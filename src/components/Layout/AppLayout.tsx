@@ -22,6 +22,7 @@ import { PayrollView } from '../../pages/admin/PayrollView';
 import { ClassesView } from '../../pages/admin/ClassesView';
 import { BlogCMSView } from '../../pages/admin/BlogCMSView';
 import { SettingsView } from '../../pages/admin/SettingsView';
+import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
 import {
   ShieldCheck,
   LayoutDashboard,
@@ -63,6 +64,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [unreadNotifications, setUnreadNotifications] = useState(3);
+  const [isAIFloatingOpen, setIsAIFloatingOpen] = useState(false);
 
   // Reset active tab to dashboard when activeRole changes
   useEffect(() => {
@@ -397,6 +399,29 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               'settings'
             ].includes(activeTab)) && children}
         </main>
+
+        {/* FLOATING PRIME AI ASSISTANT TRIGGER BUTTON & WIDGET */}
+        {activeTab !== 'ai_tutor' && (
+          <>
+            <button
+              onClick={() => setIsAIFloatingOpen(!isAIFloatingOpen)}
+              className="fixed bottom-6 right-6 z-50 p-3.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-2xl shadow-amber-500/30 border-2 border-amber-300 hover:scale-105 transition cursor-pointer flex items-center gap-2 group"
+              title="Open CenterFlow Prime AI Assistant"
+            >
+              <Sparkles className="w-6 h-6 animate-pulse text-slate-950" />
+              <span className="hidden group-hover:inline text-xs font-extrabold pr-1">
+                AI Coach
+              </span>
+            </button>
+
+            {isAIFloatingOpen && (
+              <PrimeAIAssistant
+                isOpen={isAIFloatingOpen}
+                onClose={() => setIsAIFloatingOpen(false)}
+              />
+            )}
+          </>
+        )}
 
       </div>
 

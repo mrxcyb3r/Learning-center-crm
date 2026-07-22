@@ -52,8 +52,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper to determine role and save profile
   const handleUserRole = async (user: User): Promise<UserRole> => {
-    // Check email verification status (unless SuperAdmin or demo account)
-    const isVerified = user.emailVerified || user.uid === SUPER_ADMIN_UUID || user.uid.startsWith('demo_');
+    // Check email verification status (Google OAuth users, SuperAdmin, or demo accounts bypass verification)
+    const isGoogleUser = user.providerData?.some((p) => p.providerId === 'google.com');
+    const isVerified = Boolean(user.emailVerified || isGoogleUser || user.uid === SUPER_ADMIN_UUID || user.uid.startsWith('demo_'));
     setIsEmailVerified(isVerified);
     if (!isVerified) {
       setUnverifiedUserEmail(user.email);
@@ -234,7 +235,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkEmailVerification = async (): Promise<boolean> => {
     if (auth.currentUser) {
       await reload(auth.currentUser);
-      const isVerified = auth.currentUser.emailVerified || auth.currentUser.uid === SUPER_ADMIN_UUID;
+      const isGoogleUser = auth.currentUser.providerData?.some((p) => p.providerId === 'google.com');
+      const isVerified = Boolean(auth.currentUser.emailVerified || isGoogleUser || auth.currentUser.uid === SUPER_ADMIN_UUID || auth.currentUser.uid.startsWith('demo_'));
       setIsEmailVerified(isVerified);
       if (isVerified) {
         setUnverifiedUserEmail(null);

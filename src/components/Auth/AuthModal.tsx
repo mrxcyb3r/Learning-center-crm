@@ -183,8 +183,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Render Unverified Email Screen if user is logged in but unverified
-  const showUnverifiedScreen = currentUser && !isEmailVerified;
+  // Render Unverified Email Screen if user is logged in via Email/Pass but unverified
+  const isGoogleUser = currentUser?.providerData?.some((p) => p.providerId === 'google.com');
+  const showUnverifiedScreen = currentUser && !isEmailVerified && !isGoogleUser;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">

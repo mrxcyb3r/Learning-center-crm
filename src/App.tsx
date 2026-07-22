@@ -61,8 +61,11 @@ function MainApp() {
     );
   }
 
-  // 3. Email Verification Gate (If logged in but email not verified)
-  if (!isEmailVerified) {
+  // 3. Email Verification Gate (If logged in via Email/Pass but email not verified)
+  const isGoogleUser = currentUser?.providerData?.some((p) => p.providerId === 'google.com');
+  const needsVerification = currentUser && !isEmailVerified && !isGoogleUser;
+
+  if (needsVerification) {
     const handleResend = async () => {
       setResendLoading(true);
       setVerifyMsg(null);

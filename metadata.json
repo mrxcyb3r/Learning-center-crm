@@ -1,0 +1,6 @@
+{
+  "name": "CenterFlow - Camelot LC",
+  "description": "CenterFlow learning center management and landing platform for Camelot LC in Guliston, Sirdaryo. Features courses, teacher rosters, IELTS results, multi-language support, dark mode, and authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

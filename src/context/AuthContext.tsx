@@ -8,7 +8,9 @@ import {
   getRedirectResult,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendEmailVerification,
+  reload
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
@@ -23,8 +25,12 @@ interface AuthContextType {
   activeRole: UserRole; // Active mock role for testing views
   isLoading: boolean;
   isDevMode: boolean;
+  isEmailVerified: boolean;
+  unverifiedUserEmail: string | null;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerWithEmail: (email: string, pass: string, name: string, requestedRole?: UserRole) => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
+  checkEmailVerification: () => Promise<boolean>;
   loginWithGoogle: (requestedRole?: UserRole) => Promise<void>;
   loginAsDemoUser: (requestedRole?: UserRole) => Promise<void>;
   logout: () => Promise<void>;
@@ -41,9 +47,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeRole, setActiveRole] = useState<UserRole>('guest');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDevMode] = useState<boolean>(true); // Dev switcher active
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(true);
+  const [unverifiedUserEmail, setUnverifiedUserEmail] = useState<string | null>(null);
 
   // Helper to determine role and save profile
   const handleUserRole = async (user: User): Promise<UserRole> => {
+    // Check email verification status (unless SuperAdmin or demo account)
+    const isVerified = user.emailVerified || user.uid === SUPER_ADMIN_UUID || user.uid.startsWith('demo_');
+    setIsEmailVerified(isVerified);
+    if (!isVerified) {
+      setUnverifiedUserEmail(user.email);
+    } else {
+      setUnverifiedUserEmail(null);
+    }
+
     // Exact SuperAdmin check mandated by instructions
     if (user.uid === SUPER_ADMIN_UUID) {
       const superAdminProfile: UserProfile = {
@@ -132,6 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserProfile(null);
         setRole('guest');
         setActiveRole('guest');
+        setIsEmailVerified(true);
+        setUnverifiedUserEmail(null);
       }
       setIsLoading(false);
     });
@@ -143,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, pass);
+      await reload(cred.user);
       await handleUserRole(cred.user);
     } finally {
       setIsLoading(false);
@@ -160,6 +180,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       await updateProfile(cred.user, { displayName: name });
 
+      // Trigger real email verification link immediately
+      try {
+        await sendEmailVerification(cred.user);
+      } catch (e) {
+        console.warn('Failed to send email verification link:', e);
+      }
+
       const isSuperAdmin = cred.user.uid === SUPER_ADMIN_UUID;
       const assignedRole = isSuperAdmin ? 'superadmin' : requestedRole;
 
@@ -176,9 +203,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserProfile(profile);
       setRole(assignedRole);
       setActiveRole(assignedRole);
+
+      // Mark email verification state
+      const isVerified = cred.user.emailVerified || isSuperAdmin;
+      setIsEmailVerified(isVerified);
+      if (!isVerified) {
+        setUnverifiedUserEmail(cred.user.email);
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (auth.currentUser) {
+      await sendEmailVerification(auth.currentUser);
+    }
+  };
+
+  const checkEmailVerification = async (): Promise<boolean> => {
+    if (auth.currentUser) {
+      await reload(auth.currentUser);
+      const isVerified = auth.currentUser.emailVerified || auth.currentUser.uid === SUPER_ADMIN_UUID;
+      setIsEmailVerified(isVerified);
+      if (isVerified) {
+        setUnverifiedUserEmail(null);
+      }
+      return isVerified;
+    }
+    return false;
   };
 
   const loginWithGoogle = async (requestedRole: UserRole = 'student') => {
@@ -322,8 +375,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeRole,
         isLoading,
         isDevMode,
+        isEmailVerified,
+        unverifiedUserEmail,
         loginWithEmail,
         registerWithEmail,
+        resendVerificationEmail,
+        checkEmailVerification,
         loginWithGoogle,
         loginAsDemoUser,
         logout,

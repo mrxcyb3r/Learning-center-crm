@@ -143,7 +143,13 @@ export const translations = {
       invalidPinTeacher: "Xato PIN! O'qituvchi sifatida kirish uchun PIN: 'secureteacher'",
       invalidPinAdmin: "Xato PIN! Admin sifatida kirish uchun PIN: 'secureadmin'",
       noPinNeeded: "O'quvchilar uchun PIN talab etilmaydi",
-      selectLanguage: 'Til'
+      selectLanguage: 'Til',
+      unverifiedTitle: "Elektron pochta tasdiqlanmagan",
+      unverifiedNotice: "Elektron pochtangizga tasdiqlash havolasi yuborilgan. Iltimos, pochtangizni tekshiring va havolani bosing.",
+      resendVerificationBtn: "Tasdiqlash xabarini qayta yuborish",
+      checkVerificationBtn: "Tasdiqlanganini tekshirish",
+      verificationSentSuccess: "Tasdiqlash xati qayta yuborildi! Pochtangizni tekshiring.",
+      emailVerifiedSuccess: "Pochta muvaffaqiyatli tasdiqlandi! Tizimga kirishingiz mumkin."
     },
     footer: {
       tagline: "Renessans Learning Center - Innovatsion Ta'lim va Yuqori Natijalar.",
@@ -294,7 +300,13 @@ export const translations = {
       invalidPinTeacher: "Invalid Security PIN! Teacher requires: 'secureteacher'",
       invalidPinAdmin: "Invalid Security PIN! Admin requires: 'secureadmin'",
       noPinNeeded: 'No PIN required for Students',
-      selectLanguage: 'Language'
+      selectLanguage: 'Language',
+      unverifiedTitle: "Email Not Verified",
+      unverifiedNotice: "A verification link was sent to your email address. Please check your inbox and click the link to verify.",
+      resendVerificationBtn: "Resend Verification Email",
+      checkVerificationBtn: "I've Verified, Check Status",
+      verificationSentSuccess: "Verification email resent! Please check your inbox.",
+      emailVerifiedSuccess: "Email successfully verified! Welcome to CenterFlow."
     },
     footer: {
       tagline: 'Renessans Learning Center - Innovative Education & High Results.',

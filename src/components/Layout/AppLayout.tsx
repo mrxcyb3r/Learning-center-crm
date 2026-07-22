@@ -59,7 +59,8 @@ interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { currentUser, userProfile, activeRole, setMockRole, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -357,12 +358,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </header>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <main className={`flex-1 overflow-y-auto ${activeTab === 'ai_tutor' ? 'p-0' : 'p-4 sm:p-6 md:p-8'}`}>
           {/* Student Role Pages */}
           {activeTab === 'feed' && <GroupFeed />}
           {activeTab === 'progress' && <ProgressGraphs />}
           {activeTab === 'leaderboard' && <Leaderboard />}
-          {activeTab === 'ai_tutor' && <AITutorView />}
+          {activeTab === 'ai_tutor' && (
+            <AITutorView onBackToDashboard={() => setActiveTab('dashboard')} />
+          )}
 
           {/* Teacher Role Pages */}
           {activeTab === 'attendance' && <TeacherAttendance />}

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -14,7 +15,6 @@ import {
   Sparkles,
   Send,
   Mic,
-  MicOff,
   Paperclip,
   X,
   Bot,
@@ -26,19 +26,15 @@ import {
   Minimize2,
   FileText,
   Image as ImageIcon,
-  BookOpen,
-  Terminal,
   Volume2,
-  Trash2,
   Info,
-  CheckCircle2,
   Sparkle
 } from 'lucide-react';
 
 interface PrimeAIAssistantProps {
   isOpen?: boolean;
   onClose?: () => void;
-  initialMode?: 'chat' | 'speaking' | 'essay' | 'doc';
+  initialMode?: 'chat' | 'speaking' | 'essay';
 }
 
 export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
@@ -49,7 +45,6 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
   const { activeRole } = useAuth();
   const { language } = useLanguage();
 
-  // Selected language for Gemini responses (default aligns with app language)
   const [userLang, setUserLang] = useState<UserLanguage>(language === 'EN' ? 'en' : 'uz');
 
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -57,16 +52,16 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
       role: 'model',
       text:
         userLang === 'uz'
-          ? "Salom! Men CenterFlow'ning multimodal sun'iy intellekt yordamchisiman. Darslar, IELTS Speaking/Writing, Python dasturlash yoki matematika bo'yicha qanday yordam bera olaman?"
+          ? "Salom! Men CenterFlow'ning multimodal AI yordamchisiman. Darslar, IELTS Speaking/Writing, Python yoki matematika bo'yicha qanday yordam bera olaman?"
           : userLang === 'ru'
-          ? "Здравствуйте! Я ИИ-помощник CenterFlow. Чем могу помочь по предметам, IELTS Speaking/Writing или программированию?"
-          : "Hello! I am CenterFlow's Prime Multimodal AI Coach. How can I assist you with your studies, IELTS practice, or IT tasks today?"
+          ? "Здравствуйте! Я ИИ-помощник CenterFlow. Чем могу помочь по IELTS, предметам или программированию?"
+          : "Hello! I am CenterFlow's Prime AI Assistant. How can I assist you with your studies, IELTS, or coding today?"
     }
   ]);
 
   const [inputPrompt, setInputPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'speaking' | 'essay' | 'doc'>(initialMode);
+  const [activeTab, setActiveTab] = useState<'chat' | 'speaking' | 'essay'>(initialMode);
   const [isExpanded, setIsExpanded] = useState(false);
 
   // File Attachment State
@@ -81,7 +76,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Essay Grading State (for Teacher/Student Essay Mode)
+  // Essay State
   const [essayText, setEssayText] = useState('');
   const [taskType, setTaskType] = useState<'task1' | 'task2'>('task2');
   const [essayPrompt, setEssayPrompt] = useState('');
@@ -95,12 +90,10 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Handle Quick Coaching Chips click
   const handleChipClick = (chipText: string) => {
     setInputPrompt(chipText);
   };
 
-  // Quick Action Chips tailored by Subject & Role
   const getQuickChips = () => {
     if (activeRole === 'teacher') {
       return [
@@ -113,21 +106,18 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
     if (activeRole === 'admin' || activeRole === 'superadmin') {
       return [
         { label: "📢 Telegram Post", text: "Draft an engaging Telegram channel post announcing a new IELTS 7.5+ Intensive Batch starting next Monday." },
-        { label: "📊 Weekly Summary", text: "Write a professional weekly summary format for teacher attendance and student tuition payments." },
-        { label: "✉️ Welcome Letter", text: "Draft a welcoming email message to newly enrolled students at Renessans Learning Center." }
+        { label: "📊 Weekly Summary", text: "Write a professional weekly summary format for teacher attendance and student tuition payments." }
       ];
     }
 
-    // Default: Student chips
     return [
       { label: "🇺🇿 Yechim usuli", text: "Bu misolni yechish metodini va asosiy qoidasini tushuntirib ber (javobini bermasdan)." },
-      { label: "🇬🇧 IELTS Speaking", text: "Evaluate my speaking recording for Fluency, Vocabulary, and Grammar." },
+      { label: "🇬🇧 IELTS Speaking", text: "Evaluate my speaking performance for Fluency, Vocabulary, and Grammar." },
       { label: "💻 Python Code Help", text: "Explain how list comprehensions work in Python with a clean example." },
       { label: "📐 Math Concept", text: "Explain the Pythagorean theorem step by step with a real-world example." }
     ];
   };
 
-  // File Upload Handler (Image or Document)
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -152,14 +142,12 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Clear attached file
   const handleRemoveFile = () => {
     setAttachedFile(null);
     setFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Microphone Audio Recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -199,35 +187,31 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
         const result = reader.result as string;
         const base64Audio = result.split(',')[1];
 
-        // Append student recording action to chat
         const userMsg: ChatMessage = {
           role: 'user',
-          text: `[🎙️ Audio Yozuv - IELTS Speaking Part ${speakingPart} (${recordingSeconds}s)]`
+          text: `[🎙️ Audio Recording - IELTS Speaking Part ${speakingPart} (${recordingSeconds}s)]`
         };
         setMessages((prev) => [...prev, userMsg]);
         setIsLoading(true);
 
         try {
           const evalResult = await evaluateSpeakingAudio(base64Audio, 'audio/webm', speakingPart, userLang);
-          setMessages((prev) => [
-            ...prev,
-            { role: 'model', text: evalResult }
-          ]);
+          setMessages((prev) => [...prev, { role: 'model', text: evalResult }]);
         } catch (err: any) {
           setMessages((prev) => [
             ...prev,
-            { role: 'model', text: `❌ Audio tahlil qilishda xatolik yuz berdi: ${err?.message || 'Xato'}` }
+            { role: 'model', text: `❌ Audio evaluation error: ${err?.message || 'Error'}` }
           ]);
         } finally {
           setIsLoading(false);
           setRecordingSeconds(0);
+          setActiveTab('chat');
         }
       };
       reader.readAsDataURL(audioBlob);
     };
   };
 
-  // Submit Text/Multimodal Chat Query
   const handleSendChat = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if ((!inputPrompt.trim() && !attachedFile) || isLoading) return;
@@ -248,9 +232,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
 
     try {
       let aiResponseText = '';
-
       if (currentAttachment && currentAttachment.inlineData.mimeType.startsWith('image/')) {
-        // Document / Image OCR analysis
         aiResponseText = await analyzeStudyDocument(
           currentAttachment.inlineData.data,
           currentAttachment.inlineData.mimeType,
@@ -258,7 +240,6 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
           userLang
         );
       } else {
-        // General Subject Coach Chat
         aiResponseText = await askAICoach(
           userQuery,
           messages,
@@ -272,21 +253,20 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'model', text: `❌ Kechirasiz, javob olishda xatolik bo'ldi: ${err?.message || 'Xatolik'}` }
+        { role: 'model', text: `❌ Error receiving AI response: ${err?.message || 'Error'}` }
       ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Submit Essay Grading
   const handleGradeEssaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!essayText.trim() || isLoading) return;
 
     const userMsg: ChatMessage = {
       role: 'user',
-      text: `[📝 Essay Yuborildi - IELTS Writing ${taskType.toUpperCase()}]\nPrompt: ${essayPrompt}\n\nEssay:\n${essayText}`
+      text: `[📝 Essay Submitted - IELTS Writing ${taskType.toUpperCase()}]\nTopic: ${essayPrompt}\n\nEssay:\n${essayText}`
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -301,7 +281,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'model', text: `❌ Essay baholashda xatolik yuz berdi: ${err?.message}` }
+        { role: 'model', text: `❌ Essay evaluation error: ${err?.message}` }
       ]);
     } finally {
       setIsLoading(false);
@@ -340,7 +320,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Language Switcher */}
+          {/* Language Selector */}
           <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
             <Globe className="w-3 h-3 text-amber-400 ml-1" />
             <button
@@ -369,7 +349,6 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
             </button>
           </div>
 
-          {/* Expand Toggle */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
@@ -378,7 +357,6 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
             {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
 
-          {/* Close Button */}
           {onClose && (
             <button
               onClick={onClose}
@@ -390,7 +368,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
         </div>
       </div>
 
-      {/* MODE TABS (Chat, IELTS Speaking Voice, Essay Grader) */}
+      {/* MODE TABS */}
       <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-1 overflow-x-auto shrink-0">
         <div className="flex items-center gap-1">
           <button
@@ -414,7 +392,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
             }`}
           >
             <Mic className="w-3.5 h-3.5" />
-            <span>IELTS Voice Speaking</span>
+            <span>IELTS Speaking</span>
           </button>
 
           <button
@@ -426,11 +404,10 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Essay & Writing</span>
+            <span>Essay Grader</span>
           </button>
         </div>
 
-        {/* Academic Integrity Guardrail Banner Badge */}
         <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
           <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
           <span>Academic Socratic Coach</span>
@@ -439,17 +416,8 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
 
       {/* CONTENT AREA */}
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
-        
-        {/* Academic Integrity Notice Card */}
-        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-          <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold">Akademik Halollik Qoidasi (Academic Guardrail):</span> CenterFlow AI uy vazifalarini to'g'ridan-to me'yorsiz yechib bermaydi. U sizga misollar, tushunchalar va yo'naltiruvchi maslahatlar berib bilim olishingizga ko'maklashadi!
-          </div>
-        </div>
-
-        {/* VIEW 1: IELTS SPEAKING AUDIO EVALUATOR PANEL */}
-        {activeTab === 'speaking' && (
+        {/* VIEW 1: IELTS SPEAKING AUDIO EVALUATOR */}
+        {activeTab === 'speaking' ? (
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -457,29 +425,22 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
                 <span>IELTS Speaking Voice Evaluator</span>
               </h4>
               <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-700 p-0.5 rounded-lg">
-                <button
-                  onClick={() => setSpeakingPart(1)}
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded ${speakingPart === 1 ? 'bg-amber-500 text-slate-950' : 'text-slate-600 dark:text-slate-300'}`}
-                >
-                  Part 1
-                </button>
-                <button
-                  onClick={() => setSpeakingPart(2)}
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded ${speakingPart === 2 ? 'bg-amber-500 text-slate-950' : 'text-slate-600 dark:text-slate-300'}`}
-                >
-                  Part 2
-                </button>
-                <button
-                  onClick={() => setSpeakingPart(3)}
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded ${speakingPart === 3 ? 'bg-amber-500 text-slate-950' : 'text-slate-600 dark:text-slate-300'}`}
-                >
-                  Part 3
-                </button>
+                {[1, 2, 3].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setSpeakingPart(num as 1 | 2 | 3)}
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded ${
+                      speakingPart === num ? 'bg-amber-500 text-slate-950' : 'text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    Part {num}
+                  </button>
+                ))}
               </div>
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Tugmani bosing va IELTS Speaking bo'yicha javobingizni mikrofon orqali yozib oling. Gemini AI sizning nutqingizni transkritsiya qiladi hamda Fluency, Vocabulary, Grammar va Pronunciation bo'yicha Band Score beradi.
+              Record your response to receive instant IELTS band scores and audio feedback on Fluency, Lexical Resource, Grammar, and Pronunciation.
             </p>
 
             <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
@@ -489,13 +450,13 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
                     <Mic className="w-8 h-8" />
                   </div>
                   <span className="text-xs font-mono font-bold text-rose-500">
-                    Ovoz yozilmoqda... {recordingSeconds}s
+                    Recording audio... {recordingSeconds}s
                   </span>
                   <button
                     onClick={stopRecordingAndEvaluate}
                     className="mt-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition cursor-pointer"
                   >
-                    Yozishni To'xtatish & AI Tahlil Qilish
+                    Stop Recording & Analyze AI
                   </button>
                 </div>
               ) : (
@@ -508,16 +469,14 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
                     <Mic className="w-8 h-8" />
                   </button>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Mikrofonni Bosing va Gapiring
+                    Click Microphone to Record
                   </span>
                 </div>
               )}
             </div>
           </div>
-        )}
-
-        {/* VIEW 2: ESSAY GRADERSHIP PANEL */}
-        {activeTab === 'essay' && (
+        ) : activeTab === 'essay' ? (
+          /* VIEW 2: ESSAY GRADERSHIP PANEL */
           <form onSubmit={handleGradeEssaySubmit} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3 animate-fadeIn">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -544,20 +503,20 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Essay Topic / Prompt (Mavzu):
+                Essay Topic / Prompt:
               </label>
               <input
                 type="text"
                 value={essayPrompt}
                 onChange={(e) => setEssayPrompt(e.target.value)}
-                placeholder="Masalan: Some people think that universities should provide graduates with knowledge..."
+                placeholder="e.g. Some people think universities should offer practical skills..."
                 className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Essay Matni:
+                Essay Text:
               </label>
               <textarea
                 rows={5}
@@ -575,61 +534,74 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
               className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              <span>IELTS Band Score & Tahlil Olish</span>
+              <span>Grade Essay & Get Band Score</span>
             </button>
           </form>
-        )}
+        ) : (
+          /* VIEW 3: CHAT MESSAGES THREAD (REACT-MARKDOWN FORMATTED) */
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Academic Guardrail:</span> CenterFlow AI does not solve homework directly. It provides hints, Socratic questions, and similar examples to coach your learning!
+              </div>
+            </div>
 
-        {/* CHAT MESSAGES STREAM */}
-        <div className="space-y-3">
-          {messages.map((msg, idx) => {
-            const isUser = msg.role === 'user';
-            return (
-              <div
-                key={idx}
-                className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-              >
-                {!isUser && (
-                  <div className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                    <Bot className="w-4 h-4" />
-                  </div>
-                )}
-
+            {messages.map((msg, idx) => {
+              const isUser = msg.role === 'user';
+              return (
                 <div
-                  className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed space-y-2 ${
-                    isUser
-                      ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/80 rounded-tl-none whitespace-pre-wrap'
-                  }`}
+                  key={idx}
+                  className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
                 >
-                  {msg.attachment && (
-                    <div className="p-2 bg-black/10 dark:bg-white/10 rounded-xl text-[10px] font-mono flex items-center gap-2">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      <span>Attached File ({msg.attachment.inlineData.mimeType})</span>
+                  {!isUser && (
+                    <div className="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                      <Bot className="w-4 h-4" />
                     </div>
                   )}
 
-                  <div>{msg.text}</div>
-                </div>
+                  <div
+                    className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                      isUser
+                        ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/80 rounded-tl-none'
+                    }`}
+                  >
+                    {msg.attachment && (
+                      <div className="mb-2 p-2 bg-black/10 dark:bg-white/10 rounded-xl text-[10px] font-mono flex items-center gap-2">
+                        <Paperclip className="w-3.5 h-3.5" />
+                        <span>Attached File ({msg.attachment.inlineData.mimeType})</span>
+                      </div>
+                    )}
 
-                {isUser && (
-                  <div className="w-7 h-7 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">
-                    <User className="w-4 h-4" />
+                    {isUser ? (
+                      <div className="whitespace-pre-wrap">{msg.text}</div>
+                    ) : (
+                      <div className="prose prose-invert max-w-none text-xs space-y-1.5 [&>p]:mb-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:font-bold [&>h2]:font-bold [&>h3]:font-bold [&>strong]:font-bold [&>strong]:text-amber-600 dark:[&>strong]:text-amber-400">
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {isUser && (
+                    <div className="w-7 h-7 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {isLoading && (
+              <div className="flex items-center gap-2 text-xs text-amber-500 font-bold animate-pulse p-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Gemini AI is analyzing & generating...</span>
               </div>
-            );
-          })}
+            )}
 
-          {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-amber-500 font-bold animate-pulse p-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Gemini AI O'ylamoqda va Tahlil Qilmoqda...</span>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
 
       {/* QUICK CHIPS (Only in Chat Mode) */}
@@ -651,7 +623,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
         </div>
       )}
 
-      {/* INPUT FORM (Chat & File Attachment) */}
+      {/* INPUT FORM (Chat Mode) */}
       {activeTab === 'chat' && (
         <form
           onSubmit={handleSendChat}
@@ -674,7 +646,6 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
           )}
 
           <div className="flex items-center gap-2">
-            {/* File Upload Input */}
             <input
               type="file"
               ref={fileInputRef}
@@ -686,27 +657,25 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
-              title="Upload photo of textbook exercise, code, or draft"
+              title="Upload study document / exercise image"
             >
               <Paperclip className="w-4 h-4" />
             </button>
 
-            {/* Input Field */}
             <input
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder={
                 userLang === 'uz'
-                  ? "Savolingiz yoki darslik rasmini yuklang..."
+                  ? "Savol bering yoki rasmni biriktiring..."
                   : userLang === 'ru'
-                  ? "Задайте вопрос или загрузите фото..."
-                  : "Ask a question or upload a study file..."
+                  ? "Задайте вопрос или прикрепите фото..."
+                  : "Ask a question or attach a file..."
               }
               className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
             />
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading || (!inputPrompt.trim() && !attachedFile)}

@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import {
+  subscribeStudents,
+  subscribeGroups,
+  subscribePayments,
+  seedFirestoreIfEmpty
+} from '../../services/firestore';
+import { Student, Group, Payment } from '../../types';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -36,6 +43,25 @@ export const Dashboard: React.FC = () => {
   const displayName = userProfile?.displayName || currentUser?.displayName || 'User';
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Live Firestore State
+  const [students, setStudents] = useState<Student[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+
+  useEffect(() => {
+    seedFirestoreIfEmpty();
+
+    const unsubStudents = subscribeStudents(setStudents);
+    const unsubGroups = subscribeGroups(setGroups);
+    const unsubPayments = subscribePayments(setPayments);
+
+    return () => {
+      unsubStudents();
+      unsubGroups();
+      unsubPayments();
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -83,9 +109,17 @@ export const Dashboard: React.FC = () => {
 
       {/* RENDER ROLE-SPECIFIC DASHBOARD VIEW */}
       {activeRole === 'superadmin' || activeRole === 'admin' ? (
-        <AdminDashboardView isUz={isUz} displayName={displayName} showToast={showToast} activeRole={activeRole} />
+        <AdminDashboardView
+          isUz={isUz}
+          displayName={displayName}
+          showToast={showToast}
+          activeRole={activeRole}
+          students={students}
+          groups={groups}
+          payments={payments}
+        />
       ) : activeRole === 'teacher' ? (
-        <TeacherDashboardView isUz={isUz} displayName={displayName} showToast={showToast} />
+        <TeacherDashboardView isUz={isUz} displayName={displayName} showToast={showToast} groups={groups} students={students} />
       ) : (
         <StudentDashboardView isUz={isUz} displayName={displayName} showToast={showToast} />
       )}
@@ -93,43 +127,52 @@ export const Dashboard: React.FC = () => {
   );
 };
 
+
 /* =========================================================================
    1. SUPERADMIN / ADMIN DASHBOARD VIEW
    ========================================================================= */
-const AdminDashboardView: React.FC<{ isUz: boolean; displayName: string; showToast: (msg: string) => void; activeRole: UserRole }> = ({
-  isUz,
-  showToast,
-  activeRole
-}) => {
+const AdminDashboardView: React.FC<{
+  isUz: boolean;
+  displayName: string;
+  showToast: (msg: string) => void;
+  activeRole: UserRole;
+  students: Student[];
+  groups: Group[];
+  payments: Payment[];
+}> = ({ isUz, showToast, activeRole, students, groups, payments }) => {
+  const totalRev = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+  const debtorCount = students.filter((s) => s.paymentStatus === 'pending' || s.paymentStatus === 'overdue').length;
+
   return (
     <div className="space-y-6">
       {/* Metric Cards for Revenue, Students, Debtors, Groups */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title={isUz ? "Oylik Jami Tushum" : "Total Monthly Revenue"}
-          value="48,500,000 UZS"
-          change={isUz ? "+12% ushbu oy" : "+12% vs last month"}
+          value={`${totalRev.toLocaleString()} UZS`}
+          change={isUz ? "Real-time Firestore" : "Live Firestore Sync"}
           icon={<DollarSign className="w-5 h-5 text-emerald-500" />}
         />
         <StatCard
           title={isUz ? "Faol O'quvchilar" : "Active Enrolled Students"}
-          value={isUz ? "342 O'quvchi" : "342 Students"}
-          change={isUz ? "+18 yangi birikma" : "+18 new enrollments"}
+          value={isUz ? `${students.length} O'quvchi` : `${students.length} Students`}
+          change={isUz ? "Jonli ro'yxat" : "Live Roster"}
           icon={<GraduationCap className="w-5 h-5 text-amber-500" />}
         />
         <StatCard
           title={isUz ? "Qarzdor O'quvchilar" : "Debtor Accounts"}
-          value={isUz ? "18 Qarzdor" : "18 Debtors"}
+          value={isUz ? `${debtorCount} Qarzdor` : `${debtorCount} Debtors`}
           change={isUz ? "Aktiv monitoring" : "Active monitoring"}
           icon={<AlertCircle className="w-5 h-5 text-rose-500" />}
         />
         <StatCard
           title={isUz ? "Faol O'quv Guruhlari" : "Active Study Groups"}
-          value={isUz ? "24 Guruh" : "24 Groups"}
+          value={isUz ? `${groups.length} Guruh` : `${groups.length} Groups`}
           change="IELTS & General English"
           icon={<BookOpen className="w-5 h-5 text-purple-500" />}
         />
       </div>
+
 
       {/* Quick Action Panel */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
@@ -268,24 +311,27 @@ const AdminDashboardView: React.FC<{ isUz: boolean; displayName: string; showToa
 /* =========================================================================
    2. TEACHER DASHBOARD VIEW
    ========================================================================= */
-const TeacherDashboardView: React.FC<{ isUz: boolean; displayName: string; showToast: (msg: string) => void }> = ({
-  isUz,
-  showToast
-}) => {
+const TeacherDashboardView: React.FC<{
+  isUz: boolean;
+  displayName: string;
+  showToast: (msg: string) => void;
+  groups: Group[];
+  students: Student[];
+}> = ({ isUz, showToast, groups, students }) => {
   return (
     <div className="space-y-6">
       {/* Metric Cards for Today's Schedule, Unmarked Attendance, Pending Homework, Avg Attendance */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title={isUz ? "Bugungi Darslar" : "Today's Scheduled Classes"}
-          value={isUz ? "3 ta Dars" : "3 Classes Today"}
+          title={isUz ? "Mening Guruhlarim" : "My Assigned Groups"}
+          value={isUz ? `${groups.length} ta Guruh` : `${groups.length} Groups`}
           change="IELTS & General English"
           icon={<Calendar className="w-5 h-5 text-blue-500" />}
         />
         <StatCard
-          title={isUz ? "Belgilanmagan Davomat" : "Unmarked Attendance"}
-          value={isUz ? "1 ta Guruh" : "1 Class Pending"}
-          change={isUz ? "Dars #12 kutilmoqda" : "Class #12 needs attendance"}
+          title={isUz ? "Jami O'quvchilar" : "Enrolled Students"}
+          value={isUz ? `${students.length} ta O'quvchi` : `${students.length} Students`}
+          change={isUz ? "Barcha guruhlar" : "All rosters"}
           icon={<Clock className="w-5 h-5 text-amber-500" />}
         />
         <StatCard
@@ -295,12 +341,13 @@ const TeacherDashboardView: React.FC<{ isUz: boolean; displayName: string; showT
           icon={<FileText className="w-5 h-5 text-rose-500" />}
         />
         <StatCard
-          title={isUz ? "O'rtacha DavomatKo'rsatkichi" : "Avg Attendance Rate"}
+          title={isUz ? "O'rtacha Davomat Ko'rsatkichi" : "Avg Attendance Rate"}
           value="96.4%"
           change={isUz ? "A'lo ko'rsatkich" : "High engagement"}
           icon={<Award className="w-5 h-5 text-emerald-500" />}
         />
       </div>
+
 
       {/* Teacher Quick Actions */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">

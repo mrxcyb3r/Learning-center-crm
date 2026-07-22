@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
+import { StudentsPage } from '../../pages/StudentsPage';
+import { PaymentsPage } from '../../pages/PaymentsPage';
+import { TeacherAttendance } from '../../pages/TeacherAttendance';
 import {
   ShieldCheck,
   LayoutDashboard,
@@ -331,8 +334,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         {/* MAIN CONTENT AREA */}
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
-          {children}
+          {activeTab === 'students' ? (
+            <StudentsPage />
+          ) : activeTab === 'payments' ? (
+            <PaymentsPage />
+          ) : activeTab === 'attendance' || activeTab === 'classes' ? (
+            <TeacherAttendance />
+          ) : (
+            children
+          )}
         </main>
+
       </div>
 
     </div>

@@ -77,3 +77,44 @@ export interface FAQItem {
   answerEn: string;
   category: 'general' | 'courses' | 'exams' | 'schedule';
 }
+
+export interface Group {
+  id: string;
+  name: string;
+  courseType: string;
+  teacherId: string;
+  teacherName: string;
+  scheduleTime: string;
+  room: string;
+  activeStudentsCount: number;
+}
+
+export interface Student {
+  id: string;
+  fullName: string;
+  phone: string;
+  groupId: string;
+  groupName: string;
+  tuitionFee: number;
+  paymentStatus: 'paid' | 'pending' | 'overdue';
+  lastPaymentDate: string;
+}
+
+export interface Payment {
+  id: string;
+  studentId: string;
+  studentName: string;
+  amount: number;
+  paymentMethod: 'cash' | 'card' | 'click';
+  date: string;
+  recordedBy: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  groupId: string;
+  date: string;
+  records: { [studentId: string]: 'present' | 'absent' | 'late' };
+  recordedBy: string;
+}
+

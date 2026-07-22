@@ -1,10 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { StudentsPage } from '../../pages/StudentsPage';
 import { PaymentsPage } from '../../pages/PaymentsPage';
 import { TeacherAttendance } from '../../pages/TeacherAttendance';
+
+// Student Page Views
+import { GroupFeed } from '../../pages/student/GroupFeed';
+import { ProgressGraphs } from '../../pages/student/ProgressGraphs';
+import { Leaderboard } from '../../pages/student/Leaderboard';
+import { AITutorView } from '../../pages/student/AITutorView';
+
+// Teacher Page Views
+import { HomeworkView } from '../../pages/teacher/HomeworkView';
+import { GradebookView } from '../../pages/teacher/GradebookView';
+
+// Admin Page Views
+import { SuperAdminControlView } from '../../pages/admin/SuperAdminControlView';
+import { PayrollView } from '../../pages/admin/PayrollView';
+import { ClassesView } from '../../pages/admin/ClassesView';
+import { BlogCMSView } from '../../pages/admin/BlogCMSView';
+import { SettingsView } from '../../pages/admin/SettingsView';
 import {
   ShieldCheck,
   LayoutDashboard,
@@ -46,6 +63,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [unreadNotifications, setUnreadNotifications] = useState(3);
+
+  // Reset active tab to dashboard when activeRole changes
+  useEffect(() => {
+    setActiveTab('dashboard');
+  }, [activeRole]);
 
   const displayName = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
   const email = currentUser?.email || 'user@renessans.lc';
@@ -334,15 +356,46 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         {/* MAIN CONTENT AREA */}
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
-          {activeTab === 'students' ? (
-            <StudentsPage />
-          ) : activeTab === 'payments' ? (
-            <PaymentsPage />
-          ) : activeTab === 'attendance' || activeTab === 'classes' ? (
-            <TeacherAttendance />
-          ) : (
-            children
+          {/* Student Role Pages */}
+          {activeTab === 'feed' && <GroupFeed />}
+          {activeTab === 'progress' && <ProgressGraphs />}
+          {activeTab === 'leaderboard' && <Leaderboard />}
+          {activeTab === 'ai_tutor' && <AITutorView />}
+
+          {/* Teacher Role Pages */}
+          {activeTab === 'attendance' && <TeacherAttendance />}
+          {activeTab === 'homework' && <HomeworkView />}
+          {activeTab === 'gradebook' && <GradebookView />}
+
+          {/* Admin & SuperAdmin Role Pages */}
+          {activeTab === 'superadmin_control' && <SuperAdminControlView />}
+          {activeTab === 'students' && <StudentsPage />}
+          {activeTab === 'payments' && <PaymentsPage />}
+          {activeTab === 'payroll' && <PayrollView />}
+          {activeTab === 'classes' && (
+            activeRole === 'teacher' ? <TeacherAttendance /> : <ClassesView />
           )}
+          {activeTab === 'blog' && <BlogCMSView />}
+          {activeTab === 'settings' && <SettingsView />}
+
+          {/* Fallback to Dashboard / children */}
+          {(activeTab === 'dashboard' ||
+            ![
+              'feed',
+              'progress',
+              'leaderboard',
+              'ai_tutor',
+              'attendance',
+              'homework',
+              'gradebook',
+              'superadmin_control',
+              'students',
+              'payments',
+              'payroll',
+              'classes',
+              'blog',
+              'settings'
+            ].includes(activeTab)) && children}
         </main>
 
       </div>

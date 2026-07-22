@@ -24,7 +24,10 @@ import {
   CreditCard,
   FileText,
   Newspaper,
-  Key
+  Key,
+  DollarSign,
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -33,7 +36,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { currentUser, userProfile, activeRole, logout } = useAuth();
+  const { currentUser, userProfile, activeRole, setMockRole, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -77,17 +80,51 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const badge = getRoleBadge(activeRole);
 
-  // Dynamic Navigation Items matching Day 1 prompt
+  // Dynamic Navigation Items per role
   const getNavItems = () => {
     const isUz = language === 'UZ';
+
+    if (activeRole === 'superadmin') {
+      return [
+        { id: 'dashboard', label: isUz ? 'Boshqaruv Paneli' : 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'superadmin_control', label: isUz ? 'SuperAdmin Boshqaruvi' : 'SuperAdmin Control', icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
+        { id: 'students', label: isUz ? "O'quvchilar" : 'Students', icon: <Users className="w-4 h-4" /> },
+        { id: 'payments', label: isUz ? "To'lovlar & Kontrakt" : 'Tuition & Payments', icon: <CreditCard className="w-4 h-4" /> },
+        { id: 'payroll', label: isUz ? "Oylik Maosh & Harajatlar" : 'Payroll & Expenses', icon: <DollarSign className="w-4 h-4" /> },
+        { id: 'classes', label: isUz ? "Guruhlar & Darslar" : 'Classes & Groups', icon: <BookOpen className="w-4 h-4" /> },
+        { id: 'homework', label: isUz ? "Vazifalar & Media" : 'Homework & Media', icon: <FileText className="w-4 h-4" /> },
+        { id: 'blog', label: isUz ? "Blog CMS" : 'Blog CMS', icon: <Newspaper className="w-4 h-4" /> },
+        { id: 'settings', label: isUz ? "Sozlamalar & PIN" : 'Settings & Security PINs', icon: <Settings className="w-4 h-4" /> }
+      ];
+    }
+
+    if (activeRole === 'admin') {
+      return [
+        { id: 'dashboard', label: isUz ? 'Boshqaruv Paneli' : 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'students', label: isUz ? "O'quvchilar" : 'Students', icon: <Users className="w-4 h-4" /> },
+        { id: 'payments', label: isUz ? "To'lovlar & Qarzdorlar" : 'Tuition & Debtor List', icon: <CreditCard className="w-4 h-4" /> },
+        { id: 'payroll', label: isUz ? "Oylik Maosh & Harajatlar" : 'Payroll & Expenses', icon: <DollarSign className="w-4 h-4" /> },
+        { id: 'blog', label: isUz ? "Blog CMS" : 'Blog CMS', icon: <Newspaper className="w-4 h-4" /> }
+      ];
+    }
+
+    if (activeRole === 'teacher') {
+      return [
+        { id: 'dashboard', label: isUz ? 'Boshqaruv Paneli' : 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'classes', label: isUz ? "Mening Guruhlarim" : 'My Classes', icon: <BookOpen className="w-4 h-4" /> },
+        { id: 'attendance', label: isUz ? "1-Tap Davomat" : '1-Tap Attendance', icon: <Calendar className="w-4 h-4" /> },
+        { id: 'homework', label: isUz ? "Vazifalar & Audio" : 'Homework & Audio Uploads', icon: <FileText className="w-4 h-4" /> },
+        { id: 'gradebook', label: isUz ? "Bahlash & IELTS Scoring" : 'Gradebook & IELTS Scoring', icon: <Award className="w-4 h-4" /> }
+      ];
+    }
+
+    // Default: student
     return [
       { id: 'dashboard', label: isUz ? 'Boshqaruv Paneli' : 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-      { id: 'students', label: isUz ? "O'quvchilar" : 'Students', icon: <Users className="w-4 h-4" /> },
-      { id: 'payments', label: isUz ? "To'lovlar & Kontrakt" : 'Payments & Tuition', icon: <CreditCard className="w-4 h-4" /> },
-      { id: 'classes', label: isUz ? "Guruhlar & Darslar" : 'Classes & Groups', icon: <BookOpen className="w-4 h-4" /> },
-      { id: 'homework', label: isUz ? "Vazifalar & Media" : 'Homework & Media', icon: <FileText className="w-4 h-4" /> },
-      { id: 'blog', label: isUz ? "Blog CMS" : 'Blog CMS', icon: <Newspaper className="w-4 h-4" /> },
-      { id: 'settings', label: isUz ? "Sozlamalar & PIN" : 'Settings & Security PINs', icon: <Settings className="w-4 h-4" /> }
+      { id: 'feed', label: isUz ? "Guruh Lentasim" : 'My Group Feed', icon: <Newspaper className="w-4 h-4" /> },
+      { id: 'progress', label: isUz ? "O'zlashtirish Grafigi" : 'Progress Graphs', icon: <TrendingUp className="w-4 h-4" /> },
+      { id: 'leaderboard', label: isUz ? "Guruh Reytingi" : 'Class Leaderboard', icon: <Award className="w-4 h-4" /> },
+      { id: 'ai_tutor', label: isUz ? "24/7 AI Tutor Yordamchi" : '24/7 AI Tutor Assistant', icon: <Sparkles className="w-4 h-4 text-amber-500" /> }
     ];
   };
 

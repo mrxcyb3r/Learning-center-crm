@@ -414,43 +414,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <span>{t.auth.googleBtn}</span>
         </button>
 
-        {/* Quick Demo Instant Access Section */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 text-center">
-            {language === 'UZ' ? 'Tezkor Demo Kirish (1-Bosing)' : 'Fast Demo Instant Access (1-Click)'}
-          </p>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleDemoSignIn('superadmin')}
-              className="py-1.5 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-500/30 transition cursor-pointer flex items-center justify-center gap-1"
-            >
-              👑 SuperAdmin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoSignIn('admin')}
-              className="py-1.5 px-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-[11px] border border-purple-500/30 transition cursor-pointer flex items-center justify-center gap-1"
-            >
-              🛡️ Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoSignIn('teacher')}
-              className="py-1.5 px-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-[11px] border border-blue-500/30 transition cursor-pointer flex items-center justify-center gap-1"
-            >
-              👨‍🏫 Teacher
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoSignIn('student')}
-              className="py-1.5 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] border border-emerald-500/30 transition cursor-pointer flex items-center justify-center gap-1"
-            >
-              🎓 Student
-            </button>
-          </div>
-        </div>
-
         {/* SuperAdmin Target Info */}
         <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 text-center">
           <p className="text-[10px] text-slate-400 dark:text-slate-500">

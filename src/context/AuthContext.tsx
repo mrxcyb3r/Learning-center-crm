@@ -189,13 +189,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cred = await signInWithPopup(auth, googleProvider);
       } catch (popupErr: any) {
         if (popupErr.code === 'auth/unauthorized-domain' || popupErr.message?.includes('unauthorized-domain')) {
-          throw new Error('This domain is not added to Firebase Authorized Domains list. Please use Email/Password sign in or Demo Quick Login.');
+          throw new Error('This preview domain is not listed under Authorized Domains in your Firebase Console. Please log in using Email & Password.');
         }
+        if (popupErr.code === 'auth/popup-closed-by-user') {
+          throw new Error('Sign-in popup was closed before completing authentication. Please try again.');
+        }
+        if (popupErr.code === 'auth/cancelled-popup-request') {
+          throw new Error('Sign-in request was cancelled. Please try again.');
+        }
+
         console.warn('signInWithPopup failed or blocked, attempting redirect fallback:', popupErr);
         if (
           popupErr.code === 'auth/popup-blocked' ||
-          popupErr.code === 'auth/popup-closed-by-user' ||
-          popupErr.code === 'auth/cancelled-popup-request' ||
           popupErr.message?.includes('popup')
         ) {
           try {
@@ -203,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           } catch (redirectErr: any) {
             if (redirectErr.code === 'auth/unauthorized-domain' || redirectErr.message?.includes('unauthorized-domain')) {
-              throw new Error('This domain is not added to Firebase Authorized Domains list. Please use Email/Password sign in or Demo Quick Login.');
+              throw new Error('This domain is not listed under Authorized Domains in Firebase Console. Please use Email & Password sign in.');
             }
             throw redirectErr;
           }
@@ -239,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
       if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
-        throw new Error('This preview domain is not added to Firebase Authorized Domains in Firebase Console. Please log in with Email & Password or use Quick Demo Login.');
+        throw new Error('This preview domain is not added to Firebase Authorized Domains in Firebase Console. Please log in with Email & Password.');
       }
       throw err;
     } finally {

@@ -158,10 +158,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const normalizePassOrPin = (input: string): string => {
+    const trimmed = input.trim();
+    if (trimmed.length < 6) {
+      return `renessans_pin_${trimmed}`;
+    }
+    return trimmed;
+  };
+
   const loginWithEmail = async (email: string, pass: string) => {
     setIsLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const safePass = normalizePassOrPin(pass);
+      const cred = await signInWithEmailAndPassword(auth, email, safePass);
       await reload(cred.user);
       await handleUserRole(cred.user);
     } finally {
@@ -177,7 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     setIsLoading(true);
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const safePass = normalizePassOrPin(pass);
+      const cred = await createUserWithEmailAndPassword(auth, email, safePass);
       await updateProfile(cred.user, { displayName: name });
 
       // Trigger real email verification link immediately

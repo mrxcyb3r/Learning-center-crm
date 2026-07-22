@@ -59,7 +59,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   // Validate security PIN before executing authentication
   const validatePin = (): boolean => {
-    if (selectedRole === 'teacher') {
+    if (selectedRole === 'student') {
+      if (securityPin.trim() !== 'securestudent') {
+        setErrorMsg(t.auth.invalidPinStudent || "Xato PIN! Student sifatida kirish uchun PIN: 'securestudent'");
+        return false;
+      }
+    } else if (selectedRole === 'teacher') {
       if (securityPin.trim() !== 'secureteacher') {
         setErrorMsg(t.auth.invalidPinTeacher);
         return false;
@@ -377,46 +382,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Security PIN Field (Enforced for Teacher / Admin) */}
-            {selectedRole !== 'student' && (
-              <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 animate-fadeIn">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-amber-500" />
-                    <span>
-                      {selectedRole === 'teacher' ? t.auth.pinLabelTeacher : t.auth.pinLabelAdmin}
-                    </span>
-                  </label>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">
-                    {selectedRole === 'teacher' ? 'secureteacher' : 'secureadmin'}
+            {/* Security PIN Field (Enforced for Student / Teacher / Admin) */}
+            <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 animate-fadeIn">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-500" />
+                  <span>
+                    {selectedRole === 'student'
+                      ? t.auth.pinLabelStudent || 'Student Security PIN'
+                      : selectedRole === 'teacher'
+                      ? t.auth.pinLabelTeacher
+                      : t.auth.pinLabelAdmin}
                   </span>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPin ? 'text' : 'password'}
-                    required
-                    value={securityPin}
-                    onChange={(e) => {
-                      setSecurityPin(e.target.value);
-                      setErrorMsg('');
-                    }}
-                    placeholder={
-                      selectedRole === 'teacher'
-                        ? t.auth.pinPlaceholderTeacher
-                        : t.auth.pinPlaceholderAdmin
-                    }
-                    className="w-full pl-3 pr-10 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/40 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPin(!showPin)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
+                </label>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">
+                  {selectedRole === 'student'
+                    ? 'securestudent'
+                    : selectedRole === 'teacher'
+                    ? 'secureteacher'
+                    : 'secureadmin'}
+                </span>
               </div>
-            )}
+              <div className="relative">
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  required
+                  value={securityPin}
+                  onChange={(e) => {
+                    setSecurityPin(e.target.value);
+                    setErrorMsg('');
+                  }}
+                  placeholder={
+                    selectedRole === 'student'
+                      ? t.auth.pinPlaceholderStudent || "Enter 'securestudent' PIN"
+                      : selectedRole === 'teacher'
+                      ? t.auth.pinPlaceholderTeacher
+                      : t.auth.pinPlaceholderAdmin
+                  }
+                  className="w-full pl-3 pr-10 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/40 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
 
             {/* Error Alert Box */}
             {errorMsg && (
@@ -544,51 +557,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </svg>
               <span>{t.auth.googleBtn}</span>
             </button>
-
-            {/* Quick Demo Login Option */}
-            <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80">
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2 text-center">
-                Fast Demo Quick Login (Skip Email Sandbox):
-              </p>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleDemoSignIn('student')}
-                  className="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                >
-                  Student Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoSignIn('teacher')}
-                  className="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                >
-                  Teacher Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoSignIn('admin')}
-                  className="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                >
-                  Admin Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoSignIn('superadmin')}
-                  className="py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/30 transition cursor-pointer"
-                >
-                  SuperAdmin Demo
-                </button>
-              </div>
-            </div>
-
-            {/* SuperAdmin Target Info */}
-            <div className="mt-3 text-center">
-              <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                SuperAdmin Account UID:{' '}
-                <span className="font-mono text-amber-500 font-bold">{SUPER_ADMIN_UUID.slice(0, 12)}...</span>
-              </p>
-            </div>
           </>
         )}
       </div>

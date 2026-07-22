@@ -159,7 +159,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Camelot LC CenterFlow
+            Renessans LC CenterFlow
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {activeTab === 'login' ? t.auth.welcomeLogin : t.auth.welcomeRegister}

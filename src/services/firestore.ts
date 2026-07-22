@@ -63,7 +63,7 @@ const DEFAULT_GROUPS: Omit<Group, 'id'>[] = [
     teacherId: 'teacher-1',
     teacherName: 'Mr. Javohirbek',
     scheduleTime: 'Mon/Wed/Fri 14:00 - 16:00',
-    room: 'Room 3 (Camelot Main)',
+    room: 'Room 3 (Renessans Main)',
     activeStudentsCount: 14
   },
   {

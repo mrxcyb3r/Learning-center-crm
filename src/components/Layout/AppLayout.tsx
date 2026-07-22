@@ -48,7 +48,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
 
   const displayName = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
-  const email = currentUser?.email || 'user@camelot.lc';
+  const email = currentUser?.email || 'user@renessans.lc';
 
   // Badge styles based on current active role
   const getRoleBadge = (role: UserRole) => {
@@ -155,7 +155,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   CenterFlow
                 </h1>
                 <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
-                  Camelot LC Platform
+                  Renessans LC Platform
                 </p>
               </div>
             </div>
@@ -258,7 +258,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <span>{currentTabObj.label}</span>
               </h2>
               <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">
-                Camelot Learning Center • Sirdaryo
+                Renessans Learning Center • Toshkent
               </p>
             </div>
           </div>

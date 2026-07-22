@@ -620,7 +620,7 @@ const StudentDashboardView: React.FC<{ isUz: boolean; displayName: string; showT
       <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-slate-950 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider">
-            Camelot Student Portal
+            Renessans Student Portal
           </span>
           <h2 className="text-lg md:text-xl font-black mt-2">
             {isUz ? `Salom, ${displayName}!` : `Hello, ${displayName}!`}

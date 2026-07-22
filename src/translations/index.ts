@@ -3,8 +3,8 @@ import { Language } from '../types';
 export const translations = {
   UZ: {
     nav: {
-      brand: 'Camelot LC',
-      tagline: "O'quv Markazi",
+      brand: 'Renessans LC',
+      tagline: "Learning Center",
       courses: 'Kurslar',
       teachers: "O'qituvchilar",
       results: 'Natijalar',
@@ -16,56 +16,46 @@ export const translations = {
       dashboard: 'Boshqaruv'
     },
     hero: {
-      badge: 'Guliston, Sirdaryo',
-      headlineMain: 'WISDOM - IS DOING!',
-      headlineSub: "Sirdaryo viloyatidagi eng kuchli va zamonaviy ingliz tili o'quv markazi",
-      description: "Camelot O'quv Markazida zamonaviy metodikalar, tajribali instruktorlar va xalqaro standartlar asosida ingliz tilini va IELTS sertifikatini professional darajada egallang.",
+      badge: 'Toshkent / Markaziy Filial',
+      headlineMain: "INNOVATSION TA'LIM VA YUQORI NATIJALAR",
+      headlineSub: "Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.",
+      description: "Renessans Learning Center bilan zamonaviy ta'lim standartlari, malakali pedagoglar va natijaga yo'naltirilgan o'quv tizimi orqali kelajagingizni poydevorini yarating.",
       btnCourses: "Kurslarni ko'rish",
       btnContact: "Bog'lanish",
       stats: {
-        students: "2000+",
+        students: "1,500+",
         studentsLabel: "O'quvchilar soni",
-        ielts: "350+",
-        ieltsLabel: "IELTS 7.0+ (2025 yildagi natijalar)",
-        exp: "5+ yillik",
-        expLabel: "O'quv markazi tajribasi",
-        satisfaction: "98%",
-        satisfactionLabel: "O'quvchilar mamnuniyati"
+        ielts: "280+",
+        ieltsLabel: "IELTS 7.0+ Natijalar",
+        exp: "95%",
+        expLabel: "OTMga Kirish Ko'rsatkichi",
+        satisfaction: "4+ Yil",
+        satisfactionLabel: "Muvaffaqiyatli Tajriba"
       }
     },
     features: {
-      title: "Nega aynan Camelot LC?",
-      subtitle: "Muvaffaqiyatli kelajagingiz uchun yaratilgan zamonaviy ta'lim muhiti",
+      title: "Nega Aynan Renessans?",
+      subtitle: "Kelajagingiz uchun ishonchli va zamonaviy ta'lim dargohi",
       items: [
         {
           id: '1',
-          title: 'Test Markazi',
-          desc: 'Haftalik bepul Mock IELTS va CEFR imtihonlari hamda aniq statistik tahlil.'
+          title: 'Individual Yondashuv',
+          desc: "Har bir o'quvchining bilim darajasi va maqsadlariga moslashtirilgan shaxsiy o'quv rejalari."
         },
         {
           id: '2',
-          title: 'Bepul Ikkinchi O\'qituvchi',
-          desc: 'Asosiy darsdan tashqari har bir darsda savol-javob va yordam beruvchi Mentor Support.'
+          title: 'Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)',
+          desc: "Xalqaro sertifikatlarga va ko'p yillik pedagogik tajribaga ega bo'lgan kuchli mutaxassislar."
         },
         {
           id: '3',
-          title: 'Camelot Events & Talk',
-          desc: 'English Club, Debate Sessions, Camelot Talk va doimiy motivatsion tadbirlar.'
+          title: 'IT va Zamonaviy Sharoit',
+          desc: "Zamonaviy kompyuter xonalari, shinam sinf xonalari hamda yuqori tezlikdagi internet."
         },
         {
           id: '4',
-          title: 'Tajribali O\'qituvchilar (IELTS 8.5gacha)',
-          desc: 'Xalqaro sertifikatlarga va ko\'p yillik amaliy tajribaga ega ustozlar jamoasi.'
-        },
-        {
-          id: '5',
-          title: 'Co-Working va Kutubxona',
-          desc: 'Sokin va shinam dars qilish zonalari, Wi-Fi va eng so\'nggi IELTS adabiyotlari.'
-        },
-        {
-          id: '6',
-          title: 'Natija Kafolati',
-          desc: 'Talabchan va tizimli dars o\'tish metodikasi hamda natijaga yo\'naltirilgan nazorat.'
+          title: 'Muntazam Mock Testlar',
+          desc: "Haqiqiy imtihon muhitida o'tkaziladigan sinovlar hamda batafsil tahlil va feedback."
         }
       ]
     },
@@ -115,9 +105,9 @@ export const translations = {
       submitBtn: "Arizani yuborish",
       successMsg: "Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.",
       addressTitle: "Bizning manzil va kontaktlar",
-      addressText: "Guliston shahar, Beeline ko'cha oxiri",
-      phoneText: "+998 33 600 95 95",
-      telegramText: "Telegram: @Camelot_LC",
+      addressText: "Toshkent / Markaziy Filial",
+      phoneText: "+998 90 123 45 67",
+      telegramText: "Telegram: @renessans_lc_official",
       workHours: "Ish vaqti: Dush-Shanba 08:00 - 20:00"
     },
     faq: {
@@ -156,15 +146,15 @@ export const translations = {
       selectLanguage: 'Til'
     },
     footer: {
-      tagline: "Sirdaryodagi eng nufuzli ingliz tili markazi.",
+      tagline: "Renessans Learning Center - Innovatsion Ta'lim va Yuqori Natijalar.",
       quickLinks: "Tezkor havolalar",
       rights: "Barcha huquqlar himoyalangan.",
-      credit: "CenterFlow tizimi tomonidan boshqariladi."
+      credit: "CenterFlow platformasi tomonidan boshqariladi."
     }
   },
   EN: {
     nav: {
-      brand: 'Camelot LC',
+      brand: 'Renessans LC',
       tagline: 'Learning Center',
       courses: 'Courses',
       teachers: 'Teachers',
@@ -177,56 +167,46 @@ export const translations = {
       dashboard: 'Dashboard'
     },
     hero: {
-      badge: 'Guliston, Sirdaryo',
-      headlineMain: 'WISDOM - IS DOING!',
-      headlineSub: 'The Premier English Learning Center in Sirdaryo Region',
-      description: 'Master English and achieve high IELTS scores at Camelot Learning Center with modern interactive methods, experienced instructors, and international standards.',
+      badge: 'Tashkent / Main Branch',
+      headlineMain: 'INNOVATIVE EDUCATION & HIGH RESULTS',
+      headlineSub: 'Build your future with quality education, strong teachers, and a modern environment.',
+      description: 'Build the foundation of your future with Renessans Learning Center through modern educational standards, qualified instructors, and a result-oriented academic system.',
       btnCourses: 'Explore Courses',
       btnContact: 'Get in Touch',
       stats: {
-        students: "2000+",
-        studentsLabel: "Total Students Trained",
-        ielts: "350+",
-        ieltsLabel: "IELTS 7.0+ Achievements (2025)",
-        exp: "5+ Years",
-        expLabel: "Excellence & Experience",
-        satisfaction: "98%",
-        satisfactionLabel: "Student Satisfaction Rate"
+        students: "1,500+",
+        studentsLabel: "Enrolled Students",
+        ielts: "280+",
+        ieltsLabel: "IELTS 7.0+ Results",
+        exp: "95%",
+        expLabel: "University Admission Rate",
+        satisfaction: "4+ Years",
+        satisfactionLabel: "Successful Experience"
       }
     },
     features: {
-      title: "Why Choose Camelot LC?",
-      subtitle: "A modern educational ecosystem designed for your ultimate success",
+      title: "Why Renessans?",
+      subtitle: "A modern educational hub designed for your future",
       items: [
         {
           id: '1',
-          title: 'Mock Test Center',
-          desc: 'Weekly free Mock IELTS & CEFR exams with in-depth analytical feedback.'
+          title: 'Individual Approach',
+          desc: 'Personalized study plans tailored to each student level and goals.'
         },
         {
           id: '2',
-          title: 'Free Support Teacher',
-          desc: 'Dedicated mentor support teachers available in every class for Q&A.'
+          title: 'Experienced Mentors (IELTS 8.0+ & CEFR C1)',
+          desc: 'Qualified specialists with international certificates and teaching experience.'
         },
         {
           id: '3',
-          title: 'Camelot Events & Talk',
-          desc: 'English Club, Debate Sessions, Camelot Talk shows, and motivational events.'
+          title: 'IT & Modern Facilities',
+          desc: 'State-of-the-art computer labs, comfortable classrooms, and high-speed internet.'
         },
         {
           id: '4',
-          title: 'Expert Instructors (up to 8.5 IELTS)',
-          desc: 'Highly qualified mentors holding top international credentials.'
-        },
-        {
-          id: '5',
-          title: 'Co-Working & Library Zone',
-          desc: 'Quiet, modern study spots with high-speed Wi-Fi and latest IELTS books.'
-        },
-        {
-          id: '6',
-          title: 'Guaranteed Outcomes',
-          desc: 'Systematic curriculum and high accountability designed for top scores.'
+          title: 'Regular Mock Tests',
+          desc: 'Simulated real exam conditions with detailed performance analytics.'
         }
       ]
     },
@@ -276,14 +256,14 @@ export const translations = {
       submitBtn: "Send Application",
       successMsg: "Thank you! Your application has been received. We will call you soon.",
       addressTitle: "Location & Contacts",
-      addressText: "Guliston City, end of Beeline Street",
-      phoneText: "+998 33 600 95 95",
-      telegramText: "Telegram: @Camelot_LC",
+      addressText: "Tashkent / Main Branch",
+      phoneText: "+998 90 123 45 67",
+      telegramText: "Telegram: @renessans_lc_official",
       workHours: "Operating Hours: Mon-Sat 08:00 - 20:00"
     },
     faq: {
       title: "Frequently Asked Questions",
-      subtitle: "Everything you need to know about learning at Camelot LC",
+      subtitle: "Everything you need to know about learning at Renessans Learning Center",
       searchPlaceholder: "Search question..."
     },
     auth: {
@@ -317,7 +297,7 @@ export const translations = {
       selectLanguage: 'Language'
     },
     footer: {
-      tagline: 'The leading English language academy in Sirdaryo.',
+      tagline: 'Renessans Learning Center - Innovative Education & High Results.',
       quickLinks: 'Quick Links',
       rights: 'All rights reserved.',
       credit: 'Powered by CenterFlow Platform.'

@@ -48,14 +48,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
-                  CAMELOT
+                  RENESSANS
                 </span>
                 <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   LC
                 </span>
               </div>
               <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                Guliston • Sirdaryo
+                Toshkent / Markaziy Filial
               </p>
             </div>
           </a>

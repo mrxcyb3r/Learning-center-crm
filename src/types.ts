@@ -46,7 +46,7 @@ export interface Course {
 export interface StudentResult {
   id: string;
   studentName: string;
-  testType: 'IELTS' | 'CEFR';
+  testType: 'IELTS' | 'CEFR' | 'IT';
   score: string;
   date: string;
   overall: number | string;

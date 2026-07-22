@@ -1,37 +1,32 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { mockTeachers, mockCourses, mockResults, mockFAQs } from '../data/mockData';
-import { StudentResult, Course } from '../types';
+import { StudentResult } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import {
-  Sparkles,
   ArrowRight,
   CheckCircle2,
   Award,
-  Users,
   GraduationCap,
-  Calendar,
   Phone,
   MapPin,
   Send,
   ChevronDown,
   BookOpen,
-  Globe,
-  Star,
-  Check,
   Building,
-  ShieldCheck,
   Search,
-  MessageCircle
+  MessageCircle,
+  Check,
+  Code
 } from 'lucide-react';
 
 interface LandingPageProps {
   onOpenAuth: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
+export const LandingPage: React.FC<LandingPageProps> = () => {
   const { language, t } = useLanguage();
 
   // State
@@ -40,7 +35,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
   // Contact form state
   const [formName, setFormName] = useState('');
-  const [formPhone, setFormPhone] = useState('+998 ');
+  const [formPhone, setFormPhone] = useState('+998 90 ');
   const [formCourse, setFormCourse] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +62,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       });
       setSubmitSuccess(true);
       setFormName('');
-      setFormPhone('+998 ');
+      setFormPhone('+998 90 ');
       setFormCourse('');
       setFormMessage('');
     } catch (err) {
@@ -107,22 +102,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             {/* Location Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold mb-6 tracking-wide">
               <MapPin className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t.hero.badge}</span>
+              <span>Toshkent / Markaziy Filial</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-4">
               <span className="block text-amber-500 font-extrabold drop-shadow-sm">
-                {t.hero.headlineMain}
+                INNOVATSION TA'LIM VA YUQORI NATIJALAR
               </span>
-              <span className="text-2xl sm:text-4xl font-bold text-slate-800 dark:text-slate-200 mt-2 block">
-                {t.hero.headlineSub}
+              <span className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mt-3 block leading-relaxed">
+                Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.
               </span>
             </h1>
 
             {/* Description */}
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">
-              {t.hero.description}
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8 mt-4">
+              Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.
             </p>
 
             {/* CTA Buttons */}
@@ -144,76 +139,107 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             </div>
           </div>
 
-          {/* Stats Grid Overlay */}
+          {/* Stats Grid Overlay (4 Floating Stat Cards) */}
           <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                {t.hero.stats.students}
+                1,500+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                {t.hero.stats.studentsLabel}
+                O'quvchilar soni
               </div>
             </div>
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                {t.hero.stats.ielts}
+                280+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                {t.hero.stats.ieltsLabel}
+                IELTS 7.0+ Natijalar
               </div>
             </div>
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                {t.hero.stats.exp}
+                95%
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                {t.hero.stats.expLabel}
+                OTMga Kirish Ko'rsatkichi
               </div>
             </div>
 
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                {t.hero.stats.satisfaction}
+                4+ Yil
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                {t.hero.stats.satisfactionLabel}
+                Muvaffaqiyatli Tajriba
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. FEATURES / "NEGA AYNAN CAMELOT?" */}
+      {/* 2. FEATURES / "NEGA AYNAN RENESSANS?" */}
       <section className="py-20 bg-slate-100/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t.features.title}
+              Nega Aynan Renessans?
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              {t.features.subtitle}
+              Kelajagingiz uchun ishonchli va zamonaviy ta'lim dargohi
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {t.features.items.map((feat, idx) => (
-              <div
-                key={feat.id}
-                className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
-                  {idx + 1}
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                  {feat.title}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {feat.desc}
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
+                1
               </div>
-            ))}
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                Individual Yondashuv
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
+                2
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
+                3
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                IT va Zamonaviy Sharoit
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
+                4
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                Muntazam Mock Testlar
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -224,25 +250,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <div className="text-center max-w-2xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <GraduationCap className="w-3.5 h-3.5" />
-              <span>Camelot Mentors</span>
+              <span>Renessans Mentors</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t.teachers.title}
+              O'qituvchilarimiz
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              {t.teachers.subtitle}
+              Bizning malakali, tajribali va yuqori natijali ustozlarimiz bilan tanishing
             </p>
           </div>
 
           {/* Grid of Teachers */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {mockTeachers.map((teacher) => (
               <div
                 key={teacher.id}
                 className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
-                  <div className="relative h-56 overflow-hidden bg-slate-200 dark:bg-slate-800">
+                  <div className="relative h-60 overflow-hidden bg-slate-200 dark:bg-slate-800">
                     <img
                       src={teacher.image}
                       alt={teacher.name}
@@ -254,23 +280,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </div>
                   </div>
 
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">
                       {teacher.name}
                     </h3>
-                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                    <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                       {teacher.role}
                     </p>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
                       {language === 'UZ' ? teacher.bioUz : teacher.bioEn}
                     </p>
 
-                    <div className="flex flex-wrap gap-1.5 mt-3">
+                    <div className="flex flex-wrap gap-1.5 mt-4">
                       {teacher.specialization.map((spec, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-300"
+                          className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
                         >
                           {spec}
                         </span>
@@ -279,12 +305,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800/60 mt-3 flex items-center justify-between text-xs text-slate-500">
+                <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800/60 mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span className="font-semibold text-amber-500">
                     {teacher.experience}
                   </span>
                   <span className="font-bold text-slate-700 dark:text-slate-300">
-                    {teacher.resultsCount}+ IELTS Result
+                    {teacher.resultsCount}+ Natijalar
                   </span>
                 </div>
               </div>
@@ -293,19 +319,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </div>
       </section>
 
-      {/* 4. RESULTS SECTION ("IELTS VA CEFR NATIJALARIMIZ") */}
+      {/* 4. RESULTS SECTION ("NATIJALARIMIZ") */}
       <section id="results" className="py-20 bg-slate-100/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <Award className="w-3.5 h-3.5" />
-              <span>Proven Excellence</span>
+              <span>Natijalarimiz</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t.results.title}
+              IELTS, CEFR va IT Natijalarimiz
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              {t.results.subtitle}
+              O'quvchilarimizning xalqaro imtihonlar hamda amaliy loyihalardagi yuqori ko'rsatkichlari
             </p>
           </div>
 
@@ -378,15 +404,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </div>
 
                 <button className="w-full mt-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-                  {t.results.certificateView}
+                  Sertifikatni ko'rish
                 </button>
               </div>
             ))}
           </div>
-
-          <p className="text-center text-sm font-semibold text-slate-500 dark:text-slate-400 mt-12">
-            {t.results.footerNote}
-          </p>
         </div>
       </section>
 
@@ -396,13 +418,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <div className="text-center max-w-2xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Camelot Programs</span>
+              <span>Renessans Kurslari</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t.courses.title}
+              O'quv Dasturlarimiz
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              {t.courses.subtitle}
+              Boshlang'ich darajadan to IELTS, CEFR va IT yo'nalishidagi intensiv va samarali kurslar
             </p>
           </div>
 
@@ -418,27 +440,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               >
                 {course.isPopular && (
                   <span className="absolute -top-3.5 right-8 px-4 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black shadow-md">
-                    {t.courses.popularTag}
+                    Eng ommabop
                   </span>
                 )}
 
                 <div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-                    {language === 'UZ' ? course.titleUz : course.titleEn}
-                  </h3>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+                      {course.id === 'c4' ? <Code className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                      {language === 'UZ' ? course.titleUz : course.titleEn}
+                    </h3>
+                  </div>
+
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
                     {language === 'UZ' ? course.descUz : course.descEn}
                   </p>
 
                   <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 mb-6 text-xs">
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">{t.courses.duration}</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">Davomiyligi</p>
                       <p className="font-bold text-slate-800 dark:text-slate-200">
                         {language === 'UZ' ? course.durationUz : course.durationEn}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">{t.courses.level}</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">Darajasi</p>
                       <p className="font-bold text-amber-500">
                         {language === 'UZ' ? course.levelUz : course.levelEn}
                       </p>
@@ -457,7 +485,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">{t.courses.price}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Oylik to'lov</p>
                     <p className="text-xl font-black text-slate-900 dark:text-white">
                       {language === 'UZ' ? course.priceUz : course.priceEn}
                     </p>
@@ -467,7 +495,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     onClick={() => setFormCourse(course.id)}
                     className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                   >
-                    {t.courses.enrollBtn}
+                    Kursga yozilish
                   </a>
                 </div>
               </div>
@@ -481,10 +509,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t.faq.title}
+              Ko'p Beriladigan Savollar
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              {t.faq.subtitle}
+              Renessans Learning Center haqida eng ko'p so'raladigan savollarga javoblar
             </p>
           </div>
 
@@ -495,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               type="text"
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
-              placeholder={t.faq.searchPlaceholder}
+              placeholder="Savolni izlang..."
               className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -542,20 +570,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             {/* Contact Form */}
             <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-                {t.contact.title}
+                Bizga Bog'lanish
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-6">
-                {t.contact.subtitle}
+                Savollaringiz bormi yoki darsga yozilmoqchimisiz? Ma'lumotlaringizni qoldiring!
               </p>
 
               {submitSuccess ? (
                 <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-center space-y-2">
                   <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500" />
                   <h4 className="text-lg font-bold">Arizangiz Qabul Qilindi!</h4>
-                  <p className="text-xs">{t.contact.successMsg}</p>
+                  <p className="text-xs">Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.</p>
                   <button
                     onClick={() => setSubmitSuccess(false)}
-                    className="mt-4 px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-800 text-xs font-bold"
+                    className="mt-4 px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-800 text-xs font-bold cursor-pointer"
                   >
                     Yangi ariza topshirish
                   </button>
@@ -564,42 +592,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <form onSubmit={handleLeadSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {t.contact.nameLabel}
+                      To'liq ismingiz
                     </label>
                     <input
                       type="text"
                       required
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
-                      placeholder={t.contact.namePlaceholder}
+                      placeholder="Masalan: Jasur Rahimov"
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {t.contact.phoneLabel}
+                      Telefon raqamingiz
                     </label>
                     <input
                       type="text"
                       required
                       value={formPhone}
                       onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder={t.contact.phonePlaceholder}
+                      placeholder="+998 90 123 45 67"
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {t.contact.courseLabel}
+                      Tanlangan kurs
                     </label>
                     <select
                       value={formCourse}
                       onChange={(e) => setFormCourse(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
-                      <option value="">{t.contact.courseSelectPlaceholder}</option>
+                      <option value="">Kursni tanlang...</option>
                       {mockCourses.map((c) => (
                         <option key={c.id} value={c.id}>
                           {language === 'UZ' ? c.titleUz : c.titleEn}
@@ -610,13 +638,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {t.contact.messageLabel}
+                      Xabar yoki izohingiz (Ixtiyoriy)
                     </label>
                     <textarea
                       rows={3}
                       value={formMessage}
                       onChange={(e) => setFormMessage(e.target.value)}
-                      placeholder={t.contact.messagePlaceholder}
+                      placeholder="Savolingiz yoki dars vaqti bo'yicha istagingiz..."
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
@@ -627,7 +655,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Yuborilmoqda...' : t.contact.submitBtn}</span>
+                    <span>{isSubmitting ? 'Yuborilmoqda...' : "Arizani yuborish"}</span>
                   </button>
                 </form>
               )}
@@ -637,7 +665,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             <div className="space-y-6">
               <div className="p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-6">
                 <h3 className="text-xl font-extrabold text-amber-400">
-                  {t.contact.addressTitle}
+                  Bizning Manzil va Kontaktlar
                 </h3>
 
                 <div className="space-y-4 text-xs text-slate-300">
@@ -645,7 +673,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-white">Manzil:</p>
-                      <p>{t.contact.addressText}</p>
+                      <p>Toshkent / Markaziy Filial</p>
                     </div>
                   </div>
 
@@ -653,7 +681,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <Phone className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-white">Telefon:</p>
-                      <p>{t.contact.phoneText}</p>
+                      <p>+998 90 123 45 67</p>
                     </div>
                   </div>
 
@@ -661,13 +689,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-white">Telegram:</p>
-                      <p>{t.contact.telegramText}</p>
+                      <p>@renessans_lc_official</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
-                  {t.contact.workHours}
+                  Ish vaqti: Dushanba - Shanba 08:00 - 20:00
                 </div>
               </div>
 
@@ -676,10 +704,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <div className="space-y-2">
                   <Building className="w-10 h-10 text-amber-500 mx-auto" />
                   <p className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                    Guliston City Map
+                    Renessans Learning Center
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Beeline ko'chasi oxirida joylashgan
+                    Toshkent / Markaziy Filial
                   </p>
                   <a
                     href="https://maps.google.com"
@@ -702,11 +730,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-800/80">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black">
-                C
+                R
               </div>
               <div>
-                <span className="text-lg font-black text-white">Camelot LC</span>
-                <p className="text-xs text-slate-500">{t.footer.tagline}</p>
+                <span className="text-lg font-black text-white">Renessans LC</span>
+                <p className="text-xs text-slate-500">Renessans Learning Center - Innovatsion Ta'lim va Yuqori Natijalar</p>
               </div>
             </div>
 
@@ -720,7 +748,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-            <p>© 2026 Camelot LC CenterFlow. {t.footer.rights}</p>
+            <p>© 2026 Renessans LC CenterFlow. Barcha huquqlar himoyalangan.</p>
             <p>{t.footer.credit}</p>
           </div>
         </div>

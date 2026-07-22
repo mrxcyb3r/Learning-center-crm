@@ -28,7 +28,7 @@ export const ResultCertificateModal: React.FC<ResultCertificateModalProps> = ({ 
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Camelot LC Verified Result</span>
+            <span>Renessans LC Verified Result</span>
           </div>
           <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
             Official {result.testType} Score Card
@@ -75,9 +75,9 @@ export const ResultCertificateModal: React.FC<ResultCertificateModalProps> = ({ 
           {/* Verification Badge */}
           <div className="flex items-center justify-between mt-5 pt-3 border-t border-amber-500/20 text-xs">
             <span className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" /> Camelot LC Baza Tasdiqlangan
+              <CheckCircle2 className="w-4 h-4" /> Renessans LC Baza Tasdiqlangan
             </span>
-            <span className="text-[10px] font-mono text-slate-400">ID: CLC-2025-0982</span>
+            <span className="text-[10px] font-mono text-slate-400">ID: RLC-2026-0982</span>
           </div>
         </div>
 

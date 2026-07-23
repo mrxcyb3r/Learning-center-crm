@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
 export type UserLanguage = 'uz' | 'en' | 'ru';
-export type UserRole = 'student' | 'teacher' | 'admin' | 'superadmin';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'superadmin' | 'guest';
 
 export interface FileAttachment {
   inlineData: {

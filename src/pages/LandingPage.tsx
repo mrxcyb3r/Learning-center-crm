@@ -7,7 +7,6 @@ import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import {
   ArrowRight,
-  CheckCircle2,
   Award,
   GraduationCap,
   Phone,
@@ -19,7 +18,8 @@ import {
   Search,
   MessageCircle,
   Check,
-  Code
+  Code,
+  CheckCircle2
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -27,7 +27,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = () => {
-  const { language, t } = useLanguage();
+  const { language, t: dict, translate: t } = useLanguage();
 
   // State
   const [selectedResult, setSelectedResult] = useState<StudentResult | null>(null);
@@ -102,22 +102,30 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Location Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold mb-6 tracking-wide">
               <MapPin className="w-3.5 h-3.5 text-amber-500" />
-              <span>Toshkent / Markaziy Filial</span>
+              <span>{t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-4">
               <span className="block text-amber-500 font-extrabold drop-shadow-sm">
-                INNOVATSION TA'LIM VA YUQORI NATIJALAR
+                {t("INNOVATSION TA'LIM VA YUQORI NATIJALAR", "INNOVATIVE EDUCATION & HIGH RESULTS", "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ")}
               </span>
               <span className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mt-3 block leading-relaxed">
-                Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.
+                {t(
+                  "Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.",
+                  "Build your future with high-quality education, expert mentors, and a modern learning environment.",
+                  "Постройте свое будущее с качественным образованием, опытными преподавателями и современной учебной средой."
+                )}
               </span>
             </h1>
 
             {/* Description */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8 mt-4">
-              Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.
+              {t(
+                "Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.",
+                "Achieve top goals in IT and English language learning with modern educational standards and experienced international tutors at Renessans Learning Center.",
+                "Достигайте высоких целей в сфере IT и английского языка благодаря современным стандартам обучения и международному опыту в Renessans Learning Center."
+              )}
             </p>
 
             {/* CTA Buttons */}
@@ -126,14 +134,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 href="#courses"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t.hero.btnCourses}</span>
+                <span>{t("Kurslarni ko'rish", "Explore Courses", "Посмотреть курсы")}</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="#contact"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm border border-slate-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t.hero.btnContact}</span>
+                <span>{t("Bog'lanish", "Get in Touch", "Связаться с нами")}</span>
                 <Phone className="w-4 h-4 text-amber-400" />
               </a>
             </div>
@@ -146,7 +154,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 1,500+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                O'quvchilar soni
+                {t("O'quvchilar soni", "Active Students", "Учеников")}
               </div>
             </div>
 
@@ -155,7 +163,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 280+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                IELTS 7.0+ Natijalar
+                {t("IELTS 7.0+ Natijalar", "IELTS 7.0+ Results", "Результатов IELTS 7.0+")}
               </div>
             </div>
 
@@ -164,7 +172,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 95%
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                OTMga Kirish Ko'rsatkichi
+                {t("OTMga Kirish Ko'rsatkichi", "University Admission Rate", "Поступление в ВУЗы")}
               </div>
             </div>
 
@@ -173,7 +181,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 4+ Yil
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Muvaffaqiyatli Tajriba
+                {t("Muvaffaqiyatli Tajriba", "Years of Experience", "Успешного опыта")}
               </div>
             </div>
           </div>
@@ -185,10 +193,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Nega Aynan Renessans?
+              {t("Nega Aynan Renessans?", "Why Renessans?", "Почему Именно Renessans?")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Kelajagingiz uchun ishonchli va zamonaviy ta'lim dargohi
+              {t("Kelajagingiz uchun ishonchli va zamonaviy ta'lim dargohi", "A modern educational hub designed for your future", "Современный образовательный центр для вашего будущего")}
             </p>
           </div>
 
@@ -198,10 +206,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 1
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                Individual Yondashuv
+                {t("Individual Yondashuv", "Individual Approach", "Индивидуальный Подход")}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.
+                {t(
+                  "Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.",
+                  "Personalized study plans tailored to each student level and goals.",
+                  "Персональные учебные планы для каждого студента."
+                )}
               </p>
             </div>
 
@@ -210,10 +222,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 2
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)
+                {t("Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)", "Experienced Mentors (IELTS 8.0+ & CEFR C1)", "Опытные Менторы (IELTS 8.0+ & CEFR C1)")}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.
+                {t(
+                  "Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.",
+                  "Qualified specialists with international certificates and teaching experience.",
+                  "Квалифицированные специалисты с международными сертификатами."
+                )}
               </p>
             </div>
 
@@ -222,10 +238,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 3
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                IT va Zamonaviy Sharoit
+                {t("IT va Zamonaviy Sharoit", "IT & Modern Facilities", "IT и Современные Условия")}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.
+                {t(
+                  "Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.",
+                  "State-of-the-art computer labs, comfortable classrooms, and high-speed internet.",
+                  "Современные компьютерные классы и высокоскоростной интернет."
+                )}
               </p>
             </div>
 
@@ -234,10 +254,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 4
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                Muntazam Mock Testlar
+                {t("Muntazam Mock Testlar", "Regular Mock Tests", "Регулярные Mock Тесты")}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.
+                {t(
+                  "Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.",
+                  "Simulated real exam conditions with detailed performance analytics.",
+                  "Симуляция реальных экзаменов с подробным анализом."
+                )}
               </p>
             </div>
           </div>
@@ -253,10 +277,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <span>Renessans Mentors</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              O'qituvchilarimiz
+              {t("O'qituvchilarimiz", "Our Esteemed Teachers", "Наши Преподаватели")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Bizning malakali, tajribali va yuqori natijali ustozlarimiz bilan tanishing
+              {t("Bizning malakali, tajribali va yuqori natijali ustozlarimiz bilan tanishing", "Meet our passionate, internationally certified mentors", "Познакомьтесь с нашими опытными преподавателями международного уровня")}
             </p>
           </div>
 
@@ -310,7 +334,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     {teacher.experience}
                   </span>
                   <span className="font-bold text-slate-700 dark:text-slate-300">
-                    {teacher.resultsCount}+ Natijalar
+                    {teacher.resultsCount}+{t(" Natijalar", " Results", " Результатов")}
                   </span>
                 </div>
               </div>
@@ -325,13 +349,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <Award className="w-3.5 h-3.5" />
-              <span>Natijalarimiz</span>
+              <span>{t("Natijalarimiz", "Our Achievements", "Наши Результаты")}</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              IELTS, CEFR va IT Natijalarimiz
+              {t("IELTS, CEFR va IT Natijalarimiz", "IELTS, CEFR & IT Achievements", "Результаты IELTS, CEFR и IT")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              O'quvchilarimizning xalqaro imtihonlar hamda amaliy loyihalardagi yuqori ko'rsatkichlari
+              {t("O'quvchilarimizning xalqaro imtihonlar hamda amaliy loyihalardagi yuqori ko'rsatkichlari", "Celebrating high score achievements of our outstanding students", "Высокие показатели наших студентов на международных экзаменах")}
             </p>
           </div>
 
@@ -339,10 +363,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
             {(
               [
-                { id: 'all', label: t.results.all },
-                { id: '8.0', label: t.results.ielts80 },
-                { id: '7.5', label: t.results.ielts75 },
-                { id: 'CEFR', label: t.results.cefr }
+                { id: 'all', label: dict.results.all },
+                { id: '8.0', label: dict.results.ielts80 },
+                { id: '7.5', label: dict.results.ielts75 },
+                { id: 'CEFR', label: dict.results.cefr }
               ] as const
             ).map((f) => (
               <button
@@ -380,7 +404,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   {result.studentName}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Ustoz: {result.teacherName}
+                  {t("Ustoz: ", "Instructor: ", "Преподаватель: ")}{result.teacherName}
                 </p>
 
                 {/* Scores breakdown mini bar */}
@@ -404,7 +428,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </div>
 
                 <button className="w-full mt-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs group-hover:bg-amber-500 group-hover:text-slate-950 transition">
-                  Sertifikatni ko'rish
+                  {t("Sertifikatni ko'rish", "View Certificate", "Посмотреть сертификат")}
                 </button>
               </div>
             ))}
@@ -418,13 +442,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div className="text-center max-w-2xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Renessans Kurslari</span>
+              <span>Renessans Courses</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              O'quv Dasturlarimiz
+              {t("O'quv Dasturlarimiz", "Our Courses", "Наши Курсы")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Boshlang'ich darajadan to IELTS, CEFR va IT yo'nalishidagi intensiv va samarali kurslar
+              {t("Boshlang'ich darajadan to IELTS, CEFR va IT yo'nalishidagi intensiv va samarali kurslar", "From foundational English to advanced IELTS, CEFR & IT preparation", "От базового уровня до продвинутой подготовки к IELTS, CEFR и IT")}
             </p>
           </div>
 
@@ -440,7 +464,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               >
                 {course.isPopular && (
                   <span className="absolute -top-3.5 right-8 px-4 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black shadow-md">
-                    Eng ommabop
+                    {t("Eng ommabop", "Most Popular", "Самый популярный")}
                   </span>
                 )}
 
@@ -460,13 +484,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
                   <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 mb-6 text-xs">
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">Davomiyligi</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Davomiyligi", "Duration", "Длительность")}</p>
                       <p className="font-bold text-slate-800 dark:text-slate-200">
                         {language === 'UZ' ? course.durationUz : course.durationEn}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">Darajasi</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Darajasi", "Target Level", "Уровень")}</p>
                       <p className="font-bold text-amber-500">
                         {language === 'UZ' ? course.levelUz : course.levelEn}
                       </p>
@@ -485,7 +509,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">Oylik to'lov</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Oylik to'lov", "Monthly Fee", "Ежемесячная оплата")}</p>
                     <p className="text-xl font-black text-slate-900 dark:text-white">
                       {language === 'UZ' ? course.priceUz : course.priceEn}
                     </p>
@@ -495,7 +519,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     onClick={() => setFormCourse(course.id)}
                     className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                   >
-                    Kursga yozilish
+                    {t("Kursga yozilish", "Enroll Now", "Записаться на курс")}
                   </a>
                 </div>
               </div>
@@ -509,10 +533,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Ko'p Beriladigan Savollar
+              {t("Ko'p Beriladigan Savollar", "Frequently Asked Questions", "Часто задаваемые вопросы")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Renessans Learning Center haqida eng ko'p so'raladigan savollarga javoblar
+              {t("Renessans Learning Center haqida eng ko'p so'raladigan savollarga javoblar", "Everything you need to know about learning at Renessans Learning Center", "Ответы на самые распространенные вопросы")}
             </p>
           </div>
 
@@ -523,7 +547,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               type="text"
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
-              placeholder="Savolni izlang..."
+              placeholder={t("Savolni izlang...", "Search question...", "Поиск вопроса...")}
               className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -570,43 +594,43 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Contact Form */}
             <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-                Bizga Bog'lanish
+                {t("Bizga Bog'lanish", "Get in Touch", "Связаться с нами")}
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-6">
-                Savollaringiz bormi yoki darsga yozilmoqchimisiz? Ma'lumotlaringizni qoldiring!
+                {t("Savollaringiz bormi yoki darsga yozilmoqchimisiz? Ma'lumotlaringizni qoldiring!", "Have questions or want to join a trial lesson? Leave your details below!", "Есть вопросы или хотите записаться на урок? Заполните форму!")}
               </p>
 
               {submitSuccess ? (
                 <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-center space-y-2">
                   <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500" />
-                  <h4 className="text-lg font-bold">Arizangiz Qabul Qilindi!</h4>
-                  <p className="text-xs">Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.</p>
+                  <h4 className="text-lg font-bold">{t("Arizangiz Qabul Qilindi!", "Application Received!", "Заявка принята!")}</h4>
+                  <p className="text-xs">{t("Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.", "Thank you! Your application has been received. We will call you soon.", "Спасибо! Ваша заявка принята. Мы скоро свяжемся с вами.")}</p>
                   <button
                     onClick={() => setSubmitSuccess(false)}
                     className="mt-4 px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-800 text-xs font-bold cursor-pointer"
                   >
-                    Yangi ariza topshirish
+                    {t("Yangi ariza topshirish", "Submit another application", "Отправить другую заявку")}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleLeadSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      To'liq ismingiz
+                      {t("To'liq ismingiz", "Full Name", "Ваше полное имя")}
                     </label>
                     <input
                       type="text"
                       required
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
-                      placeholder="Masalan: Jasur Rahimov"
+                      placeholder={t("Masalan: Jasur Rahimov", "E.g., Jasur Rahimov", "Например: Джасур Рахимов")}
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Telefon raqamingiz
+                      {t("Telefon raqamingiz", "Phone Number", "Номер телефона")}
                     </label>
                     <input
                       type="text"
@@ -620,14 +644,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Tanlangan kurs
+                      {t("Tanlangan kurs", "Selected Course", "Выбранный курс")}
                     </label>
                     <select
                       value={formCourse}
                       onChange={(e) => setFormCourse(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
-                      <option value="">Kursni tanlang...</option>
+                      <option value="">{t("Kursni tanlang...", "Choose a course...", "Выберите курс...")}</option>
                       {mockCourses.map((c) => (
                         <option key={c.id} value={c.id}>
                           {language === 'UZ' ? c.titleUz : c.titleEn}
@@ -638,13 +662,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Xabar yoki izohingiz (Ixtiyoriy)
+                      {t("Xabar yoki izohingiz (Ixtiyoriy)", "Message / Inquiry (Optional)", "Сообщение или вопрос (необязательно)")}
                     </label>
                     <textarea
                       rows={3}
                       value={formMessage}
                       onChange={(e) => setFormMessage(e.target.value)}
-                      placeholder="Savolingiz yoki dars vaqti bo'yicha istagingiz..."
+                      placeholder={t("Savolingiz yoki dars vaqti bo'yicha istagingiz...", "Specify preferred schedule or questions...", "Укажите ваши пожелания...")}
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
@@ -655,7 +679,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Yuborilmoqda...' : "Arizani yuborish"}</span>
+                    <span>{isSubmitting ? t("Yuborilmoqda...", "Submitting...", "Отправка...") : t("Arizani yuborish", "Send Application", "Отправить заявку")}</span>
                   </button>
                 </form>
               )}
@@ -665,22 +689,22 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="space-y-6">
               <div className="p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-6">
                 <h3 className="text-xl font-extrabold text-amber-400">
-                  Bizning Manzil va Kontaktlar
+                  {t("Bizning Manzil va Kontaktlar", "Location & Contacts", "Адрес и контакты")}
                 </h3>
 
                 <div className="space-y-4 text-xs text-slate-300">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">Manzil:</p>
-                      <p>Toshkent / Markaziy Filial</p>
+                      <p className="font-bold text-white">{t("Manzil:", "Address:", "Адрес:")}</p>
+                      <p>{t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">Telefon:</p>
+                      <p className="font-bold text-white">{t("Telefon:", "Phone:", "Телефон:")}</p>
                       <p>+998 90 123 45 67</p>
                     </div>
                   </div>
@@ -695,7 +719,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
-                  Ish vaqti: Dushanba - Shanba 08:00 - 20:00
+                  {t("Ish vaqti: Dushanba - Shanba 08:00 - 20:00", "Operating Hours: Mon-Sat 08:00 - 20:00", "Режим работы: Пн-Сб 08:00 - 20:00")}
                 </div>
               </div>
 
@@ -707,7 +731,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     Renessans Learning Center
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Toshkent / Markaziy Filial
+                    {t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}
                   </p>
                   <a
                     href="https://maps.google.com"
@@ -715,7 +739,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     rel="noreferrer"
                     className="inline-block mt-2 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
                   >
-                    Google Maps-da ko'rish
+                    {t("Google Maps-da ko'rish", "View on Google Maps", "Посмотреть на Google Maps")}
                   </a>
                 </div>
               </div>
@@ -734,22 +758,22 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               </div>
               <div>
                 <span className="text-lg font-black text-white">Renessans LC</span>
-                <p className="text-xs text-slate-500">Renessans Learning Center - Innovatsion Ta'lim va Yuqori Natijalar</p>
+                <p className="text-xs text-slate-500">{t("Renessans Learning Center - Innovatsion Ta'lim va Yuqori Natijalar.", "Renessans Learning Center - Innovative Education & High Results.", "Renessans Learning Center - Инновационное образование и высокие результаты.")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold">
-              <a href="#courses" className="hover:text-amber-400 transition">{t.nav.courses}</a>
-              <a href="#teachers" className="hover:text-amber-400 transition">{t.nav.teachers}</a>
-              <a href="#results" className="hover:text-amber-400 transition">{t.nav.results}</a>
-              <a href="#faq" className="hover:text-amber-400 transition">{t.nav.faq}</a>
-              <a href="#contact" className="hover:text-amber-400 transition">{t.nav.contact}</a>
+              <a href="#courses" className="hover:text-amber-400 transition">{dict.nav.courses}</a>
+              <a href="#teachers" className="hover:text-amber-400 transition">{dict.nav.teachers}</a>
+              <a href="#results" className="hover:text-amber-400 transition">{dict.nav.results}</a>
+              <a href="#faq" className="hover:text-amber-400 transition">{dict.nav.faq}</a>
+              <a href="#contact" className="hover:text-amber-400 transition">{dict.nav.contact}</a>
             </div>
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-            <p>© 2026 Renessans LC CenterFlow. Barcha huquqlar himoyalangan.</p>
-            <p>{t.footer.credit}</p>
+            <p>{t("© 2026 Renessans LC CenterFlow. Barcha huquqlar himoyalangan.", "© 2026 Renessans LC CenterFlow. All rights reserved.", "© 2026 Renessans LC CenterFlow. Все права защищены.")}</p>
+            <p>{dict.footer.credit}</p>
           </div>
         </div>
       </footer>

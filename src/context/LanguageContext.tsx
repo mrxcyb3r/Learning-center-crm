@@ -6,17 +6,19 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: ReturnType<typeof getTranslation>;
+  translate: (uz: string, en?: string, ru?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('language') as Language | null;
+    const saved = (localStorage.getItem('app_language') || localStorage.getItem('language')) as Language | null;
     return saved === 'EN' || saved === 'UZ' || saved === 'RU' ? saved : 'UZ';
   });
 
   useEffect(() => {
+    localStorage.setItem('app_language', language);
     localStorage.setItem('language', language);
   }, [language]);
 
@@ -26,8 +28,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = getTranslation(language);
 
+  const translate = (uz: string, en?: string, ru?: string): string => {
+    if (language === 'RU') return ru || en || uz;
+    if (language === 'EN') return en || uz;
+    return uz;
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translate }}>
       {children}
     </LanguageContext.Provider>
   );

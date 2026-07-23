@@ -10,10 +10,123 @@ export interface FileAttachment {
   };
 }
 
+export interface GroundingChunk {
+  web?: {
+    uri: string;
+    title: string;
+  };
+}
+
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   attachment?: FileAttachment;
+  groundingChunks?: GroundingChunk[];
+}
+
+export interface AIResponseResult {
+  text: string;
+  groundingChunks?: GroundingChunk[];
+}
+
+// Universal Multimodal & Grounded AI Coach function
+export async function generateInsaneAIResponse({
+  prompt,
+  history = [],
+  fileAttachment = null,
+  enableWebSearch = false,
+  userLanguage = 'uz',
+  model = 'gemini-3.6-flash',
+  role = 'student'
+}: {
+  prompt: string;
+  history?: ChatMessage[];
+  fileAttachment?: FileAttachment | null;
+  enableWebSearch?: boolean;
+  userLanguage?: UserLanguage;
+  model?: string;
+  role?: UserRole;
+}): Promise<AIResponseResult> {
+  try {
+    const res = await fetch('/api/ai/coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        contextHistory: history,
+        userLanguage,
+        fileAttachment,
+        role,
+        enableWebSearch,
+        model
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.text) {
+        return {
+          text: data.text,
+          groundingChunks: data.groundingChunks || []
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Server endpoint /api/ai/coach unreachable, trying direct client fallback:', err);
+  }
+
+  // Client-side Fallback
+  return callClientSDKWithRetry(async (ai) => {
+    let systemInst = ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION;
+    if (role === 'teacher') {
+      systemInst += `\nRole Context: You are assisting a Teacher. Help create lesson plans, quiz ideas, explanation analogies, and constructive grading feedback.`;
+    } else if (role === 'admin' || role === 'superadmin') {
+      systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
+    }
+    systemInst += `\nTarget Language: ${userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English'}`;
+
+    const parts: any[] = [];
+    if (fileAttachment?.inlineData?.data) {
+      parts.push({
+        inlineData: {
+          data: fileAttachment.inlineData.data,
+          mimeType: fileAttachment.inlineData.mimeType || 'image/jpeg',
+        },
+      });
+    }
+
+    if (history.length > 0) {
+      const formattedHistory = history
+        .map((m) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`)
+        .slice(-8)
+        .join('\n');
+      parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
+    } else {
+      parts.push({ text: prompt });
+    }
+
+    const config: any = {
+      systemInstruction: systemInst,
+      temperature: 0.7,
+    };
+
+    if (enableWebSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
+    const response = await ai.models.generateContent({
+      model: model || 'gemini-3.6-flash',
+      contents: { parts },
+      config,
+    });
+
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+
+    return {
+      text: response.text || 'Javob shakllantirib bo\'lmadi.',
+      groundingChunks: chunks
+    };
+  });
 }
 
 // Client-side fallback initialization if needed
@@ -70,69 +183,14 @@ export async function askAICoach(
   fileAttachment?: FileAttachment,
   role: UserRole = 'student'
 ): Promise<string> {
-  try {
-    // Attempt Server API first
-    const res = await fetch('/api/ai/coach', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt,
-        contextHistory,
-        userLanguage,
-        fileAttachment,
-        role,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.text) return data.text;
-    }
-  } catch (err) {
-    console.warn('Server endpoint /api/ai/coach unreachable, falling back to direct SDK:', err);
-  }
-
-  // Fallback to client-side SDK if server endpoint is unavailable
-  return callClientSDKWithRetry(async (ai) => {
-    let systemInst = ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION;
-    if (role === 'teacher') {
-      systemInst += `\nRole Context: You are assisting a Teacher. Help create lesson plans, quiz ideas, explanation analogies, and constructive grading feedback.`;
-    } else if (role === 'admin' || role === 'superadmin') {
-      systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
-    }
-    systemInst += `\nTarget Language: ${userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English'}`;
-
-    const parts: any[] = [];
-    if (fileAttachment?.inlineData?.data) {
-      parts.push({
-        inlineData: {
-          data: fileAttachment.inlineData.data,
-          mimeType: fileAttachment.inlineData.mimeType || 'image/jpeg',
-        },
-      });
-    }
-
-    if (contextHistory.length > 0) {
-      const formattedHistory = contextHistory
-        .map((m) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`)
-        .slice(-6)
-        .join('\n');
-      parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
-    } else {
-      parts.push({ text: prompt });
-    }
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: { parts },
-      config: {
-        systemInstruction: systemInst,
-        temperature: 0.7,
-      },
-    });
-
-    return response.text || 'No response returned from Gemini.';
+  const result = await generateInsaneAIResponse({
+    prompt,
+    history: contextHistory,
+    fileAttachment: fileAttachment || null,
+    userLanguage,
+    role
   });
+  return result.text;
 }
 
 /**

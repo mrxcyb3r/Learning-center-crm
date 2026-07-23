@@ -66,15 +66,23 @@ Language Requirement: Always respond clearly in the user's requested or detected
 
 // --- API ROUTES ---
 
-// 1. Universal Subject Coach
+// 1. Universal Subject Coach with Grounding and Model selection
 app.post('/api/ai/coach', async (req, res) => {
   try {
-    const { prompt, contextHistory = [], userLanguage = 'uz', fileAttachment, role = 'student' } = req.body;
+    const {
+      prompt,
+      contextHistory = [],
+      userLanguage = 'uz',
+      fileAttachment,
+      role = 'student',
+      enableWebSearch = false,
+      model = 'gemini-3.6-flash'
+    } = req.body;
 
     let systemInst = ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION;
     if (role === 'teacher') {
       systemInst += `\nRole Context: You are assisting a Teacher. Help create lesson plans, quiz ideas, explanation analogies, and constructive grading feedback.`;
-    } else if (role === 'admin') {
+    } else if (role === 'admin' || role === 'superadmin') {
       systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
     }
 
@@ -94,23 +102,38 @@ app.post('/api/ai/coach', async (req, res) => {
     if (contextHistory.length > 0) {
       const formattedHistory = contextHistory
         .map((m: any) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`)
-        .slice(-6)
+        .slice(-8)
         .join('\n');
       parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
     } else {
       parts.push({ text: prompt });
     }
 
+    const config: any = {
+      systemInstruction: systemInst,
+      temperature: 0.7,
+    };
+
+    if (enableWebSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
+    const selectedModel = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'].includes(model)
+      ? model
+      : 'gemini-3.6-flash';
+
     const response = await generateContentWithRetry({
-      model: 'gemini-3.6-flash',
+      model: selectedModel,
       contents: { parts },
-      config: {
-        systemInstruction: systemInst,
-        temperature: 0.7,
-      },
+      config,
     });
 
-    res.json({ text: response.text || 'Kechirasiz, javob shakllantirishda muammo bo\'ldi.' });
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+
+    res.json({
+      text: response.text || 'Kechirasiz, javob shakllantirishda muammo bo\'ldi.',
+      groundingChunks
+    });
   } catch (err: any) {
     console.error('API Error /api/ai/coach:', err);
     res.status(500).json({ error: err?.message || 'Gemini service error' });

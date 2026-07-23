@@ -3,18 +3,19 @@ import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
-  askAICoach,
-  analyzeStudyDocument,
+  generateInsaneAIResponse,
   evaluateSpeakingAudio,
   gradeIELTSEssay,
   UserLanguage,
   ChatMessage,
-  FileAttachment
+  FileAttachment,
+  GroundingChunk
 } from '../../services/gemini';
 import {
   Sparkles,
   Send,
   Mic,
+  MicOff,
   Paperclip,
   X,
   Bot,
@@ -24,6 +25,7 @@ import {
   FileText,
   Image as ImageIcon,
   Volume2,
+  VolumeX,
   Plus,
   Search,
   MessageSquare,
@@ -32,7 +34,13 @@ import {
   Check,
   History,
   Sparkle,
-  Info
+  Globe,
+  RotateCcw,
+  Download,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Maximize2
 } from 'lucide-react';
 
 interface SavedThread {
@@ -46,13 +54,15 @@ interface AITutorViewProps {
   onBackToDashboard?: () => void;
 }
 
-export const AITutorView: React.FC<AITutorViewProps> = () => {
+export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) => {
   const { activeRole } = useAuth();
   const { language } = useLanguage();
 
-  const [userLang, setUserLang] = useState<UserLanguage>(
-    language === 'EN' ? 'en' : 'uz'
-  );
+  const [userLang] = useState<UserLanguage>(language === 'EN' ? 'en' : 'uz');
+
+  // Model & Web Search Settings
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.6-flash');
+  const [enableWebSearch, setEnableWebSearch] = useState<boolean>(false);
 
   // Local Persistence for Chat Threads
   const [savedThreads, setSavedThreads] = useState<SavedThread[]>(() => {
@@ -103,10 +113,10 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
       role: 'model',
       text:
         userLang === 'uz'
-          ? "Salom! Men CenterFlow Prime Multimodal AI o'quv yordamchisiman. Darslik mashqlari, IELTS Speaking audio va insholarini tahlil qilish hamda Socratic metodda tushunchalarni o'rganishda yordam beraman."
+          ? "Salom! Men Renessans Prime AI o'quv yordamchisiman. Darslik mashqlari, web qidiruv, IELTS Speaking va insholarini Socratic uslubda o'rganishda yordam beraman."
           : userLang === 'ru'
-          ? "Здравствуйте! Я ИИ-помощник CenterFlow Prime. Чем могу помочь вам по предметам, IELTS, математике или программированию?"
-          : "Hello! I am CenterFlow's Prime Multimodal AI Learning Coach. How can I assist you with your studies, IELTS practice, or coding today?"
+          ? "Здравствуйте! Я ИИ-помощник Renessans Prime. Чем могу помочь по предметам, IELTS или веб-поиску?"
+          : "Hello! I am Renessans Prime AI Learning Coach. How can I assist you with your studies, web search, or IELTS practice today?"
     }
   ]);
 
@@ -115,13 +125,23 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
   const [activeTab, setActiveTab] = useState<'chat' | 'speaking' | 'essay'>('chat');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // File Attachment State
+  // Text-To-Speech (TTS) State
+  const [speakingMsgIdx, setSpeakingMsgIdx] = useState<number | null>(null);
+
+  // File Attachment State with Live Preview
   const [attachedFile, setAttachedFile] = useState<FileAttachment | null>(null);
   const [fileName, setFileName] = useState<string>('');
+  const [fileDataUrl, setFileDataUrl] = useState<string>('');
+  const [fileSize, setFileSize] = useState<string>('');
+  const [isZoomingPreview, setIsZoomingPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Audio Recorder State
-  const [isRecording, setIsRecording] = useState(false);
+  // Voice Input (Speech Recognition / Recorder) State
+  const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
+  const speechRecognitionRef = useRef<any>(null);
+
+  // Audio Recorder for Speaking Evaluation State
+  const [isRecordingSpeaking, setIsRecordingSpeaking] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -150,6 +170,13 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  // Clean Speech Synthesis on unmount
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, []);
+
   // Handle Thread Selection
   const handleSelectThread = (thread: SavedThread) => {
     setActiveThreadId(thread.id);
@@ -174,6 +201,8 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     ]);
     setAttachedFile(null);
     setFileName('');
+    setFileDataUrl('');
+    setFileSize('');
     setInputPrompt('');
     setActiveTab('chat');
     setIsHistoryOpen(false);
@@ -188,11 +217,151 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     }
   };
 
+  // Clear All History
+  const handleClearAllHistory = () => {
+    if (confirm("Barcha suhbatlar tarixini o'chirmoqchimisiz?")) {
+      setSavedThreads([]);
+      handleNewChat();
+    }
+  };
+
+  // Export Chat to Markdown File
+  const handleExportChat = () => {
+    const thread = savedThreads.find((t) => t.id === activeThreadId);
+    const title = thread ? thread.title : 'Renessans_AI_Chat';
+    let mdContent = `# ${title}\nDate: ${new Date().toLocaleDateString()}\n\n---\n\n`;
+
+    messages.forEach((m) => {
+      mdContent += `### ${m.role === 'user' ? '👤 User' : '🤖 Renessans Prime AI'}\n${m.text}\n\n`;
+    });
+
+    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/\s+/g, '_')}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Copy Text
   const handleCopyText = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  // Text To Speech (TTS)
+  const handleToggleSpeech = (text: string, idx: number) => {
+    if (!('speechSynthesis' in window)) {
+      alert("Sizning brauzeringiz matnni ovozli o'qish funksiyasini qo'llab-quvvatlamaydi.");
+      return;
+    }
+
+    if (speakingMsgIdx === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgIdx(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    // Strip markdown formatting for cleaner audio
+    const cleanText = text.replace(/[*#`_~]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = userLang === 'uz' ? 'uz-UZ' : 'en-US';
+    utterance.rate = 1.0;
+
+    utterance.onend = () => setSpeakingMsgIdx(null);
+    utterance.onerror = () => setSpeakingMsgIdx(null);
+
+    setSpeakingMsgIdx(idx);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Regenerate Response
+  const handleRegenerate = async (msgIndex: number) => {
+    if (isLoading) return;
+
+    // Find previous user prompt
+    let userPromptText = '';
+    let userAttachment: FileAttachment | undefined = undefined;
+
+    for (let i = msgIndex - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userPromptText = messages[i].text;
+        userAttachment = messages[i].attachment;
+        break;
+      }
+    }
+
+    if (!userPromptText) return;
+
+    setIsLoading(true);
+    const historySlice = messages.slice(0, msgIndex - 1);
+
+    try {
+      const response = await generateInsaneAIResponse({
+        prompt: userPromptText,
+        history: historySlice,
+        fileAttachment: userAttachment,
+        enableWebSearch,
+        userLanguage: userLang,
+        model: selectedModel,
+        role: activeRole
+      });
+
+      const updatedMsgs = [...messages];
+      updatedMsgs[msgIndex] = {
+        role: 'model',
+        text: response.text,
+        groundingChunks: response.groundingChunks
+      };
+      setMessages(updatedMsgs);
+    } catch (err: any) {
+      console.error('Regenerate Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Voice Input (Speech-to-Text for prompt bar)
+  const toggleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Brauzeringiz nutqni matnga aylantirishni (Speech-to-Text) qo'llab-quvvatlamaydi. Chrome yoki Edge brauzeridan foydalaning.");
+      return;
+    }
+
+    if (isVoiceInputActive) {
+      speechRecognitionRef.current?.stop();
+      setIsVoiceInputActive(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = userLang === 'uz' ? 'uz-UZ' : 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join('');
+      setInputPrompt(transcript);
+    };
+
+    recognition.onend = () => {
+      setIsVoiceInputActive(false);
+    };
+
+    recognition.onerror = () => {
+      setIsVoiceInputActive(false);
+    };
+
+    speechRecognitionRef.current = recognition;
+    recognition.start();
+    setIsVoiceInputActive(true);
   };
 
   const handleChipClick = (chipText: string) => {
@@ -216,26 +385,31 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     }
 
     return [
+      { label: "🌐 Live News Grounding", text: "What are the latest AI and technology education trends this month?" },
       { label: "🇺🇿 Yechim usuli", text: "Bu misolni yechish metodini va asosiy qoidasini tushuntirib ber (javobini bermasdan)." },
       { label: "🇬🇧 IELTS Speaking", text: "Evaluate my speaking performance for Fluency, Vocabulary, and Grammar." },
-      { label: "💻 Python Code Help", text: "Explain how list comprehensions work in Python with a clean example." },
-      { label: "📐 Math Concept", text: "Explain the Pythagorean theorem step by step with a real-world example." }
+      { label: "💻 Python Code Help", text: "Explain how list comprehensions work in Python with a clean example." }
     ];
   };
 
+  // Handle File Upload with Live Thumbnail
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Fayl hajmi 10MB dan oshmasligi kerak.");
+    if (file.size > 12 * 1024 * 1024) {
+      alert("Fayl hajmi 12MB dan oshmasligi kerak.");
       return;
     }
 
+    const sizeFormatted = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
     setFileName(file.name);
+    setFileSize(sizeFormatted);
+
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
+      setFileDataUrl(result);
       const base64Data = result.split(',')[1];
       setAttachedFile({
         inlineData: {
@@ -250,10 +424,13 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
   const handleRemoveFile = () => {
     setAttachedFile(null);
     setFileName('');
+    setFileDataUrl('');
+    setFileSize('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const startRecording = async () => {
+  // Speaking Voice Studio
+  const startRecordingSpeaking = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -267,7 +444,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
       };
 
       mediaRecorder.start(200);
-      setIsRecording(true);
+      setIsRecordingSpeaking(true);
       setRecordingSeconds(0);
 
       timerRef.current = setInterval(() => {
@@ -282,7 +459,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     if (!mediaRecorderRef.current) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
-    setIsRecording(false);
+    setIsRecordingSpeaking(false);
 
     mediaRecorderRef.current.stop();
     mediaRecorderRef.current.onstop = async () => {
@@ -330,11 +507,12 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     };
   };
 
+  // Send Main AI Chat
   const handleSendChat = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if ((!inputPrompt.trim() && !attachedFile) || isLoading) return;
 
-    const userQuery = inputPrompt.trim() || (attachedFile ? "Please analyze this study file." : "");
+    const userQuery = inputPrompt.trim() || (attachedFile ? "Please analyze this uploaded document / image." : "");
     const userMsg: ChatMessage = {
       role: 'user',
       text: userQuery,
@@ -347,28 +525,29 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     const currentAttachment = attachedFile;
     setAttachedFile(null);
     setFileName('');
+    setFileDataUrl('');
+    setFileSize('');
     setIsLoading(true);
 
     try {
-      let aiResponseText = '';
-      if (currentAttachment && currentAttachment.inlineData.mimeType.startsWith('image/')) {
-        aiResponseText = await analyzeStudyDocument(
-          currentAttachment.inlineData.data,
-          currentAttachment.inlineData.mimeType,
-          userQuery,
-          userLang
-        );
-      } else {
-        aiResponseText = await askAICoach(
-          userQuery,
-          messages,
-          userLang,
-          currentAttachment || undefined,
-          activeRole
-        );
-      }
+      const response = await generateInsaneAIResponse({
+        prompt: userQuery,
+        history: messages,
+        fileAttachment: currentAttachment,
+        enableWebSearch,
+        userLanguage: userLang,
+        model: selectedModel,
+        role: activeRole
+      });
 
-      const finalMsgs: ChatMessage[] = [...updatedMsgs, { role: 'model', text: aiResponseText }];
+      const finalMsgs: ChatMessage[] = [
+        ...updatedMsgs,
+        {
+          role: 'model',
+          text: response.text,
+          groundingChunks: response.groundingChunks
+        }
+      ];
       setMessages(finalMsgs);
 
       if (activeThreadId === 'new') {
@@ -396,6 +575,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     }
   };
 
+  // Essay Submission
   const handleGradeEssaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!essayText.trim() || isLoading) return;
@@ -446,10 +626,10 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
     <div className="relative min-h-[calc(100vh-5rem)] flex flex-col bg-slate-950 text-slate-100 rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden font-sans">
       
       {/* INTEGRATED TOP CONTROL BAR */}
-      <header className="px-4 md:px-6 py-3.5 bg-slate-900 border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <header className="px-4 md:px-6 py-3 bg-slate-900 border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
         
-        <div className="flex items-center gap-3">
-          {/* History Drawer Toggle Button */}
+        {/* History & New Chat Buttons */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border ${
@@ -473,6 +653,15 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Chat</span>
           </button>
+
+          {/* Export Chat Button */}
+          <button
+            onClick={handleExportChat}
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition cursor-pointer border border-slate-700"
+            title="Suhbatni Markdown shaklida yuklab olish"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Center Workspace Tabs */}
@@ -486,7 +675,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
             }`}
           >
             <Bot className="w-3.5 h-3.5" />
-            <span>AI Coach</span>
+            <span>AI Workspace</span>
           </button>
 
           <button
@@ -514,10 +703,18 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
           </button>
         </div>
 
-        {/* Right Model Badge */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-800/80 border border-slate-700/80 text-[11px] font-mono text-amber-400">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-          <span>Gemini 2.5 / 3.6 Multimodal</span>
+        {/* Model Switcher & Web Search Indicator */}
+        <div className="flex items-center gap-2">
+          {/* Model Switcher Dropdown */}
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-mono text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+          >
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Reasoning)</option>
+          </select>
         </div>
       </header>
 
@@ -597,6 +794,16 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                 );
               })}
             </div>
+
+            {savedThreads.length > 0 && (
+              <button
+                onClick={handleClearAllHistory}
+                className="mt-3 w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Barcha Tarixni Tozalash</span>
+              </button>
+            )}
           </aside>
         )}
 
@@ -634,7 +841,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                 </div>
 
                 <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-center space-y-4">
-                  {isRecording ? (
+                  {isRecordingSpeaking ? (
                     <div className="flex flex-col items-center space-y-3">
                       <div className="w-20 h-20 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center animate-ping">
                         <Mic className="w-10 h-10" />
@@ -652,7 +859,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                   ) : (
                     <div className="flex flex-col items-center space-y-3">
                       <button
-                        onClick={startRecording}
+                        onClick={startRecordingSpeaking}
                         disabled={isLoading}
                         className="w-20 h-20 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
                       >
@@ -750,6 +957,8 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
             <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 max-w-3xl mx-auto w-full">
               {messages.map((msg, idx) => {
                 const isUser = msg.role === 'user';
+                const isSpeaking = speakingMsgIdx === idx;
+
                 return (
                   <div
                     key={idx}
@@ -768,16 +977,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                           : 'bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-none shadow-sm'
                       }`}
                     >
-                      {!isUser && (
-                        <button
-                          onClick={() => handleCopyText(msg.text, idx)}
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
-                          title="Copy message"
-                        >
-                          {copiedIndex === idx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      )}
-
+                      {/* Attached File Display in Message */}
                       {msg.attachment && (
                         <div className="mb-2 p-2 rounded-xl bg-black/20 text-[10px] font-mono flex items-center gap-2 text-amber-300">
                           <Paperclip className="w-3.5 h-3.5" />
@@ -785,11 +985,86 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                         </div>
                       )}
 
+                      {/* User message vs Model Markdown message */}
                       {isUser ? (
                         <div className="whitespace-pre-wrap">{msg.text}</div>
                       ) : (
                         <div className="prose prose-invert max-w-none text-xs space-y-2 [&>p]:mb-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:font-bold [&>h2]:font-bold [&>h3]:font-bold [&>strong]:font-bold [&>strong]:text-amber-400 [&>code]:bg-slate-950 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:font-mono">
                           <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        </div>
+                      )}
+
+                      {/* Google Search Grounding Citations Accordion */}
+                      {!isUser && msg.groundingChunks && msg.groundingChunks.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-slate-800/80">
+                          <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-amber-400 mb-1.5">
+                            <Globe className="w-3 h-3" />
+                            <span>Web Search Grounding Sources ({msg.groundingChunks.length}):</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.groundingChunks.map((chunk, cIdx) => {
+                              if (!chunk.web?.uri) return null;
+                              return (
+                                <a
+                                  key={cIdx}
+                                  href={chunk.web.uri}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 hover:text-amber-300 transition flex items-center gap-1"
+                                >
+                                  <span className="truncate max-w-[140px]">{chunk.web.title || chunk.web.uri}</span>
+                                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Interactive Action Bar on AI Responses */}
+                      {!isUser && (
+                        <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center gap-2 opacity-80 group-hover:opacity-100 transition">
+                          {/* Copy Button */}
+                          <button
+                            onClick={() => handleCopyText(msg.text, idx)}
+                            className="p-1 rounded bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1 text-[10px]"
+                            title="Nusxalash"
+                          >
+                            {copiedIndex === idx ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span className="text-emerald-400 font-bold">Nusxalandi</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Text-To-Speech Button */}
+                          <button
+                            onClick={() => handleToggleSpeech(msg.text, idx)}
+                            className={`p-1 rounded bg-slate-800/80 hover:bg-slate-800 transition cursor-pointer flex items-center gap-1 text-[10px] ${
+                              isSpeaking ? 'text-amber-400 font-bold animate-pulse' : 'text-slate-400 hover:text-white'
+                            }`}
+                            title="Ovozli o'qish (TTS)"
+                          >
+                            {isSpeaking ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                            <span>{isSpeaking ? 'To\'xtatish' : 'Ovozli O\'qish'}</span>
+                          </button>
+
+                          {/* Regenerate Button */}
+                          <button
+                            onClick={() => handleRegenerate(idx)}
+                            disabled={isLoading}
+                            className="p-1 rounded bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition cursor-pointer flex items-center gap-1 text-[10px] disabled:opacity-50"
+                            title="Qaytadan yaratish"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Qayta sorash</span>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -806,7 +1081,7 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
               {isLoading && (
                 <div className="flex items-center gap-2 text-xs text-amber-400 font-bold animate-pulse p-3 bg-slate-900/80 rounded-2xl border border-slate-800">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Gemini AI tahlil o'tkazmoqda va javob tayyorlamoqda...</span>
+                  <span>Renessans Prime AI tahlil o'tkazmoqda...</span>
                 </div>
               )}
 
@@ -835,24 +1110,67 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                 ))}
               </div>
 
-              {/* Input Form */}
-              <form onSubmit={handleSendChat} className="max-w-3xl mx-auto space-y-2">
-                {attachedFile && (
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
-                    <div className="flex items-center gap-2 truncate">
-                      <ImageIcon className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="truncate font-mono text-[11px]">{fileName}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRemoveFile}
-                      className="text-slate-400 hover:text-rose-400 transition cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+              {/* INSTANT IMAGE/FILE THUMBNAIL PREVIEW CARD */}
+              {attachedFile && (
+                <div className="max-w-3xl mx-auto p-2.5 rounded-2xl bg-slate-950 border border-amber-500/40 flex items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {fileDataUrl ? (
+                      <div className="relative group">
+                        <img
+                          src={fileDataUrl}
+                          alt="Thumbnail preview"
+                          className="w-12 h-12 object-cover rounded-xl border border-slate-800 group-hover:scale-105 transition cursor-pointer"
+                          onClick={() => setIsZoomingPreview(!isZoomingPreview)}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-xl flex items-center justify-center transition">
+                          <Maximize2 className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                        <ImageIcon className="w-6 h-6" />
+                      </div>
+                    )}
 
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{fileName}</p>
+                      <p className="text-[10px] text-amber-400 font-mono mt-0.5">
+                        {attachedFile.inlineData.mimeType} • {fileSize}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="p-1.5 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 transition cursor-pointer shrink-0"
+                    title="Faylni olib tashlash"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* FULL ZOOM PREVIEW MODAL IF CLICKED */}
+              {isZoomingPreview && fileDataUrl && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                  onClick={() => setIsZoomingPreview(false)}
+                >
+                  <div className="relative max-w-2xl max-h-[80vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 p-2">
+                    <button
+                      onClick={() => setIsZoomingPreview(false)}
+                      className="absolute top-3 right-3 p-1.5 rounded-full bg-slate-950 text-white hover:bg-rose-500 transition cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <img src={fileDataUrl} alt="Zoomed preview" className="max-w-full max-h-[75vh] object-contain rounded-xl" />
+                  </div>
+                </div>
+              )}
+
+              {/* Input Form with Action Tools */}
+              <form onSubmit={handleSendChat} className="max-w-3xl mx-auto space-y-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
@@ -862,29 +1180,69 @@ export const AITutorView: React.FC<AITutorViewProps> = () => {
                     className="hidden"
                   />
 
+                  {/* Attachment Button */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-3 rounded-2xl bg-slate-800 text-slate-400 hover:text-amber-400 hover:bg-slate-700 transition cursor-pointer border border-slate-700 shrink-0"
+                    className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
+                      attachedFile
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                        : 'bg-slate-800 text-slate-400 hover:text-amber-400 hover:bg-slate-700 border-slate-700'
+                    }`}
                     title="Darslik rasmi yoki fayl biriktirish"
                   >
                     <Paperclip className="w-4.5 h-4.5" />
                   </button>
 
+                  {/* Web Search Grounding Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setEnableWebSearch(!enableWebSearch)}
+                    className={`p-3 rounded-2xl border transition cursor-pointer flex items-center gap-1 shrink-0 ${
+                      enableWebSearch
+                        ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50 font-bold'
+                        : 'bg-slate-800 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 border-slate-700'
+                    }`}
+                    title="Google Search Grounding web qidiruvini yoqish/o'chirish"
+                  >
+                    <Globe className="w-4.5 h-4.5" />
+                    <span className="hidden sm:inline text-xs font-mono">
+                      {enableWebSearch ? 'Search ON' : 'Search'}
+                    </span>
+                  </button>
+
+                  {/* Voice Input (Speech to Text) Button */}
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
+                      isVoiceInputActive
+                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
+                        : 'bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-slate-700 border-slate-700'
+                    }`}
+                    title="Ovoz bilan kiritish (Speech-To-Text)"
+                  >
+                    {isVoiceInputActive ? <MicOff className="w-4.5 h-4.5 text-rose-400" /> : <Mic className="w-4.5 h-4.5" />}
+                  </button>
+
+                  {/* Main Input Text */}
                   <input
                     type="text"
                     value={inputPrompt}
                     onChange={(e) => setInputPrompt(e.target.value)}
                     placeholder={
-                      userLang === 'uz'
+                      isVoiceInputActive
+                        ? "Eshitilmoqda, gapiring..."
+                        : userLang === 'uz'
                         ? "Savolingiz, darslik rasmi yoki Python kodi haqida so'rang..."
                         : userLang === 'ru'
                         ? "Задайте вопрос по предметам или фото..."
-                        : "Ask a question, upload a study photo, or practice..."
+                        : "Ask a question, upload a study photo, or search the web..."
                     }
                     className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
                   />
 
+                  {/* Submit Button */}
                   <button
                     type="submit"
                     disabled={isLoading || (!inputPrompt.trim() && !attachedFile)}

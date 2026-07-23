@@ -31,11 +31,21 @@ import {
   CheckCircle2,
   Send,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  ChevronRight,
+  Download,
+  X,
+  ExternalLink,
+  Headphones,
+  FileCheck
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { currentUser, userProfile, activeRole } = useAuth();
   const { language } = useLanguage();
 
@@ -121,7 +131,7 @@ export const Dashboard: React.FC = () => {
       ) : activeRole === 'teacher' ? (
         <TeacherDashboardView isUz={isUz} displayName={displayName} showToast={showToast} groups={groups} students={students} />
       ) : (
-        <StudentDashboardView isUz={isUz} displayName={displayName} showToast={showToast} />
+        <StudentDashboardView isUz={isUz} displayName={displayName} showToast={showToast} onNavigate={onNavigate} />
       )}
     </div>
   );
@@ -486,78 +496,250 @@ const TeacherDashboardView: React.FC<{
 /* =========================================================================
    3. STUDENT DASHBOARD VIEW
    ========================================================================= */
-const StudentDashboardView: React.FC<{ isUz: boolean; displayName: string; showToast: (msg: string) => void }> = ({
-  isUz,
-  displayName,
-  showToast
-}) => {
+export const StudentDashboardView: React.FC<{
+  isUz: boolean;
+  displayName: string;
+  showToast: (msg: string) => void;
+  onNavigate?: (tab: string) => void;
+}> = ({ isUz, displayName, showToast, onNavigate }) => {
+  const [isMockModalOpen, setIsMockModalOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {/* Metric Cards for Course Status, Homework Deadlines, Latest Mock Score, Attendance */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={isUz ? "Biriktirilgan Kurs" : "Enrolled Course"}
-          value="IELTS 7.5+ Intensive"
-          change={isUz ? "Xona 3 • Mr. Javohir" : "Room 3 • Mr. Javohir"}
-          icon={<BookOpen className="w-5 h-5 text-amber-500" />}
-        />
-        <StatCard
-          title={isUz ? "Kutilayotgan Vazifa" : "Upcoming Assignments"}
-          value={isUz ? "2 ta Topshiriq" : "2 Assignments Due"}
-          change={isUz ? "Muddati: Ertaga 18:00" : "Due: Tomorrow 18:00"}
-          icon={<Clock className="w-5 h-5 text-rose-500" />}
-        />
-        <StatCard
-          title={isUz ? "So'nggi IELTS Mock Ball" : "Latest IELTS Mock Score"}
-          value="Band 7.5 Overall"
-          change="L: 8.0 | R: 7.5 | W: 7.0 | S: 7.5"
-          icon={<Award className="w-5 h-5 text-emerald-500" />}
-        />
-        <StatCard
-          title={isUz ? "Darsga Qatnashish" : "Attendance Record"}
-          value="98% Attendance"
-          change={isUz ? "A'lo intizom" : "Excellent track record"}
-          icon={<CheckCircle2 className="w-5 h-5 text-blue-500" />}
-        />
+        <div
+          onClick={() => {
+            showToast(isUz ? "Guruh darslariga o'tilmoqda..." : "Opening Enrolled Course Details...");
+            onNavigate?.('feed');
+          }}
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
+        >
+          <StatCard
+            title={isUz ? "Biriktirilgan Kurs" : "Enrolled Course"}
+            value="IELTS 7.5+ Intensive"
+            change={isUz ? "Xona 3 • Mr. Javohir" : "Room 3 • Mr. Javohir"}
+            icon={<BookOpen className="w-5 h-5 text-amber-500" />}
+          />
+        </div>
+
+        <div
+          onClick={() => {
+            showToast(isUz ? "Guruh vazifalariga o'tilmoqda..." : "Opening Homework List...");
+            onNavigate?.('feed');
+          }}
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
+        >
+          <StatCard
+            title={isUz ? "Kutilayotgan Vazifa" : "Upcoming Assignments"}
+            value={isUz ? "2 ta Topshiriq" : "2 Assignments Due"}
+            change={isUz ? "Muddati: Ertaga 18:00" : "Due: Tomorrow 18:00"}
+            icon={<Clock className="w-5 h-5 text-rose-500" />}
+          />
+        </div>
+
+        <div
+          onClick={() => {
+            showToast(isUz ? "Mock test grafiklariga o'tilmoqda..." : "Opening IELTS Mock Analytics...");
+            onNavigate?.('progress');
+          }}
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
+        >
+          <StatCard
+            title={isUz ? "So'nggi IELTS Mock Ball" : "Latest IELTS Mock Score"}
+            value="Band 7.5 Overall"
+            change="L: 8.0 | R: 7.5 | W: 7.0 | S: 7.5"
+            icon={<Award className="w-5 h-5 text-emerald-500" />}
+          />
+        </div>
+
+        <div
+          onClick={() => {
+            showToast(isUz ? "Davomat ko'rsatkichi a'lo darajada" : "Attendance record verified (98%)");
+          }}
+          className="cursor-pointer transition-transform hover:scale-[1.01]"
+        >
+          <StatCard
+            title={isUz ? "Darsga Qatnashish" : "Attendance Record"}
+            value="98% Attendance"
+            change={isUz ? "A'lo intizom" : "Excellent track record"}
+            icon={<CheckCircle2 className="w-5 h-5 text-blue-500" />}
+          />
+        </div>
       </div>
 
       {/* Student Quick Actions */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {isUz ? "O'quvchi Tezkor Yordamchilar" : "Student Portal Tools"}
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <span>{isUz ? "O'quvchi Tezkor Yordamchilar" : "Student Portal Tools"}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                Interactive
+              </span>
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              {isUz ? "24/7 AI Tutor va guruh topshiriqlarini ko'ring" : "24/7 AI tutor, homework feed & class standings"}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {isUz ? "24/7 AI tutor, guruh topshiriqlari va mock imtihonlar portaliga kiring" : "24/7 AI tutor, homework feed, class standings & practice test hub"}
             </p>
           </div>
           <Sparkles className="w-4 h-4 text-amber-500" />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ActionButton
-            icon={<Bot className="w-4 h-4 text-amber-500" />}
+            icon={<Bot className="w-5 h-5 text-amber-500" />}
             label={isUz ? "24/7 AI Tutor Yordamchi" : "Ask 24/7 AI Tutor"}
-            onClick={() => showToast(isUz ? "AI Yordamchi bilan suhbat..." : "Opening 24/7 AI Tutor Chat...")}
+            subtitle={isUz ? "Instant AI response & speaking feedback" : "Instant AI feedback, essay grading & speaking"}
+            badge="AI 24/7"
+            onClick={() => {
+              showToast(isUz ? "Opening 24/7 AI Tutor Chat ✨" : "Opening 24/7 AI Tutor Chat ✨");
+              onNavigate?.('ai_tutor');
+            }}
           />
           <ActionButton
-            icon={<FileText className="w-4 h-4 text-blue-500" />}
+            icon={<FileText className="w-5 h-5 text-blue-500" />}
             label={isUz ? "Guruh Vazifalari" : "View Class Homework"}
-            onClick={() => showToast(isUz ? "Vazifalar ro'yxati..." : "Opening Homework Portal...")}
+            subtitle={isUz ? "Topshiriqlar lentalari va yuklamalar" : "Check class feed, audio drills & assignments"}
+            badge="Assignments"
+            onClick={() => {
+              showToast(isUz ? "Guruh topshiriqlariga o'tilmoqda..." : "Opening Homework Portal...");
+              onNavigate?.('feed');
+            }}
           />
           <ActionButton
-            icon={<Award className="w-4 h-4 text-emerald-500" />}
+            icon={<Award className="w-5 h-5 text-emerald-500" />}
             label={isUz ? "Guruh Reytingi" : "Check Leaderboard"}
-            onClick={() => showToast(isUz ? "Guruh reyting jadvali..." : "Opening Class Leaderboard...")}
+            subtitle={isUz ? "Guruhdagi o'rin va XP ballar" : "Rankings, attendance streak & top scores"}
+            badge="Top 3"
+            onClick={() => {
+              showToast(isUz ? "Guruh reytingiga o'tilmoqda..." : "Opening Class Leaderboard...");
+              onNavigate?.('leaderboard');
+            }}
           />
           <ActionButton
-            icon={<Newspaper className="w-4 h-4 text-purple-500" />}
+            icon={<Newspaper className="w-5 h-5 text-purple-500" />}
             label={isUz ? "Mock Test Yuklash" : "Mock Practice Tests"}
-            onClick={() => showToast(isUz ? "Mock PDF va audio fayllar..." : "Opening Practice Test Files...")}
+            subtitle={isUz ? "Real IELTS variantlar & mp3 mashqlar" : "Full IELTS & CEFR mock papers + audio drills"}
+            badge="Exams"
+            onClick={() => {
+              showToast(isUz ? "Mock Test materiallari ochilmoqda..." : "Opening Practice Test Files...");
+              setIsMockModalOpen(true);
+            }}
           />
         </div>
       </div>
+
+      {/* Mock Practice Tests Modal */}
+      {isMockModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                  <Newspaper className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    {isUz ? "IELTS & CEFR Mock Practice Hub" : "IELTS & CEFR Mock Practice Hub"}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {isUz ? "Haqiqiy imtihon formatidagi materiallar va audio mashqlar" : "Real exam format materials, audio drills & analytical keys"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMockModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="my-5 space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              {[
+                {
+                  title: isUz ? "Full Mock IELTS #6 Academic Paper (PDF)" : "Full Mock IELTS #6 Academic Paper (PDF)",
+                  desc: isUz ? "Listening, Reading Passage 1-3 va Writing Task 1/2" : "Full Listening 40 Qs, Reading 3 Passages & Writing 1/2",
+                  tag: "Academic",
+                  color: "amber"
+                },
+                {
+                  title: isUz ? "IELTS Listening Audio Section 1-4 Drill" : "IELTS Listening Audio Section 1-4 Drill",
+                  desc: isUz ? "Original audio yozuvlar va kalitlar (32 min MP3)" : "Full exam listening audio with timing & answer sheet",
+                  tag: "Audio MP3",
+                  color: "blue"
+                },
+                {
+                  title: isUz ? "Band 8.0 Writing Essay Prompt Collection" : "Band 8.0 Writing Essay Prompt Collection",
+                  desc: isUz ? "Automation & AI mavzusidagi 15 ta namuna insho" : "15 Model essays with examiner comments and vocabulary",
+                  tag: "Writing",
+                  color: "emerald"
+                }
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between gap-4 hover:border-amber-500/40 transition"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        {item.tag}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        {item.title}
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {item.desc}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => {
+                        showToast(isUz ? "Fayl yuklab olindi ✅" : "Mock Material Downloaded ✅");
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-amber-500 hover:text-slate-950 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMockModalOpen(false);
+                        onNavigate?.('ai_tutor');
+                        showToast(isUz ? "AI Tutor bilan test yechilmoqda..." : "Starting Mock in AI Tutor...");
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      <span>AI Mode</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setIsMockModalOpen(false);
+                  onNavigate?.('progress');
+                }}
+                className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>{isUz ? "Barcha o'tgan Mock natijalarini ko'rish →" : "View all past mock score analytics →"}</span>
+              </button>
+              <button
+                onClick={() => setIsMockModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs hover:bg-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
+              >
+                {isUz ? "Yopish" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Homework & Mock Results Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
@@ -570,9 +752,13 @@ const StudentDashboardView: React.FC<{ isUz: boolean; displayName: string; showT
               {isUz ? "Shaxsiy o'zlashtirish va baholar tarixi" : "Personal submission history & band scores"}
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-            Target: IELTS 8.0
-          </span>
+          <button
+            onClick={() => onNavigate?.('progress')}
+            className="px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 font-bold text-xs border border-amber-500/20 transition cursor-pointer flex items-center gap-1"
+          >
+            <span>Target: IELTS 8.0</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -588,11 +774,15 @@ const StudentDashboardView: React.FC<{ isUz: boolean; displayName: string; showT
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {[
-                { name: "Writing Essay #14: Automation", skill: "Writing Task 2", date: "Ertaga 18:00", score: "Pending", status: "pending" },
-                { name: "Full Mock IELTS #5", skill: "Listening / Reading / Writing / Speaking", date: "15 Iyul 2025", score: "7.5 Overall", status: "graded" },
-                { name: "Listening Vocabulary Drill", skill: "Audio Section 4", date: "12 Iyul 2025", score: "19/20 (95%)", status: "graded" }
+                { name: "Writing Essay #14: Automation", skill: "Writing Task 2", date: "Ertaga 18:00", score: "Pending", status: "pending", targetTab: "feed" },
+                { name: "Full Mock IELTS #5", skill: "Listening / Reading / Writing / Speaking", date: "15 Iyul 2025", score: "7.5 Overall", status: "graded", targetTab: "progress" },
+                { name: "Listening Vocabulary Drill", skill: "Audio Section 4", date: "12 Iyul 2025", score: "19/20 (95%)", status: "graded", targetTab: "feed" }
               ].map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                <tr
+                  key={i}
+                  onClick={() => onNavigate?.(row.targetTab)}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+                >
                   <td className="py-3.5 px-2 font-bold text-slate-800 dark:text-slate-200">{row.name}</td>
                   <td className="py-3.5 px-2 text-slate-600 dark:text-slate-400">{row.skill}</td>
                   <td className="py-3.5 px-2 text-slate-500 font-mono text-[11px]">{row.date}</td>
@@ -631,9 +821,16 @@ const StudentDashboardView: React.FC<{ isUz: boolean; displayName: string; showT
               : "Your next class is today at 14:00 (IELTS Intensive #12). Next Full Mock IELTS Exam: Saturday 09:00."}
           </p>
         </div>
-        <div className="px-4 py-2 bg-slate-950 text-amber-400 rounded-2xl font-black text-xs shadow-md shrink-0 border border-amber-400/30">
-          Target: IELTS 8.0
-        </div>
+        <button
+          onClick={() => {
+            showToast(isUz ? "Opening 24/7 AI Tutor Chat ✨" : "Opening 24/7 AI Tutor Chat ✨");
+            onNavigate?.('ai_tutor');
+          }}
+          className="px-4 py-2.5 bg-slate-950 hover:bg-slate-900 text-amber-400 rounded-2xl font-black text-xs shadow-md shrink-0 border border-amber-400/30 flex items-center gap-2 cursor-pointer transition"
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>{isUz ? "AI Yordamchi bilan mashq" : "Launch AI Coach"}</span>
+        </button>
       </div>
     </div>
   );
@@ -649,7 +846,7 @@ const StatCard: React.FC<{
   icon: React.ReactNode;
 }> = ({ title, value, change, icon }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-all hover:border-amber-500/50 dark:hover:border-amber-500/50">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{title}</span>
         <div className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800">{icon}</div>
@@ -663,17 +860,38 @@ const StatCard: React.FC<{
 const ActionButton: React.FC<{
   icon: React.ReactNode;
   label: string;
+  subtitle?: string;
+  badge?: string;
   onClick: () => void;
-}> = ({ icon, label, onClick }) => {
+}> = ({ icon, label, subtitle, badge, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-500/10 border border-slate-200/80 dark:border-slate-700/60 hover:border-amber-500/30 flex items-center gap-3 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer group"
+      className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:scale-[1.02] transition-all duration-200 flex flex-col justify-between text-left cursor-pointer group shadow-sm hover:shadow-md relative overflow-hidden"
     >
-      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 shadow-sm group-hover:scale-110 transition">
-        {icon}
+      <div className="flex items-start justify-between w-full mb-3">
+        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 group-hover:scale-110 group-hover:border-amber-500/40 transition-transform duration-200">
+          {icon}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {badge && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              {badge}
+            </span>
+          )}
+          <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-200" />
+        </div>
       </div>
-      <span className="truncate">{label}</span>
+      <div>
+        <h4 className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
+          {label}
+        </h4>
+        {subtitle && (
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-medium">
+            {subtitle}
+          </p>
+        )}
+      </div>
     </button>
   );
 };

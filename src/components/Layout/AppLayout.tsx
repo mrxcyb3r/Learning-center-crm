@@ -159,6 +159,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navItems = getNavItems();
   const currentTabObj = navItems.find((n) => n.id === activeTab) || navItems[0];
 
+  const handleNavigate = (tab: string) => {
+    const normalized = tab.replace(/^\//, '');
+    if (normalized === 'ai-tutor' || normalized === 'ai_tutor') {
+      setActiveTab('ai_tutor');
+    } else if (normalized === 'homework' || normalized === 'my-group-feed' || normalized === 'feed') {
+      setActiveTab('feed');
+    } else if (normalized === 'leaderboard' || normalized === 'class-leaderboard') {
+      setActiveTab('leaderboard');
+    } else if (normalized === 'mock-tests' || normalized === 'mock_tests' || normalized === 'progress') {
+      setActiveTab('progress');
+    } else {
+      setActiveTab(normalized);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-200">
       
@@ -400,7 +415,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               'classes',
               'blog',
               'settings'
-            ].includes(activeTab)) && children}
+            ].includes(activeTab)) &&
+            (React.isValidElement(children)
+              ? React.cloneElement(children as React.ReactElement<any>, { onNavigate: handleNavigate })
+              : children)}
         </main>
 
         {/* FLOATING PRIME AI ASSISTANT TRIGGER BUTTON & WIDGET */}

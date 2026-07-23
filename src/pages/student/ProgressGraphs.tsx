@@ -16,7 +16,11 @@ import { MockTestScore } from '../../types';
 export const ProgressGraphs: React.FC = () => {
   const { language } = useLanguage();
   const { currentUser } = useAuth();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [scores, setScores] = useState<MockTestScore[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -54,20 +58,22 @@ export const ProgressGraphs: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold border border-amber-500/20 mb-2">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>{isUz ? "O'zlashtirish Dinamikasi" : "Academic Performance Dynamics"}</span>
+            <span>{t("O'zlashtirish Dinamikasi", "Academic Performance Dynamics", "Динамика Успеваемости")}</span>
           </div>
           <h2 className="text-2xl font-black tracking-tight">
-            {isUz ? "O'quv Natijalari va Davomat Tahlili" : "Test Scores & Attendance Analytics"}
+            {t("O'quv Natijalari va Davomat Tahlili", "Test Scores & Attendance Analytics", "Результаты Тестов и Аналитика Посещаемости")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            {isUz
-              ? "Mock imtihonlari va darslardagi faolligingiz bo'yicha tayyorlangan shaxsiy tahliliy ko'rsatkichlar."
-              : "Individual breakdown of your mock test scores and class attendance records."}
+            {t(
+              "Mock imtihonlari va darslardagi faolligingiz bo'yicha tayyorlangan shaxsiy tahliliy ko'rsatkichlar.",
+              "Individual breakdown of your mock test scores and class attendance records.",
+              "Персональная аналитика по пробным экзаменам и посещаемости занятий."
+            )}
           </p>
         </div>
 
         <div className="px-6 py-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-center shrink-0">
-          <span className="text-[10px] text-slate-400 uppercase font-bold block">{isUz ? "Hozirgi IELTS Darajangiz" : "Current Band Score"}</span>
+          <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("Hozirgi IELTS Darajangiz", "Current Band Score", "Текущий Балл IELTS")}</span>
           <span className="text-3xl font-black text-amber-400">
             {latestScore ? latestScore.overall : "7.5"}
           </span>
@@ -89,12 +95,14 @@ export const ProgressGraphs: React.FC = () => {
         <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
           <FileCheck className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Hozircha o'tgan mock natijalari mavjud emas" : "No past mock exam records found"}
+            {t("Hozircha o'tgan mock natijalari mavjud emas", "No past mock exam records found", "Результаты прошлых пробных экзаменов не найдены")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            {isUz
-              ? "O'qituvchingiz birinchi mock test natijalarini kiritgach, bu yerda 4 ta ko'nikma bo'yicha tahliliy grafiklar hosil bo'ladi."
-              : "Once your instructor enters your first mock test scores, complete band breakdowns will render here."}
+            {t(
+              "O'qituvchingiz birinchi mock test natijalarini kiritgach, bu yerda 4 ta ko'nikma bo'yicha tahliliy grafiklar hosil bo'ladi.",
+              "Once your instructor enters your first mock test scores, complete band breakdowns will render here.",
+              "Как только ваш преподаватель внесет первые результаты, здесь появится подробная аналитика по 4 навыкам."
+            )}
           </p>
         </div>
       ) : (
@@ -112,7 +120,7 @@ export const ProgressGraphs: React.FC = () => {
                 <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(Number(latestScore.listening) / 9) * 100}%` }} />
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">A'lo (Top Section)</p>
+                <p className="text-[10px] text-slate-400 font-medium">{t("A'lo (Top Section)", "Excellent (Top Section)", "Отлично (Высшая секция)")}</p>
               </div>
 
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
@@ -125,7 +133,7 @@ export const ProgressGraphs: React.FC = () => {
                 <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(Number(latestScore.reading) / 9) * 100}%` }} />
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Barqaror o'sish</p>
+                <p className="text-[10px] text-slate-400 font-medium">{t("Barqaror o'sish", "Steady Growth", "Стабильный рост")}</p>
               </div>
 
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
@@ -138,7 +146,7 @@ export const ProgressGraphs: React.FC = () => {
                 <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(Number(latestScore.writing) / 9) * 100}%` }} />
                 </div>
-                <p className="text-[10px] text-amber-500 font-medium">E'tibor talab (Task 2)</p>
+                <p className="text-[10px] text-amber-500 font-medium">{t("E'tibor talab (Task 2)", "Needs Focus (Task 2)", "Требует внимания (Task 2)")}</p>
               </div>
 
               <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
@@ -151,7 +159,7 @@ export const ProgressGraphs: React.FC = () => {
                 <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(Number(latestScore.speaking) / 9) * 100}%` }} />
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Yaxshi natija</p>
+                <p className="text-[10px] text-slate-400 font-medium">{t("Yaxshi natija", "Good Score", "Хороший результат")}</p>
               </div>
             </div>
           )}
@@ -160,14 +168,14 @@ export const ProgressGraphs: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md">
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-amber-500" />
-              <span>{isUz ? "Mock Imtihonlar Tarixi" : "Mock Test Score History"}</span>
+              <span>{t("Mock Imtihonlar Tarixi", "Mock Test Score History", "История Результатов Пробных Тестов")}</span>
             </h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="py-3 px-4">{isUz ? "Sana / Oy" : "Date / Month"}</th>
+                    <th className="py-3 px-4">{t("Sana / Oy", "Date / Month", "Дата / Месяц")}</th>
                     <th className="py-3 px-4">Listening</th>
                     <th className="py-3 px-4">Reading</th>
                     <th className="py-3 px-4">Writing</th>
@@ -203,7 +211,7 @@ export const ProgressGraphs: React.FC = () => {
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-              {isUz ? "Darslarga Qatnashish Davomati" : "Class Attendance Rate"}
+              {t("Darslarga Qatnashish Davomati", "Class Attendance Rate", "Посещаемость Занятий")}
             </h4>
             <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black">
               98% Overall
@@ -213,9 +221,11 @@ export const ProgressGraphs: React.FC = () => {
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
             <p>
-              {isUz
-                ? "Darslardagi intizomingiz a'lo darajada. Firestore orqali davomat vaqti-vaqti bilan yangilanib boriladi."
-                : "Your class discipline is excellent. Attendance logs sync live via Firestore."}
+              {t(
+                "Darslardagi intizomingiz a'lo darajada. Firestore orqali davomat vaqti-vaqti bilan yangilanib boriladi.",
+                "Your class discipline is excellent. Attendance logs sync live via Firestore.",
+                "Ваша дисциплина на занятиях отличная. Журнал посещаемости обновляется через Firestore."
+              )}
             </p>
           </div>
         </div>
@@ -223,15 +233,17 @@ export const ProgressGraphs: React.FC = () => {
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isUz ? "Ustoz Tavsiyasi" : "Teacher Recommendation"}</span>
+            <span>{t("Ustoz Tavsiyasi", "Teacher Recommendation", "Рекомендация Преподавателя")}</span>
           </div>
           <h4 className="text-xs font-bold text-slate-900 dark:text-white">
             Head IELTS Mentor:
           </h4>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
-            "{isUz
-              ? "Writing Task 2 insholarida kiritish jumlalari va murakkab sintaksislarga e'tibor qarating. Listening va Speaking darajangiz IELTS 8.0 tayyor!"
-              : "Focus more on complex linking phrases for Writing Task 2 essays. Your Listening & Speaking are ready for IELTS 8.0!"}"
+            "{t(
+              "Writing Task 2 insholarida kiritish jumlalari va murakkab sintaksislarga e'tibor qarating. Listening va Speaking darajangiz IELTS 8.0 tayyor!",
+              "Focus more on complex linking phrases for Writing Task 2 essays. Your Listening & Speaking are ready for IELTS 8.0!",
+              "Уделите внимание вводным фразам и синтаксису в эссе Task 2. Ваши Listening и Speaking готовы к IELTS 8.0!"
+            )}"
           </p>
         </div>
       </div>

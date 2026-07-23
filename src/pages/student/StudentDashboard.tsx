@@ -9,9 +9,7 @@ interface StudentDashboardProps {
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate, showToast: externalShowToast }) => {
-  const { language } = useLanguage();
   const { userProfile, currentUser } = useAuth();
-  const isUz = language === 'UZ';
   const displayName = userProfile?.displayName || currentUser?.displayName || 'Student';
 
   const showToast = externalShowToast || ((msg: string) => {
@@ -20,7 +18,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onNavigate, 
 
   return (
     <StudentDashboardView
-      isUz={isUz}
       displayName={displayName}
       showToast={showToast}
       onNavigate={onNavigate}

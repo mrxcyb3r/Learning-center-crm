@@ -4,7 +4,11 @@ import { DollarSign, Plus, CheckCircle2, TrendingDown, Users, CreditCard } from 
 
 export const PayrollView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [expenses, setExpenses] = useState([
     { id: 'ex1', title: 'Mr. Javohirbek Oylik Maoshi', category: 'Oylik Maosh', amount: 8500000, date: '2026-07-20', status: 'paid' },
@@ -49,12 +53,14 @@ export const PayrollView: React.FC = () => {
             <span>Moliya & Payroll Control</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Oylik Maoshlar va Markaz Harajatlari" : "Payroll & Expenses Logger"}
+            {t("Oylik Maoshlar va Markaz Harajatlari", "Payroll & Expenses Logger", "Зарплаты и Расходы Центра")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
-            {isUz
-              ? "O'qituvchilar maoshi, xona ijarasi hamda o'quv markazi xarajatlarini hisobga olish paneli."
-              : "Track instructor salaries, facility rent, and operational center expenses."}
+            {t(
+              "O'qituvchilar maoshi, xona ijarasi hamda o'quv markazi xarajatlarini hisobga olish paneli.",
+              "Track instructor salaries, facility rent, and operational center expenses.",
+              "Учет зарплат преподавателей, аренды помещений и расходов учебного центра."
+            )}
           </p>
         </div>
 
@@ -63,28 +69,28 @@ export const PayrollView: React.FC = () => {
           className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>{isUz ? "Yangi Harajat Kiritish" : "Add Expense Record"}</span>
+          <span>{t("Yangi Harajat Kiritish", "Add Expense Record", "Добавить Расход")}</span>
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase font-bold">{isUz ? "Jami Harajatlar" : "Total Expense"}</span>
+          <span className="text-[10px] text-slate-400 uppercase font-bold">{t("Jami Harajatlar", "Total Expense", "Общие Расходы")}</span>
           <p className="text-xl font-black text-rose-500">
             {totalExpenseSum.toLocaleString()} UZS
           </p>
         </div>
 
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase font-bold">{isUz ? "Ustozlar Maosh Fondi" : "Instructor Payroll"}</span>
+          <span className="text-[10px] text-slate-400 uppercase font-bold">{t("Ustozlar Maosh Fondi", "Instructor Payroll", "Фонд Зарплаты Преподавателей")}</span>
           <p className="text-xl font-black text-slate-900 dark:text-white">
             16,300,000 UZS
           </p>
         </div>
 
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase font-bold">{isUz ? "Oylik Status" : "Monthly Balance Status"}</span>
+          <span className="text-[10px] text-slate-400 uppercase font-bold">{t("Oylik Status", "Monthly Balance Status", "Ежемесячный Баланс")}</span>
           <p className="text-sm font-bold text-emerald-500 flex items-center gap-1">
             <CheckCircle2 className="w-4 h-4" /> In Surplus (+32%)
           </p>
@@ -95,43 +101,43 @@ export const PayrollView: React.FC = () => {
       {isAdding && (
         <form onSubmit={handleAddExpense} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-xl space-y-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            {isUz ? "Yangi Harajat yoki Oylik To'lovni Saqlash" : "Record Expense or Salary"}
+            {t("Yangi Harajat yoki Oylik To'lovni Saqlash", "Record Expense or Salary", "Записать Расход или Зарплату")}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Tavsif / Nomi
+                {t("Tavsif / Nomi", "Title / Description", "Название / Описание")}
               </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Masalan: Mr. Jasur Oylik Maoshi"
+                placeholder={t("Masalan: Mr. Jasur Oylik Maoshi", "E.g.: Mr. Jasur Salary", "Например: Зарплата Преподавателя")}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Kategoriya
+                {t("Kategoriya", "Category", "Категория")}
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white"
               >
-                <option value="Oylik Maosh">Oylik Maosh (Salaries)</option>
-                <option value="Infratuzilma">Infratuzilma & Ijara</option>
-                <option value="O'quv Jihozlari">O'quv Jihozlari</option>
-                <option value="Reklama">Reklama & Marketing</option>
+                <option value="Oylik Maosh">{t("Oylik Maosh (Salaries)", "Salary", "Зарплата")}</option>
+                <option value="Infratuzilma">{t("Infratuzilma & Ijara", "Infrastructure & Rent", "Инфраструктура и Аренда")}</option>
+                <option value="O'quv Jihozlari">{t("O'quv Jihozlari", "Study Supplies", "Учебные Материалы")}</option>
+                <option value="Reklama">{t("Reklama & Marketing", "Marketing & Ads", "Реклама и Маркетинг")}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Summasi (UZS)
+                {t("Summasi (UZS)", "Amount (UZS)", "Сумма (UZS)")}
               </label>
               <input
                 type="number"
@@ -150,13 +156,13 @@ export const PayrollView: React.FC = () => {
               onClick={() => setIsAdding(false)}
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300"
             >
-              Bekor qilish
+              {t("Bekor qilish", "Cancel", "Отмена")}
             </button>
             <button
               type="submit"
               className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20"
             >
-              Saqlash
+              {t("Saqlash", "Save Record", "Сохранить")}
             </button>
           </div>
         </form>
@@ -168,10 +174,10 @@ export const PayrollView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="py-3 px-4">Harajat Nomi</th>
-                <th className="py-3 px-4">Kategoriya</th>
-                <th className="py-3 px-4">Sana</th>
-                <th className="py-3 px-4 text-right">Summasi (UZS)</th>
+                <th className="py-3 px-4">{t("Harajat Nomi", "Expense Title", "Название Расхода")}</th>
+                <th className="py-3 px-4">{t("Kategoriya", "Category", "Категория")}</th>
+                <th className="py-3 px-4">{t("Sana", "Date", "Дата")}</th>
+                <th className="py-3 px-4 text-right">{t("Summasi (UZS)", "Amount (UZS)", "Сумма (UZS)")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold">

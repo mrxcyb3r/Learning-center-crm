@@ -6,7 +6,11 @@ import { Group } from '../../types';
 
 export const ClassesView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [groupsList, setGroupsList] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -46,7 +50,7 @@ export const ClassesView: React.FC = () => {
 
       setName('');
       setIsAdding(false);
-      setToastMessage(isUz ? "Yangi guruh saqlandi!" : "Group created successfully!");
+      setToastMessage(t("Yangi guruh saqlandi!", "Group created successfully!", "Новая группа создана!"));
       setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
       console.error('Error adding group:', err);
@@ -56,7 +60,7 @@ export const ClassesView: React.FC = () => {
   const handleDeleteGroup = async (id: string) => {
     try {
       await deleteGroup(id);
-      setToastMessage(isUz ? "Guruh o'chirildi" : "Group deleted");
+      setToastMessage(t("Guruh o'chirildi", "Group deleted", "Группа удалена"));
       setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
       console.error('Error deleting group:', err);
@@ -77,15 +81,17 @@ export const ClassesView: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30 mb-2">
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Guruhlar & Dars Jadvallari</span>
+            <span>{t("Guruhlar & Dars Jadvallari", "Classes & Schedules", "Группы и Расписание")}</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "O'quv Xonalari va Guruhlar Boshqaruvi" : "Classes & Course Schedules"}
+            {t("O'quv Xonalari va Guruhlar Boshqaruvi", "Classes & Course Schedules", "Управление Классами и Группами")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
-            {isUz
-              ? "Markazdagi barcha dars guruhlari, xonalar birikmasi va o'qituvchilar jadvallarini boshqaring."
-              : "Manage active class groups, assigned classrooms, and mentor schedules."}
+            {t(
+              "Markazdagi barcha dars guruhlari, xonalar birikmasi va o'qituvchilar jadvallarini boshqaring.",
+              "Manage active class groups, assigned classrooms, and mentor schedules.",
+              "Управление учебными группами, аудиториями и расписанием преподавателей."
+            )}
           </p>
         </div>
 
@@ -94,7 +100,7 @@ export const ClassesView: React.FC = () => {
           className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>{isUz ? "Yangi Guruh Ochish" : "Create New Group"}</span>
+          <span>{t("Yangi Guruh Ochish", "Create New Group", "Создать Новую Группу")}</span>
         </button>
       </div>
 
@@ -102,13 +108,13 @@ export const ClassesView: React.FC = () => {
       {isAdding && (
         <form onSubmit={handleAddGroup} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-xl space-y-4">
           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Yangi Guruh Qo'shish" : "Add New Group"}
+            {t("Yangi Guruh Qo'shish", "Add New Group", "Добавить Новую Группу")}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Guruh Nomi
+                {t("Guruh Nomi", "Group Name", "Название Группы")}
               </label>
               <input
                 type="text"
@@ -122,7 +128,7 @@ export const ClassesView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Kurs Yo'nalishi
+                {t("Kurs Yo'nalishi", "Course Track", "Направление Курса")}
               </label>
               <select
                 value={courseType}
@@ -140,7 +146,7 @@ export const ClassesView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Biriktirilgan Ustoz
+                {t("Biriktirilgan Ustoz", "Assigned Teacher", "Преподаватель")}
               </label>
               <input
                 type="text"
@@ -152,7 +158,7 @@ export const ClassesView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Dars Vaqti
+                {t("Dars Vaqti", "Schedule Time", "Время Занятий")}
               </label>
               <input
                 type="text"
@@ -164,7 +170,7 @@ export const ClassesView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Xona
+                {t("Xona", "Classroom", "Аудитория")}
               </label>
               <input
                 type="text"
@@ -181,13 +187,13 @@ export const ClassesView: React.FC = () => {
               onClick={() => setIsAdding(false)}
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
             >
-              Bekor qilish
+              {t("Bekor qilish", "Cancel", "Отмена")}
             </button>
             <button
               type="submit"
               className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 cursor-pointer"
             >
-              Saqlash
+              {t("Saqlash", "Save Group", "Сохранить")}
             </button>
           </div>
         </form>
@@ -205,12 +211,14 @@ export const ClassesView: React.FC = () => {
         <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
           <BookOpen className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Hozircha faol guruhlar ro'yxatga olinmagan" : "No active class groups found in Firestore"}
+            {t("Hozircha faol guruhlar ro'yxatga olinmagan", "No active class groups found in Firestore", "Активные группы не найдены")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            {isUz
-              ? "Yangi guruh ochish uchun yuqoridagi 'Yangi Guruh Ochish' tugmasini bosing."
-              : "Click 'Create New Group' above to create classrooms and course schedules."}
+            {t(
+              "Yangi guruh ochish uchun yuqoridagi 'Yangi Guruh Ochish' tugmasini bosing.",
+              "Click 'Create New Group' above to create classrooms and course schedules.",
+              "Нажмите 'Создать Новую Группу' выше, чтобы добавить аудиторию и расписание."
+            )}
           </p>
         </div>
       ) : (
@@ -225,7 +233,7 @@ export const ClassesView: React.FC = () => {
                   {g.courseType}
                 </span>
                 <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> {g.activeStudentsCount || 0} o'quvchi
+                  <Users className="w-3.5 h-3.5" /> {g.activeStudentsCount || 0} {t("o'quvchi", "students", "учеников")}
                 </span>
               </div>
 
@@ -233,7 +241,7 @@ export const ClassesView: React.FC = () => {
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
                   {g.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Ustoz: {g.teacherName}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{t("Ustoz", "Teacher", "Преподаватель")}: {g.teacherName}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs space-y-1.5 text-slate-600 dark:text-slate-300 font-semibold">
@@ -251,7 +259,7 @@ export const ClassesView: React.FC = () => {
                 <button
                   onClick={() => handleDeleteGroup(g.id)}
                   className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
-                  title="Guruhni o'chirish"
+                  title={t("Guruhni o'chirish", "Delete group", "Удалить группу")}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

@@ -5,7 +5,11 @@ import { saveMockScore } from '../../services/firestore';
 
 export const GradebookView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [studentName, setStudentName] = useState('Jasur Rahimov');
   const [testType, setTestType] = useState<'IELTS' | 'CEFR'>('IELTS');
@@ -59,12 +63,14 @@ export const GradebookView: React.FC = () => {
             <span>IELTS & CEFR Gradebook</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Baholash & IELTS Score Recorder" : "Gradebook & Essay Scoring Tool"}
+            {t("Baholash & IELTS Score Recorder", "Gradebook & Essay Scoring Tool", "Журнал Оценок & IELTS Score Recorder")}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {isUz
-              ? "O'quvchilarning Mock IELTS / CEFR ballarini kiritib, insholar bo'yicha shaxsiy feedback va sertifikat kartasini shakllantiring."
-              : "Record mock scores, generate band breakdowns, and provide teacher feedback."}
+            {t(
+              "O'quvchilarning Mock IELTS / CEFR ballarini kiritib, insholar bo'yicha shaxsiy feedback va sertifikat kartasini shakllantiring.",
+              "Record mock scores, generate band breakdowns, and provide teacher feedback.",
+              "Записывайте результаты пробных экзаменов, создавайте разбор баллов и оставляйте отзывы."
+            )}
           </p>
         </div>
       </div>
@@ -72,7 +78,7 @@ export const GradebookView: React.FC = () => {
       {savedSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <span>{isUz ? "Natija va feedback Firestore ga saqlandi va o'quvchi profiliga biriktirildi!" : "Score and feedback saved strictly to Firestore!"}</span>
+          <span>{t("Natija va feedback Firestore ga saqlandi va o'quvchi profiliga biriktirildi!", "Score and feedback saved strictly to Firestore!", "Результат и отзыв сохранены в Firestore и прикреплены к профилю!")}</span>
         </div>
       )}
 
@@ -81,7 +87,7 @@ export const GradebookView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              O'quvchining Ismi
+              {t("O'quvchining Ismi", "Student Name", "Имя Ученика")}
             </label>
             <input
               type="text"
@@ -94,7 +100,7 @@ export const GradebookView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Imtihon Turi
+              {t("Imtihon Turi", "Test Type", "Тип Экзамена")}
             </label>
             <select
               value={testType}
@@ -160,14 +166,14 @@ export const GradebookView: React.FC = () => {
 
         {/* Calculated Overall Band Banner */}
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-          <span>{isUz ? "Hisoblangan Umumiy (Overall Band):" : "Calculated Overall Band:"}</span>
+          <span>{t("Hisoblangan Umumiy (Overall Band):", "Calculated Overall Band:", "Общий Рассчитанный Балл:")}</span>
           <span className="text-xl font-black text-amber-500">{calculatedOverall}</span>
         </div>
 
         {/* Feedback Textarea */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            {isUz ? "Insho va Dars Boyicha Ustoz Mulohazalari (Feedback)" : "Teacher Essay Feedback & Notes"}
+            {t("Insho va Dars Boyicha Ustoz Mulohazalari (Feedback)", "Teacher Essay Feedback & Notes", "Отзыв и Замечания Преподавателя")}
           </label>
           <textarea
             rows={4}
@@ -183,7 +189,7 @@ export const GradebookView: React.FC = () => {
           className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          <span>{isSaving ? "Saqlanmoqda..." : (isUz ? "Natijani Saqlash va Firestore ga Yozish" : "Save Grade to Firestore")}</span>
+          <span>{isSaving ? t("Saqlanmoqda...", "Saving...", "Сохранение...") : t("Natijani Saqlash va Firestore ga Yozish", "Save Grade to Firestore", "Сохранить Результат в Firestore")}</span>
         </button>
       </form>
     </div>

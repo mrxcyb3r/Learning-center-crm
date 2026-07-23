@@ -6,7 +6,11 @@ import { Assignment, Group } from '../../types';
 
 export const HomeworkView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -66,7 +70,7 @@ export const HomeworkView: React.FC = () => {
       setDueDate('');
       setFile(null);
       setIsCreating(false);
-      setToastMessage(isUz ? "Topshiriq e'lon qilindi!" : "Assignment posted successfully!");
+      setToastMessage(t("Topshiriq e'lon qilindi!", "Assignment posted successfully!", "Задание успешно опубликовано!"));
       setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
       console.error('Error adding assignment:', err);
@@ -76,7 +80,7 @@ export const HomeworkView: React.FC = () => {
   const handleDeleteAssignment = async (id: string) => {
     try {
       await deleteAssignment(id);
-      setToastMessage(isUz ? "Topshiriq o'chirildi" : "Assignment deleted");
+      setToastMessage(t("Topshiriq o'chirildi", "Assignment deleted", "Задание удалено"));
       setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
       console.error('Error deleting assignment:', err);
@@ -96,12 +100,14 @@ export const HomeworkView: React.FC = () => {
       <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Vazifalar & Audio/PDF Yuklamalar" : "Homework & Media Management"}
+            {t("Vazifalar & Audio/PDF Yuklamalar", "Homework & Media Management", "Задания и Загрузка Audio/PDF")}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {isUz
-              ? "O'quvchilaringizga dars audiolari, insho topshiriqlari va PDF resurslarini e'lon qiling."
-              : "Upload listening mp3s, PDF files, and essay assignments for your classes."}
+            {t(
+              "O'quvchilaringizga dars audiolari, insho topshiriqlari va PDF resurslarini e'lon qiling.",
+              "Upload listening mp3s, PDF files, and essay assignments for your classes.",
+              "Публикуйте аудиозаписи уроков, эссе и PDF-ресурсы для ваших учеников."
+            )}
           </p>
         </div>
 
@@ -110,7 +116,7 @@ export const HomeworkView: React.FC = () => {
           className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 shrink-0"
         >
           <Upload className="w-4 h-4" />
-          <span>{isUz ? "Yangi Vazifa Yuklash" : "Create Assignment"}</span>
+          <span>{t("Yangi Vazifa Yuklash", "Create Assignment", "Создать Задание")}</span>
         </button>
       </div>
 
@@ -118,13 +124,13 @@ export const HomeworkView: React.FC = () => {
       {isCreating && (
         <form onSubmit={handleCreateAssignment} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-xl space-y-4">
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Yangi Topshiriq Yaratish" : "Upload New Assignment"}
+            {t("Yangi Topshiriq Yaratish", "Upload New Assignment", "Создать Новое Задание")}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {isUz ? "Topshiriq Sarlavhasi" : "Assignment Title"}
+                {t("Topshiriq Sarlavhasi", "Assignment Title", "Название Задания")}
               </label>
               <input
                 type="text"
@@ -138,7 +144,7 @@ export const HomeworkView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {isUz ? "Guruhni Tanlang" : "Select Group"}
+                {t("Guruhni Tanlang", "Select Group", "Выберите Группу")}
               </label>
               <select
                 value={selectedGroup}
@@ -165,7 +171,7 @@ export const HomeworkView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {isUz ? "Topshirish Muddat (Deadline)" : "Due Date"}
+                {t("Topshirish Muddat (Deadline)", "Due Date", "Срок Сдачи (Дедлайн)")}
               </label>
               <input
                 type="date"
@@ -177,7 +183,7 @@ export const HomeworkView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {isUz ? "Fayl Biriktirish (PDF/MP3)" : "Attach File (PDF/MP3)"}
+                {t("Fayl Biriktirish (PDF/MP3)", "Attach File (PDF/MP3)", "Прикрепить Файл (PDF/MP3)")}
               </label>
               <input
                 type="file"
@@ -193,13 +199,13 @@ export const HomeworkView: React.FC = () => {
               onClick={() => setIsCreating(false)}
               className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
             >
-              {isUz ? "Bekor qilish" : "Cancel"}
+              {t("Bekor qilish", "Cancel", "Отмена")}
             </button>
             <button
               type="submit"
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 cursor-pointer"
             >
-              {isUz ? "E'lon qilish" : "Publish Assignment"}
+              {t("E'lon qilish", "Publish Assignment", "Опубликовать")}
             </button>
           </div>
         </form>
@@ -217,19 +223,21 @@ export const HomeworkView: React.FC = () => {
         <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
           <FileText className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Ushbu guruh uchun vazifalar topilmadi" : "No assignments created yet for this class group"}
+            {t("Ushbu guruh uchun vazifalar topilmadi", "No assignments created yet for this class group", "Для этой группы задания не найдены")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            {isUz
-              ? "Yangi topshiriq e'lon qilish uchun yuqoridagi 'Yangi Vazifa Yuklash' tugmasini bosing."
-              : "Click 'Create Assignment' above to upload audio drills or PDF exercises."}
+            {t(
+              "Yangi topshiriq e'lon qilish uchun yuqoridagi 'Yangi Vazifa Yuklash' tugmasini bosing.",
+              "Click 'Create Assignment' above to upload audio drills or PDF exercises.",
+              "Нажмите 'Создать Задание' выше, чтобы загрузить аудио или упражнения в PDF."
+            )}
           </p>
           <button
             onClick={() => setIsCreating(true)}
             className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-md"
           >
             <Plus className="w-4 h-4" />
-            <span>{isUz ? "Vazifa Yuklash" : "Post Assignment"}</span>
+            <span>{t("Vazifa Yuklash", "Post Assignment", "Загрузить Задание")}</span>
           </button>
         </div>
       ) : (
@@ -261,10 +269,10 @@ export const HomeworkView: React.FC = () => {
               <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right">
                   <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                    {hw.submittedCount || 0} / {hw.totalStudents || 14} Topshirildi
+                    {hw.submittedCount || 0} / {hw.totalStudents || 14} {t("Topshirildi", "Submitted", "Сдано")}
                   </span>
                   <span className="text-[10px] text-emerald-500 font-bold">
-                    {Math.round(((hw.submittedCount || 0) / (hw.totalStudents || 14)) * 100)}% Bajarildi
+                    {Math.round(((hw.submittedCount || 0) / (hw.totalStudents || 14)) * 100)}% {t("Bajarildi", "Completed", "Выполнено")}
                   </span>
                 </div>
 

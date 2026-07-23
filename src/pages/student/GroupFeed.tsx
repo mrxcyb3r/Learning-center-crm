@@ -20,7 +20,11 @@ import { FeedPost, Assignment } from '../../types';
 export const GroupFeed: React.FC = () => {
   const { language } = useLanguage();
   const { userProfile, currentUser } = useAuth();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -73,22 +77,24 @@ export const GroupFeed: React.FC = () => {
       <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-slate-950 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider">
-            {isUz ? "Guruhingiz: IELTS Intensive #12" : "Your Group: IELTS Intensive #12"}
+            {t("Guruhingiz: IELTS Intensive #12", "Your Group: IELTS Intensive #12", "Ваша Группа: IELTS Intensive #12")}
           </span>
           <h2 className="text-xl md:text-2xl font-black mt-2">
-            {isUz ? "Guruh Lentasiga Xush Kelibsiz!" : "Welcome to Your Group Feed!"}
+            {t("Guruh Lentasiga Xush Kelibsiz!", "Welcome to Your Group Feed!", "Добро Пожаловать в Ленту Группы!")}
           </h2>
           <p className="text-xs text-slate-900/80 mt-1 max-w-xl">
-            {isUz
-              ? "Ustozingiz tomonidan joylanadigan e'lonlar, vazifalar va o'quv materiallarini shu yerdan kuzatib boring."
-              : "Track announcements, homework tasks, and downloadable study resources posted by your instructor."}
+            {t(
+              "Ustozingiz tomonidan joylanadigan e'lonlar, vazifalar va o'quv materiallarini shu yerdan kuzatib boring.",
+              "Track announcements, homework tasks, and downloadable study resources posted by your instructor.",
+              "Следите за объявлениями, заданиями и учебными материалами от вашего преподавателя."
+            )}
           </p>
         </div>
 
         <div className="bg-slate-950/10 backdrop-blur-md p-4 rounded-2xl border border-slate-950/20 text-xs shrink-0 font-semibold space-y-1">
           <div className="flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5" />
-            <span>{isUz ? "Dushanba / Chorshanba / Juma" : "Mon / Wed / Fri"}</span>
+            <span>{t("Dushanba / Chorshanba / Juma", "Mon / Wed / Fri", "Пн / Ср / Пт")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5" />
@@ -102,7 +108,7 @@ export const GroupFeed: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-amber-500" />
-            <span>{isUz ? "So'nggi E'lonlar va Vazifalar" : "Recent Posts & Announcements"}</span>
+            <span>{t("So'nggi E'lonlar va Vazifalar", "Recent Posts & Announcements", "Последние Объявления и Задания")}</span>
           </h3>
 
           {isLoading ? (
@@ -116,12 +122,14 @@ export const GroupFeed: React.FC = () => {
             <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
               <Inbox className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                {isUz ? "Ayni vaqtda guruh lentasida e'lonlar yo'q" : "No announcements posted yet"}
+                {t("Ayni vaqtda guruh lentasida e'lonlar yo'q", "No announcements posted yet", "В ленте группы пока нет объявлений")}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                {isUz
-                  ? "O'qituvchingiz guruhga vazifa yoki dars materiallarini joylaganda, ushbu lentalarda avtomatik ko'rinadi."
-                  : "When your instructor posts homework or study resources, they will appear in this live feed."}
+                {t(
+                  "O'qituvchingiz guruhga vazifa yoki dars materiallarini joylaganda, ushbu lentalarda avtomatik ko'rinadi.",
+                  "When your instructor posts homework or study resources, they will appear in this live feed.",
+                  "Когда ваш преподаватель опубликует материалы, они появятся здесь."
+                )}
               </p>
             </div>
           ) : (
@@ -147,7 +155,7 @@ export const GroupFeed: React.FC = () => {
                   </div>
 
                   <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                    {isUz ? "Rasmiy e'lon" : "Announcement"}
+                    {t("Rasmiy e'lon", "Announcement", "Объявление")}
                   </span>
                 </div>
 
@@ -175,7 +183,7 @@ export const GroupFeed: React.FC = () => {
                     </div>
                     <button className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm">
                       <Download className="w-3.5 h-3.5" />
-                      <span>{isUz ? "Yuklash" : "Download"}</span>
+                      <span>{t("Yuklash", "Download", "Скачать")}</span>
                     </button>
                   </div>
                 )}
@@ -184,13 +192,13 @@ export const GroupFeed: React.FC = () => {
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span className="font-bold">
-                      {post.comments?.length || 0} {isUz ? "Izohlar" : "Comments"}
+                      {post.comments?.length || 0} {t("Izohlar", "Comments", "Комментарии")}
                     </span>
                     <button
                       onClick={() => setActivePostForComment(activePostForComment === post.id ? null : post.id)}
                       className="text-amber-500 hover:underline font-semibold cursor-pointer"
                     >
-                      {isUz ? "Izoh qoldirish" : "Add Comment"}
+                      {t("Izoh qoldirish", "Add Comment", "Оставить комментарий")}
                     </button>
                   </div>
 
@@ -210,7 +218,7 @@ export const GroupFeed: React.FC = () => {
                         type="text"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder={isUz ? "Izohingizni yozing..." : "Write your comment..."}
+                        placeholder={t("Izohingizni yozing...", "Write your comment...", "Напишите комментарий...")}
                         className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
                       />
                       <button
@@ -232,14 +240,14 @@ export const GroupFeed: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-4">
             <h4 className="text-xs font-black uppercase text-amber-500 tracking-wider flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isUz ? "Topshirilishi Kerak Vazifalar" : "Pending Assignments"}</span>
+              <span>{t("Topshirilishi Kerak Vazifalar", "Pending Assignments", "Предстоящие Задания")}</span>
             </h4>
 
             {isLoading ? (
               <div className="h-24 rounded-2xl animate-pulse bg-slate-200 dark:bg-slate-800/50" />
             ) : assignments.length === 0 ? (
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-center text-xs text-slate-500">
-                {isUz ? "Hozircha topshiriqlar berilmagan." : "No pending homework tasks."}
+                {t("Hozircha topshiriqlar berilmagan.", "No pending homework tasks.", "Пока нет предстоящих заданий.")}
               </div>
             ) : (
               assignments.map((hw) => (
@@ -266,12 +274,14 @@ export const GroupFeed: React.FC = () => {
                 <span>24/7 AI Tutor</span>
               </div>
               <h4 className="text-sm font-bold">
-                {isUz ? "Insho xatolaringizni tekshirtiring" : "Check Your Essay Errors Instantly"}
+                {t("Insho xatolaringizni tekshirtiring", "Check Your Essay Errors Instantly", "Мгновенно проверяйте ошибки в эссе")}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                {isUz
-                  ? "Vazifani topshirishdan oldin AI Yordamchidan grammatika va leksikani tekshirib olishingiz mumkin."
-                  : "Get immediate grammar and vocabulary feedback from AI Tutor before final submission."}
+                {t(
+                  "Vazifani topshirishdan oldin AI Yordamchidan grammatika va leksikani tekshirib olishingiz mumkin.",
+                  "Get immediate grammar and vocabulary feedback from AI Tutor before final submission.",
+                  "Получите мгновенный отзыв по грамматике от AI Tutor перед отправкой."
+                )}
               </p>
             </div>
           </div>

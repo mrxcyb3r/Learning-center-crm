@@ -28,7 +28,11 @@ import {
 export const PaymentsPage: React.FC = () => {
   const { currentUser, userProfile, activeRole } = useAuth();
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [activeTab, setActiveTab] = useState<'all_payments' | 'debtors'>('all_payments');
   const [students, setStudents] = useState<Student[]>([]);
@@ -97,7 +101,7 @@ export const PaymentsPage: React.FC = () => {
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentId) {
-      showToast(isUz ? "O'quvchini tanlang!" : "Select a student!");
+      showToast(t("O'quvchini tanlang!", "Select a student!", "Выберите ученика!"));
       return;
     }
 
@@ -113,11 +117,11 @@ export const PaymentsPage: React.FC = () => {
         paymentMethod,
         recorderName
       );
-      showToast(isUz ? `${studentName} uchun to'lov qabul qilindi va holat 'To'langan'ga o'zgardi! ✅` : `Payment recorded for ${studentName}! Status set to 'Paid'. ✅`);
+      showToast(t(`${studentName} uchun to'lov qabul qilindi va holat 'To'langan'ga o'zgardi! ✅`, `Payment recorded for ${studentName}! Status set to 'Paid'. ✅`, `Оплата принята для ${studentName}! Статус изменен на 'Оплачено'. ✅`));
       setIsLogModalOpen(false);
     } catch (err) {
       console.error(err);
-      showToast(isUz ? "To'lovni saqlashda xatolik!" : "Failed to record payment.");
+      showToast(t("To'lovni saqlashda xatolik!", "Failed to record payment.", "Ошибка при записи оплаты."));
     }
   };
 
@@ -151,12 +155,14 @@ export const PaymentsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {isUz ? "To'lovlar & Qarzdorlar Boshqaruvi" : "Tuition & Debtor Management"}
+                {t("To'lovlar & Qarzdorlar Boshqaruvi", "Tuition & Debtor Management", "Управление Оплатой и Задолженностями")}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isUz
-                  ? "Kontrakt to'lovlarini qabul qilish va avtomatik qarzdorlik holatini yangilash"
-                  : "Record student tuition payments & track overdue accounts in real-time"}
+                {t(
+                  "Kontrakt to'lovlarini qabul qilish va avtomatik qarzdorlik holatini yangilash",
+                  "Record student tuition payments & track overdue accounts in real-time",
+                  "Прием оплаты контрактов и автообновление задолженностей"
+                )}
               </p>
             </div>
           </div>
@@ -168,7 +174,7 @@ export const PaymentsPage: React.FC = () => {
             className="w-full sm:w-auto px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>{isUz ? "To'lov Kiritish (Log Payment)" : "Log Payment"}</span>
+            <span>{t("To'lov Kiritish (Log Payment)", "Log Payment", "Внести Оплату")}</span>
           </button>
         )}
       </div>
@@ -178,7 +184,7 @@ export const PaymentsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-              {isUz ? "Yig'ilgan Jami Tushum" : "Total Recorded Revenue"}
+              {t("Yig'ilgan Jami Tushum", "Total Recorded Revenue", "Общая Выручка")}
             </span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
               <DollarSign className="w-4 h-4" />
@@ -188,31 +194,31 @@ export const PaymentsPage: React.FC = () => {
             {totalRevenue.toLocaleString()} UZS
           </h3>
           <p className="text-[11px] text-slate-500 mt-1">
-            {isUz ? `${payments.length} ta tasdiqlangan to'lov` : `${payments.length} logged transactions`}
+            {t(`${payments.length} ta tasdiqlangan to'lov`, `${payments.length} logged transactions`, `${payments.length} подтвержденных платежей`)}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-              {isUz ? "Qarzdor / Kutilayotganlar" : "Pending / Debtor Accounts"}
+              {t("Qarzdor / Kutilayotganlar", "Pending / Debtor Accounts", "Должники / Ожидающие")}
             </span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
               <AlertCircle className="w-4 h-4" />
             </div>
           </div>
           <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
-            {debtors.length} {isUz ? "O'quvchi" : "Students"}
+            {debtors.length} {t("O'quvchi", "Students", "Учеников")}
           </h3>
           <p className="text-[11px] text-slate-500 mt-1">
-            {isUz ? "Kutilayotgan kontrakt to'lovlari" : "Awaiting monthly tuition"}
+            {t("Kutilayotgan kontrakt to'lovlari", "Awaiting monthly tuition", "Ожидание оплаты контрактов")}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-              {isUz ? "To'lov Intizomi" : "Payment Compliance Rate"}
+              {t("To'lov Intizomi", "Payment Compliance Rate", "Дисциплина Оплаты")}
             </span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
               <CheckCircle2 className="w-4 h-4" />
@@ -222,7 +228,7 @@ export const PaymentsPage: React.FC = () => {
             {students.length > 0 ? Math.round(((students.length - debtors.length) / students.length) * 100) : 100}%
           </h3>
           <p className="text-[11px] text-slate-500 mt-1">
-            {isUz ? "O'z vaqtida to'langan kontraktlar" : "On-time paid subscriptions"}
+            {t("O'z vaqtida to'langan kontraktlar", "On-time paid subscriptions", "Вовремя оплаченные контракты")}
           </p>
         </div>
       </div>
@@ -238,7 +244,7 @@ export const PaymentsPage: React.FC = () => {
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          <span>{isUz ? "Barcha To'lovlar Tarixi" : "All Payment Logs"}</span>
+          <span>{t("Barcha To'lovlar Tarixi", "All Payment Logs", "История Всех Платежей")}</span>
           <span className="px-2 py-0.5 rounded-full bg-slate-950/20 text-[10px] font-mono">
             {payments.length}
           </span>
@@ -253,7 +259,7 @@ export const PaymentsPage: React.FC = () => {
           }`}
         >
           <AlertCircle className="w-4 h-4" />
-          <span>{isUz ? "Qarzdorlar Ro'yxati" : "Debtor List Tab"}</span>
+          <span>{t("Qarzdorlar Ro'yxati", "Debtor List Tab", "Список Должников")}</span>
           <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
             {debtors.length}
           </span>
@@ -265,7 +271,7 @@ export const PaymentsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-4">
             <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-              {isUz ? "Barcha Qabul Qilingan To'lovlar (Firestore Logs)" : "Recorded Payments History"}
+              {t("Barcha Qabul Qilingan To'lovlar (Firestore Logs)", "Recorded Payments History", "История Принятых Платежей")}
             </h3>
 
             <div className="relative w-full md:w-64">
@@ -274,7 +280,7 @@ export const PaymentsPage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={isUz ? "Ism bo'yicha..." : "Filter by name..."}
+                placeholder={t("Ism bo'yicha...", "Filter by name...", "Поиск по имени...")}
                 className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none"
               />
             </div>
@@ -283,22 +289,22 @@ export const PaymentsPage: React.FC = () => {
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-              <span className="text-xs font-bold">{isUz ? "To'lovlar yuklanmoqda..." : "Loading payments..."}</span>
+              <span className="text-xs font-bold">{t("To'lovlar yuklanmoqda...", "Loading payments...", "Загрузка платежей...")}</span>
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
-              <p className="text-sm font-bold">{isUz ? "Hozircha birorta ham to'lov qayd etilmagan" : "No payment logs recorded yet"}</p>
+              <p className="text-sm font-bold">{t("Hozircha birorta ham to'lov qayd etilmagan", "No payment logs recorded yet", "Записи платежей отсутствуют")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                    <th className="pb-3 px-2">{isUz ? "O'quvchi" : "Student Name"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Summa (UZS)" : "Amount"}</th>
-                    <th className="pb-3 px-2">{isUz ? "To'lov Usuli" : "Payment Method"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Qabul Qilgan" : "Recorded By"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Sana" : "Date"}</th>
+                    <th className="pb-3 px-2">{t("O'quvchi", "Student Name", "Ученик")}</th>
+                    <th className="pb-3 px-2">{t("Summa (UZS)", "Amount", "Сумма (UZS)")}</th>
+                    <th className="pb-3 px-2">{t("To'lov Usuli", "Payment Method", "Способ Оплаты")}</th>
+                    <th className="pb-3 px-2">{t("Qabul Qilgan", "Recorded By", "Принял")}</th>
+                    <th className="pb-3 px-2">{t("Sana", "Date", "Дата")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -330,13 +336,13 @@ export const PaymentsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{isUz ? "Qarzdor va Kutilayotgan O'quvchilar Ro'yxati" : "Debtor & Overdue Accounts List"}</span>
+                <span>{t("Qarzdor va Kutilayotgan O'quvchilar Ro'yxati", "Debtor & Overdue Accounts List", "Список Должников и Ожидающих")}</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20">
-                  {debtors.length} {isUz ? "Qarzdor" : "Overdue"}
+                  {debtors.length} {t("Qarzdor", "Overdue", "Должник")}
                 </span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {isUz ? "Tugmachani bosib darhol to'lov kiritishingiz va holatni 'To'langan'ga o'tkazishingiz mumkin" : "Click 'Log Payment' to clear debtor status automatically"}
+                {t("Tugmachani bosib darhol to'lov kiritishingiz va holatni 'To'langan'ga o'tkazishingiz mumkin", "Click 'Log Payment' to clear debtor status automatically", "Нажмите 'Внести Оплату' для автоматической смены статуса")}
               </p>
             </div>
           </div>
@@ -344,19 +350,19 @@ export const PaymentsPage: React.FC = () => {
           {debtors.length === 0 ? (
             <div className="py-12 text-center text-emerald-500 font-bold">
               <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
-              <p>{isUz ? "Barcha o'quvchilar to'lovlarini to'lagan! Qarzdorlar yo'q 🎉" : "All students are fully paid up! Zero debtors 🎉"}</p>
+              <p>{t("Barcha o'quvchilar to'lovlarini to'lagan! Qarzdorlar yo'q 🎉", "All students are fully paid up! Zero debtors 🎉", "Все ученики полностью оплатили! Должников нет 🎉")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                    <th className="pb-3 px-2">{isUz ? "O'quvchi Ismi" : "Student Name"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Telefon" : "Phone Number"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Guruh" : "Group"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Oylik Kontrakt" : "Tuition Fee"}</th>
-                    <th className="pb-3 px-2">{isUz ? "Holat" : "Status"}</th>
-                    <th className="pb-3 px-2 text-right">{isUz ? "Tezkor Amal" : "Action"}</th>
+                    <th className="pb-3 px-2">{t("O'quvchi Ismi", "Student Name", "Имя Ученика")}</th>
+                    <th className="pb-3 px-2">{t("Telefon", "Phone Number", "Телефон")}</th>
+                    <th className="pb-3 px-2">{t("Guruh", "Group", "Группа")}</th>
+                    <th className="pb-3 px-2">{t("Oylik Kontrakt", "Tuition Fee", "Оплата Контракта")}</th>
+                    <th className="pb-3 px-2">{t("Holat", "Status", "Статус")}</th>
+                    <th className="pb-3 px-2 text-right">{t("Tezkor Amal", "Action", "Действие")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -376,11 +382,11 @@ export const PaymentsPage: React.FC = () => {
                       <td className="py-3.5 px-2">
                         {st.paymentStatus === 'overdue' ? (
                           <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px] border border-rose-500/20">
-                            Qarzdor ❌
+                            {t("Qarzdor ❌", "Overdue ❌", "Задолженность ❌")}
                           </span>
                         ) : (
                           <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px] border border-amber-500/20">
-                            Kutilmoqda ⏳
+                            {t("Kutilmoqda ⏳", "Pending ⏳", "В ожидании ⏳")}
                           </span>
                         )}
                       </td>
@@ -389,7 +395,7 @@ export const PaymentsPage: React.FC = () => {
                           onClick={() => handleOpenLogModal(st.id)}
                           className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[11px] rounded-xl shadow transition cursor-pointer"
                         >
-                          {isUz ? "To'lov Qabul Qilish" : "Log Payment"}
+                          {t("To'lov Qabul Qilish", "Log Payment", "Принять Оплату")}
                         </button>
                       </td>
                     </tr>
@@ -418,10 +424,10 @@ export const PaymentsPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                  {isUz ? "Kontrakt To'lovini Kiritish" : "Record Tuition Payment"}
+                  {t("Kontrakt To'lovini Kiritish", "Record Tuition Payment", "Внести Оплату Контракта")}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {isUz ? "To'lov avtomatik Firestore da 'To'langan' ga o'tkazadi" : "Saves payment record and updates student status to 'Paid'"}
+                  {t("To'lov avtomatik Firestore da 'To'langan' ga o'tkazadi", "Saves payment record and updates student status to 'Paid'", "Сохраняет оплату и обновляет статус на 'Оплачено'")}
                 </p>
               </div>
             </div>
@@ -429,7 +435,7 @@ export const PaymentsPage: React.FC = () => {
             <form onSubmit={handleSubmitPayment} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "O'quvchini Tanlang *" : "Select Student *"}
+                  {t("O'quvchini Tanlang *", "Select Student *", "Выберите Ученика *")}
                 </label>
                 <select
                   value={selectedStudentId}
@@ -446,7 +452,7 @@ export const PaymentsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "To'lov Summasi (UZS) *" : "Payment Amount (UZS) *"}
+                  {t("To'lov Summasi (UZS) *", "Payment Amount (UZS) *", "Сумма Оплаты (UZS) *")}
                 </label>
                 <input
                   type="number"
@@ -459,7 +465,7 @@ export const PaymentsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "To'lov Usuli *" : "Payment Method *"}
+                  {t("To'lov Usuli *", "Payment Method *", "Способ Оплаты *")}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -495,7 +501,7 @@ export const PaymentsPage: React.FC = () => {
                         : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                     }`}
                   >
-                    💵 {isUz ? "Naqd Pul" : "Cash"}
+                    💵 {t("Naqd Pul", "Cash", "Наличные")}
                   </button>
                 </div>
               </div>
@@ -506,13 +512,13 @@ export const PaymentsPage: React.FC = () => {
                   onClick={() => setIsLogModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
-                  {isUz ? "Bekor Qilish" : "Cancel"}
+                  {t("Bekor Qilish", "Cancel", "Отмена")}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs shadow-md cursor-pointer"
                 >
-                  {isUz ? "To'lovni Qabul Qilish" : "Record Payment"}
+                  {t("To'lovni Qabul Qilish", "Record Payment", "Принять Оплату")}
                 </button>
               </div>
             </form>

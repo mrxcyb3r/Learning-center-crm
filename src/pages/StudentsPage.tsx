@@ -31,7 +31,11 @@ import {
 export const StudentsPage: React.FC = () => {
   const { currentUser, activeRole } = useAuth();
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [students, setStudents] = useState<Student[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -120,7 +124,7 @@ export const StudentsPage: React.FC = () => {
   const handleSubmitStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim()) {
-      showToast(isUz ? "Iltimos, ism va telefon raqamini kiriting!" : "Please fill in student name and phone!");
+      showToast(t("Iltimos, ism va telefon raqamini kiriting!", "Please fill in student name and phone!", "Пожалуйста, укажите имя и телефон!"));
       return;
     }
 
@@ -137,7 +141,7 @@ export const StudentsPage: React.FC = () => {
           tuitionFee: Number(tuitionFee) || 650000,
           paymentStatus
         });
-        showToast(isUz ? "O'quvchi ma'lumotlari yangilandi! ✅" : "Student profile updated! ✅");
+        showToast(t("O'quvchi ma'lumotlari yangilandi! ✅", "Student profile updated! ✅", "Данные ученика обновлены! ✅"));
       } else {
         await addStudent({
           fullName,
@@ -148,23 +152,23 @@ export const StudentsPage: React.FC = () => {
           paymentStatus,
           lastPaymentDate: new Date().toISOString().split('T')[0]
         });
-        showToast(isUz ? "Yangi o'quvchi Firestore ga qo'shildi! 🎉" : "New student registered in Firestore! 🎉");
+        showToast(t("Yangi o'quvchi Firestore ga qo'shildi! 🎉", "New student registered in Firestore! 🎉", "Новый ученик добавлен в Firestore! 🎉"));
       }
       setIsAddModalOpen(false);
     } catch (err) {
       console.error(err);
-      showToast(isUz ? "Xatolik yuz berdi!" : "Failed to save student record.");
+      showToast(t("Xatolik yuz berdi!", "Failed to save student record.", "Произошла ошибка при сохранении."));
     }
   };
 
   const handleDeleteStudent = async (id: string, name: string) => {
-    if (confirm(isUz ? `${name} ni o'chirishni tasdiqlaysizmi?` : `Are you sure you want to remove ${name}?`)) {
+    if (confirm(t(`${name} ni o'chirishni tasdiqlaysizmi?`, `Are you sure you want to remove ${name}?`, `Вы уверены, что хотите удалить ${name}?`))) {
       try {
         await deleteStudent(id);
-        showToast(isUz ? `${name} o'chirildi.` : `${name} removed.`);
+        showToast(t(`${name} o'chirildi.`, `${name} removed.`, `${name} удален.`));
       } catch (err) {
         console.error(err);
-        showToast(isUz ? "O'chirishda xatolik!" : "Failed to delete student.");
+        showToast(t("O'chirishda xatolik!", "Failed to delete student.", "Ошибка при удалении!"));
       }
     }
   };
@@ -188,12 +192,14 @@ export const StudentsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {isUz ? "O'quvchilar Boshqaruvi (Live Firestore)" : "Student Roster Management (Firestore)"}
+                {t("O'quvchilar Boshqaruvi (Live Firestore)", "Student Roster Management (Firestore)", "Управление Учениками (Firestore)")}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isUz
-                  ? "Markaz o'quvchilarini ro'yxatga olish, guruhlarga biriktirish va to'lov holatini kuzatish"
-                  : "Register students, assign groups, and manage live enrollment statuses"}
+                {t(
+                  "Markaz o'quvchilarini ro'yxatga olish, guruhlarga biriktirish va to'lov holatini kuzatish",
+                  "Register students, assign groups, and manage live enrollment statuses",
+                  "Регистрация учеников, привязка к группам и отслеживание статуса оплаты"
+                )}
               </p>
             </div>
           </div>
@@ -205,7 +211,7 @@ export const StudentsPage: React.FC = () => {
             className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>{isUz ? "Yangi O'quvchi Qo'shish" : "Add New Student"}</span>
+            <span>{t("Yangi O'quvchi Qo'shish", "Add New Student", "Добавить Ученика")}</span>
           </button>
         )}
       </div>
@@ -219,7 +225,7 @@ export const StudentsPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isUz ? "Ism yoki telefon raqami bo'yicha qidirish..." : "Search by name or phone number..."}
+            placeholder={t("Ism yoki telefon raqami bo'yicha qidirish...", "Search by name or phone number...", "Поиск по имени или телефону...")}
             className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
           />
         </div>
@@ -228,14 +234,14 @@ export const StudentsPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="flex items-center gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5 text-amber-500" />
-            <span>{isUz ? "Guruh:" : "Group:"}</span>
+            <span>{t("Guruh:", "Group:", "Группа:")}</span>
           </div>
           <select
             value={selectedGroupFilter}
             onChange={(e) => setSelectedGroupFilter(e.target.value)}
             className="py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none"
           >
-            <option value="ALL">{isUz ? "Barcha Guruhlar" : "All Groups"}</option>
+            <option value="ALL">{t("Barcha Guruhlar", "All Groups", "Все Группы")}</option>
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
@@ -249,10 +255,10 @@ export const StudentsPage: React.FC = () => {
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
             className="py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none"
           >
-            <option value="ALL">{isUz ? "Barcha Holatlar" : "All Payment Statuses"}</option>
-            <option value="paid">{isUz ? "To'langan ✅" : "Paid ✅"}</option>
-            <option value="pending">{isUz ? "Kutilmoqda ⏳" : "Pending ⏳"}</option>
-            <option value="overdue">{isUz ? "Qarzdor ❌" : "Overdue ❌"}</option>
+            <option value="ALL">{t("Barcha Holatlar", "All Payment Statuses", "Все Статусы")}</option>
+            <option value="paid">{t("To'langan ✅", "Paid ✅", "Оплачено ✅")}</option>
+            <option value="pending">{t("Kutilmoqda ⏳", "Pending ⏳", "В ожидании ⏳")}</option>
+            <option value="overdue">{t("Qarzdor ❌", "Overdue ❌", "Задолженность ❌")}</option>
           </select>
         </div>
       </div>
@@ -262,26 +268,26 @@ export const StudentsPage: React.FC = () => {
         {isLoading ? (
           <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-            <span className="text-xs font-bold">{isUz ? "Firestore o'quvchilar yuklanmoqda..." : "Fetching live students from Firestore..."}</span>
+            <span className="text-xs font-bold">{t("Firestore o'quvchilar yuklanmoqda...", "Fetching live students from Firestore...", "Загрузка учеников из Firestore...")}</span>
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="py-12 text-center text-slate-400">
-            <p className="text-sm font-bold">{isUz ? "Birorta ham o'quvchi topilmadi" : "No students found matching filters"}</p>
-            <p className="text-xs mt-1">{isUz ? "Qidiruv parametrlarini o'zgartiring yoki yangi o'quvchi qo'shing." : "Adjust search parameters or add a new student."}</p>
+            <p className="text-sm font-bold">{t("Birorta ham o'quvchi topilmadi", "No students found matching filters", "Ученики не найдены")}</p>
+            <p className="text-xs mt-1">{t("Qidiruv parametrlarini o'zgartiring yoki yangi o'quvchi qo'shing.", "Adjust search parameters or add a new student.", "Измените параметры поиска или добавьте нового ученика.")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="pb-3 px-2">{isUz ? "O'quvchi Ismi" : "Student Name"}</th>
-                  <th className="pb-3 px-2">{isUz ? "Telefon" : "Phone Number"}</th>
-                  <th className="pb-3 px-2">{isUz ? "Guruh" : "Assigned Group"}</th>
-                  <th className="pb-3 px-2">{isUz ? "Oylik Kontrakt" : "Monthly Tuition"}</th>
-                  <th className="pb-3 px-2">{isUz ? "To'lov Holati" : "Payment Status"}</th>
-                  <th className="pb-3 px-2">{isUz ? "So'nggi To'lov" : "Last Payment Date"}</th>
+                  <th className="pb-3 px-2">{t("O'quvchi Ismi", "Student Name", "Имя Ученика")}</th>
+                  <th className="pb-3 px-2">{t("Telefon", "Phone Number", "Телефон")}</th>
+                  <th className="pb-3 px-2">{t("Guruh", "Assigned Group", "Группа")}</th>
+                  <th className="pb-3 px-2">{t("Oylik Kontrakt", "Monthly Tuition", "Ежемесячная Оплата")}</th>
+                  <th className="pb-3 px-2">{t("To'lov Holati", "Payment Status", "Статус Оплаты")}</th>
+                  <th className="pb-3 px-2">{t("So'nggi To'lov", "Last Payment Date", "Дата Последней Оплаты")}</th>
                   {(activeRole === 'superadmin' || activeRole === 'admin') && (
-                    <th className="pb-3 px-2 text-right">{isUz ? "Amallar" : "Actions"}</th>
+                    <th className="pb-3 px-2 text-right">{t("Amallar", "Actions", "Действия")}</th>
                   )}
                 </tr>
               </thead>
@@ -312,17 +318,17 @@ export const StudentsPage: React.FC = () => {
                     <td className="py-3.5 px-2">
                       {st.paymentStatus === 'paid' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-500/20">
-                          <CheckCircle2 className="w-3 h-3" /> {isUz ? "To'langan ✅" : "Paid ✅"}
+                          <CheckCircle2 className="w-3 h-3" /> {t("To'langan ✅", "Paid ✅", "Оплачено ✅")}
                         </span>
                       )}
                       {st.paymentStatus === 'pending' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20">
-                          <Clock className="w-3 h-3" /> {isUz ? "Kutilmoqda ⏳" : "Pending ⏳"}
+                          <Clock className="w-3 h-3" /> {t("Kutilmoqda ⏳", "Pending ⏳", "В ожидании ⏳")}
                         </span>
                       )}
                       {st.paymentStatus === 'overdue' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-500/20">
-                          <XCircle className="w-3 h-3" /> {isUz ? "Qarzdor ❌" : "Overdue ❌"}
+                          <XCircle className="w-3 h-3" /> {t("Qarzdor ❌", "Overdue ❌", "Задолженность ❌")}
                         </span>
                       )}
                     </td>
@@ -375,11 +381,11 @@ export const StudentsPage: React.FC = () => {
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
                   {editingStudent
-                    ? isUz ? "O'quvchi Ma'lumotlarini Tahrirlash" : "Edit Student Profile"
-                    : isUz ? "Yangi O'quvchi Ro'yxatga Olish" : "Register New Student"}
+                    ? t("O'quvchi Ma'lumotlarini Tahrirlash", "Edit Student Profile", "Редактировать Профиль Ученика")
+                    : t("Yangi O'quvchi Ro'yxatga Olish", "Register New Student", "Зарегистрировать Ученика")}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {isUz ? "Ma'lumotlar Firestore ma'lumotlar bazasiga saqlanadi" : "Saved live to Firebase Firestore collection"}
+                  {t("Ma'lumotlar Firestore ma'lumotlar bazasiga saqlanadi", "Saved live to Firebase Firestore collection", "Сохраняется напрямую в Firestore")}
                 </p>
               </div>
             </div>
@@ -387,7 +393,7 @@ export const StudentsPage: React.FC = () => {
             <form onSubmit={handleSubmitStudent} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "O'quvchi To'liq Ismi *" : "Full Student Name *"}
+                  {t("O'quvchi To'liq Ismi *", "Full Student Name *", "ФИО Ученика *")}
                 </label>
                 <input
                   type="text"
@@ -401,7 +407,7 @@ export const StudentsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "Telefon Raqami *" : "Phone Number *"}
+                  {t("Telefon Raqami *", "Phone Number *", "Номер Телефона *")}
                 </label>
                 <input
                   type="text"
@@ -416,7 +422,7 @@ export const StudentsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {isUz ? "Guruh *" : "Assigned Group *"}
+                    {t("Guruh *", "Assigned Group *", "Группа *")}
                   </label>
                   <select
                     value={groupId}
@@ -433,7 +439,7 @@ export const StudentsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {isUz ? "Oylik Kontrakt (UZS)" : "Tuition Fee (UZS)"}
+                    {t("Oylik Kontrakt (UZS)", "Tuition Fee (UZS)", "Ежемесячная Оплата (UZS)")}
                   </label>
                   <input
                     type="number"
@@ -446,16 +452,16 @@ export const StudentsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {isUz ? "Boshlang'ich To'lov Holati" : "Initial Payment Status"}
+                  {t("Boshlang'ich To'lov Holati", "Initial Payment Status", "Начальный Статус Оплаты")}
                 </label>
                 <select
                   value={paymentStatus}
                   onChange={(e) => setPaymentStatus(e.target.value as any)}
                   className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none"
                 >
-                  <option value="pending">{isUz ? "Kutilmoqda ⏳" : "Pending ⏳"}</option>
-                  <option value="paid">{isUz ? "To'langan ✅" : "Paid ✅"}</option>
-                  <option value="overdue">{isUz ? "Qarzdor ❌" : "Overdue ❌"}</option>
+                  <option value="pending">{t("Kutilmoqda ⏳", "Pending ⏳", "В ожидании ⏳")}</option>
+                  <option value="paid">{t("To'langan ✅", "Paid ✅", "Оплачено ✅")}</option>
+                  <option value="overdue">{t("Qarzdor ❌", "Overdue ❌", "Задолженность ❌")}</option>
                 </select>
               </div>
 
@@ -465,15 +471,15 @@ export const StudentsPage: React.FC = () => {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
-                  {isUz ? "Bekor Qilish" : "Cancel"}
+                  {t("Bekor Qilish", "Cancel", "Отмена")}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-md cursor-pointer"
                 >
                   {editingStudent
-                    ? isUz ? "Saqlash" : "Save Changes"
-                    : isUz ? "O'quvchini Qo'shish" : "Register Student"}
+                    ? t("Saqlash", "Save Changes", "Сохранить")
+                    : t("O'quvchini Qo'shish", "Register Student", "Зарегистрировать")}
                 </button>
               </div>
             </form>

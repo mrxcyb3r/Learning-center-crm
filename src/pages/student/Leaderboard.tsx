@@ -8,7 +8,11 @@ import { Student, MockTestScore } from '../../types';
 export const Leaderboard: React.FC = () => {
   const { language } = useLanguage();
   const { currentUser } = useAuth();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [students, setStudents] = useState<Student[]>([]);
   const [mockScores, setMockScores] = useState<MockTestScore[]>([]);
@@ -71,21 +75,23 @@ export const Leaderboard: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider mb-2">
             <Trophy className="w-3.5 h-3.5" />
-            <span>{isUz ? "Guruh Reytingi & Oylik Peshqadamlar" : "Class Leaderboard & Ranking"}</span>
+            <span>{t("Guruh Reytingi & Oylik Peshqadamlar", "Class Leaderboard & Ranking", "Рейтинг Группы и Лидеры Месяца")}</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Renessans LC Top O'quvchilari" : "Renessans LC Top Students"}
+            {t("Renessans LC Top O'quvchilari", "Renessans LC Top Students", "Luchshie Ucheniki Renessans LC")}
           </h2>
           <p className="text-xs text-slate-900/80 mt-1">
-            {isUz
-              ? "Vazifalarni vaqtida topshirish, Mock test natijalari hamda darsdagi faollik asosida hisoblanadi."
-              : "Rankings based on timely homework submissions, mock test bands, and class participation."}
+            {t(
+              "Vazifalarni vaqtida topshirish, Mock test natijalari hamda darsdagi faollik asosida hisoblanadi.",
+              "Rankings based on timely homework submissions, mock test bands, and class participation.",
+              "Рейтинг рассчитывается на основе своевременной сдачи заданий, результатов пробных тестов и активности."
+            )}
           </p>
         </div>
 
         <div className="hidden sm:block p-4 rounded-2xl bg-slate-950/10 border border-slate-950/20 text-center">
           <Flame className="w-8 h-8 text-slate-950 mx-auto mb-1 animate-bounce" />
-          <span className="text-[10px] font-bold uppercase">{isUz ? "Oylik Musobaqa" : "Monthly Challenge"}</span>
+          <span className="text-[10px] font-bold uppercase">{t("Oylik Musobaqa", "Monthly Challenge", "Ежемесячный Конкурс")}</span>
         </div>
       </div>
 
@@ -104,12 +110,14 @@ export const Leaderboard: React.FC = () => {
         <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
           <Users className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Hozircha o'quvchilar reytingi shakllanmagan" : "No student rankings available yet"}
+            {t("Hozircha o'quvchilar reytingi shakllanmagan", "No student rankings available yet", "Рейтинг учеников еще не сформирован")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            {isUz
-              ? "O'quvchilar guruhlarga biriktirilgach va mock test topshirgach, ushbu jadval avtomatik ravishda yangilanadi."
-              : "Once students enroll in class groups and take mock exams, live rankings will appear here."}
+            {t(
+              "O'quvchilar guruhlarga biriktirilgach va mock test topshirgach, ushbu jadval avtomatik ravishda yangilanadi.",
+              "Once students enroll in class groups and take mock exams, live rankings will appear here.",
+              "Как только ученики запишутся в группы и сдадут пробный тест, здесь появятся результаты."
+            )}
           </p>
         </div>
       ) : (
@@ -170,10 +178,10 @@ export const Leaderboard: React.FC = () => {
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
                     <th className="py-3 px-4">Rank</th>
-                    <th className="py-3 px-4">O'quvchi Ismi</th>
-                    <th className="py-3 px-4">Sertifikat / Daraja</th>
-                    <th className="py-3 px-4">Oylik Ballar</th>
-                    <th className="py-3 px-4 text-right">Davomat Ketma-ketligi</th>
+                    <th className="py-3 px-4">{t("O'quvchi Ismi", "Student Name", "Имя Ученика")}</th>
+                    <th className="py-3 px-4">{t("Sertifikat / Daraja", "Score / Band", "Балл / Уровень")}</th>
+                    <th className="py-3 px-4">{t("Oylik Ballar", "Monthly Points", "Баллы за Месяц")}</th>
+                    <th className="py-3 px-4 text-right">{t("Davomat Ketma-ketligi", "Attendance Streak", "Серия Посещений")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold">
@@ -203,7 +211,7 @@ export const Leaderboard: React.FC = () => {
                           <span>{item.name}</span>
                           {item.isCurrentUser && (
                             <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 text-[9px] font-black uppercase">
-                              Siz
+                              {t("Siz", "You", "Вы")}
                             </span>
                           )}
                         </td>
@@ -211,7 +219,7 @@ export const Leaderboard: React.FC = () => {
                         <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">{item.points} pts</td>
                         <td className="py-3.5 px-4 text-right text-rose-500 font-bold flex items-center justify-end gap-1">
                           <Flame className="w-3.5 h-3.5 fill-current" />
-                          <span>{item.streak} kun</span>
+                          <span>{item.streak} {t("kun", "days", "дн")}</span>
                         </td>
                       </tr>
                     );

@@ -6,7 +6,11 @@ import { ShieldAlert, Key, CheckCircle2, UserCheck, Lock, ShieldCheck, Database,
 export const SuperAdminControlView: React.FC = () => {
   const { language } = useLanguage();
   const { currentUser } = useAuth();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [adminPin, setAdminPin] = useState('secureadmin');
   const [teacherPin, setTeacherPin] = useState('secureteacher');
@@ -30,12 +34,14 @@ export const SuperAdminControlView: React.FC = () => {
             <span>SuperAdmin Master Control</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Tizim Boshqaruvi va Xavfsizlik PIN Kodlari" : "System Security & Role PIN Controls"}
+            {t("Tizim Boshqaruvi va Xavfsizlik PIN Kodlari", "System Security & Role PIN Controls", "Управление Системой и PIN Кодами")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
-            {isUz
-              ? "SuperAdmin vakolati orqali Admin va Teacher rollariga kirish PIN kalitlarini boshqaring."
-              : "Manage elevated security credentials, PIN codes, and system access levels."}
+            {t(
+              "SuperAdmin vakolati orqali Admin va Teacher rollariga kirish PIN kalitlarini boshqaring.",
+              "Manage elevated security credentials, PIN codes, and system access levels.",
+              "Управление доступами, PIN кодами и уровнями безопасности."
+            )}
           </p>
         </div>
 
@@ -48,7 +54,7 @@ export const SuperAdminControlView: React.FC = () => {
       {savedSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <span>{isUz ? "Xavfsizlik PIN kalitlari muvaffaqiyatli yangilandi!" : "Security PIN codes updated successfully!"}</span>
+          <span>{t("Xavfsizlik PIN kalitlari muvaffaqiyatli yangilandi!", "Security PIN codes updated successfully!", "PIN коды безопасности успешно обновлены!")}</span>
         </div>
       )}
 
@@ -56,7 +62,7 @@ export const SuperAdminControlView: React.FC = () => {
       <form onSubmit={handleUpdatePins} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
         <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
           <Key className="w-4 h-4 text-amber-500" />
-          <span>{isUz ? "Boshqaruv Kalitlari (Role Switch PINs)" : "Elevated Role Access PINs"}</span>
+          <span>{t("Boshqaruv Kalitlari (Role Switch PINs)", "Elevated Role Access PINs", "Ключи Доступа Ролей")}</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -100,7 +106,7 @@ export const SuperAdminControlView: React.FC = () => {
           className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition cursor-pointer flex items-center justify-center gap-2"
         >
           <ShieldAlert className="w-4 h-4" />
-          <span>{isUz ? "PIN Kalitlarini Saqlash" : "Save Master PIN Credentials"}</span>
+          <span>{t("PIN Kalitlarini Saqlash", "Save Master PIN Credentials", "Сохранить PIN Коды")}</span>
         </button>
       </form>
 

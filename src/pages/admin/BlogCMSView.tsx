@@ -4,7 +4,11 @@ import { Newspaper, Plus, Send, CheckCircle2, FileText, Image } from 'lucide-rea
 
 export const BlogCMSView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [posts, setPosts] = useState([
     {
@@ -59,12 +63,14 @@ export const BlogCMSView: React.FC = () => {
             <span>Blog & E'lonlar CMS</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Yangiliklar va Maqolalar Publisher" : "Public Blog & News CMS"}
+            {t("Yangiliklar va Maqolalar Publisher", "Public Blog & News CMS", "Блог и Публикация Новостей")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
-            {isUz
-              ? "Markaz xabarlari, o'quvchilar muvaffaqiyati va IELTS maslahatlarini e'lon qiling."
-              : "Publish center news, student achievement stories, and IELTS prep articles."}
+            {t(
+              "Markaz xabarlari, o'quvchilar muvaffaqiyati va IELTS maslahatlarini e'lon qiling.",
+              "Publish center news, student achievement stories, and IELTS prep articles.",
+              "Публикация новостей центра, успехов учеников и советов по IELTS."
+            )}
           </p>
         </div>
 
@@ -73,7 +79,7 @@ export const BlogCMSView: React.FC = () => {
           className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer flex items-center gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>{isUz ? "Yangi Maqola Yozish" : "Create Blog Post"}</span>
+          <span>{t("Yangi Maqola Yozish", "Create Blog Post", "Написать Статью")}</span>
         </button>
       </div>
 
@@ -81,13 +87,13 @@ export const BlogCMSView: React.FC = () => {
       {isCreating && (
         <form onSubmit={handlePublish} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-xl space-y-4">
           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-            {isUz ? "Yangi Maqolani Chop Etish" : "Publish New Article"}
+            {t("Yangi Maqolani Chop Etish", "Publish New Article", "Опубликовать Новую Статью")}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Maqola Sarlavhasi
+                {t("Maqola Sarlavhasi", "Article Title", "Заголовок Статьи")}
               </label>
               <input
                 type="text"
@@ -101,29 +107,29 @@ export const BlogCMSView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Kategoriya
+                {t("Kategoriya", "Category", "Категория")}
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
               >
-                <option value="IELTS Maslahatlar">IELTS Maslahatlar</option>
-                <option value="Muvaffaqiyat Tarixi">Muvaffaqiyat Tarixi</option>
-                <option value="E'lonlar">E'lonlar va Yangiliklar</option>
+                <option value="IELTS Maslahatlar">{t("IELTS Maslahatlar", "IELTS Tips", "Советы IELTS")}</option>
+                <option value="Muvaffaqiyat Tarixi">{t("Muvaffaqiyat Tarixi", "Success Stories", "Истории Успеха")}</option>
+                <option value="E'lonlar">{t("E'lonlar va Yangiliklar", "Announcements & News", "Объявления и Новости")}</option>
               </select>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Maqola Matni
+              {t("Maqola Matni", "Article Content", "Текст Статьи")}
             </label>
             <textarea
               rows={4}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Maqola matni va foydali maslahatlarni kiriting..."
+              placeholder={t("Maqola matni va foydali maslahatlarni kiriting...", "Type article content here...", "Введите текст статьи...")}
               className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -134,14 +140,14 @@ export const BlogCMSView: React.FC = () => {
               onClick={() => setIsCreating(false)}
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300"
             >
-              Bekor qilish
+              {t("Bekor qilish", "Cancel", "Отмена")}
             </button>
             <button
               type="submit"
               className="px-6 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 flex items-center gap-1.5"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Chop etish</span>
+              <span>{t("Chop etish", "Publish", "Опубликовать")}</span>
             </button>
           </div>
         </form>
@@ -153,10 +159,10 @@ export const BlogCMSView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="py-3 px-4">Sarlavha</th>
-                <th className="py-3 px-4">Kategoriya</th>
-                <th className="py-3 px-4">Muallif</th>
-                <th className="py-3 px-4 text-right">Status</th>
+                <th className="py-3 px-4">{t("Sarlavha", "Title", "Заголовок")}</th>
+                <th className="py-3 px-4">{t("Kategoriya", "Category", "Категория")}</th>
+                <th className="py-3 px-4">{t("Muallif", "Author", "Автор")}</th>
+                <th className="py-3 px-4 text-right">{t("Status", "Status", "Статус")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold">

@@ -4,7 +4,11 @@ import { Settings, Lock, MapPin, Phone, MessageCircle, Save, CheckCircle2 } from
 
 export const SettingsView: React.FC = () => {
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [centerName, setCenterName] = useState('Renessans Learning Center');
   const [address, setAddress] = useState('Toshkent / Markaziy Filial');
@@ -27,15 +31,17 @@ export const SettingsView: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30 mb-2">
             <Settings className="w-3.5 h-3.5" />
-            <span>Platform Sozlamalari</span>
+            <span>{t("Platform Sozlamalari", "Platform Settings", "Настройки Платформы")}</span>
           </div>
           <h2 className="text-2xl font-black">
-            {isUz ? "Markaz Profil va Xavfsizlik Sozlamalari" : "Center Profile & Security Settings"}
+            {t("Markaz Profil va Xavfsizlik Sozlamalari", "Center Profile & Security Settings", "Профиль Центра и Настройки Безопасности")}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg">
-            {isUz
-              ? "Markaz rekvizitlari, kontakt ma'lumotlari hamda xodimlarning kirish PIN koderini sozlang."
-              : "Manage organization contact info and system authorization PIN codes."}
+            {t(
+              "Markaz rekvizitlari, kontakt ma'lumotlari hamda xodimlarning kirish PIN koderini sozlang.",
+              "Manage organization contact info and system authorization PIN codes.",
+              "Управление контактными данными и PIN кодами доступа сотрудников."
+            )}
           </p>
         </div>
       </div>
@@ -43,20 +49,20 @@ export const SettingsView: React.FC = () => {
       {savedSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <span>{isUz ? "Sozlamalar va PIN kodlar muvaffaqiyatli yangilandi!" : "Settings updated successfully!"}</span>
+          <span>{t("Sozlamalar va PIN kodlar muvaffaqiyatli yangilandi!", "Settings updated successfully!", "Настройки и PIN коды успешно обновлены!")}</span>
         </div>
       )}
 
       {/* Settings Form */}
       <form onSubmit={handleSave} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
         <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-          {isUz ? "Markaz Ma'lumotlari" : "Center Information"}
+          {t("Markaz Ma'lumotlari", "Center Information", "Информация о Центре")}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Markaz Nomi
+              {t("Markaz Nomi", "Center Name", "Название Центра")}
             </label>
             <input
               type="text"
@@ -69,7 +75,7 @@ export const SettingsView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Manzil
+              {t("Manzil", "Address", "Адрес")}
             </label>
             <input
               type="text"
@@ -84,7 +90,7 @@ export const SettingsView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Telefon Raqam
+              {t("Telefon Raqam", "Phone Number", "Номер Телефона")}
             </label>
             <input
               type="text"
@@ -97,7 +103,7 @@ export const SettingsView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Telegram Kanal / Admin
+              {t("Telegram Kanal / Admin", "Telegram Channel / Admin", "Telegram Канал / Админ")}
             </label>
             <input
               type="text"
@@ -111,7 +117,7 @@ export const SettingsView: React.FC = () => {
 
         <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
           <Lock className="w-4 h-4 text-amber-500" />
-          <span>{isUz ? "Xavfsizlik PIN Kodlari" : "Security PIN Codes"}</span>
+          <span>{t("Xavfsizlik PIN Kodlari", "Security PIN Codes", "PIN Коды Безопасности")}</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -147,7 +153,7 @@ export const SettingsView: React.FC = () => {
           className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2"
         >
           <Save className="w-4 h-4" />
-          <span>{isUz ? "Sozlamalarni Saqlash" : "Save All Settings"}</span>
+          <span>{t("Sozlamalarni Saqlash", "Save All Settings", "Сохранить Все Настройки")}</span>
         </button>
       </form>
     </div>

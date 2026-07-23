@@ -25,7 +25,11 @@ import {
 export const TeacherAttendance: React.FC = () => {
   const { currentUser, userProfile, activeRole } = useAuth();
   const { language } = useLanguage();
-  const isUz = language === 'UZ';
+  const t = (uz: string, en: string, ru: string) => {
+    if (language === 'UZ') return uz;
+    if (language === 'RU') return ru;
+    return en;
+  };
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [allStudents, setAllStudents] = useState<Student[]>([]);
@@ -104,10 +108,16 @@ export const TeacherAttendance: React.FC = () => {
 
     try {
       await saveAttendanceRecord(selectedGroupId, selectedDate, attendanceState, teacherName);
-      showToast(isUz ? `${selectedGroupObj?.name} uchun davomat saqlandi! ✅` : `Attendance saved for ${selectedGroupObj?.name}! ✅`);
+      showToast(
+        t(
+          `${selectedGroupObj?.name} uchun davomat saqlandi! ✅`,
+          `Attendance saved for ${selectedGroupObj?.name}! ✅`,
+          `Посещаемость сохранена для ${selectedGroupObj?.name}! ✅`
+        )
+      );
     } catch (err) {
       console.error(err);
-      showToast(isUz ? "Davomatni saqlashda xatolik!" : "Failed to save attendance record.");
+      showToast(t("Davomatni saqlashda xatolik!", "Failed to save attendance record.", "Ошибка при сохранении посещаемости!"));
     } finally {
       setIsSaving(false);
     }
@@ -140,12 +150,14 @@ export const TeacherAttendance: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {isUz ? "1-Tap Davomat Boshqaruvi (Teacher Portal)" : "1-Tap Attendance Grid"}
+                {t("1-Tap Davomat Boshqaruvi (Teacher Portal)", "1-Tap Attendance Grid", "1-Клик Посещаемость (Учитель)")}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isUz
-                  ? "Guruh bo'yicha o'quvchilar qatnashishini 1-Bosish bilan belgilash va Firestore ga saqlash"
-                  : "Mark attendance with 1-tap buttons and log directly to live Firestore database"}
+                {t(
+                  "Guruh bo'yicha o'quvchilar qatnashishini 1-Bosish bilan belgilash va Firestore ga saqlash",
+                  "Mark attendance with 1-tap buttons and log directly to live Firestore database",
+                  "Отмечайте посещаемость в 1 клик и сохраняйте в Firestore"
+                )}
               </p>
             </div>
           </div>
@@ -159,12 +171,12 @@ export const TeacherAttendance: React.FC = () => {
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{isUz ? "Saqlanmoqda..." : "Saving..."}</span>
+              <span>{t("Saqlanmoqda...", "Saving...", "Сохранение...")}</span>
             </>
           ) : (
             <>
               <Save className="w-4 h-4" />
-              <span>{isUz ? "Davomatni Saqlash" : "Save Attendance"}</span>
+              <span>{t("Davomatni Saqlash", "Save Attendance", "Сохранить Посещаемость")}</span>
             </>
           )}
         </button>
@@ -176,7 +188,7 @@ export const TeacherAttendance: React.FC = () => {
           {/* Select Group */}
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
-              {isUz ? "Guruhni Tanlang:" : "Select Study Group:"}
+              {t("Guruhni Tanlang:", "Select Study Group:", "Выберите Группу:")}
             </label>
             <div className="relative">
               <select
@@ -196,7 +208,7 @@ export const TeacherAttendance: React.FC = () => {
           {/* Select Date */}
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
-              {isUz ? "Dars Sanasi:" : "Lesson Date:"}
+              {t("Dars Sanasi:", "Lesson Date:", "Дата Занятия:")}
             </label>
             <input
               type="date"
@@ -211,17 +223,17 @@ export const TeacherAttendance: React.FC = () => {
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold w-full md:w-auto justify-around">
           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-4 h-4" />
-            <span>{presentCount} {isUz ? "Kelgan" : "Present"}</span>
+            <span>{presentCount} {t("Kelgan", "Present", "Пришли")}</span>
           </div>
           <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
           <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
             <XCircle className="w-4 h-4" />
-            <span>{absentCount} {isUz ? "Kelmagan" : "Absent"}</span>
+            <span>{absentCount} {t("Kelmagan", "Absent", "Отсутствуют")}</span>
           </div>
           <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
           <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
             <Clock className="w-4 h-4" />
-            <span>{lateCount} {isUz ? "Kechikkan" : "Late"}</span>
+            <span>{lateCount} {t("Kechikkan", "Late", "Опоздали")}</span>
           </div>
         </div>
       </div>
@@ -240,19 +252,19 @@ export const TeacherAttendance: React.FC = () => {
           </div>
 
           <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs border border-blue-500/20">
-            {activeGroupStudents.length} {isUz ? "O'quvchi" : "Students Enrolled"}
+            {activeGroupStudents.length} {t("O'quvchi", "Students Enrolled", "Учеников")}
           </span>
         </div>
 
         {isLoading ? (
           <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-            <span className="text-xs font-bold">{isUz ? "O'quvchilar ro'yxati yuklanmoqda..." : "Loading student roster..."}</span>
+            <span className="text-xs font-bold">{t("O'quvchilar ro'yxati yuklanmoqda...", "Loading student roster...", "Загрузка списка учеников...")}</span>
           </div>
         ) : activeGroupStudents.length === 0 ? (
           <div className="py-12 text-center text-slate-400">
-            <p className="text-sm font-bold">{isUz ? "Ushbu guruhga hali o'quvchi biriktirilmagan" : "No students assigned to this group yet"}</p>
-            <p className="text-xs mt-1">{isUz ? "Admin panelidan O'quvchilar bo'limiga o'tib guruhga tayinlang." : "Go to Students tab to enroll students into this group."}</p>
+            <p className="text-sm font-bold">{t("Ushbu guruhga hali o'quvchi biriktirilmagan", "No students assigned to this group yet", "В эту группу пока не добавлены ученики")}</p>
+            <p className="text-xs mt-1">{t("Admin panelidan O'quvchilar bo'limiga o'tib guruhga tayinlang.", "Go to Students tab to enroll students into this group.", "Перейдите в раздел Ученики для зачисления.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -292,7 +304,7 @@ export const TeacherAttendance: React.FC = () => {
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{isUz ? "Keldi ✅" : "Present ✅"}</span>
+                      <span>{t("Keldi ✅", "Present ✅", "Пришел ✅")}</span>
                     </button>
 
                     {/* Absent Button */}
@@ -306,7 +318,7 @@ export const TeacherAttendance: React.FC = () => {
                       }`}
                     >
                       <XCircle className="w-3.5 h-3.5" />
-                      <span>{isUz ? "Sababsiz ❌" : "Absent ❌"}</span>
+                      <span>{t("Sababsiz ❌", "Absent ❌", "Отсутствует ❌")}</span>
                     </button>
 
                     {/* Late Button */}
@@ -320,7 +332,7 @@ export const TeacherAttendance: React.FC = () => {
                       }`}
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      <span>{isUz ? "Kechikdi ⏳" : "Late ⏳"}</span>
+                      <span>{t("Kechikdi ⏳", "Late ⏳", "Опоздал ⏳")}</span>
                     </button>
                   </div>
                 </div>

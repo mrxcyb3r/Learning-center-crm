@@ -309,8 +309,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err: any) {
       console.error('Google Sign-In Error:', err);
-      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
-        throw new Error('This preview domain is not added to Firebase Authorized Domains in Firebase Console. Please log in with Email & Password.');
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain') || err.message?.includes('Authorized Domains')) {
+        throw new Error('This preview domain is not listed under Authorized Domains in your Firebase Console. Please log in using Email & Password or 1-Click Fast Demo Login.');
       }
       throw err;
     } finally {

@@ -159,8 +159,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       onClose();
     } catch (err: any) {
       console.error('Google Auth Error:', err);
-      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
-        setErrorMsg('Google OAuth Note: Domain is not authorized in Firebase Console for popup auth. Use Email / Password or Fast Demo Login below.');
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain') || err?.message?.includes('Authorized Domains')) {
+        setErrorMsg('Domain Error: Google Sign-In requires adding preview domain to Firebase Console. Please log in using Email & Password or use 1-Click Demo Login below!');
       } else {
         setErrorMsg(err?.message || 'Google Sign-In failed.');
       }
@@ -526,6 +526,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </svg>
               <span>{t.auth.googleBtn}</span>
             </button>
+
+            {/* Quick Demo Login Section */}
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  ⚡ Fast Demo Access
+                </span>
+                <span className="text-[10px] text-amber-500 font-bold">1-Click Login</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await loginAsDemoUser('student');
+                    onClose();
+                  }}
+                  className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Student</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await loginAsDemoUser('teacher');
+                    onClose();
+                  }}
+                  className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Teacher</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await loginAsDemoUser('admin');
+                    onClose();
+                  }}
+                  className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Shield className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Admin</span>
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>

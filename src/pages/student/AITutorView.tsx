@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { FormattedAIResponse } from '../../components/AI/FormattedAIResponse';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -989,9 +989,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                       {isUser ? (
                         <div className="whitespace-pre-wrap">{msg.text}</div>
                       ) : (
-                        <div className="prose prose-invert max-w-none text-xs space-y-2 [&>p]:mb-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:font-bold [&>h2]:font-bold [&>h3]:font-bold [&>strong]:font-bold [&>strong]:text-amber-400 [&>code]:bg-slate-950 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:font-mono">
-                          <ReactMarkdown>{msg.text}</ReactMarkdown>
-                        </div>
+                        <FormattedAIResponse content={msg.text} />
                       )}
 
                       {/* Google Search Grounding Citations Accordion */}

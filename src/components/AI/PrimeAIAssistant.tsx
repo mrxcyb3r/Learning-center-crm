@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { FormattedAIResponse } from './FormattedAIResponse';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -577,9 +577,7 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
                     {isUser ? (
                       <div className="whitespace-pre-wrap">{msg.text}</div>
                     ) : (
-                      <div className="prose prose-invert max-w-none text-xs space-y-1.5 [&>p]:mb-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h1]:font-bold [&>h2]:font-bold [&>h3]:font-bold [&>strong]:font-bold [&>strong]:text-amber-600 dark:[&>strong]:text-amber-400">
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
-                      </div>
+                      <FormattedAIResponse content={msg.text} />
                     )}
                   </div>
 

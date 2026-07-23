@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Award, CheckCircle2, Save, Send, Sparkles, User } from 'lucide-react';
+import { Award, CheckCircle2, Save, Sparkles } from 'lucide-react';
+import { saveMockScore } from '../../services/firestore';
 
 export const GradebookView: React.FC = () => {
   const { language } = useLanguage();
   const isUz = language === 'UZ';
 
-  const [studentName, setStudentName] = useState('Shahrzod Rahimov');
+  const [studentName, setStudentName] = useState('Jasur Rahimov');
   const [testType, setTestType] = useState<'IELTS' | 'CEFR'>('IELTS');
   const [listening, setListening] = useState('7.5');
   const [reading, setReading] = useState('7.0');
@@ -14,6 +15,7 @@ export const GradebookView: React.FC = () => {
   const [speaking, setSpeaking] = useState('7.5');
   const [feedback, setFeedback] = useState('Writing Task 2 inshoda tahlil yetarlicha chuqur, lekin paragraflar oralig\'idagi bog\'lovchi so\'zlarga ko\'proq e\'tibor qaratish kerak.');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const calculatedOverall = (
     (parseFloat(listening || '0') +
@@ -23,10 +25,28 @@ export const GradebookView: React.FC = () => {
     4
   ).toFixed(1);
 
-  const handleSaveGrade = (e: React.FormEvent) => {
+  const handleSaveGrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setIsSaving(true);
+    try {
+      await saveMockScore({
+        studentId: Date.now().toString(),
+        studentName,
+        date: new Date().toISOString().split('T')[0],
+        overall: parseFloat(calculatedOverall),
+        listening: parseFloat(listening || '0'),
+        reading: parseFloat(reading || '0'),
+        writing: parseFloat(writing || '0'),
+        speaking: parseFloat(speaking || '0'),
+        teacherFeedback: feedback
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error saving score to Firestore:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -52,7 +72,7 @@ export const GradebookView: React.FC = () => {
       {savedSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <span>{isUz ? "Natija va feedback muvaffaqiyatli saqlandi va o'quvchi profiliga biriktirildi!" : "Score and feedback saved successfully!"}</span>
+          <span>{isUz ? "Natija va feedback Firestore ga saqlandi va o'quvchi profiliga biriktirildi!" : "Score and feedback saved strictly to Firestore!"}</span>
         </div>
       )}
 
@@ -159,10 +179,11 @@ export const GradebookView: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2"
+          disabled={isSaving}
+          className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          <span>{isUz ? "Natijani Saqlash va E'lon Qilish" : "Save Grade & Certificate"}</span>
+          <span>{isSaving ? "Saqlanmoqda..." : (isUz ? "Natijani Saqlash va Firestore ga Yozish" : "Save Grade to Firestore")}</span>
         </button>
       </form>
     </div>

@@ -1,61 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { FileText, Upload, CheckCircle2, Clock, AlertCircle, Send, Paperclip } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, Clock, AlertCircle, Trash2, Paperclip, Plus } from 'lucide-react';
+import { subscribeAssignments, addAssignment, deleteAssignment, subscribeGroups } from '../../services/firestore';
+import { Assignment, Group } from '../../types';
 
 export const HomeworkView: React.FC = () => {
   const { language } = useLanguage();
   const isUz = language === 'UZ';
 
-  const [assignments, setAssignments] = useState([
-    {
-      id: 'hw1',
-      title: 'Writing Task 2: Impact of AI on Future Jobs',
-      group: 'IELTS Intensive #12',
-      dueDate: '2026-07-25',
-      submittedCount: 12,
-      totalStudents: 14,
-      file: 'AI_Impact_Reading_Task.pdf'
-    },
-    {
-      id: 'hw2',
-      title: 'Listening Section 3 Audio Drill & Vocabulary',
-      group: 'General English B2',
-      dueDate: '2026-07-24',
-      submittedCount: 9,
-      totalStudents: 10,
-      file: 'Section3_Audio_Drill.mp3'
-    }
-  ]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [title, setTitle] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('IELTS Intensive #12');
   const [dueDate, setDueDate] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleCreateAssignment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title) return;
+  useEffect(() => {
+    let unsubAssignments: () => void = () => {};
+    let unsubGroups: () => void = () => {};
 
-    const newHw = {
-      id: Date.now().toString(),
-      title,
-      group: selectedGroup,
-      dueDate: dueDate || '2026-07-30',
-      submittedCount: 0,
-      totalStudents: 14,
-      file: file ? file.name : 'Assignment_Guide.pdf'
+    setIsLoading(true);
+
+    try {
+      unsubAssignments = subscribeAssignments((data) => {
+        setAssignments(data);
+        setIsLoading(false);
+      });
+
+      unsubGroups = subscribeGroups((gList) => {
+        setGroups(gList);
+        if (gList.length > 0) {
+          setSelectedGroup(gList[0].name);
+        }
+      });
+    } catch (err) {
+      console.error('Error connecting to Firestore homework:', err);
+      setIsLoading(false);
+    }
+
+    return () => {
+      unsubAssignments();
+      unsubGroups();
     };
+  }, []);
 
-    setAssignments([newHw, ...assignments]);
-    setTitle('');
-    setDueDate('');
-    setFile(null);
-    setIsCreating(false);
+  const handleCreateAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    try {
+      await addAssignment({
+        title: title.trim(),
+        group: selectedGroup,
+        dueDate: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+        submittedCount: 0,
+        totalStudents: 14,
+        file: file ? file.name : 'Assignment_Guide.pdf'
+      });
+
+      setTitle('');
+      setDueDate('');
+      setFile(null);
+      setIsCreating(false);
+      setToastMessage(isUz ? "Topshiriq e'lon qilindi!" : "Assignment posted successfully!");
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      console.error('Error adding assignment:', err);
+    }
+  };
+
+  const handleDeleteAssignment = async (id: string) => {
+    try {
+      await deleteAssignment(id);
+      setToastMessage(isUz ? "Topshiriq o'chirildi" : "Assignment deleted");
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      console.error('Error deleting assignment:', err);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 px-5 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-black text-xs shadow-xl animate-bounce">
+          {toastMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex items-center justify-between">
         <div>
@@ -78,7 +114,7 @@ export const HomeworkView: React.FC = () => {
         </button>
       </div>
 
-      {/* New Assignment Modal / Form */}
+      {/* New Assignment Form Modal */}
       {isCreating && (
         <form onSubmit={handleCreateAssignment} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-xl space-y-4">
           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
@@ -88,7 +124,7 @@ export const HomeworkView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Topshiriq Sarlavhasi
+                {isUz ? "Topshiriq Sarlavhasi" : "Assignment Title"}
               </label>
               <input
                 type="text"
@@ -102,16 +138,26 @@ export const HomeworkView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Guruhni Tanlang
+                {isUz ? "Guruhni Tanlang" : "Select Group"}
               </label>
               <select
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white"
               >
-                <option value="IELTS Intensive #12">IELTS Intensive #12</option>
-                <option value="General English B2">General English B2</option>
-                <option value="CEFR C1 Master">CEFR C1 Master</option>
+                {groups.length > 0 ? (
+                  groups.map((g) => (
+                    <option key={g.id} value={g.name}>
+                      {g.name}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="IELTS Intensive #12">IELTS Intensive #12</option>
+                    <option value="General English B2">General English B2</option>
+                    <option value="CEFR C1 Master">CEFR C1 Master</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -119,7 +165,7 @@ export const HomeworkView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Topshirish Muddat (Deadline)
+                {isUz ? "Topshirish Muddat (Deadline)" : "Due Date"}
               </label>
               <input
                 type="date"
@@ -131,7 +177,7 @@ export const HomeworkView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Fayl Biriktirish (PDF/MP3)
+                {isUz ? "Fayl Biriktirish (PDF/MP3)" : "Attach File (PDF/MP3)"}
               </label>
               <input
                 type="file"
@@ -145,63 +191,95 @@ export const HomeworkView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreating(false)}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
             >
-              Bekor qilish
+              {isUz ? "Bekor qilish" : "Cancel"}
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20"
+              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 cursor-pointer"
             >
-              E'lon qilish
+              {isUz ? "E'lon qilish" : "Publish Assignment"}
             </button>
           </div>
         </form>
       )}
 
       {/* Active Assignments List */}
-      <div className="space-y-4">
-        {assignments.map((hw) => (
-          <div
-            key={hw.id}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-28 rounded-3xl animate-pulse bg-slate-200 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-800" />
+          ))}
+        </div>
+      ) : assignments.length === 0 ? (
+        /* Production Empty State */
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
+          <FileText className="w-12 h-12 text-amber-500 mx-auto opacity-80" />
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+            {isUz ? "Ushbu guruh uchun vazifalar topilmadi" : "No assignments created yet for this class group"}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            {isUz
+              ? "Yangi topshiriq e'lon qilish uchun yuqoridagi 'Yangi Vazifa Yuklash' tugmasini bosing."
+              : "Click 'Create Assignment' above to upload audio drills or PDF exercises."}
+          </p>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-md"
           >
-            <div className="space-y-1">
-              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
-                {hw.group}
-              </span>
-              <h4 className="text-base font-extrabold text-slate-900 dark:text-white mt-1">
-                {hw.title}
-              </h4>
-              <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-1">
-                <span className="flex items-center gap-1">
-                  <Paperclip className="w-3.5 h-3.5 text-amber-500" />
-                  {hw.file}
+            <Plus className="w-4 h-4" />
+            <span>{isUz ? "Vazifa Yuklash" : "Post Assignment"}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {assignments.map((hw) => (
+            <div
+              key={hw.id}
+              className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+            >
+              <div className="space-y-1">
+                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                  {hw.group}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-rose-500" />
-                  Deadline: {hw.dueDate}
-                </span>
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-white mt-1">
+                  {hw.title}
+                </h4>
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-1">
+                  <span className="flex items-center gap-1">
+                    <Paperclip className="w-3.5 h-3.5 text-amber-500" />
+                    {hw.file || 'Assignment_Guide.pdf'}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-rose-500" />
+                    Deadline: {hw.dueDate}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                    {hw.submittedCount || 0} / {hw.totalStudents || 14} Topshirildi
+                  </span>
+                  <span className="text-[10px] text-emerald-500 font-bold">
+                    {Math.round(((hw.submittedCount || 0) / (hw.totalStudents || 14)) * 100)}% Bajarildi
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => handleDeleteAssignment(hw.id)}
+                  className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 transition cursor-pointer"
+                  title="Delete Assignment"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="text-right">
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  {hw.submittedCount} / {hw.totalStudents} Topshirildi
-                </span>
-                <span className="text-[10px] text-emerald-500 font-bold">
-                  {Math.round((hw.submittedCount / hw.totalStudents) * 100)}% Bajarildi
-                </span>
-              </div>
-
-              <button className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs text-slate-800 dark:text-slate-200 transition cursor-pointer">
-                Tekshirish
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

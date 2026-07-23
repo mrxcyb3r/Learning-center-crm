@@ -118,3 +118,42 @@ export interface AttendanceRecord {
   recordedBy: string;
 }
 
+export interface Assignment {
+  id: string;
+  title: string;
+  group: string;
+  dueDate: string;
+  submittedCount: number;
+  totalStudents: number;
+  file?: string;
+  createdAt?: string;
+  description?: string;
+}
+
+export interface FeedPost {
+  id: string;
+  author: string;
+  role: string;
+  avatar: string;
+  date: string;
+  title: string;
+  content: string;
+  attachment?: string;
+  attachmentSize?: string;
+  likes: number;
+  comments?: { id?: string; author: string; text: string; date?: string }[];
+}
+
+export interface MockTestScore {
+  id: string;
+  studentId: string;
+  studentName: string;
+  date: string;
+  overall: number;
+  listening: number;
+  reading: number;
+  writing: number;
+  speaking: number;
+  teacherFeedback?: string;
+}
+

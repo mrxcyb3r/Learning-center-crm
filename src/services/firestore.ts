@@ -10,11 +10,19 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
-  serverTimestamp
+  orderBy
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { Group, Student, Payment, AttendanceRecord } from '../types';
+import {
+  Group,
+  Student,
+  Payment,
+  AttendanceRecord,
+  Assignment,
+  FeedPost,
+  MockTestScore,
+  LeadSubmission
+} from '../types';
 
 enum OperationType {
   CREATE = 'create',
@@ -45,7 +53,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  console.error('Firestore Error:', JSON.stringify(errInfo));
   throw new Error(errInfo.error);
 }
 
@@ -54,154 +62,10 @@ const GROUPS_COL = 'groups';
 const STUDENTS_COL = 'students';
 const PAYMENTS_COL = 'payments';
 const ATTENDANCE_COL = 'attendance';
-
-// Default Mock Seed Data
-const DEFAULT_GROUPS: Omit<Group, 'id'>[] = [
-  {
-    name: 'IELTS Intensive #12',
-    courseType: 'IELTS 7.5+ Rocket',
-    teacherId: 'teacher-1',
-    teacherName: 'Mr. Javohirbek',
-    scheduleTime: 'Mon/Wed/Fri 14:00 - 16:00',
-    room: 'Room 3 (Renessans Main)',
-    activeStudentsCount: 14
-  },
-  {
-    name: 'General English B2',
-    courseType: 'CEFR B2 FastTrack',
-    teacherId: 'teacher-2',
-    teacherName: 'Ms. Shahlo',
-    scheduleTime: 'Tue/Thu/Sat 16:30 - 18:00',
-    room: 'Room 1',
-    activeStudentsCount: 12
-  },
-  {
-    name: 'CEFR FastTrack #04',
-    courseType: 'State Exam CEFR',
-    teacherId: 'teacher-1',
-    teacherName: 'Mr. Javohirbek',
-    scheduleTime: 'Mon/Wed/Fri 18:30 - 20:00',
-    room: 'Room 5',
-    activeStudentsCount: 10
-  }
-];
-
-const DEFAULT_STUDENTS: Omit<Student, 'id'>[] = [
-  {
-    fullName: 'Jasur Rahimov',
-    phone: '+998 90 123 45 67',
-    groupId: '',
-    groupName: 'IELTS Intensive #12',
-    tuitionFee: 650000,
-    paymentStatus: 'paid',
-    lastPaymentDate: new Date().toISOString().split('T')[0]
-  },
-  {
-    fullName: 'Malika Sharipova',
-    phone: '+998 91 234 56 78',
-    groupId: '',
-    groupName: 'General English B2',
-    tuitionFee: 550000,
-    paymentStatus: 'paid',
-    lastPaymentDate: new Date().toISOString().split('T')[0]
-  },
-  {
-    fullName: 'Sardor Bekmuratov',
-    phone: '+998 93 345 67 89',
-    groupId: '',
-    groupName: 'IELTS Intensive #12',
-    tuitionFee: 650000,
-    paymentStatus: 'pending',
-    lastPaymentDate: '2025-06-15'
-  },
-  {
-    fullName: 'Aziza Umarova',
-    phone: '+998 94 456 78 90',
-    groupId: '',
-    groupName: 'CEFR FastTrack #04',
-    tuitionFee: 500000,
-    paymentStatus: 'paid',
-    lastPaymentDate: '2025-07-10'
-  },
-  {
-    fullName: 'Boburmirzo Alimov',
-    phone: '+998 99 567 89 01',
-    groupId: '',
-    groupName: 'General English B2',
-    tuitionFee: 550000,
-    paymentStatus: 'overdue',
-    lastPaymentDate: '2025-05-20'
-  }
-];
-
-const DEFAULT_PAYMENTS: Omit<Payment, 'id'>[] = [
-  {
-    studentId: '',
-    studentName: 'Jasur Rahimov',
-    amount: 650000,
-    paymentMethod: 'click',
-    date: new Date().toISOString().split('T')[0],
-    recordedBy: 'Admin'
-  },
-  {
-    studentId: '',
-    studentName: 'Malika Sharipova',
-    amount: 550000,
-    paymentMethod: 'card',
-    date: new Date().toISOString().split('T')[0],
-    recordedBy: 'Admin'
-  },
-  {
-    studentId: '',
-    studentName: 'Aziza Umarova',
-    amount: 500000,
-    paymentMethod: 'cash',
-    date: '2025-07-10',
-    recordedBy: 'SuperAdmin'
-  }
-];
-
-/* =========================================================================
-   SEED FIRESTORE INITIAL DATA IF EMPTY
-   ========================================================================= */
-export async function seedFirestoreIfEmpty() {
-  try {
-    const groupSnap = await getDocs(collection(db, GROUPS_COL));
-    if (groupSnap.empty) {
-      console.log('Seeding initial groups to Firestore...');
-      const createdGroups: Group[] = [];
-      for (const g of DEFAULT_GROUPS) {
-        const docRef = await addDoc(collection(db, GROUPS_COL), g);
-        createdGroups.push({ id: docRef.id, ...g });
-      }
-
-      // Seed students
-      const studentSnap = await getDocs(collection(db, STUDENTS_COL));
-      if (studentSnap.empty && createdGroups.length > 0) {
-        console.log('Seeding initial students...');
-        for (let i = 0; i < DEFAULT_STUDENTS.length; i++) {
-          const s = DEFAULT_STUDENTS[i];
-          const groupMatch = createdGroups.find((grp) => grp.name === s.groupName) || createdGroups[0];
-          await addDoc(collection(db, STUDENTS_COL), {
-            ...s,
-            groupId: groupMatch.id
-          });
-        }
-      }
-
-      // Seed payments
-      const paymentSnap = await getDocs(collection(db, PAYMENTS_COL));
-      if (paymentSnap.empty) {
-        console.log('Seeding initial payments...');
-        for (const p of DEFAULT_PAYMENTS) {
-          await addDoc(collection(db, PAYMENTS_COL), p);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Firestore seeding skipped or failed offline:', err);
-  }
-}
+const ASSIGNMENTS_COL = 'assignments';
+const FEED_POSTS_COL = 'feed_posts';
+const MOCK_SCORES_COL = 'mock_scores';
+const LEADS_COL = 'leads';
 
 /* =========================================================================
    GROUPS SERVICE
@@ -313,7 +177,6 @@ export function subscribePayments(callback: (payments: Payment[]) => void) {
           id: doc.id,
           ...(doc.data() as Omit<Payment, 'id'>)
         }));
-        // Sort descending by date
         items.sort((a, b) => (a.date < b.date ? 1 : -1));
         callback(items);
       },
@@ -337,7 +200,6 @@ export async function recordPaymentAndSetPaid(
   try {
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // 1. Create Payment record in Firestore
     const paymentData: Omit<Payment, 'id'> = {
       studentId,
       studentName,
@@ -348,7 +210,6 @@ export async function recordPaymentAndSetPaid(
     };
     const paymentRef = await addDoc(collection(db, PAYMENTS_COL), paymentData);
 
-    // 2. Automatically update student's status to 'paid' and lastPaymentDate
     if (studentId) {
       await updateDoc(doc(db, STUDENTS_COL, studentId), {
         paymentStatus: 'paid',
@@ -399,3 +260,222 @@ export async function getAttendanceRecord(groupId: string, date: string): Promis
     return null;
   }
 }
+
+/* =========================================================================
+   ASSIGNMENTS SERVICE
+   ========================================================================= */
+export function subscribeAssignments(callback: (assignments: Assignment[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, ASSIGNMENTS_COL),
+      (snapshot) => {
+        const items: Assignment[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Assignment, 'id'>)
+        }));
+        callback(items);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, ASSIGNMENTS_COL);
+      }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, ASSIGNMENTS_COL);
+    return () => {};
+  }
+}
+
+export async function addAssignment(data: Omit<Assignment, 'id'>) {
+  try {
+    const docRef = await addDoc(collection(db, ASSIGNMENTS_COL), {
+      ...data,
+      createdAt: new Date().toISOString()
+    });
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, ASSIGNMENTS_COL);
+  }
+}
+
+export async function deleteAssignment(id: string) {
+  try {
+    await deleteDoc(doc(db, ASSIGNMENTS_COL, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${ASSIGNMENTS_COL}/${id}`);
+  }
+}
+
+/* =========================================================================
+   FEED POSTS SERVICE
+   ========================================================================= */
+export function subscribeFeedPosts(callback: (posts: FeedPost[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, FEED_POSTS_COL),
+      (snapshot) => {
+        const items: FeedPost[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<FeedPost, 'id'>)
+        }));
+        callback(items);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, FEED_POSTS_COL);
+      }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, FEED_POSTS_COL);
+    return () => {};
+  }
+}
+
+export async function addFeedPost(data: Omit<FeedPost, 'id'>) {
+  try {
+    const docRef = await addDoc(collection(db, FEED_POSTS_COL), data);
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, FEED_POSTS_COL);
+  }
+}
+
+export async function addPostComment(postId: string, commentText: string, authorName: string) {
+  try {
+    const postRef = doc(db, FEED_POSTS_COL, postId);
+    const snap = await getDoc(postRef);
+    if (snap.exists()) {
+      const currentComments = snap.data().comments || [];
+      const newComment = {
+        id: Date.now().toString(),
+        author: authorName,
+        text: commentText,
+        date: new Date().toISOString()
+      };
+      await updateDoc(postRef, {
+        comments: [...currentComments, newComment]
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${FEED_POSTS_COL}/${postId}`);
+  }
+}
+
+/* =========================================================================
+   MOCK EXAM SCORES & GRADEBOOK SERVICE
+   ========================================================================= */
+export function subscribeMockScores(callback: (scores: MockTestScore[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, MOCK_SCORES_COL),
+      (snapshot) => {
+        const items: MockTestScore[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<MockTestScore, 'id'>)
+        }));
+        callback(items);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, MOCK_SCORES_COL);
+      }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, MOCK_SCORES_COL);
+    return () => {};
+  }
+}
+
+export async function saveMockScore(data: Omit<MockTestScore, 'id'>) {
+  try {
+    const docRef = await addDoc(collection(db, MOCK_SCORES_COL), data);
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, MOCK_SCORES_COL);
+  }
+}
+
+/* =========================================================================
+   LEADS SERVICE
+   ========================================================================= */
+export async function addLeadSubmission(lead: Omit<LeadSubmission, 'id'>) {
+  try {
+    const docRef = await addDoc(collection(db, LEADS_COL), lead);
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, LEADS_COL);
+  }
+}
+
+export function subscribeLeads(callback: (leads: LeadSubmission[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, LEADS_COL),
+      (snapshot) => {
+        const items: LeadSubmission[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<LeadSubmission, 'id'>)
+        }));
+        callback(items);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, LEADS_COL);
+      }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, LEADS_COL);
+    return () => {};
+  }
+}
+
+/* =========================================================================
+   INITIAL DB SEEDER (IF EMPTY)
+   ========================================================================= */
+export async function seedFirestoreIfEmpty() {
+  try {
+    const groupSnap = await getDocs(collection(db, GROUPS_COL));
+    if (groupSnap.empty) {
+      const g1Id = await addGroup({
+        name: 'IELTS Intensive #12',
+        courseType: 'IELTS 7.5+ Rocket',
+        teacherId: 'teacher-1',
+        teacherName: 'Mr. Javohirbek',
+        scheduleTime: 'Mon/Wed/Fri 14:00 - 16:00',
+        room: 'Room 3 (Renessans Main)',
+        activeStudentsCount: 14
+      });
+
+      const g2Id = await addGroup({
+        name: 'General English B2',
+        courseType: 'CEFR B2 FastTrack',
+        teacherId: 'teacher-2',
+        teacherName: 'Ms. Shahlo',
+        scheduleTime: 'Tue/Thu/Sat 16:30 - 18:00',
+        room: 'Room 1',
+        activeStudentsCount: 12
+      });
+
+      if (g1Id) {
+        await addStudent({
+          fullName: 'Jasur Rahimov',
+          phone: '+998 90 123 45 67',
+          groupId: g1Id,
+          groupName: 'IELTS Intensive #12',
+          tuitionFee: 650000,
+          paymentStatus: 'paid',
+          lastPaymentDate: new Date().toISOString().split('T')[0]
+        });
+
+        await addStudent({
+          fullName: 'Malika Sharipova',
+          phone: '+998 91 234 56 78',
+          groupId: g1Id,
+          groupName: 'IELTS Intensive #12',
+          tuitionFee: 650000,
+          paymentStatus: 'pending',
+          lastPaymentDate: '2026-06-15'
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('seedFirestoreIfEmpty notice:', err);
+  }
+}
+

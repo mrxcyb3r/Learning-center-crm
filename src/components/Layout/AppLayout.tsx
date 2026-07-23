@@ -358,7 +358,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </header>
 
         {/* MAIN CONTENT AREA */}
-        <main className={`flex-1 overflow-y-auto ${activeTab === 'ai_tutor' ? 'p-0' : 'p-4 sm:p-6 md:p-8'}`}>
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {/* Student Role Pages */}
           {activeTab === 'feed' && <GroupFeed />}
           {activeTab === 'progress' && <ProgressGraphs />}

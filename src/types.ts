@@ -10,7 +10,7 @@ export interface UserProfile {
   createdAt?: string;
 }
 
-export type Language = 'UZ' | 'EN';
+export type Language = 'UZ' | 'EN' | 'RU';
 
 export interface Teacher {
   id: string;

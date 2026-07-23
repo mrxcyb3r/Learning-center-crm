@@ -343,6 +343,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               >
                 EN
               </button>
+              <button
+                onClick={() => setLanguage('RU')}
+                className={`px-2 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                  language === 'RU'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                RU
+              </button>
             </div>
 
             {/* Dark Mode Toggle */}

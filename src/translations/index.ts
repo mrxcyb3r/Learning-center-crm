@@ -322,6 +322,167 @@ export const translations = {
       rights: 'All rights reserved.',
       credit: 'Powered by CenterFlow Platform.'
     }
+  },
+  RU: {
+    nav: {
+      brand: 'Renessans LC',
+      tagline: 'Учебный Центр',
+      courses: 'Курсы',
+      teachers: 'Преподаватели',
+      results: 'Результаты',
+      faq: 'FAQ',
+      contact: 'Контакты',
+      login: 'Войти',
+      logout: 'Выйти',
+      devMode: 'Dev Роль',
+      dashboard: 'Панель управления'
+    },
+    hero: {
+      badge: 'Ташкент / Главный Филиал',
+      headlineMain: 'ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ',
+      headlineSub: 'Постройте свое будущее с качественным образованием и опытными преподавателями.',
+      description: 'Создайте фундамент своего будущего с Renessans Learning Center благодаря современным стандартам обучения и результативной системе.',
+      btnCourses: 'Посмотреть курсы',
+      btnContact: 'Связаться с нами',
+      stats: {
+        students: "1,500+",
+        studentsLabel: "Учеников",
+        ielts: "280+",
+        ieltsLabel: "Результатов IELTS 7.0+",
+        exp: "95%",
+        expLabel: "Поступление в ВУЗы",
+        satisfaction: "4+ Года",
+        satisfactionLabel: "Успешного опыта"
+      }
+    },
+    features: {
+      title: "Почему Именно Renessans?",
+      subtitle: "Современный образовательный центр для вашего будущего",
+      items: [
+        {
+          id: '1',
+          title: 'Индивидуальный Подход',
+          desc: 'Персональные учебные планы для каждого студента.'
+        },
+        {
+          id: '2',
+          title: 'Опытные Менторы (IELTS 8.0+ & CEFR C1)',
+          desc: 'Квалифицированные специалисты с международными сертификатами.'
+        },
+        {
+          id: '3',
+          title: 'IT и Современные Условия',
+          desc: 'Современные компьютерные классы и высокоскоростной интернет.'
+        },
+        {
+          id: '4',
+          title: 'Регулярные Mock Тесты',
+          desc: 'Симуляция реальных экзаменов с подробным анализом.'
+        }
+      ]
+    },
+    teachers: {
+      title: "Наши Преподаватели",
+      subtitle: "Познакомьтесь с нашими опытными преподавателями международного уровня",
+      badge: "Инструктор IELTS",
+      expLabel: "Опыт",
+      viewBio: "Подробнее"
+    },
+    results: {
+      title: "Результаты IELTS и CEFR",
+      subtitle: "Высокие показатели наших студентов на международных экзаменах",
+      all: "Все",
+      ielts75: "IELTS 7.5+",
+      ielts80: "IELTS 8.0+",
+      cefr: "CEFR C1",
+      overall: "Общий балл",
+      listening: "Listening",
+      reading: "Reading",
+      writing: "Writing",
+      speaking: "Speaking",
+      certificateView: "Посмотреть сертификат",
+      closeModal: "Закрыть",
+      footerNote: "И более 2000+ других успешных результатов..."
+    },
+    courses: {
+      title: "Наши Курсы",
+      subtitle: "От базового уровня до продвинутой подготовки к IELTS и SAT",
+      duration: "Длительность",
+      level: "Уровень",
+      price: "Ежемесячная оплата",
+      enrollBtn: "Записаться на курс",
+      popularTag: "Самый популярный"
+    },
+    contact: {
+      title: "Связаться с нами",
+      subtitle: "Есть вопросы или хотите записаться на урок? Заполните форму!",
+      nameLabel: "Ваше полное имя",
+      namePlaceholder: "Например: Джасур Рахимов",
+      phoneLabel: "Номер телефона",
+      phonePlaceholder: "+998 90 123 45 67",
+      courseLabel: "Выбранный курс",
+      courseSelectPlaceholder: "Выберите курс...",
+      messageLabel: "Сообщение или вопрос (необязательно)",
+      messagePlaceholder: "Укажите ваши пожелания...",
+      submitBtn: "Отправить заявку",
+      successMsg: "Спасибо! Ваша заявка принята. Мы скоро свяжемся с вами.",
+      addressTitle: "Адрес и контакты",
+      addressText: "Ташкент / Главный Филиал",
+      phoneText: "+998 90 123 45 67",
+      telegramText: "Telegram: @renessans_lc_official",
+      workHours: "Режим работы: Пн-Сб 08:00 - 20:00"
+    },
+    faq: {
+      title: "Часто задаваемые вопросы",
+      subtitle: "Ответы на самые распространенные вопросы",
+      searchPlaceholder: "Поиск вопроса..."
+    },
+    auth: {
+      loginTab: 'Вход',
+      registerTab: 'Регистрация',
+      welcomeLogin: 'Добро пожаловать! Войдите в аккаунт',
+      welcomeRegister: 'Создать новый аккаунт',
+      emailLabel: 'Электронная почта',
+      passwordLabel: 'Пароль / PIN код (мин. 4 символа)',
+      nameLabel: 'Имя и Фамилия',
+      roleLabel: 'Тип аккаунта (Роль)',
+      studentRole: 'Студент',
+      teacherRole: 'Преподаватель',
+      adminRole: 'Админ / СуперАдмин',
+      pinLabelStudent: 'Секретный PIN Студента',
+      pinLabelTeacher: 'Секретный PIN Преподавателя',
+      pinLabelAdmin: 'Секретный PIN Админа',
+      pinPlaceholderStudent: "Введите PIN 'securestudent'",
+      pinPlaceholderTeacher: "Введите PIN 'secureteacher'",
+      pinPlaceholderAdmin: "Введите PIN 'secureadmin'",
+      studentPinNotice: "ПИН-код безопасности студента: 'securestudent'",
+      googleBtn: 'Войти через Google',
+      orText: 'Или через email',
+      noAccount: 'Еще нет аккаунта?',
+      hasAccount: 'Уже есть аккаунт?',
+      loginBtn: 'Войти',
+      registerBtn: 'Зарегистрироваться',
+      superAdminDetected: 'Обнаружен СуперАдмин!',
+      mockRolesHeader: 'Dev Переключатель ролей',
+      currentRole: 'Текущая роль',
+      invalidPinStudent: "Неверный PIN! Для входа студента: 'securestudent'",
+      invalidPinTeacher: "Неверный PIN! Для входа преподавателя: 'secureteacher'",
+      invalidPinAdmin: "Неверный PIN! Для входа админа: 'secureadmin'",
+      noPinNeeded: 'Студенты могут войти по 4-значному PIN',
+      selectLanguage: 'Язык',
+      unverifiedTitle: "Email не подтвержден",
+      unverifiedNotice: "Ссылка для подтверждения отправлена на вашу почту. Пожалуйста, проверьте почту.",
+      resendVerificationBtn: "Отправить письмо повторно",
+      checkVerificationBtn: "Я подтвердил, проверить",
+      verificationSentSuccess: "Письмо со ссылкой отправлено заново! Проверьте почту.",
+      emailVerifiedSuccess: "Email успешно подтвержден! Добро пожаловать."
+    },
+    footer: {
+      tagline: 'Renessans Learning Center - Инновационное образование и высокие результаты.',
+      quickLinks: 'Быстрые ссылки',
+      rights: 'Все права защищены.',
+      credit: 'Работает на платформе CenterFlow.'
+    }
   }
 };
 

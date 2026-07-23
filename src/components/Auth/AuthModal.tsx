@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   X,
@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Globe,
   GraduationCap,
   Shield,
   UserCheck,
@@ -28,7 +27,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage(); // Single Source of Truth for Language
   const {
     loginWithEmail,
     registerWithEmail,
@@ -48,7 +47,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -66,12 +65,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
     } else if (selectedRole === 'teacher') {
       if (securityPin.trim() !== 'secureteacher') {
-        setErrorMsg(t.auth.invalidPinTeacher);
+        setErrorMsg(t.auth.invalidPinTeacher || "Xato PIN! O'qituvchi sifatida kirish uchun PIN: 'secureteacher'");
         return false;
       }
     } else if (selectedRole === 'admin' || selectedRole === 'superadmin') {
       if (securityPin.trim() !== 'secureadmin') {
-        setErrorMsg(t.auth.invalidPinAdmin);
+        setErrorMsg(t.auth.invalidPinAdmin || "Xato PIN! Admin sifatida kirish uchun PIN: 'secureadmin'");
         return false;
       }
     }
@@ -103,7 +102,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         setSuccessMsg(t.auth.emailVerifiedSuccess || 'Email successfully verified! Welcome.');
         setTimeout(() => {
           onClose();
-        }, 1200);
+        }, 1000);
       } else {
         setErrorMsg('Email is still not verified. Please click the link in your inbox.');
       }
@@ -120,7 +119,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    // Enforce PIN security rule BEFORE calling auth
     if (!validatePin()) {
       return;
     }
@@ -132,10 +130,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         await registerWithEmail(email, password, displayName, selectedRole);
         setSuccessMsg(t.auth.verificationSentSuccess || 'Verification email sent! Please check your inbox.');
       }
-      
-      // If user is verified or logged in cleanly, close modal
+
       if (isEmailVerified || activeTab === 'register') {
-        // Stay open if unverified to show warning screen
+        // Unverified users stay on verification screen
       } else {
         onClose();
       }
@@ -153,7 +150,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    // Enforce PIN security rule BEFORE calling Google OAuth popup
     if (!validatePin()) {
       return;
     }
@@ -171,60 +167,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleDemoSignIn = async (role: UserRole) => {
-    setErrorMsg('');
-    setSuccessMsg('');
-    try {
-      await loginAsDemoUser(role);
-      onClose();
-    } catch (err: any) {
-      console.error('Demo Auth Error:', err);
-      setErrorMsg('Demo sign in failed.');
-    }
-  };
-
-  // Render Unverified Email Screen if user is logged in via Email/Pass but unverified
   const isGoogleUser = currentUser?.providerData?.some((p) => p.providerId === 'google.com');
   const showUnverifiedScreen = currentUser && !isEmailVerified && !isGoogleUser;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 transition-colors duration-200">
-        
-        {/* Top Header Controls: Language Switcher & Close Button */}
+      <div
+        data-aos="zoom-in"
+        className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 transition-colors duration-200"
+      >
+        {/* Header Bar (Modal Title & Close Button) */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
-            <Globe className="w-3.5 h-3.5 text-amber-500 ml-1.5" />
-            <button
-              onClick={() => setLanguage('UZ')}
-              className={`px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
-                language === 'UZ'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              UZ 🇺🇿
-            </button>
-            <button
-              onClick={() => setLanguage('EN')}
-              className={`px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
-                language === 'EN'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              EN 🇬🇧
-            </button>
-            <button
-              onClick={() => setLanguage('RU')}
-              className={`px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
-                language === 'RU'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              RU 🇷🇺
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 font-black">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Renessans LC CenterFlow
+            </span>
           </div>
 
           <button
@@ -246,7 +206,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               {t.auth.unverifiedTitle || 'Email Verification Required'}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-sm mx-auto mb-4">
-              {t.auth.unverifiedNotice || 'A verification link was sent to your email address. Please verify your email before accessing the dashboard.'}
+              {t.auth.unverifiedNotice ||
+                'A verification link was sent to your email address. Please verify your email before accessing the dashboard.'}
             </p>
             <div className="p-3 bg-slate-100 dark:bg-slate-800/60 rounded-xl font-mono text-xs text-amber-600 dark:text-amber-400 font-bold mb-5 break-all">
               {unverifiedUserEmail || currentUser?.email}
@@ -290,16 +251,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <>
-            {/* Modal Branding Header */}
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 mb-3 border border-amber-500/20">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
+            {/* Modal Subtitle Header */}
+            <div className="text-center mb-5">
               <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Renessans LC CenterFlow
+                {activeTab === 'login' ? t.auth.welcomeLogin : t.auth.welcomeRegister}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {activeTab === 'login' ? t.auth.welcomeLogin : t.auth.welcomeRegister}
+                CenterFlow Educational Management System
               </p>
             </div>
 
@@ -574,4 +532,3 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     </div>
   );
 };
-

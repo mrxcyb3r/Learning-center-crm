@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -7,6 +9,7 @@ import { LandingPage } from './pages/LandingPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AppLayout } from './components/Layout/AppLayout';
 import { Dashboard } from './components/Dashboard/Dashboard';
+import { ParticleBackground } from './components/UI/ParticleBackground';
 import { ShieldCheck, Loader2, MailWarning, RefreshCw, Send, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
 
 function MainApp() {
@@ -25,15 +28,25 @@ function MainApp() {
   const [resendLoading, setResendLoading] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
+  // Initialize AOS scroll animations
+  useEffect(() => {
+    AOS.init({
+      duration: 600,
+      once: true,
+      easing: 'ease-out-cubic'
+    });
+  }, []);
+
   // 1. Loading State
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 transition-colors">
-        <div className="flex flex-col items-center gap-4">
+      <div className="relative min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 transition-colors">
+        <ParticleBackground />
+        <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center text-slate-950 font-black shadow-xl shadow-amber-500/20 animate-bounce">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wide">
+          <div className="flex items-center gap-2 text-slate-300 font-bold text-xs tracking-wide">
             <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
             <span>CenterFlow Yuklanmoqda...</span>
           </div>
@@ -45,18 +58,21 @@ function MainApp() {
   // 2. Unauthenticated View (Public Landing Page)
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-amber-500 selection:text-slate-950">
-        {/* Public Navigation Bar */}
-        <Navbar onOpenAuth={() => setIsAuthModalOpen(true)} />
+      <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-amber-500 selection:text-slate-950">
+        <ParticleBackground />
+        <div className="relative z-10">
+          {/* Public Navigation Bar */}
+          <Navbar onOpenAuth={() => setIsAuthModalOpen(true)} />
 
-        {/* Public Landing Page */}
-        <LandingPage onOpenAuth={() => setIsAuthModalOpen(true)} />
+          {/* Public Landing Page */}
+          <LandingPage onOpenAuth={() => setIsAuthModalOpen(true)} />
 
-        {/* Auth Modal (Login & Register) */}
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
+          {/* Auth Modal (Login & Register) */}
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+          />
+        </div>
       </div>
     );
   }
@@ -112,8 +128,9 @@ function MainApp() {
     };
 
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans selection:bg-amber-500 selection:text-slate-950">
-        <div className="w-full max-w-md bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl p-8 text-center animate-fadeIn">
+      <div className="relative min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans selection:bg-amber-500 selection:text-slate-950">
+        <ParticleBackground />
+        <div data-aos="zoom-in" className="relative z-10 w-full max-w-md bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl p-8 text-center animate-fadeIn">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 mb-4 border border-amber-500/20 shadow-lg shadow-amber-500/10">
             <MailWarning className="w-8 h-8" />
           </div>
@@ -181,9 +198,14 @@ function MainApp() {
 
   // 4. Authenticated & Verified View (Internal Dashboard)
   return (
-    <AppLayout>
-      <Dashboard />
-    </AppLayout>
+    <div className="relative min-h-screen bg-slate-100 dark:bg-slate-950">
+      <ParticleBackground />
+      <div className="relative z-10">
+        <AppLayout>
+          <Dashboard />
+        </AppLayout>
+      </div>
+    </div>
   );
 }
 

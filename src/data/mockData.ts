@@ -1,4 +1,4 @@
-import { Teacher, Course, StudentResult, FAQItem } from '../types';
+import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore } from '../types';
 
 export const mockTeachers: Teacher[] = [
   {
@@ -269,5 +269,171 @@ export const mockFAQs: FAQItem[] = [
     questionEn: 'How is the class schedule determined?',
     answerUz: "O'quvchilarning qulayligiga qarab ertalabki, tushdan keyingi va kechki guruhlar mavjud.",
     answerEn: 'Flexible morning, afternoon, and evening slots are available based on student convenience.'
+  }
+];
+
+export const DEFAULT_MOCK_GROUPS: Group[] = [
+  {
+    id: 'g-1',
+    name: 'IELTS Intensive #12',
+    courseType: 'IELTS 7.5+ Rocket',
+    teacherId: 'teacher-1',
+    teacherName: 'Mr. Javohirbek',
+    scheduleTime: 'Mon/Wed/Fri 14:00 - 16:00',
+    room: 'Room 3 (Renessans Main)',
+    activeStudentsCount: 14
+  },
+  {
+    id: 'g-2',
+    name: 'General English B2',
+    courseType: 'CEFR B2 FastTrack',
+    teacherId: 'teacher-2',
+    teacherName: 'Ms. Shahlo',
+    scheduleTime: 'Tue/Thu/Sat 16:30 - 18:00',
+    room: 'Room 1',
+    activeStudentsCount: 12
+  },
+  {
+    id: 'g-3',
+    name: 'IELTS Foundation #5',
+    courseType: 'IELTS 6.5 Target',
+    teacherId: 'teacher-1',
+    teacherName: 'Mr. Javohirbek',
+    scheduleTime: 'Mon/Wed/Fri 09:00 - 11:00',
+    room: 'Room 2',
+    activeStudentsCount: 10
+  }
+];
+
+export const DEFAULT_MOCK_STUDENTS: Student[] = [
+  {
+    id: 'st-1',
+    fullName: 'Jasur Rahimov',
+    phone: '+998 90 123 45 67',
+    groupId: 'g-1',
+    groupName: 'IELTS Intensive #12',
+    tuitionFee: 650000,
+    paymentStatus: 'paid',
+    lastPaymentDate: '2026-07-01'
+  },
+  {
+    id: 'st-2',
+    fullName: 'Malika Sharipova',
+    phone: '+998 91 234 56 78',
+    groupId: 'g-1',
+    groupName: 'IELTS Intensive #12',
+    tuitionFee: 650000,
+    paymentStatus: 'pending',
+    lastPaymentDate: '2026-06-15'
+  },
+  {
+    id: 'st-3',
+    fullName: 'Sardor Ergashev',
+    phone: '+998 93 345 67 89',
+    groupId: 'g-1',
+    groupName: 'IELTS Intensive #12',
+    tuitionFee: 650000,
+    paymentStatus: 'paid',
+    lastPaymentDate: '2026-07-05'
+  },
+  {
+    id: 'st-4',
+    fullName: 'Madina Umarova',
+    phone: '+998 94 456 78 90',
+    groupId: 'g-2',
+    groupName: 'General English B2',
+    tuitionFee: 550000,
+    paymentStatus: 'paid',
+    lastPaymentDate: '2026-07-02'
+  },
+  {
+    id: 'st-5',
+    fullName: 'Shahrzod Nabiyev',
+    phone: '+998 97 567 89 01',
+    groupId: 'g-2',
+    groupName: 'General English B2',
+    tuitionFee: 550000,
+    paymentStatus: 'pending',
+    lastPaymentDate: '2026-06-20'
+  }
+];
+
+export const DEFAULT_MOCK_ASSIGNMENTS: Assignment[] = [
+  {
+    id: 'hw-1',
+    title: 'IELTS Academic Writing Task 2 - Education & AI Technology',
+    group: 'IELTS Intensive #12',
+    groupName: 'IELTS Intensive #12',
+    dueDate: '2026-07-28',
+    instructions: 'Write a 250-word essay evaluating whether artificial intelligence will replace traditional classroom teachers. Include specific examples.',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=english-listening-practice.mp3',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    submittedCount: 12,
+    submissionsCount: 12,
+    totalStudents: 14
+  },
+  {
+    id: 'hw-2',
+    title: 'IELTS Listening Part 3 Drill (Multiple Choice & Matching)',
+    group: 'IELTS Foundation #5',
+    groupName: 'IELTS Foundation #5',
+    dueDate: '2026-07-26',
+    instructions: 'Listen to the audio recording attached below and answer questions 21-30 in your IELTS Workbook Page 45.',
+    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=english-listening-practice.mp3',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    submittedCount: 8,
+    submissionsCount: 8,
+    totalStudents: 10
+  },
+  {
+    id: 'hw-3',
+    title: 'CEFR B2 Reading Passage - Renewable Energy Innovations',
+    group: 'General English B2',
+    groupName: 'General English B2',
+    dueDate: '2026-07-30',
+    instructions: 'Read the PDF passage and complete the true/false/not given exercises.',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    submittedCount: 10,
+    submissionsCount: 10,
+    totalStudents: 12
+  }
+];
+
+export const DEFAULT_MOCK_SCORES: MockTestScore[] = [
+  {
+    id: 'sc-1',
+    studentId: 'st-1',
+    studentName: 'Jasur Rahimov',
+    date: '2026-07-20',
+    overall: 7.5,
+    listening: 8.0,
+    reading: 7.5,
+    writing: 7.0,
+    speaking: 7.5,
+    teacherFeedback: 'Excellent coherence in Writing Task 2! Work on Section 4 listening distractors.'
+  },
+  {
+    id: 'sc-2',
+    studentId: 'st-2',
+    studentName: 'Malika Sharipova',
+    date: '2026-07-18',
+    overall: 8.0,
+    listening: 8.5,
+    reading: 8.5,
+    writing: 7.0,
+    speaking: 8.0,
+    teacherFeedback: 'Outstanding Reading performance. Expand lexical resource in Speaking Part 3.'
+  },
+  {
+    id: 'sc-3',
+    studentId: 'st-3',
+    studentName: 'Sardor Ergashev',
+    date: '2026-07-15',
+    overall: 7.0,
+    listening: 7.5,
+    reading: 7.0,
+    writing: 6.5,
+    speaking: 7.0,
+    teacherFeedback: 'Solid progress in Listening. Focus on paragraph topic sentences in essay writing.'
   }
 ];

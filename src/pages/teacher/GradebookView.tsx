@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { Award, CheckCircle2, Save, Sparkles, User, History, Loader2, BookOpen } from 'lucide-react';
 import { saveMockScore, subscribeMockScores, subscribeStudents } from '../../services/firestore';
+import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_SCORES } from '../../data/mockData';
 import { roundToIELTSBand } from '../../services/gemini';
 import { MockTestScore, Student } from '../../types';
 
@@ -32,17 +33,18 @@ export const GradebookView: React.FC = () => {
     let isMounted = true;
     const unsubStudents = subscribeStudents((stList) => {
       if (!isMounted) return;
-      setStudents(stList);
-      if (stList.length > 0 && !studentName) {
-        setStudentName(stList[0].fullName);
-        setSelectedStudentId(stList[0].id);
+      const effectiveStudents = stList.length > 0 ? stList : DEFAULT_MOCK_STUDENTS;
+      setStudents(effectiveStudents);
+      if (effectiveStudents.length > 0 && !studentName) {
+        setStudentName(effectiveStudents[0].fullName);
+        setSelectedStudentId(effectiveStudents[0].id);
       }
       setIsLoading(false);
     });
 
     const unsubScores = subscribeMockScores((scoresList) => {
       if (!isMounted) return;
-      setMockScores(scoresList);
+      setMockScores(scoresList.length > 0 ? scoresList : DEFAULT_MOCK_SCORES);
       setIsLoading(false);
     });
 

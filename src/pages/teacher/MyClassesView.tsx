@@ -5,6 +5,7 @@ import {
   subscribeStudents,
   seedFirestoreIfEmpty
 } from '../../services/firestore';
+import { DEFAULT_MOCK_GROUPS, DEFAULT_MOCK_STUDENTS } from '../../data/mockData';
 import { Group, Student } from '../../types';
 import {
   BookOpen,
@@ -42,13 +43,13 @@ export const MyClassesView: React.FC<{ onNavigateToAttendance?: (groupId: string
 
     const unsubGroups = subscribeGroups((gList) => {
       if (!isMounted) return;
-      setGroups(gList);
+      setGroups(gList.length > 0 ? gList : DEFAULT_MOCK_GROUPS);
       setIsLoading(false);
     });
 
     const unsubStudents = subscribeStudents((sList) => {
       if (!isMounted) return;
-      setStudents(sList);
+      setStudents(sList.length > 0 ? sList : DEFAULT_MOCK_STUDENTS);
       setIsLoading(false);
     });
 

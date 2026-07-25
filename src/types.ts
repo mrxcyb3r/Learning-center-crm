@@ -123,12 +123,17 @@ export interface Assignment {
   id: string;
   title: string;
   group: string;
+  groupName?: string;
   dueDate: string;
   submittedCount: number;
+  submissionsCount?: number;
   totalStudents: number;
   file?: string;
+  audioUrl?: string;
+  pdfUrl?: string;
   createdAt?: string;
   description?: string;
+  instructions?: string;
 }
 
 export interface FeedPost {

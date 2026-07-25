@@ -8,6 +8,7 @@ import {
   getAttendanceRecord,
   seedFirestoreIfEmpty
 } from '../services/firestore';
+import { DEFAULT_MOCK_GROUPS, DEFAULT_MOCK_STUDENTS } from '../data/mockData';
 import { Group, Student } from '../types';
 import {
   Calendar,
@@ -52,16 +53,17 @@ export const TeacherAttendance: React.FC<{ initialGroupId?: string }> = ({ initi
 
     const unsubGroups = subscribeGroups((groupList) => {
       if (!isMounted) return;
-      setGroups(groupList);
-      if (groupList.length > 0 && !selectedGroupId) {
-        setSelectedGroupId(initialGroupId && groupList.some(g => g.id === initialGroupId) ? initialGroupId : groupList[0].id);
+      const effectiveGroups = groupList.length > 0 ? groupList : DEFAULT_MOCK_GROUPS;
+      setGroups(effectiveGroups);
+      if (effectiveGroups.length > 0 && !selectedGroupId) {
+        setSelectedGroupId(initialGroupId && effectiveGroups.some(g => g.id === initialGroupId) ? initialGroupId : effectiveGroups[0].id);
       }
       setIsLoading(false);
     });
 
     const unsubStudents = subscribeStudents((studentList) => {
       if (!isMounted) return;
-      setAllStudents(studentList);
+      setAllStudents(studentList.length > 0 ? studentList : DEFAULT_MOCK_STUDENTS);
       setIsLoading(false);
     });
 

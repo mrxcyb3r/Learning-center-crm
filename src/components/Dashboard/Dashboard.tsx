@@ -132,9 +132,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           students={students}
           groups={groups}
           payments={payments}
+          onNavigate={onNavigate}
         />
       ) : activeRole === 'teacher' ? (
-        <TeacherDashboardView displayName={displayName} showToast={showToast} groups={groups} students={students} />
+        <TeacherDashboardView
+          displayName={displayName}
+          showToast={showToast}
+          groups={groups}
+          students={students}
+          onNavigate={onNavigate}
+        />
       ) : (
         <StudentDashboardView displayName={displayName} showToast={showToast} onNavigate={onNavigate} />
       )}
@@ -153,7 +160,8 @@ const AdminDashboardView: React.FC<{
   students: Student[];
   groups: Group[];
   payments: Payment[];
-}> = ({ showToast, activeRole, students, groups, payments }) => {
+  onNavigate?: (tab: string) => void;
+}> = ({ showToast, activeRole, students, groups, payments, onNavigate }) => {
   const { language } = useLanguage();
   const t = (uz: string, en: string, ru: string) => {
     if (language === 'UZ') return uz;
@@ -168,30 +176,38 @@ const AdminDashboardView: React.FC<{
     <div className="space-y-6">
       {/* Metric Cards for Revenue, Students, Debtors, Groups */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t("Oylik Jami Tushum", "Total Monthly Revenue", "Ежемесячный Доход")}
-          value={`${totalRev.toLocaleString()} UZS`}
-          change={t("Real-time Firestore", "Live Firestore Sync", "Синхронизация Firestore")}
-          icon={<DollarSign className="w-5 h-5 text-emerald-500" />}
-        />
-        <StatCard
-          title={t("Faol O'quvchilar", "Active Enrolled Students", "Активные Ученики")}
-          value={t(`${students.length} O'quvchi`, `${students.length} Students`, `${students.length} Учеников`)}
-          change={t("Jonli ro'yxat", "Live Roster", "Текущий список")}
-          icon={<GraduationCap className="w-5 h-5 text-amber-500" />}
-        />
-        <StatCard
-          title={t("Qarzdor O'quvchilar", "Debtor Accounts", "Задолженности")}
-          value={t(`${debtorCount} Qarzdor`, `${debtorCount} Debtors`, `${debtorCount} Должников`)}
-          change={t("Aktiv monitoring", "Active monitoring", "Активный мониторинг")}
-          icon={<AlertCircle className="w-5 h-5 text-rose-500" />}
-        />
-        <StatCard
-          title={t("Faol O'quv Guruhlari", "Active Study Groups", "Учебные Группы")}
-          value={t(`${groups.length} Guruh`, `${groups.length} Groups`, `${groups.length} Групп`)}
-          change="IELTS & General English"
-          icon={<BookOpen className="w-5 h-5 text-purple-500" />}
-        />
+        <div onClick={() => onNavigate?.('payments')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Oylik Jami Tushum", "Total Monthly Revenue", "Ежемесячный Доход")}
+            value={`${totalRev.toLocaleString()} UZS`}
+            change={t("Real-time Firestore", "Live Firestore Sync", "Синхронизация Firestore")}
+            icon={<DollarSign className="w-5 h-5 text-emerald-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('students')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Faol O'quvchilar", "Active Enrolled Students", "Активные Ученики")}
+            value={t(`${students.length} O'quvchi`, `${students.length} Students`, `${students.length} Учеников`)}
+            change={t("Jonli ro'yxat", "Live Roster", "Текущий список")}
+            icon={<GraduationCap className="w-5 h-5 text-amber-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('payments')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Qarzdor O'quvchilar", "Debtor Accounts", "Задолженности")}
+            value={t(`${debtorCount} Qarzdor`, `${debtorCount} Debtors`, `${debtorCount} Должников`)}
+            change={t("Aktiv monitoring", "Active monitoring", "Активный мониторинг")}
+            icon={<AlertCircle className="w-5 h-5 text-rose-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('classes')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Faol O'quv Guruhlari", "Active Study Groups", "Учебные Группы")}
+            value={t(`${groups.length} Guruh`, `${groups.length} Groups`, `${groups.length} Групп`)}
+            change="IELTS & General English"
+            icon={<BookOpen className="w-5 h-5 text-purple-500" />}
+          />
+        </div>
       </div>
 
 
@@ -213,23 +229,35 @@ const AdminDashboardView: React.FC<{
           <ActionButton
             icon={<CreditCard className="w-4 h-4 text-emerald-500" />}
             label={t("To'lov Kiritish", "Log Tuition Payment", "Внести Оплату")}
-            onClick={() => showToast(t("To'lov kiritish modali...", "Opening Log Payment Modal...", "Открытие окна оплаты..."))}
+            onClick={() => {
+              showToast(t("To'lovlar sahifasiga o'tilmoqda...", "Navigating to Payments...", "Переход к оплате..."));
+              onNavigate?.('payments');
+            }}
           />
           <ActionButton
             icon={<FileText className="w-4 h-4 text-blue-500" />}
             label={t("Vazifa Biriktirish", "Assign Homework", "Назначить Задание")}
-            onClick={() => showToast(t("Vazifa yaratish rejimi...", "Opening Homework Creator...", "Открытие конструктора заданий..."))}
+            onClick={() => {
+              showToast(t("Vazifalar sahifasiga o'tilmoqda...", "Navigating to Homework...", "Переход к заданиям..."));
+              onNavigate?.('homework');
+            }}
           />
           <ActionButton
             icon={<Newspaper className="w-4 h-4 text-amber-500" />}
             label={t("Blog Maqola", "Publish Blog Post", "Опубликовать Блог")}
-            onClick={() => showToast(t("Blog CMS muharriri...", "Opening Blog CMS Editor...", "Открытие редактора блогов..."))}
+            onClick={() => {
+              showToast(t("Blog CMS sahifasiga o'tilmoqda...", "Navigating to Blog CMS...", "Переход к блогу..."));
+              onNavigate?.('blog');
+            }}
           />
           {(activeRole === 'superadmin' || activeRole === 'admin') && (
             <ActionButton
               icon={<Key className="w-4 h-4 text-purple-500" />}
-              label={t("Xavfsizlik PIN", "Generate Security PIN", "PIN Безопасности")}
-              onClick={() => showToast(t("PIN yaratildi: 'secureadmin' / 'secureteacher'", "Security PIN generated!", "Сгенерирован PIN безопасности!"))}
+              label={t("Xavfsizlik PIN", "Security PIN Settings", "PIN Безопасности")}
+              onClick={() => {
+                showToast(t("Sozlamalar sahifasiga o'tilmoqda...", "Navigating to Settings...", "Переход к настройкам..."));
+                onNavigate?.('settings');
+              }}
             />
           )}
         </div>
@@ -339,7 +367,8 @@ const TeacherDashboardView: React.FC<{
   showToast: (msg: string) => void;
   groups: Group[];
   students: Student[];
-}> = ({ showToast, groups, students }) => {
+  onNavigate?: (tab: string) => void;
+}> = ({ showToast, groups, students, onNavigate }) => {
   const { language } = useLanguage();
   const t = (uz: string, en: string, ru: string) => {
     if (language === 'UZ') return uz;
@@ -351,30 +380,38 @@ const TeacherDashboardView: React.FC<{
     <div className="space-y-6">
       {/* Metric Cards for Today's Schedule, Unmarked Attendance, Pending Homework, Avg Attendance */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t("Mening Guruhlarim", "My Assigned Groups", "Мои Группы")}
-          value={t(`${groups.length} ta Guruh`, `${groups.length} Groups`, `${groups.length} Групп`)}
-          change="IELTS & General English"
-          icon={<Calendar className="w-5 h-5 text-blue-500" />}
-        />
-        <StatCard
-          title={t("Jami O'quvchilar", "Enrolled Students", "Всего Учеников")}
-          value={t(`${students.length} ta O'quvchi`, `${students.length} Students`, `${students.length} Учеников`)}
-          change={t("Barcha guruhlar", "All rosters", "Все списки")}
-          icon={<Clock className="w-5 h-5 text-amber-500" />}
-        />
-        <StatCard
-          title={t("Tekshiriladigan Vazifa", "Homework Pending Review", "Задания на Проверку")}
-          value={t("12 ta Insho", "12 Writing Essays", "12 Эссе")}
-          change="IELTS Writing Task 2"
-          icon={<FileText className="w-5 h-5 text-rose-500" />}
-        />
-        <StatCard
-          title={t("O'rtacha Davomat Ko'rsatkichi", "Avg Attendance Rate", "Ср. Посещаемость")}
-          value="96.4%"
-          change={t("A'lo ko'rsatkich", "High engagement", "Высокая активность")}
-          icon={<Award className="w-5 h-5 text-emerald-500" />}
-        />
+        <div onClick={() => onNavigate?.('classes')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Mening Guruhlarim", "My Assigned Groups", "Мои Группы")}
+            value={t(`${groups.length} ta Guruh`, `${groups.length} Groups`, `${groups.length} Групп`)}
+            change="IELTS & General English"
+            icon={<Calendar className="w-5 h-5 text-blue-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('classes')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Jami O'quvchilar", "Enrolled Students", "Всего Учеников")}
+            value={t(`${students.length} ta O'quvchi`, `${students.length} Students`, `${students.length} Учеников`)}
+            change={t("Barcha guruhlar", "All rosters", "Все списки")}
+            icon={<Clock className="w-5 h-5 text-amber-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('homework')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("Tekshiriladigan Vazifa", "Homework Pending Review", "Задания на Проверку")}
+            value={t("12 ta Insho", "12 Writing Essays", "12 Эссе")}
+            change="IELTS Writing Task 2"
+            icon={<FileText className="w-5 h-5 text-rose-500" />}
+          />
+        </div>
+        <div onClick={() => onNavigate?.('attendance')} className="cursor-pointer transition-transform hover:scale-[1.01]">
+          <StatCard
+            title={t("O'rtacha Davomat Ko'rsatkichi", "Avg Attendance Rate", "Ср. Посещаемость")}
+            value="96.4%"
+            change={t("A'lo ko'rsatkich", "High engagement", "Высокая активность")}
+            icon={<Award className="w-5 h-5 text-emerald-500" />}
+          />
+        </div>
       </div>
 
 
@@ -396,22 +433,34 @@ const TeacherDashboardView: React.FC<{
           <ActionButton
             icon={<Calendar className="w-4 h-4 text-blue-500" />}
             label={t("1-Tap Davomat", "1-Tap Attendance Grid", "Посещаемость в 1 клик")}
-            onClick={() => showToast(t("Davomat modali ochilmoqda...", "Opening Attendance Grid...", "Открытие посещаемости..."))}
+            onClick={() => {
+              showToast(t("Davomat sahifasiga o'tilmoqda...", "Navigating to Attendance...", "Переход к посещаемости..."));
+              onNavigate?.('attendance');
+            }}
           />
           <ActionButton
             icon={<FileText className="w-4 h-4 text-purple-500" />}
             label={t("Audio/Vazifa Yuklash", "Upload Audio & Homework", "Загрузка Аудио/Заданий")}
-            onClick={() => showToast(t("Media fayl biriktirish...", "Opening Audio Upload Modal...", "Загрузка медиа..."))}
+            onClick={() => {
+              showToast(t("Vazifalar sahifasiga o'tilmoqda...", "Navigating to Homework...", "Переход к заданиям..."));
+              onNavigate?.('homework');
+            }}
           />
           <ActionButton
             icon={<Award className="w-4 h-4 text-emerald-500" />}
             label={t("Insho Bahlash", "Grade IELTS Writing", "Проверка Эссе")}
-            onClick={() => showToast(t("Bahlash va ball qo'yish...", "Opening Essay Gradebook...", "Открытие журнала эссе..."))}
+            onClick={() => {
+              showToast(t("Bahlash daftarchasiga o'tilmoqda...", "Navigating to Gradebook...", "Переход к журналу..."));
+              onNavigate?.('gradebook');
+            }}
           />
           <ActionButton
             icon={<Send className="w-4 h-4 text-amber-500" />}
-            label={t("Guruhga Elon", "Send Class Announcement", "Объявление Группе")}
-            onClick={() => showToast(t("Guruh xabari yuborilmoqda...", "Sending announcement...", "Отправка объявления..."))}
+            label={t("Guruhlarim", "My Classes", "Мои Группы")}
+            onClick={() => {
+              showToast(t("Guruhlar ro'yxatiga o'tilmoqda...", "Navigating to My Classes...", "Переход к группам..."));
+              onNavigate?.('classes');
+            }}
           />
         </div>
       </div>
@@ -472,7 +521,10 @@ const TeacherDashboardView: React.FC<{
                   </td>
                   <td className="py-3.5 px-2">
                     <button
-                      onClick={() => showToast(t(`${row.name} uchun davomat rejimi...`, `Opening attendance for ${row.name}`, `Открытие посещаемости для ${row.name}`))}
+                      onClick={() => {
+                        showToast(t(`${row.name} uchun davomat rejimi...`, `Opening attendance for ${row.name}`, `Открытие посещаемости для ${row.name}`));
+                        onNavigate?.('attendance');
+                      }}
                       className="px-3 py-1 bg-blue-500 text-white rounded-xl text-[11px] font-bold hover:bg-blue-600 transition cursor-pointer"
                     >
                       {t("Belgilash", "Mark Attendance", "Отметить")}
@@ -504,7 +556,10 @@ const TeacherDashboardView: React.FC<{
         </div>
 
         <button
-          onClick={() => showToast(t("Insholarni bahlash rejimi...", "Opening Essay Grading...", "Проверка эссе..."))}
+          onClick={() => {
+            showToast(t("Insholarni bahlash rejimi...", "Opening Essay Grading...", "Проверка эссе..."));
+            onNavigate?.('gradebook');
+          }}
           className="px-4 py-2 bg-blue-500 text-white font-bold text-xs rounded-2xl shadow-lg hover:bg-blue-600 transition cursor-pointer shrink-0"
         >
           {t("Bahlashni Boshlash", "Grade Essays", "Начать Проверку")}

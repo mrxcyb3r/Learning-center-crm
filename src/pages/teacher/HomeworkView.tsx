@@ -26,16 +26,19 @@ export const HomeworkView: React.FC = () => {
   useEffect(() => {
     let unsubAssignments: () => void = () => {};
     let unsubGroups: () => void = () => {};
+    let isMounted = true;
 
     setIsLoading(true);
 
     try {
       unsubAssignments = subscribeAssignments((data) => {
+        if (!isMounted) return;
         setAssignments(data);
         setIsLoading(false);
       });
 
       unsubGroups = subscribeGroups((gList) => {
+        if (!isMounted) return;
         setGroups(gList);
         if (gList.length > 0) {
           setSelectedGroup(gList[0].name);
@@ -43,10 +46,16 @@ export const HomeworkView: React.FC = () => {
       });
     } catch (err) {
       console.error('Error connecting to Firestore homework:', err);
-      setIsLoading(false);
+      if (isMounted) setIsLoading(false);
     }
 
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 2000);
+
     return () => {
+      isMounted = false;
+      clearTimeout(timer);
       unsubAssignments();
       unsubGroups();
     };

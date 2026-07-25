@@ -65,23 +65,32 @@ export const StudentsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     // Seed default records if empty
     seedFirestoreIfEmpty();
 
     // Subscribe to students and groups live updates
     const unsubStudents = subscribeStudents((data) => {
+      if (!isMounted) return;
       setStudents(data);
       setIsLoading(false);
     });
 
     const unsubGroups = subscribeGroups((data) => {
+      if (!isMounted) return;
       setGroups(data);
       if (data.length > 0 && !groupId) {
         setGroupId(data[0].id);
       }
     });
 
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 2000);
+
     return () => {
+      isMounted = false;
+      clearTimeout(timer);
       unsubStudents();
       unsubGroups();
     };

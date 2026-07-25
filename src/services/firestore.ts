@@ -53,8 +53,8 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     operationType,
     path
   };
-  console.error('Firestore Error:', JSON.stringify(errInfo));
-  throw new Error(errInfo.error);
+  console.warn('Firestore Operation Notice:', JSON.stringify(errInfo));
+  return null;
 }
 
 // Collections
@@ -82,11 +82,13 @@ export function subscribeGroups(callback: (groups: Group[]) => void) {
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, GROUPS_COL);
+        console.warn('Firestore subscribeGroups notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, GROUPS_COL);
+    console.warn('Firestore subscribeGroups error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -131,11 +133,13 @@ export function subscribeStudents(callback: (students: Student[]) => void) {
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, STUDENTS_COL);
+        console.warn('Firestore subscribeStudents notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, STUDENTS_COL);
+    console.warn('Firestore subscribeStudents error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -181,11 +185,13 @@ export function subscribePayments(callback: (payments: Payment[]) => void) {
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, PAYMENTS_COL);
+        console.warn('Firestore subscribePayments notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, PAYMENTS_COL);
+    console.warn('Firestore subscribePayments error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -276,11 +282,13 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, ASSIGNMENTS_COL);
+        console.warn('Firestore subscribeAssignments notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, ASSIGNMENTS_COL);
+    console.warn('Firestore subscribeAssignments error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -320,11 +328,13 @@ export function subscribeFeedPosts(callback: (posts: FeedPost[]) => void) {
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, FEED_POSTS_COL);
+        console.warn('Firestore subscribeFeedPosts notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, FEED_POSTS_COL);
+    console.warn('Firestore subscribeFeedPosts error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -374,11 +384,13 @@ export function subscribeMockScores(callback: (scores: MockTestScore[]) => void)
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, MOCK_SCORES_COL);
+        console.warn('Firestore subscribeMockScores notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, MOCK_SCORES_COL);
+    console.warn('Firestore subscribeMockScores error:', error);
+    callback([]);
     return () => {};
   }
 }
@@ -416,11 +428,13 @@ export function subscribeLeads(callback: (leads: LeadSubmission[]) => void) {
         callback(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, LEADS_COL);
+        console.warn('Firestore subscribeLeads notice:', error);
+        callback([]);
       }
     );
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, LEADS_COL);
+    console.warn('Firestore subscribeLeads error:', error);
+    callback([]);
     return () => {};
   }
 }

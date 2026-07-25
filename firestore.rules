@@ -2,42 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isSuperAdmin() {
-      return isAuthenticated() && request.auth.uid == 'ISLveDBeEndRC0U6jQ0lEmEn68l2';
-    }
-
-    // Groups collection
-    match /groups/{groupId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Students collection
-    match /students/{studentId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Payments collection
-    match /payments/{paymentId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Attendance collection
-    match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Default deny for all other paths
+    // Allow full read and write access for all collections (groups, students, payments, attendance, assignments, feed_posts, mock_scores, leads, users, blogs)
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

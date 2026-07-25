@@ -56,9 +56,11 @@ export const PaymentsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     seedFirestoreIfEmpty();
 
     const unsubStudents = subscribeStudents((data) => {
+      if (!isMounted) return;
       setStudents(data);
       if (data.length > 0 && !selectedStudentId) {
         setSelectedStudentId(data[0].id);
@@ -66,11 +68,18 @@ export const PaymentsPage: React.FC = () => {
     });
 
     const unsubPayments = subscribePayments((data) => {
+      if (!isMounted) return;
       setPayments(data);
       setIsLoading(false);
     });
 
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 2000);
+
     return () => {
+      isMounted = false;
+      clearTimeout(timer);
       unsubStudents();
       unsubPayments();
     };

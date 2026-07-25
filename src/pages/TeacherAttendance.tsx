@@ -22,7 +22,7 @@ import {
   Check
 } from 'lucide-react';
 
-export const TeacherAttendance: React.FC = () => {
+export const TeacherAttendance: React.FC<{ initialGroupId?: string }> = ({ initialGroupId }) => {
   const { currentUser, userProfile, activeRole } = useAuth();
   const { language } = useLanguage();
   const t = (uz: string, en: string, ru: string) => {
@@ -33,7 +33,7 @@ export const TeacherAttendance: React.FC = () => {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [allStudents, setAllStudents] = useState<Student[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || '');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceState, setAttendanceState] = useState<{ [studentId: string]: 'present' | 'absent' | 'late' }>({});
 
@@ -47,21 +47,31 @@ export const TeacherAttendance: React.FC = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     seedFirestoreIfEmpty();
 
     const unsubGroups = subscribeGroups((groupList) => {
+      if (!isMounted) return;
       setGroups(groupList);
       if (groupList.length > 0 && !selectedGroupId) {
-        setSelectedGroupId(groupList[0].id);
+        setSelectedGroupId(initialGroupId && groupList.some(g => g.id === initialGroupId) ? initialGroupId : groupList[0].id);
       }
+      setIsLoading(false);
     });
 
     const unsubStudents = subscribeStudents((studentList) => {
+      if (!isMounted) return;
       setAllStudents(studentList);
       setIsLoading(false);
     });
 
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 2000);
+
     return () => {
+      isMounted = false;
+      clearTimeout(timer);
       unsubGroups();
       unsubStudents();
     };

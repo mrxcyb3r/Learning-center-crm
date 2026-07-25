@@ -13,6 +13,7 @@ import { Leaderboard } from '../../pages/student/Leaderboard';
 import { AITutorView } from '../../pages/student/AITutorView';
 
 // Teacher Page Views
+import { MyClassesView } from '../../pages/teacher/MyClassesView';
 import { HomeworkView } from '../../pages/teacher/HomeworkView';
 import { GradebookView } from '../../pages/teacher/GradebookView';
 
@@ -252,7 +253,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    if (window.innerWidth < 768) {
+                      setIsSidebarOpen(false);
+                    }
+                  }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     isActive
                       ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/10'
@@ -407,7 +413,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {activeTab === 'payments' && <PaymentsPage />}
           {activeTab === 'payroll' && <PayrollView />}
           {activeTab === 'classes' && (
-            activeRole === 'teacher' ? <TeacherAttendance /> : <ClassesView />
+            activeRole === 'teacher' ? (
+              <MyClassesView onNavigateToAttendance={() => setActiveTab('attendance')} />
+            ) : (
+              <ClassesView />
+            )
           )}
           {activeTab === 'blog' && <BlogCMSView />}
           {activeTab === 'settings' && <SettingsView />}

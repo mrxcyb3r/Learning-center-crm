@@ -27,7 +27,7 @@ interface AuthContextType {
   isDevMode: boolean;
   isEmailVerified: boolean;
   unverifiedUserEmail: string | null;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
+  loginWithEmail: (email: string, pass: string, requestedRole?: UserRole) => Promise<void>;
   registerWithEmail: (email: string, pass: string, name: string, requestedRole?: UserRole) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   checkEmailVerification: () => Promise<boolean>;
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [unverifiedUserEmail, setUnverifiedUserEmail] = useState<string | null>(null);
 
   // Helper to determine role and save profile
-  const handleUserRole = async (user: User): Promise<UserRole> => {
+  const handleUserRole = async (user: User, preferredRole?: UserRole): Promise<UserRole> => {
     // Check email verification status (Google OAuth users, SuperAdmin, or demo accounts bypass verification)
     const isGoogleUser = user.providerData?.some((p) => p.providerId === 'google.com');
     const isVerified = Boolean(user.emailVerified || isGoogleUser || user.uid === SUPER_ADMIN_UUID || user.uid.startsWith('demo_'));
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUnverifiedUserEmail(null);
     }
 
-    // Exact SuperAdmin check mandated by instructions
+    // Exact SuperAdmin check
     if (user.uid === SUPER_ADMIN_UUID) {
       const superAdminProfile: UserProfile = {
         uid: user.uid,
@@ -85,46 +85,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return 'superadmin';
     }
 
-    // Try fetching existing profile from Firestore
+    // Fetch existing profile from Firestore
     try {
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data() as UserProfile;
-        setUserProfile(data);
-        setRole(data.role || 'student');
-        setActiveRole(data.role || 'student');
-        return data.role || 'student';
+        const userRole = data.role || preferredRole || 'student';
+        const updatedProfile = { ...data, role: userRole };
+        setUserProfile(updatedProfile);
+        setRole(userRole);
+        setActiveRole(userRole);
+        return userRole;
       } else {
-        // Create initial default profile
+        const assignedRole = preferredRole || 'student';
         const newProfile: UserProfile = {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName || user.email?.split('@')[0] || 'User',
-          role: 'student',
+          role: assignedRole,
           photoURL: user.photoURL,
           createdAt: new Date().toISOString()
         };
         await setDoc(docRef, newProfile);
         setUserProfile(newProfile);
-        setRole('student');
-        setActiveRole('student');
-        return 'student';
+        setRole(assignedRole);
+        setActiveRole(assignedRole);
+        return assignedRole;
       }
     } catch (err) {
-      console.warn('Error fetching Firestore user role, defaulting to student:', err);
+      console.warn('Error fetching Firestore user role, defaulting to preferredRole or student:', err);
+      const fallbackRole = preferredRole || 'student';
       const fallback: UserProfile = {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || 'User',
-        role: 'student',
+        role: fallbackRole,
         photoURL: user.photoURL
       };
       setUserProfile(fallback);
-      setRole('student');
-      setActiveRole('student');
-      return 'student';
+      setRole(fallbackRole);
+      setActiveRole(fallbackRole);
+      return fallbackRole;
     }
   };
 
@@ -167,13 +170,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return trimmed;
   };
 
-  const loginWithEmail = async (email: string, pass: string) => {
+  const loginWithEmail = async (email: string, pass: string, requestedRole?: UserRole) => {
     setIsLoading(true);
     try {
       const safePass = normalizePassOrPin(pass);
       const cred = await signInWithEmailAndPassword(auth, email, safePass);
       await reload(cred.user);
-      await handleUserRole(cred.user);
+      await handleUserRole(cred.user, requestedRole);
     } finally {
       setIsLoading(false);
     }

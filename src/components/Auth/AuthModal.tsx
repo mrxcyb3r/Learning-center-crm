@@ -125,7 +125,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     try {
       if (activeTab === 'login') {
-        await loginWithEmail(email, password);
+        await loginWithEmail(email, password, selectedRole);
       } else {
         await registerWithEmail(email, password, displayName, selectedRole);
         setSuccessMsg(t.auth.verificationSentSuccess || 'Verification email sent! Please check your inbox.');

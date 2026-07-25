@@ -97,24 +97,24 @@ export const PrimeAIAssistant: React.FC<PrimeAIAssistantProps> = ({
   const getQuickChips = () => {
     if (activeRole === 'teacher') {
       return [
-        { label: "📝 Lesson Plan Blueprint", text: "Create a 60-minute IELTS Writing Task 2 lesson plan outline on environmental topics." },
-        { label: "🎯 Quiz Generator", text: "Generate 5 multiple-choice questions for Python Loops & Functions with explanations." },
-        { label: "💡 Homework Hints", text: "Give me 3 Socratic hint questions to guide a student struggling with quadratic equations." }
+        { label: "📝 Draft Lesson Plan", text: "Draft a comprehensive 60-minute IELTS Writing Task 2 lesson plan outline on environmental topics." },
+        { label: "📊 Evaluate Essay", text: "Evaluate an IELTS Writing Task 2 essay against official Band Descriptors (Task Response, Coherence, Lexical Resource, Grammar) with .0 or .5 band scores." },
+        { label: "📢 Draft Parent Notice", text: "Draft a professional broadcast notification for parents regarding upcoming mock exam dates and student progress updates." }
       ];
     }
 
     if (activeRole === 'admin' || activeRole === 'superadmin') {
       return [
-        { label: "📢 Telegram Post", text: "Draft an engaging Telegram channel post announcing a new IELTS 7.5+ Intensive Batch starting next Monday." },
-        { label: "📊 Weekly Summary", text: "Write a professional weekly summary format for teacher attendance and student tuition payments." }
+        { label: "📢 Telegram Announcement", text: "Draft an engaging Telegram channel post announcing a new IELTS 7.5+ Intensive Batch starting next Monday." },
+        { label: "📊 Center Summary Report", text: "Write a professional weekly summary report for teacher attendance, active courses, and tuition payment statuses." }
       ];
     }
 
     return [
-      { label: "🇺🇿 Yechim usuli", text: "Bu misolni yechish metodini va asosiy qoidasini tushuntirib ber (javobini bermasdan)." },
-      { label: "🇬🇧 IELTS Speaking", text: "Evaluate my speaking performance for Fluency, Vocabulary, and Grammar." },
-      { label: "💻 Python Code Help", text: "Explain how list comprehensions work in Python with a clean example." },
-      { label: "📐 Math Concept", text: "Explain the Pythagorean theorem step by step with a real-world example." }
+      { label: "💡 Explain Grammar Rule", text: "Explain the difference between Present Perfect and Past Simple tenses with clear rules and examples." },
+      { label: "🔍 Review My Draft", text: "Review my paragraph draft, point out specific grammatical or lexical errors, and guide me on how to improve without rewriting it for me." },
+      { label: "🎧 IELTS Tips", text: "Give me top strategies and Socratic guidance for improving my score in IELTS Listening and Speaking Part 2." },
+      { label: "💻 Coding Assistance", text: "Explain how list comprehensions work in Python with a clean step-by-step breakdown." }
     ];
   };
 

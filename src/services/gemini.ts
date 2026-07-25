@@ -29,6 +29,40 @@ export interface AIResponseResult {
   groundingChunks?: GroundingChunk[];
 }
 
+// Official IELTS Band Score Rounding (.0 or .5 steps)
+export function roundToIELTSBand(rawScore: number): number {
+  if (isNaN(rawScore) || rawScore <= 0) return 0;
+  const floor = Math.floor(rawScore);
+  const diff = rawScore - floor;
+  if (diff < 0.25) {
+    return floor;
+  } else if (diff < 0.75) {
+    return floor + 0.5;
+  } else {
+    return floor + 1;
+  }
+}
+
+export const TEACHER_SYSTEM_INSTRUCTION = `
+You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teachers at Renessans Learning Center.
+YOUR ROLE & RESPONSIBILITIES:
+1. Direct Generation: Draft comprehensive 60-minute lesson plans, practice exercise worksheets, quiz questions, and high-scoring sample Band 8.0/9.0 essays instantly upon request.
+2. Automated Essay & Speaking Grading: Evaluate student submissions strictly against official IELTS Band Descriptors (Task Response / Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy).
+3. OFFICIAL IELTS SCORING MANDATE: ALL individual band scores and overall band scores MUST strictly follow official IELTS band score increments (.0 or .5). Example valid scores: 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0. NEVER output non-standard decimals like 7.3 or 6.8.
+4. Broadcast & Announcements: Draft polished broadcast messages for parents/students regarding test schedules, attendance, and center news.
+TONE: Direct, efficient, highly professional, academic, and structured.
+`;
+
+export const STUDENT_SYSTEM_INSTRUCTION = `
+You are the Socratic Learning Coach & Tutor for students at Renessans Learning Center in Uzbekistan.
+STRICT ACADEMIC INTEGRITY GUARDRAILS (NO CHEATING / NO DIRECT HOMEWORK SOLVING):
+1. DO NOT give direct answers or complete homework assignments/essays for the student.
+2. ENFORCE SOCRATIC GUIDANCE: Ask helpful leading questions, explain underlying grammar rules and formulas step-by-step, break down difficult vocabulary, and guide the student to arrive at the answer themselves.
+3. WRITING FEEDBACK: Point out specific grammatical, structural, or lexical errors in student drafts and offer suggestions or similar examples WITHOUT rewriting the full text for them.
+4. OFFICIAL IELTS SCORING MANDATE: When estimating student practice scores, ALL band scores MUST strictly adhere to official IELTS band score increments (.0 or .5).
+TONE: Encouraging, patient, structured, and supportive.
+`;
+
 // Universal Multimodal & Grounded AI Coach function
 export async function generateInsaneAIResponse({
   prompt,
@@ -77,10 +111,8 @@ export async function generateInsaneAIResponse({
 
   // Client-side Fallback
   return callClientSDKWithRetry(async (ai) => {
-    let systemInst = ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION;
-    if (role === 'teacher') {
-      systemInst += `\nRole Context: You are assisting a Teacher. Help create lesson plans, quiz ideas, explanation analogies, and constructive grading feedback.`;
-    } else if (role === 'admin' || role === 'superadmin') {
+    let systemInst = role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION;
+    if (role === 'admin' || role === 'superadmin') {
       systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
     }
     systemInst += `\nTarget Language: ${userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English'}`;
@@ -97,7 +129,7 @@ export async function generateInsaneAIResponse({
 
     if (history.length > 0) {
       const formattedHistory = history
-        .map((m) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`)
+        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
         .slice(-8)
         .join('\n');
       parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
@@ -107,7 +139,7 @@ export async function generateInsaneAIResponse({
 
     const config: any = {
       systemInstruction: systemInst,
-      temperature: 0.7,
+      temperature: role === 'teacher' ? 0.3 : 0.7,
     };
 
     if (enableWebSearch) {
@@ -129,14 +161,13 @@ export async function generateInsaneAIResponse({
   });
 }
 
-// Client-side fallback initialization if needed
+// Client-side fallback initialization
 const getClientGeminiSDK = () => {
   const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
   if (!apiKey) return null;
   return new GoogleGenAI({ apiKey });
 };
 
-// Exponential backoff helper for client-side fallback
 async function callClientSDKWithRetry(fn: (ai: GoogleGenAI) => Promise<any>, retries = 3, initialDelay = 1000) {
   const ai = getClientGeminiSDK();
   if (!ai) {

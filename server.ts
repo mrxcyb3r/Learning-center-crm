@@ -49,19 +49,25 @@ async function generateContentWithRetry(params: any, retries = 3, initialDelay =
   throw new Error('Gemini API call failed after retries.');
 }
 
-// Global System Prompt enforcing Socratic Academic Integrity
-const ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION = `
-You are the Prime Learning Coach for Renessans Learning Center in Uzbekistan. You are friendly, highly knowledgeable in English (IELTS/CEFR), Mathematics, Physics, General Science, and IT/Python Dasturlash.
+// Global System Prompts for Teacher vs Student AI Personas
+const TEACHER_SYSTEM_INSTRUCTION = `
+You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teachers at Renessans Learning Center.
+YOUR ROLE & RESPONSIBILITIES:
+1. Direct Generation: Draft comprehensive 60-minute lesson plans, practice exercise worksheets, quiz questions, and high-scoring sample Band 8.0/9.0 essays instantly upon request.
+2. Automated Essay & Speaking Grading: Evaluate student submissions strictly against official IELTS Band Descriptors (Task Response / Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy).
+3. OFFICIAL IELTS SCORING MANDATE: ALL individual band scores and overall band scores MUST strictly follow official IELTS band score increments (.0 or .5). Example valid scores: 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0. NEVER output non-standard decimals like 7.3 or 6.8.
+4. Broadcast & Announcements: Draft polished broadcast messages for parents/students regarding test schedules, attendance, and center news.
+TONE: Direct, efficient, highly professional, academic, and structured.
+`;
 
-STRICT ACADEMIC INTEGRITY GUARDRAIL (NO HOMEWORK SOLVING):
-- Do NOT provide direct answers or complete assignments/homework solutions for students.
-- If a student uploads an image, audio file, or text of a homework exercise, test, or quiz:
-  1. Identify the core concepts, grammar rules, or mathematical/algorithmic principles involved.
-  2. Provide a similar, step-by-step example problem to illustrate how to solve it.
-  3. Guide the student with hint questions or constructive feedback to help them solve their own assignment.
-  4. Explicitly state: "I am here to coach and help you learn! Try working through this step using the hints above, and show me your answer so I can check it."
-
-Language Requirement: Always respond clearly in the user's requested or detected language (Uzbek, English, or Russian).
+const STUDENT_SYSTEM_INSTRUCTION = `
+You are the Socratic Learning Coach & Tutor for students at Renessans Learning Center in Uzbekistan.
+STRICT ACADEMIC INTEGRITY GUARDRAILS (NO CHEATING / NO DIRECT HOMEWORK SOLVING):
+1. DO NOT give direct answers or complete homework assignments/essays for the student.
+2. ENFORCE SOCRATIC GUIDANCE: Ask helpful leading questions, explain underlying grammar rules and formulas step-by-step, break down difficult vocabulary, and guide the student to arrive at the answer themselves.
+3. WRITING FEEDBACK: Point out specific grammatical, structural, or lexical errors in student drafts and offer suggestions or similar examples WITHOUT rewriting the full text for them.
+4. OFFICIAL IELTS SCORING MANDATE: When estimating student practice scores, ALL band scores MUST strictly adhere to official IELTS band score increments (.0 or .5).
+TONE: Encouraging, patient, structured, and supportive.
 `;
 
 // --- API ROUTES ---
@@ -79,10 +85,8 @@ app.post('/api/ai/coach', async (req, res) => {
       model = 'gemini-3.6-flash'
     } = req.body;
 
-    let systemInst = ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION;
-    if (role === 'teacher') {
-      systemInst += `\nRole Context: You are assisting a Teacher. Help create lesson plans, quiz ideas, explanation analogies, and constructive grading feedback.`;
-    } else if (role === 'admin' || role === 'superadmin') {
+    let systemInst = role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION;
+    if (role === 'admin' || role === 'superadmin') {
       systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
     }
 
@@ -101,7 +105,7 @@ app.post('/api/ai/coach', async (req, res) => {
 
     if (contextHistory.length > 0) {
       const formattedHistory = contextHistory
-        .map((m: any) => `${m.role === 'user' ? 'Student' : 'Coach'}: ${m.text}`)
+        .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
         .slice(-8)
         .join('\n');
       parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
@@ -111,7 +115,7 @@ app.post('/api/ai/coach', async (req, res) => {
 
     const config: any = {
       systemInstruction: systemInst,
-      temperature: 0.7,
+      temperature: role === 'teacher' ? 0.3 : 0.7,
     };
 
     if (enableWebSearch) {
@@ -167,7 +171,7 @@ Perform OCR and analysis:
         ],
       },
       config: {
-        systemInstruction: ACADEMIC_GUARDRAIL_SYSTEM_INSTRUCTION,
+        systemInstruction: STUDENT_SYSTEM_INSTRUCTION,
         temperature: 0.5,
       },
     });
@@ -191,14 +195,16 @@ You are an official IELTS Speaking Examiner and Audio Evaluator.
 Target Language for Feedback: ${langName}
 Speaking Test Part: Part ${partNumber}
 
+CRITICAL IELTS SCORING MANDATE: All individual criteria band scores and overall score MUST strictly be official IELTS band increments (.0 or .5). For example: 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0.
+
 Instructions:
 1. Transcribe the student's spoken audio accurately.
 2. Evaluate performance across 4 official IELTS criteria:
-   - Fluency & Coherence (Band 1.0 - 9.0)
-   - Lexical Resource (Band 1.0 - 9.0)
-   - Grammatical Range & Accuracy (Band 1.0 - 9.0)
-   - Pronunciation & Intonation (Band 1.0 - 9.0)
-3. Calculate Overall Band Score (rounded to nearest 0.5).
+   - Fluency & Coherence (Band 1.0 - 9.0, ending in .0 or .5)
+   - Lexical Resource (Band 1.0 - 9.0, ending in .0 or .5)
+   - Grammatical Range & Accuracy (Band 1.0 - 9.0, ending in .0 or .5)
+   - Pronunciation & Intonation (Band 1.0 - 9.0, ending in .0 or .5)
+3. Calculate Overall Band Score (strictly rounded to nearest .0 or .5 increment).
 4. Provide detailed constructive coaching notes, highlighting grammar mistakes, fillers, and suggested vocabulary upgrades.
 
 Format the response cleanly with Markdown headers and bullet points.
@@ -213,8 +219,8 @@ Format the response cleanly with Markdown headers and bullet points.
         ],
       },
       config: {
-        systemInstruction: "You are an expert IELTS Speaking Examiner. Be accurate, encouraging, and detailed.",
-        temperature: 0.4,
+        systemInstruction: TEACHER_SYSTEM_INSTRUCTION,
+        temperature: 0.3,
       },
     });
 
@@ -240,13 +246,15 @@ Essay Content:
 ${essayText}
 """
 
+CRITICAL IELTS SCORING MANDATE: ALL sub-scores and overall scores MUST strictly end in official IELTS increments (.0 or .5). Examples: 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0. NEVER output non-standard decimals.
+
 Evaluation requirements:
-1. Provide individual Band Scores (1.0 - 9.0) for:
+1. Provide individual Band Scores (1.0 - 9.0, .0 or .5 increments) for:
    - Task Achievement / Task Response
    - Coherence & Cohesion
    - Lexical Resource
    - Grammatical Range & Accuracy
-2. Overall Band Score.
+2. Overall Band Score (strictly rounded to nearest .0 or .5).
 3. Word Count check.
 4. Detailed inline corrections (Grammar & Style).
 5. Better vocabulary & phrase suggestions for the student to improve.
@@ -257,7 +265,7 @@ Evaluation requirements:
       model: 'gemini-3.6-flash',
       contents: { parts: [{ text: promptText }] },
       config: {
-        systemInstruction: "You are a master IELTS Writing Assessor. Provide clear, professional, structured criteria evaluation.",
+        systemInstruction: TEACHER_SYSTEM_INSTRUCTION,
         temperature: 0.3,
       },
     });

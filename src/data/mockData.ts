@@ -1,4 +1,4 @@
-import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore } from '../types';
+import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore, Payment } from '../types';
 
 export const mockTeachers: Teacher[] = [
   {
@@ -435,5 +435,48 @@ export const DEFAULT_MOCK_SCORES: MockTestScore[] = [
     writing: 6.5,
     speaking: 7.0,
     teacherFeedback: 'Solid progress in Listening. Focus on paragraph topic sentences in essay writing.'
+  }
+];
+
+export const DEFAULT_MOCK_PAYMENTS: Payment[] = [
+  {
+    id: 'pay-1',
+    studentId: 'st-1',
+    studentName: 'Jasur Rahimov',
+    amount: 650000,
+    paymentMethod: 'click',
+    date: '2026-07-22',
+    recordedBy: 'Admin',
+    status: 'paid'
+  },
+  {
+    id: 'pay-2',
+    studentId: 'st-2',
+    studentName: 'Malika Sharipova',
+    amount: 650000,
+    paymentMethod: 'payme',
+    date: '2026-07-20',
+    recordedBy: 'Admin',
+    status: 'paid'
+  },
+  {
+    id: 'pay-3',
+    studentId: 'st-3',
+    studentName: 'Sardor Ergashev',
+    amount: 550000,
+    paymentMethod: 'card',
+    date: '2026-07-18',
+    recordedBy: 'Admin',
+    status: 'paid'
+  },
+  {
+    id: 'pay-4',
+    studentId: 'st-4',
+    studentName: 'Nigora Abdullayeva',
+    amount: 650000,
+    paymentMethod: 'cash',
+    date: '2026-07-15',
+    recordedBy: 'Admin',
+    status: 'pending'
   }
 ];

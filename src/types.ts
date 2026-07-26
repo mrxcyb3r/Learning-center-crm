@@ -106,9 +106,10 @@ export interface Payment {
   studentId: string;
   studentName: string;
   amount: number;
-  paymentMethod: 'cash' | 'card' | 'click';
+  paymentMethod: 'cash' | 'card' | 'click' | 'payme' | string;
   date: string;
   recordedBy: string;
+  status?: 'paid' | 'pending' | 'refunded';
 }
 
 export interface AttendanceRecord {

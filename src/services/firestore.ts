@@ -200,7 +200,7 @@ export async function recordPaymentAndSetPaid(
   studentId: string,
   studentName: string,
   amount: number,
-  paymentMethod: 'cash' | 'card' | 'click',
+  paymentMethod: 'cash' | 'card' | 'click' | 'payme' | string,
   recordedBy: string
 ) {
   try {
@@ -212,7 +212,8 @@ export async function recordPaymentAndSetPaid(
       amount,
       paymentMethod,
       date: todayStr,
-      recordedBy
+      recordedBy,
+      status: 'paid'
     };
     const paymentRef = await addDoc(collection(db, PAYMENTS_COL), paymentData);
 
@@ -226,6 +227,14 @@ export async function recordPaymentAndSetPaid(
     return paymentRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, PAYMENTS_COL);
+  }
+}
+
+export async function updatePaymentStatus(paymentId: string, status: 'paid' | 'pending' | 'refunded') {
+  try {
+    await updateDoc(doc(db, PAYMENTS_COL, paymentId), { status });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${PAYMENTS_COL}/${paymentId}`);
   }
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { AdminDashboard } from '../../pages/admin/AdminDashboard';
 import {
   subscribeStudents,
   subscribeGroups,
@@ -125,15 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       {/* RENDER ROLE-SPECIFIC DASHBOARD VIEW */}
       {activeRole === 'superadmin' || activeRole === 'admin' ? (
-        <AdminDashboardView
-          displayName={displayName}
-          showToast={showToast}
-          activeRole={activeRole}
-          students={students}
-          groups={groups}
-          payments={payments}
-          onNavigate={onNavigate}
-        />
+        <AdminDashboard onNavigate={onNavigate} />
       ) : activeRole === 'teacher' ? (
         <TeacherDashboardView
           displayName={displayName}

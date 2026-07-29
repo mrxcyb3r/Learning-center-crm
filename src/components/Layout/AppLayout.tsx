@@ -184,9 +184,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div
-      className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-200 bg-cover bg-center bg-fixed"
+      className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-200 bg-cover bg-center bg-fixed"
       style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.94)), url('https://i.ibb.co/Wv1yrFwC/image.png')`
+        backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.78)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
       }}
     >
       

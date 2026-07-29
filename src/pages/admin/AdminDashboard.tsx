@@ -244,7 +244,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <Sparkles className="w-4 h-4 text-amber-500" />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => {
               showToast(t("To'lovlar sahifasiga o'tilmoqda...", "Navigating to Payments...", "Переход к оплате..."));
@@ -278,24 +278,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 {t("Vazifa Biriktirish", "Assign Homework", "Назначить Задание")}
               </p>
               <p className="text-[10px] text-slate-400">Audio / PDF Uploads</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => {
-              showToast(t("Blog CMS sahifasiga o'tilmoqda...", "Navigating to Blog CMS...", "Переход к блогу..."));
-              onNavigate?.('blog');
-            }}
-            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-amber-500/50 transition text-left cursor-pointer flex items-center gap-3 group"
-          >
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition shrink-0">
-              <Newspaper className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-extrabold text-slate-900 dark:text-white">
-                {t("Blog Maqola", "Publish Blog Post", "Опубликовать Блог")}
-              </p>
-              <p className="text-[10px] text-slate-400">CMS News & Tips</p>
             </div>
           </button>
 

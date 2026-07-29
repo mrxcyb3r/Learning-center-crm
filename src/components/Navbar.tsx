@@ -29,11 +29,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const navLinks = [
-    { href: '#courses', label: t.nav.courses },
-    { href: '#teachers', label: t.nav.teachers },
-    { href: '#results', label: t.nav.results },
-    { href: '#faq', label: t.nav.faq },
-    { href: '#contact', label: t.nav.contact }
+    { href: '#courses', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
+    { href: '#pricing', label: language === 'UZ' ? 'Narxlar' : language === 'RU' ? 'Цены' : 'Pricing' },
+    { href: 'https://chronicle.ai.studio/', label: language === 'UZ' ? 'Blog' : language === 'RU' ? 'Блог' : 'Blog', isExternal: true },
+    { href: '#contact', label: language === 'UZ' ? 'Aloqa' : language === 'RU' ? 'Контакты' : 'Contact' }
   ];
 
   return (
@@ -66,6 +65,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
               <a
                 key={link.href}
                 href={link.href}
+                target={link.isExternal ? "_blank" : undefined}
+                rel={link.isExternal ? "noopener noreferrer" : undefined}
                 className="text-sm font-medium text-slate-700 hover:text-amber-500 dark:text-slate-300 dark:hover:text-amber-400 transition-colors"
               >
                 {link.label}
@@ -214,6 +215,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
               <a
                 key={link.href}
                 href={link.href}
+                target={link.isExternal ? "_blank" : undefined}
+                rel={link.isExternal ? "noopener noreferrer" : undefined}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-base font-semibold text-slate-800 dark:text-slate-200 hover:text-amber-500 py-1"
               >

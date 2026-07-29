@@ -364,13 +364,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       : t.auth.pinLabelAdmin}
                   </span>
                 </label>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">
-                  {selectedRole === 'student'
-                    ? 'securestudent'
-                    : selectedRole === 'teacher'
-                    ? 'secureteacher'
-                    : 'secureadmin'}
-                </span>
               </div>
               <div className="relative">
                 <input
@@ -381,13 +374,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     setSecurityPin(e.target.value);
                     setErrorMsg('');
                   }}
-                  placeholder={
-                    selectedRole === 'student'
-                      ? t.auth.pinPlaceholderStudent || "Enter 'securestudent' PIN"
-                      : selectedRole === 'teacher'
-                      ? t.auth.pinPlaceholderTeacher
-                      : t.auth.pinPlaceholderAdmin
-                  }
+                  placeholder="••••••••"
                   className="w-full pl-3 pr-10 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/40 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
                 <button

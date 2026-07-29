@@ -68,10 +68,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
   const [isAIFloatingOpen, setIsAIFloatingOpen] = useState(false);
 
-  // Reset active tab to dashboard when activeRole changes
+  // Reset active tab and update clean path URL when activeRole or activeTab changes
   useEffect(() => {
-    setActiveTab('dashboard');
-  }, [activeRole]);
+    const rolePath = activeRole === 'superadmin' ? 'admin' : activeRole;
+    const tabPath = activeTab === 'dashboard' ? '' : `/${activeTab}`;
+    const cleanUrl = `/dashboard/${rolePath}${tabPath}`;
+    if (window.location.pathname !== cleanUrl) {
+      window.history.pushState(null, '', cleanUrl);
+    }
+  }, [activeRole, activeTab]);
 
   const displayName = userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
   const email = currentUser?.email || 'user@renessans.lc';
@@ -126,7 +131,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
         { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
         { id: 'homework', label: t("Vazifalar & Media", 'Homework & Media', 'Задания и Медиа'), icon: <FileText className="w-4 h-4" /> },
-        { id: 'blog', label: t("Blog CMS", 'Blog CMS', 'Блог CMS'), icon: <Newspaper className="w-4 h-4" /> },
         { id: 'settings', label: t("Sozlamalar & PIN", 'Settings & Security PINs', 'Настройки и PIN'), icon: <Settings className="w-4 h-4" /> }
       ];
     }
@@ -136,8 +140,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Qarzdorlar", 'Tuition & Debtor List', 'Оплата и Должники'), icon: <CreditCard className="w-4 h-4" /> },
-        { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
-        { id: 'blog', label: t("Blog CMS", 'Blog CMS', 'Блог CMS'), icon: <Newspaper className="w-4 h-4" /> }
+        { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> }
       ];
     }
 

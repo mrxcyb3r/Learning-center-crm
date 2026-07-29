@@ -218,7 +218,7 @@ const AdminDashboardView: React.FC<{
           <Sparkles className="w-4 h-4 text-amber-500" />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <ActionButton
             icon={<CreditCard className="w-4 h-4 text-emerald-500" />}
             label={t("To'lov Kiritish", "Log Tuition Payment", "Внести Оплату")}
@@ -233,14 +233,6 @@ const AdminDashboardView: React.FC<{
             onClick={() => {
               showToast(t("Vazifalar sahifasiga o'tilmoqda...", "Navigating to Homework...", "Переход к заданиям..."));
               onNavigate?.('homework');
-            }}
-          />
-          <ActionButton
-            icon={<Newspaper className="w-4 h-4 text-amber-500" />}
-            label={t("Blog Maqola", "Publish Blog Post", "Опубликовать Блог")}
-            onClick={() => {
-              showToast(t("Blog CMS sahifasiga o'tilmoqda...", "Navigating to Blog CMS...", "Переход к блогу..."));
-              onNavigate?.('blog');
             }}
           />
           {(activeRole === 'superadmin' || activeRole === 'admin') && (

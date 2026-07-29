@@ -5,6 +5,7 @@ import {
   subscribeStudents,
   subscribePayments,
   recordPaymentAndSetPaid,
+  updateStudentPaymentStatus,
   seedFirestoreIfEmpty
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_PAYMENTS } from '../../data/mockData';
@@ -147,6 +148,35 @@ export const TuitionDebtorsView: React.FC = () => {
     showToast(msg);
   };
 
+  const handleQuickStudentStatusChange = async (
+    studentId: string,
+    newStatus: 'paid' | 'pending' | 'overdue',
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    e.stopPropagation();
+    const prevStudents = [...students];
+    // Optimistic local state update
+    setStudents((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, paymentStatus: newStatus } : s))
+    );
+    try {
+      await updateStudentPaymentStatus(studentId, newStatus);
+      showToast(
+        t(
+          `O'quvchi to'lov statusi '${newStatus}' ga yangilandi ✅`,
+          `Student tuition status updated to '${newStatus}' ✅`,
+          `Статус оплаты ученика обновлен на '${newStatus}' ✅`
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update student status:', err);
+      setStudents(prevStudents); // Revert local state
+      showToast(
+        t('Statusni yangilashda xatolik yuz berdi!', 'Failed to update status.', 'Ошибка при обновлении статуса.')
+      );
+    }
+  };
+
   // Debtors list (pending or overdue)
   const debtors = students.filter((s) => s.paymentStatus === 'pending' || s.paymentStatus === 'overdue');
   const filteredDebtors = debtors.filter((s) =>
@@ -174,9 +204,14 @@ export const TuitionDebtorsView: React.FC = () => {
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
+      {/* Header Banner with Hosted Asset Background */}
+      <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+        <img
+          src="https://i.ibb.co/rR6PYx2b/image.png"
+          alt="Admin Banner Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none"
+        />
+        <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 mb-2">
             <CreditCard className="w-3.5 h-3.5" />
             <span>CenterFlow Tuition & Debtors Hub</span>
@@ -195,10 +230,42 @@ export const TuitionDebtorsView: React.FC = () => {
 
         <button
           onClick={() => handleOpenLogModal()}
-          className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-2 shrink-0"
+          className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-2 shrink-0 relative z-10"
         >
           <CreditCard className="w-4 h-4" />
           <span>{t("To'lov Qabul Qilish", "Log Tuition Payment", "Принять Оплату")}</span>
+        </button>
+      </div>
+
+      {/* Tuition Analytics Banner Asset */}
+      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden relative shadow-lg">
+        <div className="flex items-center gap-4 relative z-10">
+          <img
+            src="https://i.ibb.co/XfBqBNBX/image.png"
+            alt="Tuition Analytics"
+            className="w-24 h-20 object-cover rounded-2xl border border-emerald-500/30 shadow-md shrink-0"
+          />
+          <div>
+            <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+              <span>{t("Moliya va Kontrakt Tahlili", "Tuition & Financial Analytics", "Аналитика Оплат")}</span>
+              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-mono font-bold">
+                LIVE METRICS
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-lg">
+              {t(
+                "Oylik tushum va qarzdorliklar real-vaqt rejimida Firestore ma'lumotlar bazasi bilan avtomatik sinxronlanadi.",
+                "Real-time tuition metrics, collected fees, and debtor account streams synced with Firestore.",
+                "Аналитика и финансовые потоки автоматически синхронизируются с базами данных."
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => handleOpenLogModal()}
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold text-xs shrink-0 cursor-pointer transition relative z-10"
+        >
+          {t("Kassa Operatsiyalari →", "Open Cashier Portal →", "Кассовые Операции →")}
         </button>
       </div>
 
@@ -356,10 +423,34 @@ export const TuitionDebtorsView: React.FC = () => {
                         </td>
 
                         <td className="py-3.5 px-2">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] border border-rose-500/20">
-                            <AlertTriangle className="w-3 h-3" />
-                            {st.paymentStatus === 'overdue' ? t("Overdue ⚠️", "Overdue ⚠️", "Задолженность ⚠️") : t("Pending ⏳", "Pending ⏳", "В ожидании ⏳")}
-                          </span>
+                          <select
+                            value={st.paymentStatus || 'pending'}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleQuickStudentStatusChange(
+                                st.id,
+                                e.target.value as 'paid' | 'pending' | 'overdue',
+                                e
+                              )
+                            }
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border cursor-pointer focus:outline-none transition ${
+                              st.paymentStatus === 'paid'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                : st.paymentStatus === 'overdue'
+                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            }`}
+                          >
+                            <option value="paid" className="bg-slate-900 text-emerald-400 font-bold">
+                              {t("Paid ✅", "Paid ✅", "Оплачено ✅")}
+                            </option>
+                            <option value="pending" className="bg-slate-900 text-amber-400 font-bold">
+                              {t("Pending ⏳", "Pending ⏳", "В ожидании ⏳")}
+                            </option>
+                            <option value="overdue" className="bg-slate-900 text-rose-400 font-bold">
+                              {t("Overdue ⚠️", "Overdue ⚠️", "Задолженность ⚠️")}
+                            </option>
+                          </select>
                         </td>
 
                         <td className="py-3.5 px-2 text-right space-x-2">

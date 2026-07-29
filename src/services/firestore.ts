@@ -158,6 +158,26 @@ export async function updateStudent(id: string, data: Partial<Student>) {
     await updateDoc(doc(db, STUDENTS_COL, id), data);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${STUDENTS_COL}/${id}`);
+    throw error;
+  }
+}
+
+export async function updateStudentPaymentStatus(
+  studentId: string,
+  newStatus: 'paid' | 'pending' | 'overdue'
+) {
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const updateData: Partial<Student> = {
+      paymentStatus: newStatus
+    };
+    if (newStatus === 'paid') {
+      updateData.lastPaymentDate = todayStr;
+    }
+    await updateDoc(doc(db, STUDENTS_COL, studentId), updateData);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${STUDENTS_COL}/${studentId}`);
+    throw error;
   }
 }
 

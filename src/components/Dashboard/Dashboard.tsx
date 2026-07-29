@@ -872,22 +872,29 @@ export const StudentDashboardView: React.FC<{
         </div>
       </div>
 
-      {/* Student Goal Banner */}
+      {/* Student Goal Banner with Hosted Student Avatar Asset */}
       <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-slate-950 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider">
-            Renessans Student Portal
-          </span>
-          <h2 className="text-lg md:text-xl font-black mt-2">
-            {t(`Salom, ${displayName}!`, `Hello, ${displayName}!`, `Привет, ${displayName}!`)}
-          </h2>
-          <p className="text-xs text-slate-900/80 mt-1 max-w-xl font-medium">
-            {t(
-              "Keyingi darsingiz bugun soat 14:00 da (IELTS Intensive #12). Keyingi Mock IELTS imtihoni: Shanba 09:00.",
-              "Your next class is today at 14:00 (IELTS Intensive #12). Next Full Mock IELTS Exam: Saturday 09:00.",
-              "Следующее занятие сегодня в 14:00 (IELTS Intensive #12). Следующий пробный экзамен IELTS: Суббота 09:00."
-            )}
-          </p>
+        <div className="flex items-center gap-4">
+          <img
+            src="https://i.ibb.co/3ypn7jPN/image.png"
+            alt="Top Student IELTS 8.0"
+            className="w-14 h-14 rounded-2xl border-2 border-slate-950 object-cover shadow-lg shrink-0"
+          />
+          <div>
+            <span className="px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider">
+              Renessans Student Portal • IELTS 8.0 Target
+            </span>
+            <h2 className="text-lg md:text-xl font-black mt-1">
+              {t(`Salom, ${displayName}!`, `Hello, ${displayName}!`, `Привет, ${displayName}!`)}
+            </h2>
+            <p className="text-xs text-slate-900/80 mt-0.5 max-w-xl font-medium">
+              {t(
+                "Keyingi darsingiz bugun soat 14:00 da (IELTS Intensive #12). Keyingi Mock IELTS imtihoni: Shanba 09:00.",
+                "Your next class is today at 14:00 (IELTS Intensive #12). Next Full Mock IELTS Exam: Saturday 09:00.",
+                "Следующее занятие сегодня в 14:00 (IELTS Intensive #12). Следующий пробный экзамен IELTS: Суббота 09:00."
+              )}
+            </p>
+          </div>
         </div>
         <button
           onClick={() => {

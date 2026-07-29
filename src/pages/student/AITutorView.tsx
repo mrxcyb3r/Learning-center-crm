@@ -955,6 +955,26 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           {/* TAB 3: GENERAL CHAT MESSAGES STREAM */}
           {activeTab === 'chat' && (
             <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 max-w-3xl mx-auto w-full">
+              {/* Feature Banner Card */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 flex items-center gap-4 shadow-xl">
+                <img
+                  src="https://i.ibb.co/fzkdYxCC/image.png"
+                  alt="24/7 AI Tutor"
+                  className="w-20 h-20 object-cover rounded-xl border border-amber-500/30 shadow-md shrink-0"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-white">24/7 AI Personal Coach & Tutor</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                      GEMINI POWERED
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed font-medium">
+                    IELTS Speaking practice, Essay grading, grammar drills va real-time akademik yordam oling.
+                  </p>
+                </div>
+              </div>
+
               {messages.map((msg, idx) => {
                 const isUser = msg.role === 'user';
                 const isSpeaking = speakingMsgIdx === idx;

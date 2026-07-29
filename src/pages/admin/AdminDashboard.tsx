@@ -103,6 +103,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         </div>
       )}
 
+      {/* Admin Hero Header with Hosted Banner Background */}
+      <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+        <img
+          src="https://i.ibb.co/rR6PYx2b/image.png"
+          alt="Admin Banner Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none"
+        />
+        <div className="relative z-10">
+          <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
+            Renessans Learning Center Platform • Tashkent
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2">
+            {t(`Boshqaruv Paneli • ${displayName}`, `Admin Dashboard • ${displayName}`, `Панель Управления • ${displayName}`)}
+          </h1>
+          <p className="text-xs text-slate-400 mt-1 max-w-xl font-medium">
+            {t(
+              "Tizim statistikasi, tushumlar, o'quvchilar roysteri va to'lovlar statusi real-vaqt rejimida Firestore bilan sinxronlanmoqda.",
+              "Live system overview, student enrollments, tuition revenue logs & payment sync active.",
+              "Обзор системы, зачисление учеников и синхронизация оплат."
+            )}
+          </p>
+        </div>
+      </div>
+
       {/* SuperAdmin Verified Banner */}
       {currentUser?.uid === SUPER_ADMIN_UUID && (
         <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-purple-500/20 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
@@ -228,6 +252,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Tuition & Financial Analytics Card Asset */}
+      <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg relative overflow-hidden">
+        <div className="flex items-center gap-4 relative z-10">
+          <img
+            src="https://i.ibb.co/XfBqBNBX/image.png"
+            alt="Tuition Analytics"
+            className="w-24 h-20 object-cover rounded-2xl border border-amber-500/30 shadow-md shrink-0"
+          />
+          <div>
+            <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+              <span>{t("To'lovlar & Debtorlar Analitikasi", "Tuition & Debtor Analytics", "Аналитика Задолженностей")}</span>
+              <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 font-mono font-bold">
+                LIVE SYNC
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-lg font-medium">
+              {t(
+                "Muddati o'tgan kontraktlar, to'lovlar monitoringi va Telegram avto-eslatmalar markaziga o'ting.",
+                "Review overdue accounts, payment status breakdowns and Telegram notification logs.",
+                "Просмотр задолженностей и журнала уведомлений Telegram."
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigate?.('payments')}
+          className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shrink-0 cursor-pointer transition relative z-10"
+        >
+          {t("Debtorlar Ro'yxatini Ko'rish →", "Manage Tuition & Debtors →", "Управление Задолженностями →")}
+        </button>
       </div>
 
       {/* Admin Quick Action Panel */}

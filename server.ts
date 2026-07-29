@@ -82,11 +82,12 @@ app.post('/api/ai/coach', async (req, res) => {
       fileAttachment,
       role = 'student',
       enableWebSearch = false,
-      model = 'gemini-3.6-flash'
+      model = 'gemini-3.6-flash',
+      customSystemInstruction
     } = req.body;
 
-    let systemInst = role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION;
-    if (role === 'admin' || role === 'superadmin') {
+    let systemInst = customSystemInstruction || (role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION);
+    if (!customSystemInstruction && (role === 'admin' || role === 'superadmin')) {
       systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
     }
 

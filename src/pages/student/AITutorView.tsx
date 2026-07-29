@@ -5,6 +5,7 @@ import { AIStreamingText } from '../../components/common/AIStreamingText';
 import { TypingIndicator } from '../../components/common/TypingIndicator';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   generateInsaneAIResponse,
   evaluateSpeakingAudio,
@@ -41,9 +42,16 @@ import {
   RotateCcw,
   Download,
   ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  Maximize2
+  ChevronRight,
+  Maximize2,
+  Award,
+  Code,
+  GraduationCap,
+  BookOpen,
+  HelpCircle,
+  Mail,
+  Megaphone,
+  Briefcase
 } from 'lucide-react';
 
 interface SavedThread {
@@ -58,14 +66,21 @@ interface AITutorViewProps {
 }
 
 export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) => {
-  const { activeRole } = useAuth();
+  const { userProfile, activeRole } = useAuth();
   const { language } = useLanguage();
+  const { theme } = useTheme();
 
   const [userLang] = useState<UserLanguage>(language === 'EN' ? 'en' : 'uz');
 
   // Model & Web Search Settings
   const [selectedModel, setSelectedModel] = useState<string>('gemini-3.6-flash');
   const [enableWebSearch, setEnableWebSearch] = useState<boolean>(false);
+
+  // Dynamic Mode Selector per Role
+  // Student modes: 'general' | 'essay_evaluator' | 'code_reviewer' | 'speaking_coach'
+  // Teacher modes: 'general' | 'lesson_plan' | 'quiz_builder' | 'parent_report'
+  // Admin modes:   'general' | 'announcements' | 'operations_advisory'
+  const [activeMode, setActiveMode] = useState<string>('general');
 
   // Local Persistence for Chat Threads
   const [savedThreads, setSavedThreads] = useState<SavedThread[]>(() => {
@@ -116,10 +131,10 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
       role: 'model',
       text:
         userLang === 'uz'
-          ? "Salom! Men Renessans Prime AI o'quv yordamchisiman. Darslik mashqlari, web qidiruv, IELTS Speaking va insholarini Socratic uslubda o'rganishda yordam beraman."
+          ? "Salom! Men CenterFlow Neural Copilot v2.5 AI yordamchisiman. Darslik mashqlari, IELTS Speaking, Python kodi va akademik resurslar bilan ishlashda tayyorman. Savolingizni bering!"
           : userLang === 'ru'
-          ? "Здравствуйте! Я ИИ-помощник Renessans Prime. Чем могу помочь по предметам, IELTS или веб-поиску?"
-          : "Hello! I am Renessans Prime AI Learning Coach. How can I assist you with your studies, web search, or IELTS practice today?"
+          ? "Здравствуйте! Я CenterFlow Neural Copilot v2.5 ИИ-помощник. Чем могу помочь по предметам, IELTS или программированию?"
+          : "Hello! I am CenterFlow Neural Copilot v2.5 Flash. How can I assist you with your studies, IELTS practice, or teaching workflows today?"
     }
   ]);
 
@@ -139,7 +154,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   const [isZoomingPreview, setIsZoomingPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Voice Input (Speech Recognition / Recorder) State
+  // Voice Input (Speech Recognition) State
   const [isVoiceInputActive, setIsVoiceInputActive] = useState(false);
   const speechRecognitionRef = useRef<any>(null);
 
@@ -180,6 +195,94 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
     };
   }, []);
 
+  // Dynamic Multi-Role System Prompt Generator
+  const buildSystemPrompt = () => {
+    const name = userProfile?.fullName || (userProfile as any)?.name || (activeRole === 'teacher' ? 'Teacher' : activeRole === 'admin' ? 'Administrator' : 'Student');
+
+    if (activeRole === 'teacher') {
+      const dept = 'IELTS & Academic English';
+      const assignedGroups = 'IELTS-Intensive-A1, General-English-B2';
+
+      if (activeMode === 'lesson_plan') {
+        return `You are Teacher Copilot & Curriculum Design Assistant for ${name} at Renessans Learning Center.
+Department: ${dept} | Groups: ${assignedGroups}.
+SPECIALIZED MODE: 📚 Lesson Plan Generator.
+Output structured 60-minute or 90-minute lesson outlines including:
+1. Warm-up Activity (10 mins)
+2. Core Interactive Skill Building (35 mins)
+3. Guided Worksheet/Exercise Practice (35 mins)
+4. Wrap-up & Homework Assignment (10 mins)
+Maintain an efficient, highly practical, academic tone. Format cleanly with clear headers and bullet points.`;
+      }
+
+      if (activeMode === 'quiz_builder') {
+        return `You are Teacher Copilot & Quiz Builder for ${name} at Renessans Learning Center.
+SPECIALIZED MODE: 📝 Quiz & Homework Builder.
+Generate comprehensive quizzes, multiple-choice questions, fill-in-the-blanks, or IELTS reading/listening passages. Always include complete Answer Keys with detailed explanations at the end.`;
+      }
+
+      if (activeMode === 'parent_report') {
+        return `You are Teacher Copilot for ${name} at Renessans Learning Center.
+SPECIALIZED MODE: 💬 Parent Progress Report Writer.
+Convert teacher shorthand notes into polite, constructive, encouraging, and professional student progress updates for parents via Telegram or Email.`;
+      }
+
+      return `You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teacher ${name} at Renessans Learning Center. Help draft lesson plans, worksheets, student feedback, and class announcements efficiently.`;
+    }
+
+    if (activeRole === 'admin' || activeRole === 'superadmin') {
+      const branch = 'Tashkent Main Branch';
+
+      if (activeMode === 'announcements') {
+        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}).
+SPECIALIZED MODE: 📢 Announcement & Broadcast Generator.
+Draft engaging, clear, high-converting Telegram, SMS, or email announcements for student tuition fee reminders, upcoming IELTS test dates, center holidays, or new course batch launches. Use emojis effectively.`;
+      }
+
+      if (activeMode === 'operations_advisory') {
+        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}).
+SPECIALIZED MODE: 📊 Operations & Administration Advisory.
+Provide practical operational advice, staff scheduling frameworks, debtor communication scripts, and administrative templates.`;
+      }
+
+      return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}). Provide clear operational scripts, administrative copy, and center reports.`;
+    }
+
+    // Default: Student Role
+    const enrolledSubject = 'IELTS & General English';
+    const targetGoal = 'Band 8.0 / 1500+ SAT';
+    const currentModule = 'Advanced Writing & Speaking';
+
+    if (activeMode === 'essay_evaluator') {
+      return `You are Specialized AI Mentor for student ${name}.
+Enrolled Subject: ${enrolledSubject} | Target Goal: ${targetGoal}.
+SPECIALIZED MODE: 📝 IELTS Essay Evaluator.
+Analyze submitted essays strictly against official IELTS Band Descriptors:
+1. Task Response / Task Achievement
+2. Coherence & Cohesion
+3. Lexical Resource
+4. Grammatical Range & Accuracy
+Provide itemized band scores in standard .0 or .5 steps (e.g. 6.5, 7.0, 7.5), followed by an overall estimated Band Score and specific C1/C2 vocabulary & grammar upgrade suggestions.`;
+    }
+
+    if (activeMode === 'code_reviewer') {
+      return `You are Cybersecurity & Python Code Reviewer for student ${name}.
+SPECIALIZED MODE: 💻 Code Reviewer & Tech Tutor.
+Analyze submitted code snippets for bugs, security vulnerabilities, efficiency bottlenecks, and style. Provide refactored clean code blocks with step-by-step explanations.`;
+    }
+
+    if (activeMode === 'speaking_coach') {
+      return `You are Interactive Speaking & Grammar Coach for student ${name}.
+SPECIALIZED MODE: 🗣️ Speaking & Grammar Coach.
+Conduct interactive micro-quizzes, suggest C1/C2 vocabulary upgrades, point out grammatical nuances, and ask IELTS Speaking practice questions.`;
+    }
+
+    return `You are the Socratic Learning Coach & Tutor for student ${name} at Renessans Learning Center in Uzbekistan.
+STRICT ACADEMIC INTEGRITY GUARDRAIL:
+1. DO NOT give direct answers or solve complete homework assignments for the student.
+2. ENFORCE SOCRATIC GUIDANCE: Ask helpful leading questions, explain underlying grammar rules and formulas step-by-step, and guide the student to arrive at the answer themselves.`;
+  };
+
   // Handle Thread Selection
   const handleSelectThread = (thread: SavedThread) => {
     setActiveThreadId(thread.id);
@@ -215,6 +318,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   const handleDeleteThread = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setSavedThreads((prev) => prev.filter((t) => t.id !== id));
+    toast.info("Suhbat o'chirildi.");
     if (activeThreadId === id) {
       handleNewChat();
     }
@@ -224,6 +328,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   const handleClearAllHistory = () => {
     if (confirm("Barcha suhbatlar tarixini o'chirmoqchimisiz?")) {
       setSavedThreads([]);
+      toast.success("Barcha suhbatlar tarixi tozalandi.");
       handleNewChat();
     }
   };
@@ -231,11 +336,11 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   // Export Chat to Markdown File
   const handleExportChat = () => {
     const thread = savedThreads.find((t) => t.id === activeThreadId);
-    const title = thread ? thread.title : 'Renessans_AI_Chat';
+    const title = thread ? thread.title : 'CenterFlow_AI_Chat';
     let mdContent = `# ${title}\nDate: ${new Date().toLocaleDateString()}\n\n---\n\n`;
 
     messages.forEach((m) => {
-      mdContent += `### ${m.role === 'user' ? '👤 User' : '🤖 Renessans Prime AI'}\n${m.text}\n\n`;
+      mdContent += `### ${m.role === 'user' ? '👤 User' : '🤖 CenterFlow Neural Copilot'}\n${m.text}\n\n`;
     });
 
     const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
@@ -245,19 +350,21 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
     a.download = `${title.replace(/\s+/g, '_')}.md`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Suhbat hujjati (.md) yuklab olindi.");
   };
 
   // Copy Text
   const handleCopyText = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
+    toast.success("Nusxalandi!");
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   // Text To Speech (TTS)
   const handleToggleSpeech = (text: string, idx: number) => {
     if (!('speechSynthesis' in window)) {
-      alert("Sizning brauzeringiz matnni ovozli o'qish funksiyasini qo'llab-quvvatlamaydi.");
+      toast.error("Sizning brauzeringiz matnni ovozli o'qish funksiyasini qo'llab-quvvatlamaydi.");
       return;
     }
 
@@ -285,7 +392,6 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   const handleRegenerate = async (msgIndex: number) => {
     if (isLoading) return;
 
-    // Find previous user prompt
     let userPromptText = '';
     let userAttachment: FileAttachment | undefined = undefined;
 
@@ -310,7 +416,8 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
         enableWebSearch,
         userLanguage: userLang,
         model: selectedModel,
-        role: activeRole
+        role: activeRole,
+        customSystemInstruction: buildSystemPrompt()
       });
 
       const updatedMsgs = [...messages];
@@ -322,6 +429,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
       setMessages(updatedMsgs);
     } catch (err: any) {
       console.error('Regenerate Error:', err);
+      toast.error("Qayta so'rovda xatolik yuz berdi.");
     } finally {
       setIsLoading(false);
     }
@@ -332,7 +440,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Brauzeringiz nutqni matnga aylantirishni (Speech-to-Text) qo'llab-quvvatlamaydi. Chrome yoki Edge brauzeridan foydalaning.");
+      toast.error("Brauzeringiz nutqni matnga aylantirishni (Speech-to-Text) qo'llab-quvvatlamaydi. Chrome brauzeridan foydalaning.");
       return;
     }
 
@@ -371,19 +479,65 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
     setInputPrompt(chipText);
   };
 
+  // Dynamic Suggestion Chips based on Role & Active Mode
   const getQuickChips = () => {
     if (activeRole === 'teacher') {
+      if (activeMode === 'lesson_plan') {
+        return [
+          { label: "📝 IELTS Lesson Plan", text: "Create a 60-minute IELTS Writing Task 2 lesson plan outline on technology impact." },
+          { label: "🐍 Python Lesson Outline", text: "Draft a 90-minute Python Loops & Functions lesson outline with 3 practice problems." }
+        ];
+      }
+      if (activeMode === 'quiz_builder') {
+        return [
+          { label: "🎯 Grammar Quiz", text: "Generate 5 multiple-choice questions for Advanced English Conditionals with explanations." },
+          { label: "📖 IELTS Reading Passages", text: "Create a short 200-word academic passage with 3 True/False/Not Given questions and answer key." }
+        ];
+      }
+      if (activeMode === 'parent_report') {
+        return [
+          { label: "💬 Student Progress Email", text: "Convert shorthand: 'Student score 88% in vocabulary, attendance 100%, polite in class' into email for parent." }
+        ];
+      }
       return [
         { label: "📝 Lesson Plan", text: "Create a 60-minute IELTS Writing Task 2 lesson plan outline on technology impact." },
         { label: "🎯 Quiz Generator", text: "Generate 5 multiple-choice questions for Python Loops & Functions with explanations." },
-        { label: "💡 Homework Hints", text: "Give me 3 Socratic hint questions to guide a student struggling with quadratic equations." }
+        { label: "💡 Socratic Hints", text: "Give me 3 Socratic hint questions to guide a student struggling with quadratic equations." }
       ];
     }
 
     if (activeRole === 'admin' || activeRole === 'superadmin') {
+      if (activeMode === 'announcements') {
+        return [
+          { label: "📢 Telegram Batch Launch", text: "Draft an engaging Telegram post announcing a new IELTS 7.5+ Intensive Batch starting next Monday." },
+          { label: "💳 Tuition Reminder SMS", text: "Write a polite SMS reminder for students with overdue tuition fees." }
+        ];
+      }
       return [
         { label: "📢 Telegram Post", text: "Draft an engaging Telegram channel post announcing a new IELTS 7.5+ Intensive Batch starting next Monday." },
         { label: "📊 Weekly Summary", text: "Write a professional weekly summary format for teacher attendance and student tuition payments." }
+      ];
+    }
+
+    // Student Chips
+    if (activeMode === 'essay_evaluator') {
+      return [
+        { label: "📝 Grade Essay Draft", text: "Please evaluate my Task 2 essay on Technology vs Human Interaction against official Band descriptors." },
+        { label: "🎯 Band 8.0 Tips", text: "How can I improve my Coherence & Cohesion score to Band 8.0?" }
+      ];
+    }
+
+    if (activeMode === 'code_reviewer') {
+      return [
+        { label: "💻 Review Python Code", text: "Explain how list comprehensions work in Python and optimize this snippet." },
+        { label: "🛡️ Security Check", text: "Check if my Python API request function handles rate limit exceptions securely." }
+      ];
+    }
+
+    if (activeMode === 'speaking_coach') {
+      return [
+        { label: "🗣️ Speaking Micro-Quiz", text: "Ask me 2 IELTS Speaking Part 2 practice questions and grade my vocabulary." },
+        { label: "✨ C2 Vocabulary", text: "Give me 5 C1/C2 advanced academic synonyms for 'important' and 'useful'." }
       ];
     }
 
@@ -395,13 +549,13 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
     ];
   };
 
-  // Handle File Upload with Live Thumbnail
+  // Handle File Upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 12 * 1024 * 1024) {
-      alert("Fayl hajmi 12MB dan oshmasligi kerak.");
+      toast.error("Fayl hajmi 12MB dan oshmasligi kerak.");
       return;
     }
 
@@ -420,6 +574,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           mimeType: file.type || 'image/jpeg'
         }
       });
+      toast.info("Fayl biriktirildi!");
     };
     reader.readAsDataURL(file);
   };
@@ -454,7 +609,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
         setRecordingSeconds((prev) => prev + 1);
       }, 1000);
     } catch (err) {
-      alert("Microphone ga ruxsat berilmadi yoki qurilmada mikrofon topilmadi.");
+      toast.error("Microphone ga ruxsat berilmadi yoki qurilmada mikrofon topilmadi.");
     }
   };
 
@@ -540,7 +695,8 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
         enableWebSearch,
         userLanguage: userLang,
         model: selectedModel,
-        role: activeRole
+        role: activeRole,
+        customSystemInstruction: buildSystemPrompt()
       });
 
       const finalMsgs: ChatMessage[] = [
@@ -626,13 +782,90 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   );
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] flex flex-col bg-white/80 dark:bg-slate-900/50 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-3xl border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl overflow-hidden font-sans transition-colors duration-200">
+    <div className={`relative min-h-[calc(100vh-5rem)] flex flex-col backdrop-blur-xl rounded-3xl border shadow-2xl overflow-hidden font-sans transition-all duration-300 ${
+      theme === 'light'
+        ? 'bg-white/80 border-slate-200/90 shadow-xl text-slate-900'
+        : 'bg-slate-900/60 border-slate-800/80 shadow-2xl text-slate-100'
+    }`}>
       
-      {/* INTEGRATED TOP CONTROL BAR */}
-      <header className="px-4 md:px-6 py-3 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      {/* AMBIENT RADIAL GLOW EFFECT BEHIND TOP HEADER */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-r from-amber-500/10 via-cyan-500/10 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
+
+      {/* FUTURISTIC CONTROL & HEADER TOOLBAR */}
+      <header className="px-4 md:px-6 py-3.5 bg-slate-900/80 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 shrink-0 relative z-10 backdrop-blur-md">
         
-        {/* History & New Chat Buttons */}
+        {/* Left Side: Status & Neural Bot Identity */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div className="flex flex-col">
+              <h2 className="text-xs font-black tracking-wide text-slate-100 flex items-center gap-1.5">
+                <span>CenterFlow Neural Copilot</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                  v2.5 Flash
+                </span>
+              </h2>
+              <span className="text-[10px] text-slate-400 font-mono">Real-time Socratic & Academic Intelligence</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Workspace Main Navigation Tabs */}
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-2xl border border-slate-800/80 shadow-inner">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'chat'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-extrabold scale-105'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span>AI Workspace</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('speaking')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'speaking'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-extrabold scale-105'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Mic className="w-3.5 h-3.5" />
+            <span>IELTS Voice</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('essay')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'essay'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-extrabold scale-105'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Essay Grader</span>
+          </button>
+        </div>
+
+        {/* Right Side: Actions, Model Switcher & Thread Controls */}
         <div className="flex items-center gap-2">
+          {/* Model Switcher Dropdown */}
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-sm"
+          >
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Reasoning)</option>
+          </select>
+
+          {/* History Drawer Toggle */}
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border ${
@@ -651,7 +884,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
 
           <button
             onClick={handleNewChat}
-            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-amber-500/10"
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Chat</span>
@@ -666,68 +899,133 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
             <Download className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Center Workspace Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'chat'
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>AI Workspace</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('speaking')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'speaking'
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            <span>IELTS Voice</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('essay')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'essay'
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Essay Grader</span>
-          </button>
-        </div>
-
-        {/* Model Switcher & Web Search Indicator */}
-        <div className="flex items-center gap-2">
-          {/* Model Switcher Dropdown */}
-          <select
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-mono text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
-          >
-            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast)</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Reasoning)</option>
-          </select>
-        </div>
       </header>
 
-      {/* DISMISSIBLE GUARDRAIL NOTICE */}
+      {/* SPECIALIZED ROLE MODE SELECTION PILLS TOOLBAR */}
+      <div className="px-4 md:px-6 py-2 bg-slate-950/90 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto relative z-10 shrink-0">
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 shrink-0 flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-amber-400" />
+          Mode:
+        </span>
+
+        {/* General Mode Pill */}
+        <button
+          onClick={() => setActiveMode('general')}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+            activeMode === 'general'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+              : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+          }`}
+        >
+          🎓 General Mentor
+        </button>
+
+        {/* Student Specific Mode Pills */}
+        {activeRole === 'student' && (
+          <>
+            <button
+              onClick={() => setActiveMode('essay_evaluator')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'essay_evaluator'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              📝 IELTS Essay Evaluator
+            </button>
+            <button
+              onClick={() => setActiveMode('code_reviewer')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'code_reviewer'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              💻 Cybersecurity & Code Reviewer
+            </button>
+            <button
+              onClick={() => setActiveMode('speaking_coach')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'speaking_coach'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              🗣️ Interactive Speaking Coach
+            </button>
+          </>
+        )}
+
+        {/* Teacher Specific Mode Pills */}
+        {activeRole === 'teacher' && (
+          <>
+            <button
+              onClick={() => setActiveMode('lesson_plan')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'lesson_plan'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              📚 Lesson Plan Generator
+            </button>
+            <button
+              onClick={() => setActiveMode('quiz_builder')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'quiz_builder'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              📝 Quiz & Homework Builder
+            </button>
+            <button
+              onClick={() => setActiveMode('parent_report')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'parent_report'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              💬 Parent Report Writer
+            </button>
+          </>
+        )}
+
+        {/* Admin Specific Mode Pills */}
+        {(activeRole === 'admin' || activeRole === 'superadmin') && (
+          <>
+            <button
+              onClick={() => setActiveMode('announcements')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'announcements'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              📢 Announcement Generator
+            </button>
+            <button
+              onClick={() => setActiveMode('operations_advisory')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                activeMode === 'operations_advisory'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105'
+                  : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50'
+              }`}
+            >
+              📊 Operations Advisory
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* DISMISSIBLE SOCRATIC GUARDRAIL NOTICE */}
       {showGuardrail && (
-        <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-300 flex items-center justify-between shrink-0">
+        <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-300 flex items-center justify-between shrink-0 relative z-10">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              <strong className="font-bold">Socratic Coach Guardrail:</strong> AI masalalarni to'g'ridan-to'g'ri yechib bermaydi. U akademik tushuncha va ko'rsatmalar beradi.
+              <strong className="font-bold">Socratic Intelligence Active:</strong> AI to'g'ridan-to'g'ri uy vazifani yechib bermaydi, balki bosqichma-bosqich akademik tushunchalarni o'rgatadi.
             </span>
           </div>
           <button
@@ -740,11 +1038,11 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
       )}
 
       {/* MAIN CONTAINER WITH OPTIONAL SLIDE-OVER HISTORY DRAWER */}
-      <div className="flex-1 flex min-h-0 relative">
+      <div className="flex-1 flex min-h-0 relative z-10">
         
         {/* SLIDE-OVER HISTORY DRAWER */}
         {isHistoryOpen && (
-          <aside className="absolute z-20 inset-y-0 left-0 w-72 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 p-4 flex flex-col shadow-2xl animate-fadeIn">
+          <aside className="absolute z-30 inset-y-0 left-0 w-72 bg-slate-900/95 backdrop-blur-xl border-r border-slate-800 p-4 flex flex-col shadow-2xl animate-fadeIn">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-extrabold text-white flex items-center gap-2">
                 <History className="w-4 h-4 text-amber-500" />
@@ -816,7 +1114,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           {/* TAB 1: IELTS VOICE COACH WORKSPACE */}
           {activeTab === 'speaking' && (
             <div className="flex-1 p-6 overflow-y-auto max-w-3xl mx-auto w-full space-y-6 animate-fadeIn">
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+              <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-extrabold text-white flex items-center gap-2">
@@ -834,7 +1132,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                         key={p}
                         onClick={() => setSpeakingPart(p as 1 | 2 | 3)}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-                          speakingPart === p ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                          speakingPart === p ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                         }`}
                       >
                         Part {p}
@@ -843,7 +1141,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                   </div>
                 </div>
 
-                <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="p-8 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col items-center justify-center text-center space-y-4">
                   {isRecordingSpeaking ? (
                     <div className="flex flex-col items-center space-y-3">
                       <div className="w-20 h-20 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center animate-ping">
@@ -864,7 +1162,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                       <button
                         onClick={startRecordingSpeaking}
                         disabled={isLoading}
-                        className="w-20 h-20 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
+                        className="w-20 h-20 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 active:scale-95"
                       >
                         <Mic className="w-10 h-10" />
                       </button>
@@ -882,7 +1180,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           {/* TAB 2: ESSAY GRADERSHIP WORKSPACE */}
           {activeTab === 'essay' && (
             <div className="flex-1 p-6 overflow-y-auto max-w-3xl mx-auto w-full space-y-6 animate-fadeIn">
-              <form onSubmit={handleGradeEssaySubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <form onSubmit={handleGradeEssaySubmit} className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                     <FileText className="w-5 h-5 text-amber-400" />
@@ -946,7 +1244,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                 <button
                   type="submit"
                   disabled={isLoading || !essayText.trim()}
-                  className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-xl shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   <span>IELTS Writing Band Score va Tahlil Olish</span>
@@ -959,21 +1257,21 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           {activeTab === 'chat' && (
             <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 max-w-3xl mx-auto w-full">
               {/* Feature Banner Card */}
-              <div className="p-4 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex items-center gap-4 shadow-sm dark:shadow-xl">
-                <img
-                  src="https://i.ibb.co/fzkdYxCC/image.png"
-                  alt="24/7 AI Tutor"
-                  className="w-20 h-20 object-cover rounded-xl border border-amber-500/30 shadow-md shrink-0 opacity-90 dark:opacity-100"
-                />
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md flex items-center gap-4 shadow-xl">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-500 to-indigo-500 p-0.5 shrink-0 shadow-lg shadow-amber-500/20">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-amber-400" />
+                  </div>
+                </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">24/7 AI Personal Coach & Tutor</h3>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30">
-                      GEMINI POWERED
+                    <h3 className="text-sm font-extrabold text-white">CenterFlow Neural Copilot • v2.5 Flash</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                      ACTIVE ROLE: {activeRole.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed font-medium">
-                    IELTS Speaking practice, Essay grading, grammar drills va real-time akademik yordam oling.
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed font-medium">
+                    Socratic tutorship, IELTS Speaking & Essay scoring, Python code review va akademik ko'mak.
                   </p>
                 </div>
               </div>
@@ -988,16 +1286,18 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                     className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
                   >
                     {!isUser && (
-                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center shrink-0 shadow-md mt-1">
-                        <Bot className="w-4 h-4" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-indigo-500 p-0.5 shrink-0 shadow-md mt-1">
+                        <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-amber-400" />
+                        </div>
                       </div>
                     )}
 
                     <div
                       className={`relative group max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${
                         isUser
-                          ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none shadow-md'
-                          : 'bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-none shadow-sm'
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-medium rounded-tr-sm shadow-lg shadow-amber-500/10'
+                          : 'bg-slate-800/40 border border-slate-700/50 rounded-tl-sm text-slate-200 shadow-sm backdrop-blur-md'
                       }`}
                     >
                       {/* Attached File Display in Message */}
@@ -1088,14 +1388,14 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                             title="Qaytadan yaratish"
                           >
                             <RotateCcw className="w-3 h-3" />
-                            <span>Qayta sorash</span>
+                            <span>Qayta so'rash</span>
                           </button>
                         </div>
                       )}
                     </div>
 
                     {isUser && (
-                      <div className="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center shrink-0 text-xs mt-1">
+                      <div className="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center shrink-0 text-xs mt-1 border border-slate-700">
                         <User className="w-4 h-4" />
                       </div>
                     )}
@@ -1111,21 +1411,22 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
 
           {/* BOTTOM QUICK CHIPS & MULTIMODAL INPUT BAR */}
           {activeTab === 'chat' && (
-            <div className="p-4 bg-slate-900/90 border-t border-slate-800/90 shrink-0 space-y-2.5">
+            <div className="p-4 bg-slate-900/90 border-t border-slate-800/90 shrink-0 space-y-2.5 backdrop-blur-2xl">
               
-              {/* Quick Action Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-3xl mx-auto">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0 flex items-center gap-1">
+              {/* Floating Quick Action Chips */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-3xl mx-auto scrollbar-none">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0 flex items-center gap-1 font-mono">
                   <Sparkle className="w-3 h-3 text-amber-500" />
-                  Chips:
+                  Suggestions:
                 </span>
                 {getQuickChips().map((chip, i) => (
                   <button
                     key={i}
                     onClick={() => handleChipClick(chip.text)}
-                    className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-[11px] text-slate-300 hover:text-amber-400 transition cursor-pointer whitespace-nowrap shrink-0"
+                    className="bg-slate-800/30 hover:bg-amber-500/10 border border-slate-700/60 hover:border-amber-500/40 rounded-xl px-3 py-1.5 text-xs text-slate-300 hover:text-amber-400 transition-all duration-200 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm group whitespace-nowrap shrink-0"
                   >
-                    {chip.label}
+                    <span>{chip.label}</span>
+                    <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform text-amber-400" />
                   </button>
                 ))}
               </div>
@@ -1189,8 +1490,8 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                 </div>
               )}
 
-              {/* Input Form with Action Tools */}
-              <form onSubmit={handleSendChat} className="max-w-3xl mx-auto space-y-2">
+              {/* Floating Bottom Command Input Bar */}
+              <form onSubmit={handleSendChat} className="max-w-3xl mx-auto relative bg-slate-900/80 border border-slate-700/80 focus-within:border-amber-500/60 rounded-2xl p-2 shadow-2xl backdrop-blur-2xl transition-all">
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
@@ -1204,28 +1505,28 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
+                    className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 ${
                       attachedFile
                         ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
                         : 'bg-slate-800 text-slate-400 hover:text-amber-400 hover:bg-slate-700 border-slate-700'
                     }`}
                     title="Darslik rasmi yoki fayl biriktirish"
                   >
-                    <Paperclip className="w-4.5 h-4.5" />
+                    <Paperclip className="w-4 h-4" />
                   </button>
 
                   {/* Web Search Grounding Toggle Button */}
                   <button
                     type="button"
                     onClick={() => setEnableWebSearch(!enableWebSearch)}
-                    className={`p-3 rounded-2xl border transition cursor-pointer flex items-center gap-1 shrink-0 ${
+                    className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center gap-1 shrink-0 ${
                       enableWebSearch
                         ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50 font-bold'
                         : 'bg-slate-800 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 border-slate-700'
                     }`}
                     title="Google Search Grounding web qidiruvini yoqish/o'chirish"
                   >
-                    <Globe className="w-4.5 h-4.5" />
+                    <Globe className="w-4 h-4" />
                     <span className="hidden sm:inline text-xs font-mono">
                       {enableWebSearch ? 'Search ON' : 'Search'}
                     </span>
@@ -1235,17 +1536,17 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                   <button
                     type="button"
                     onClick={toggleVoiceInput}
-                    className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
+                    className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 ${
                       isVoiceInputActive
                         ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
-                        : 'bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-slate-700 border-slate-700'
+                        : 'bg-slate-800 text-slate-400 hover:text-amber-400 hover:bg-slate-700 border-slate-700'
                     }`}
                     title="Ovoz bilan kiritish (Speech-To-Text)"
                   >
-                    {isVoiceInputActive ? <MicOff className="w-4.5 h-4.5 text-rose-400" /> : <Mic className="w-4.5 h-4.5" />}
+                    {isVoiceInputActive ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4" />}
                   </button>
 
-                  {/* Main Input Text */}
+                  {/* Main Input Text Area */}
                   <input
                     type="text"
                     value={inputPrompt}
@@ -1259,16 +1560,16 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                         ? "Задайте вопрос по предметам или фото..."
                         : "Ask a question, upload a study photo, or search the web..."
                     }
-                    className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+                    className="flex-1 px-3 py-2 bg-transparent text-xs text-slate-100 placeholder-slate-500 focus:outline-none transition"
                   />
 
-                  {/* Submit Button */}
+                  {/* Submit Send Button */}
                   <button
                     type="submit"
                     disabled={isLoading || (!inputPrompt.trim() && !attachedFile)}
-                    className="p-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold transition cursor-pointer shadow-lg shadow-amber-500/20 shrink-0 disabled:opacity-50"
+                    className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 active:scale-95 transition-all shrink-0 disabled:opacity-50 cursor-pointer"
                   >
-                    {isLoading ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Send className="w-4.5 h-4.5" />}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
                 </div>
               </form>

@@ -71,7 +71,8 @@ export async function generateInsaneAIResponse({
   enableWebSearch = false,
   userLanguage = 'uz',
   model = 'gemini-3.6-flash',
-  role = 'student'
+  role = 'student',
+  customSystemInstruction
 }: {
   prompt: string;
   history?: ChatMessage[];
@@ -80,6 +81,7 @@ export async function generateInsaneAIResponse({
   userLanguage?: UserLanguage;
   model?: string;
   role?: UserRole;
+  customSystemInstruction?: string;
 }): Promise<AIResponseResult> {
   try {
     const res = await fetch('/api/ai/coach', {
@@ -92,7 +94,8 @@ export async function generateInsaneAIResponse({
         fileAttachment,
         role,
         enableWebSearch,
-        model
+        model,
+        customSystemInstruction
       }),
     });
 
@@ -111,8 +114,8 @@ export async function generateInsaneAIResponse({
 
   // Client-side Fallback
   return callClientSDKWithRetry(async (ai) => {
-    let systemInst = role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION;
-    if (role === 'admin' || role === 'superadmin') {
+    let systemInst = customSystemInstruction || (role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION);
+    if (!customSystemInstruction && (role === 'admin' || role === 'superadmin')) {
       systemInst += `\nRole Context: You are assisting an Administrator. Help draft announcements, center news, communication copy, and summary reports.`;
     }
     systemInst += `\nTarget Language: ${userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English'}`;

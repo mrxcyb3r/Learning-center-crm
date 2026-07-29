@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { mockTeachers, mockCourses, mockResults, mockFAQs } from '../data/mockData';
 import { StudentResult } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
@@ -29,6 +30,8 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = () => {
   const { language, t: dict, translate: t } = useLanguage();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // State
   const [selectedResult, setSelectedResult] = useState<StudentResult | null>(null);
@@ -92,15 +95,22 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   });
 
   return (
-    <div
-      className="min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200 bg-cover bg-center bg-fixed"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <div className="relative min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      {/* Dynamic Background Layer with Theme Inversion for Light Mode */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center bg-fixed transition-all duration-300"
+        style={{
+          backgroundImage: isDark
+            ? `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`
+            : `linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.92)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
+          filter: isDark ? 'none' : 'invert(0.85) hue-rotate(180deg) brightness(1.1)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      />
+
+      <div className="relative z-10">
       {/* 1. HERO SECTION */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -771,16 +781,16 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
             {/* Address & Interactive Location Card */}
             <div className="space-y-6">
-              <div className="p-8 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-6">
-                <h3 className="text-xl font-extrabold text-amber-400">
+              <div className="p-8 rounded-3xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl space-y-6">
+                <h3 className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
                   {t("Bizning Manzil va Kontaktlar", "Location & Contacts", "Адрес и контакты")}
                 </h3>
 
-                <div className="space-y-4 text-xs text-slate-300">
+                <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">{t("Manzil:", "Address:", "Адрес:")}</p>
+                      <p className="font-bold text-slate-900 dark:text-white">{t("Manzil:", "Address:", "Адрес:")}</p>
                       <p>{t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}</p>
                     </div>
                   </div>
@@ -788,7 +798,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">{t("Telefon:", "Phone:", "Телефон:")}</p>
+                      <p className="font-bold text-slate-900 dark:text-white">{t("Telefon:", "Phone:", "Телефон:")}</p>
                       <p>+998 90 123 45 67</p>
                     </div>
                   </div>
@@ -796,13 +806,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   <div className="flex items-start gap-3">
                     <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">Telegram:</p>
+                      <p className="font-bold text-slate-900 dark:text-white">Telegram:</p>
                       <p>@renessans_lc_official</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
+                <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400">
                   {t("Ish vaqti: Dushanba - Shanba 08:00 - 20:00", "Operating Hours: Mon-Sat 08:00 - 20:00", "Режим работы: Пн-Сб 08:00 - 20:00")}
                 </div>
               </div>
@@ -867,6 +877,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         result={selectedResult}
         onClose={() => setSelectedResult(null)}
       />
+      </div>
     </div>
   );
 };

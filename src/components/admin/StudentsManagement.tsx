@@ -228,7 +228,7 @@ export const StudentsManagement: React.FC = () => {
         <img
           src="https://i.ibb.co/rR6PYx2b/image.png"
           alt="Admin Banner Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 dark:opacity-35 pointer-events-none"
         />
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/30 mb-2">
@@ -257,7 +257,7 @@ export const StudentsManagement: React.FC = () => {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-4 shadow-sm dark:shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -304,7 +304,7 @@ export const StudentsManagement: React.FC = () => {
       </div>
 
       {/* Students Directory Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
             <span>{t("O'quvchilar Ro'yxati", "Student Roster", "Список Учеников")}</span>

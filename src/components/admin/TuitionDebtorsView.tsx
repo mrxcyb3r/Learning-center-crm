@@ -209,7 +209,7 @@ export const TuitionDebtorsView: React.FC = () => {
         <img
           src="https://i.ibb.co/rR6PYx2b/image.png"
           alt="Admin Banner Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 dark:opacity-35 pointer-events-none"
         />
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 mb-2">
@@ -238,21 +238,21 @@ export const TuitionDebtorsView: React.FC = () => {
       </div>
 
       {/* Tuition Analytics Banner Asset */}
-      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden relative shadow-lg">
+      <div className="p-4 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden relative shadow-sm dark:shadow-xl">
         <div className="flex items-center gap-4 relative z-10">
           <img
             src="https://i.ibb.co/XfBqBNBX/image.png"
             alt="Tuition Analytics"
-            className="w-24 h-20 object-cover rounded-2xl border border-emerald-500/30 shadow-md shrink-0"
+            className="w-24 h-20 object-cover rounded-2xl border border-emerald-500/30 shadow-md shrink-0 opacity-90 dark:opacity-100"
           />
           <div>
-            <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>{t("Moliya va Kontrakt Tahlili", "Tuition & Financial Analytics", "Аналитика Оплат")}</span>
-              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-mono font-bold">
+              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                 LIVE METRICS
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-lg">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-lg">
               {t(
                 "Oylik tushum va qarzdorliklar real-vaqt rejimida Firestore ma'lumotlar bazasi bilan avtomatik sinxronlanadi.",
                 "Real-time tuition metrics, collected fees, and debtor account streams synced with Firestore.",
@@ -263,7 +263,7 @@ export const TuitionDebtorsView: React.FC = () => {
         </div>
         <button
           onClick={() => handleOpenLogModal()}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold text-xs shrink-0 cursor-pointer transition relative z-10"
+          className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-xs shrink-0 cursor-pointer transition relative z-10"
         >
           {t("Kassa Operatsiyalari →", "Open Cashier Portal →", "Кассовые Операции →")}
         </button>
@@ -271,8 +271,8 @@ export const TuitionDebtorsView: React.FC = () => {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl space-y-1">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
             {t("Jami Qabul Qilingan Tushum", "Total Logged Revenue", "Принятый Доход")}
           </span>
           <p className="text-2xl font-black text-emerald-500 font-mono">
@@ -283,8 +283,8 @@ export const TuitionDebtorsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl space-y-1">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
             {t("Qarzdorlik Summasi", "Total Pending Debt", "Общий Долг")}
           </span>
           <p className="text-2xl font-black text-rose-500 font-mono">
@@ -295,8 +295,8 @@ export const TuitionDebtorsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl space-y-1">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
             {t("To'lov Intizomi", "Payment Compliance", "Исполнение Оплаты")}
           </span>
           <p className="text-2xl font-black text-slate-900 dark:text-white">
@@ -310,7 +310,7 @@ export const TuitionDebtorsView: React.FC = () => {
       </div>
 
       {/* Navigation Tabs & Search */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-4 shadow-sm dark:shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Tab Buttons */}
         <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-full sm:w-auto">
           <button
@@ -358,7 +358,7 @@ export const TuitionDebtorsView: React.FC = () => {
       </div>
 
       {/* Main Table Content */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:shadow-xl">
         {activeTab === 'debtors' ? (
           <div>
             <div className="flex items-center justify-between mb-4">

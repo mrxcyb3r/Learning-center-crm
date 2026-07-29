@@ -104,11 +104,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       )}
 
       {/* Admin Hero Header with Hosted Banner Background */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
+      <div className="p-6 rounded-3xl bg-slate-900 dark:bg-slate-900/90 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
         <img
           src="https://i.ibb.co/rR6PYx2b/image.png"
           alt="Admin Banner Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 dark:opacity-35 pointer-events-none"
         />
         <div className="relative z-10">
           <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
@@ -163,10 +163,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {/* Total Monthly Revenue */}
         <div
           onClick={() => onNavigate?.('payments')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 transition cursor-pointer space-y-2 group"
+          className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl hover:border-emerald-500/50 transition cursor-pointer space-y-2 group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {t("Oylik Jami Tushum", "Total Monthly Revenue", "Ежемесячный Доход")}
             </span>
             <div className="p-2 rounded-2xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition">
@@ -187,10 +187,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {/* Active Enrolled Students */}
         <div
           onClick={() => onNavigate?.('students')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500/50 transition cursor-pointer space-y-2 group"
+          className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl hover:border-amber-500/50 transition cursor-pointer space-y-2 group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {t("Faol O'quvchilar", "Active Enrolled Students", "Активные Ученики")}
             </span>
             <div className="p-2 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition">
@@ -210,10 +210,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {/* Debtor Accounts */}
         <div
           onClick={() => onNavigate?.('payments')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-rose-500/50 transition cursor-pointer space-y-2 group"
+          className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl hover:border-rose-500/50 transition cursor-pointer space-y-2 group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {t("Qarzdor Accounts", "Debtor Accounts", "Задолженности")}
             </span>
             <div className="p-2 rounded-2xl bg-rose-500/10 text-rose-500 group-hover:scale-110 transition">
@@ -233,10 +233,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {/* Active Study Groups */}
         <div
           onClick={() => onNavigate?.('classes')}
-          className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-purple-500/50 transition cursor-pointer space-y-2 group"
+          className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl hover:border-purple-500/50 transition cursor-pointer space-y-2 group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {t("Faol Guruhlar", "Active Study Groups", "Учебные Группы")}
             </span>
             <div className="p-2 rounded-2xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition">
@@ -255,21 +255,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       </div>
 
       {/* Tuition & Financial Analytics Card Asset */}
-      <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg relative overflow-hidden">
+      <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm dark:shadow-xl relative overflow-hidden">
         <div className="flex items-center gap-4 relative z-10">
           <img
             src="https://i.ibb.co/XfBqBNBX/image.png"
             alt="Tuition Analytics"
-            className="w-24 h-20 object-cover rounded-2xl border border-amber-500/30 shadow-md shrink-0"
+            className="w-24 h-20 object-cover rounded-2xl border border-amber-500/30 shadow-md shrink-0 opacity-90 dark:opacity-100"
           />
           <div>
-            <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span>{t("To'lovlar & Debtorlar Analitikasi", "Tuition & Debtor Analytics", "Аналитика Задолженностей")}</span>
-              <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 font-mono font-bold">
+              <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono font-bold">
                 LIVE SYNC
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-lg font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-lg font-medium">
               {t(
                 "Muddati o'tgan kontraktlar, to'lovlar monitoringi va Telegram avto-eslatmalar markaziga o'ting.",
                 "Review overdue accounts, payment status breakdowns and Telegram notification logs.",
@@ -287,7 +287,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       </div>
 
       {/* Admin Quick Action Panel */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+      <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-5 shadow-sm dark:shadow-xl">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">

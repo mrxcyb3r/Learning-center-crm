@@ -183,15 +183,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div
-      className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-200 bg-cover bg-center bg-fixed"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <div className="relative min-h-screen text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
+      {/* Dynamic Background Layer with Theme Inversion for Light Mode */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center bg-fixed transition-all duration-300"
+        style={{
+          backgroundImage: isDarkMode
+            ? `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`
+            : `linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.92)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
+          filter: isDarkMode ? 'none' : 'invert(0.85) hue-rotate(180deg) brightness(1.1)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col md:flex-row min-h-screen">
       
       {/* LEFT SIDEBAR */}
       <aside
@@ -482,5 +489,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </div>
 
     </div>
-  );
+  </div>
+);
 };

@@ -623,10 +623,10 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
   );
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] flex flex-col bg-slate-950 text-slate-100 rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden font-sans">
+    <div className="relative min-h-[calc(100vh-5rem)] flex flex-col bg-white/80 dark:bg-slate-900/50 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-3xl border border-slate-200/80 dark:border-slate-800/60 shadow-sm dark:shadow-xl overflow-hidden font-sans transition-colors duration-200">
       
       {/* INTEGRATED TOP CONTROL BAR */}
-      <header className="px-4 md:px-6 py-3 bg-slate-900 border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <header className="px-4 md:px-6 py-3 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
         
         {/* History & New Chat Buttons */}
         <div className="flex items-center gap-2">
@@ -665,7 +665,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
         </div>
 
         {/* Center Workspace Tabs */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
@@ -956,20 +956,20 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
           {activeTab === 'chat' && (
             <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 max-w-3xl mx-auto w-full">
               {/* Feature Banner Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 flex items-center gap-4 shadow-xl">
+              <div className="p-4 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex items-center gap-4 shadow-sm dark:shadow-xl">
                 <img
                   src="https://i.ibb.co/fzkdYxCC/image.png"
                   alt="24/7 AI Tutor"
-                  className="w-20 h-20 object-cover rounded-xl border border-amber-500/30 shadow-md shrink-0"
+                  className="w-20 h-20 object-cover rounded-xl border border-amber-500/30 shadow-md shrink-0 opacity-90 dark:opacity-100"
                 />
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-extrabold text-white">24/7 AI Personal Coach & Tutor</h3>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">24/7 AI Personal Coach & Tutor</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30">
                       GEMINI POWERED
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed font-medium">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed font-medium">
                     IELTS Speaking practice, Essay grading, grammar drills va real-time akademik yordam oling.
                   </p>
                 </div>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { TypewriterText } from '../common/TypewriterText';
+import { StudentProgressCharts } from '../student/StudentProgressCharts';
 import { AdminDashboard } from '../../pages/admin/AdminDashboard';
 import {
   subscribeStudents,
@@ -872,6 +875,9 @@ export const StudentDashboardView: React.FC<{
         </div>
       </div>
 
+      {/* Recharts Student Progress Radar & Line Charts */}
+      <StudentProgressCharts />
+
       {/* Student Goal Banner with Hosted Student Avatar Asset */}
       <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-slate-950 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -884,8 +890,13 @@ export const StudentDashboardView: React.FC<{
             <span className="px-3 py-1 rounded-full bg-slate-950/20 text-slate-950 font-bold text-xs uppercase tracking-wider">
               Renessans Student Portal • IELTS 8.0 Target
             </span>
-            <h2 className="text-lg md:text-xl font-black mt-1">
-              {t(`Salom, ${displayName}!`, `Hello, ${displayName}!`, `Привет, ${displayName}!`)}
+            <h2 className="text-lg md:text-xl font-black mt-1 flex items-center gap-1.5">
+              <TypewriterText
+                texts={[`Welcome back, ${displayName || 'Jasur Rahimov'} • Target: IELTS 8.0 🎯`]}
+                speed={30}
+                loop={false}
+                cursorColorClass="text-slate-950 font-black"
+              />
             </h2>
             <p className="text-xs text-slate-900/80 mt-0.5 max-w-xl font-medium">
               {t(

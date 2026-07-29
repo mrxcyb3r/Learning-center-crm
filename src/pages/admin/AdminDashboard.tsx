@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { TypewriterText } from '../../components/common/TypewriterText';
+import { TuitionRevenueChart } from '../../components/admin/TuitionRevenueChart';
 import {
   subscribeStudents,
   subscribeGroups,
@@ -114,8 +117,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
             Renessans Learning Center Platform • Tashkent
           </span>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2">
-            {t(`Boshqaruv Paneli • ${displayName}`, `Admin Dashboard • ${displayName}`, `Панель Управления • ${displayName}`)}
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-2 flex items-center gap-2">
+            <span>{t("Xush kelibsiz", "Welcome back", "Добро пожаловать")},</span>
+            <span className="text-amber-400">
+              <TypewriterText
+                texts={[`${displayName || "Center Admin Manager"} 👋`]}
+                speed={35}
+                loop={false}
+                cursorColorClass="text-amber-400 font-bold"
+              />
+            </span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xl font-medium">
             {t(
@@ -253,6 +264,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           </div>
         </div>
       </div>
+
+      {/* Recharts Interactive Revenue & Debt Analytics Chart */}
+      <TuitionRevenueChart />
 
       {/* Tuition & Financial Analytics Card Asset */}
       <div className="p-5 rounded-3xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm dark:shadow-xl relative overflow-hidden">

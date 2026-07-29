@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { toast } from 'react-toastify';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { TypewriterText } from '../components/common/TypewriterText';
+import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel';
 import { mockTeachers, mockCourses, mockResults, mockFAQs } from '../data/mockData';
 import { StudentResult } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
@@ -65,6 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         status: 'new'
       });
       setSubmitSuccess(true);
+      toast.success(t("Arizangiz qabul qilindi! Menejerimiz tez orada bog'lanadi.", "Application received! Our manager will contact you soon.", "Заявка принята! Менеджер свяжется с вами."));
       setFormName('');
       setFormPhone('+998 90 ');
       setFormCourse('');
@@ -73,6 +77,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
       console.warn('Firestore write warning (offline fallback enabled):', err);
       // Fallback local success
       setSubmitSuccess(true);
+      toast.success(t("Arizangiz qabul qilindi! Menejerimiz tez orada bog'lanadi.", "Application received! Our manager will contact you soon.", "Заявка принята! Менеджер свяжется с вами."));
     } finally {
       setIsSubmitting(false);
     }
@@ -131,8 +136,18 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-4">
-              <span className="block text-amber-500 font-extrabold drop-shadow-sm">
-                {t("INNOVATSION TA'LIM VA YUQORI NATIJALAR", "INNOVATIVE EDUCATION & HIGH RESULTS", "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ")}
+              <span className="block text-amber-500 font-extrabold drop-shadow-sm min-h-[3.5rem] sm:min-h-[4.5rem]">
+                <TypewriterText
+                  texts={[
+                    t("INNOVATSION TA'LIM VA YUQORI NATIJALAR", "INNOVATIVE EDUCATION & HIGH RESULTS", "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ"),
+                    t("Real-vaqtda to'lovlar, davomat va IELTS progressi", "Track tuition, attendance, and IELTS progress in real-time", "Отслеживайте оплату, посещаемость и прогресс IELTS"),
+                    t("24/7 AI Mentori va zamonaviy tahlillar bilan", "Powered by 24/7 AI Mentors and modern analytics", "С поддержкой 24/7 ИИ-менторов и современной аналитики")
+                  ]}
+                  speed={45}
+                  deleteSpeed={20}
+                  pauseDuration={2000}
+                  cursorColorClass="text-amber-500 font-extrabold drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]"
+                />
               </span>
               <span className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mt-3 block leading-relaxed">
                 {t(
@@ -506,6 +521,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           </div>
         </div>
       </motion.section>
+
+      {/* SWIPER TESTIMONIALS & ACHIEVERS CAROUSEL */}
+      <section className="py-16 bg-slate-100/60 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <TestimonialsCarousel />
+        </div>
+      </section>
 
       {/* 5. COURSES & PRICING GRID ("KURSLARIMIZ & NARXLAR") */}
       <motion.section

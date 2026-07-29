@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { FormattedAIResponse } from '../../components/AI/FormattedAIResponse';
+import { AIStreamingText } from '../../components/common/AIStreamingText';
+import { TypingIndicator } from '../../components/common/TypingIndicator';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -1009,7 +1012,11 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                       {isUser ? (
                         <div className="whitespace-pre-wrap">{msg.text}</div>
                       ) : (
-                        <FormattedAIResponse content={msg.text} />
+                        <AIStreamingText
+                          content={msg.text}
+                          isLatest={idx === messages.length - 1}
+                          speedMsPerWord={18}
+                        />
                       )}
 
                       {/* Google Search Grounding Citations Accordion */}
@@ -1096,12 +1103,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({ onBackToDashboard }) =
                 );
               })}
 
-              {isLoading && (
-                <div className="flex items-center gap-2 text-xs text-amber-400 font-bold animate-pulse p-3 bg-slate-900/80 rounded-2xl border border-slate-800">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Renessans Prime AI tahlil o'tkazmoqda...</span>
-                </div>
-              )}
+              {isLoading && <TypingIndicator />}
 
               <div ref={messagesEndRef} />
             </div>

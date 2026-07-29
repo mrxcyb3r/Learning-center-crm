@@ -29,11 +29,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const navLinks = [
-    { href: '#courses', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
+    { href: '#features', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
     { href: '#pricing', label: language === 'UZ' ? 'Narxlar' : language === 'RU' ? 'Цены' : 'Pricing' },
     { href: 'https://chronicle.ai.studio/', label: language === 'UZ' ? 'Blog' : language === 'RU' ? 'Блог' : 'Blog', isExternal: true },
     { href: '#contact', label: language === 'UZ' ? 'Aloqa' : language === 'RU' ? 'Контакты' : 'Contact' }
   ];
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isExternal?: boolean) => {
+    if (isExternal) return;
+    e.preventDefault();
+    const targetId = href.replace('#', '');
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
@@ -67,6 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                 href={link.href}
                 target={link.isExternal ? "_blank" : undefined}
                 rel={link.isExternal ? "noopener noreferrer" : undefined}
+                onClick={(e) => handleNavClick(e, link.href, link.isExternal)}
                 className="text-sm font-medium text-slate-700 hover:text-amber-500 dark:text-slate-300 dark:hover:text-amber-400 transition-colors"
               >
                 {link.label}
@@ -181,6 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
             {/* Quick Contact Header CTA */}
             <a
               href="#contact"
+              onClick={(e) => handleNavClick(e, '#contact')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs border border-slate-700/50 transition cursor-pointer"
             >
               <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
@@ -217,7 +230,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                 href={link.href}
                 target={link.isExternal ? "_blank" : undefined}
                 rel={link.isExternal ? "noopener noreferrer" : undefined}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, link.href, link.isExternal)}
                 className="text-base font-semibold text-slate-800 dark:text-slate-200 hover:text-amber-500 py-1"
               >
                 {link.label}

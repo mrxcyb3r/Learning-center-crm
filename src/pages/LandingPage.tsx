@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
 import { mockTeachers, mockCourses, mockResults, mockFAQs } from '../data/mockData';
 import { StudentResult } from '../types';
@@ -91,9 +92,22 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div
+      className="min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200 bg-cover bg-center bg-fixed"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 border-b border-slate-200/80 dark:border-slate-800/80">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 border-b border-slate-200/80 dark:border-slate-800/80"
+      >
         {/* Subtle background glow circles */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-amber-500/10 dark:bg-amber-500/5 blur-3xl rounded-full pointer-events-none" />
 
@@ -139,7 +153,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               </a>
               <a
                 href="#contact"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm border border-slate-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 backdrop-blur-md dark:bg-slate-800/80 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm border border-slate-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 <span>{t("Bog'lanish", "Get in Touch", "Связаться с нами")}</span>
                 <Phone className="w-4 h-4 text-amber-400" />
@@ -149,47 +163,66 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
           {/* Stats Grid Overlay (4 Floating Stat Cards) */}
           <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
+            >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
                 1,500+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("O'quvchilar soni", "Active Students", "Учеников")}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
+            >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
                 280+
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("IELTS 7.0+ Natijalar", "IELTS 7.0+ Results", "Результатов IELTS 7.0+")}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
+            >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
                 95%
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("OTMga Kirish Ko'rsatkichi", "University Admission Rate", "Поступление в ВУЗы")}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none text-center">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
+            >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
                 4+ Yil
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("Muvaffaqiyatli Tajriba", "Years of Experience", "Успешного опыта")}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 2. FEATURES / "NEGA AYNAN RENESSANS?" */}
-      <section className="py-20 bg-slate-100/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
+      <motion.section
+        id="features"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 bg-slate-900/20 backdrop-blur-sm border-b border-slate-200/80 dark:border-slate-800/80"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -201,7 +234,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+            <motion.div
+              whileHover={{ scale: 1.03, y: -4 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
+            >
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
                 1
               </div>
@@ -215,9 +251,12 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   "Персональные учебные планы для каждого студента."
                 )}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+            <motion.div
+              whileHover={{ scale: 1.03, y: -4 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
+            >
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
                 2
               </div>
@@ -231,9 +270,12 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   "Квалифицированные специалисты с международными сертификатами."
                 )}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+            <motion.div
+              whileHover={{ scale: 1.03, y: -4 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
+            >
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
                 3
               </div>
@@ -247,9 +289,12 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   "Современные компьютерные классы и высокоскоростной интернет."
                 )}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group">
+            <motion.div
+              whileHover={{ scale: 1.03, y: -4 }}
+              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
+            >
               <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
                 4
               </div>
@@ -263,13 +308,20 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   "Симуляция реальных экзаменов с подробным анализом."
                 )}
               </p>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 3. TEACHERS ROSTER ("O'QITUVCHILARIMIZ") */}
-      <section id="teachers" className="py-20 border-b border-slate-200/80 dark:border-slate-800/80">
+      <motion.section
+        id="teachers"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 border-b border-slate-200/80 dark:border-slate-800/80"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
@@ -287,9 +339,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           {/* Grid of Teachers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {mockTeachers.map((teacher) => (
-              <div
+              <motion.div
                 key={teacher.id}
-                className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group"
+                whileHover={{ scale: 1.02, y: -4 }}
+                className="rounded-3xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
                   <div className="relative h-60 overflow-hidden bg-slate-200 dark:bg-slate-800">
@@ -320,7 +373,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       {teacher.specialization.map((spec, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+                          className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800/80 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
                         >
                           {spec}
                         </span>
@@ -337,14 +390,21 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     {teacher.resultsCount}+{t(" Natijalar", " Results", " Результатов")}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 4. RESULTS SECTION ("NATIJALARIMIZ") */}
-      <section id="results" className="py-20 bg-slate-100/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
+      <motion.section
+        id="results"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 bg-slate-900/20 backdrop-blur-sm border-b border-slate-200/80 dark:border-slate-800/80"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
@@ -375,7 +435,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                   resultFilter === f.id
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                    : 'bg-white/90 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                 }`}
               >
                 {f.label}
@@ -386,9 +446,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           {/* Results Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredResults.map((result) => (
-              <div
+              <motion.div
                 key={result.id}
-                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                whileHover={{ scale: 1.02, y: -4 }}
+                className="p-6 rounded-3xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
                 onClick={() => setSelectedResult(result)}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -427,25 +488,33 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   </div>
                 </div>
 
-                <button className="w-full mt-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                <button className="w-full mt-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-bold text-xs group-hover:bg-amber-500 group-hover:text-slate-950 transition">
                   {t("Sertifikatni ko'rish", "View Certificate", "Посмотреть сертификат")}
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* 5. COURSES GRID ("KURSLARIMIZ") */}
-      <section id="courses" className="py-20 border-b border-slate-200/80 dark:border-slate-800/80">
+      {/* 5. COURSES & PRICING GRID ("KURSLARIMIZ & NARXLAR") */}
+      <motion.section
+        id="pricing"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 border-b border-slate-200/80 dark:border-slate-800/80 relative"
+      >
+        <div id="courses" className="scroll-mt-24" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20 mb-3">
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Renessans Courses</span>
+              <span>Renessans Courses & Pricing</span>
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t("O'quv Dasturlarimiz", "Our Courses", "Наши Курсы")}
+              {t("O'quv Dasturlarimiz va Narxlar", "Our Courses & Pricing Plans", "Наши Курсы и Тарифы")}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
               {t("Boshlang'ich darajadan to IELTS, CEFR va IT yo'nalishidagi intensiv va samarali kurslar", "From foundational English to advanced IELTS, CEFR & IT preparation", "От базового уровня до продвинутой подготовки к IELTS, CEFR и IT")}
@@ -454,12 +523,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {mockCourses.map((course) => (
-              <div
+              <motion.div
                 key={course.id}
-                className={`relative rounded-3xl p-8 bg-white dark:bg-slate-900 border transition-all duration-300 flex flex-col justify-between shadow-xl ${
+                whileHover={{ scale: 1.02, y: -4 }}
+                className={`relative rounded-3xl p-8 bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border transition-all duration-300 flex flex-col justify-between shadow-xl ${
                   course.isPopular
                     ? 'border-amber-500/80 ring-2 ring-amber-500/20'
-                    : 'border-slate-200/80 dark:border-slate-800'
+                    : 'border-slate-200/80 dark:border-slate-800/80'
                 }`}
               >
                 {course.isPopular && (
@@ -522,14 +592,21 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     {t("Kursga yozilish", "Enroll Now", "Записаться на курс")}
                   </a>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 6. FAQ SECTION */}
-      <section id="faq" className="py-20 bg-slate-100/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
+      <motion.section
+        id="faq"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 bg-slate-900/20 backdrop-blur-sm border-b border-slate-200/80 dark:border-slate-800/80"
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -548,7 +625,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               value={faqSearch}
               onChange={(e) => setFaqSearch(e.target.value)}
               placeholder={t("Savolni izlang...", "Search question...", "Поиск вопроса...")}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/90 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -562,7 +639,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               return (
                 <div
                   key={faq.id}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm"
+                  className="rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-sm"
                 >
                   <button
                     onClick={() => setExpandedFaqId(isExpanded ? null : faq.id)}
@@ -585,14 +662,21 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             })}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 7. LEAD CONTACT FORM & LOCATION ("BIZGA BOG'LANISH") */}
-      <section id="contact" className="py-20 relative">
+      <motion.section
+        id="contact"
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.5 }}
+        className="py-20 relative"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Contact Form */}
-            <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl">
+            <div className="p-8 rounded-3xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
                 {t("Bizga Bog'lanish", "Get in Touch", "Связаться с нами")}
               </h2>
@@ -746,7 +830,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* FOOTER */}
       <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-800">

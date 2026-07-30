@@ -7,7 +7,7 @@ import { TypewriterText } from '../components/common/TypewriterText';
 import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel';
 import { StudentResult, LandingPageContent } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { subscribeLandingPageContent, DEFAULT_LANDING_PAGE_CONTENT } from '../services/landingCms';
 import {
@@ -101,9 +101,9 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         fullName: formName.trim(),
         phoneNumber: formPhone.trim(),
         selectedCourse: formCourse,
-        message: formMessage.trim(),
+        message: formMessage.trim() || '',
         status: 'new' as const,
-        createdAt: new Date().toISOString()
+        createdAt: serverTimestamp()
       };
 
       // Write to 'inquiries' collection in Firestore
@@ -114,9 +114,9 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         name: formName.trim(),
         phone: formPhone.trim(),
         courseId: formCourse,
-        message: formMessage.trim(),
+        message: formMessage.trim() || '',
         status: 'new',
-        createdAt: payload.createdAt
+        createdAt: new Date().toISOString()
       }).catch(() => {});
 
       setSubmitSuccess(true);

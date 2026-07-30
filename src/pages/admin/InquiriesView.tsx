@@ -28,45 +28,6 @@ import {
   Lock
 } from 'lucide-react';
 
-const MOCK_INQUIRIES: Inquiry[] = [
-  {
-    id: 'inq-1',
-    fullName: 'Shohruh Olimov',
-    phoneNumber: '+998 90 456 78 90',
-    selectedCourse: 'ielts-rocket',
-    message: 'IELTS 7.5+ guruhiga yozilmoqchiman. Darslar soat 14:00 da bo\'ladimi?',
-    status: 'new',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString()
-  },
-  {
-    id: 'inq-2',
-    fullName: 'Dilnoza Axmedova',
-    phoneNumber: '+998 93 111 22 33',
-    selectedCourse: 'cefr-fasttrack',
-    message: 'CEFR B2 imtihoniga tayyorlanish uchun 2 oylik kurs kerak.',
-    status: 'new',
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString()
-  },
-  {
-    id: 'inq-3',
-    fullName: 'Sardor Qodirov',
-    phoneNumber: '+998 97 999 88 77',
-    selectedCourse: 'general-english',
-    message: 'Noldan o\'rganmoqchiman. Boshlang\'ich guruh bormi?',
-    status: 'contacted',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
-  },
-  {
-    id: 'inq-4',
-    fullName: 'Aziza Yusupova',
-    phoneNumber: '+998 91 333 44 55',
-    selectedCourse: 'kids-english',
-    message: 'Farzandim uchun ingliz tili darsi bo\'yicha ma\'lumot olmoqchiman.',
-    status: 'enrolled',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
-  }
-];
-
 export const InquiriesView: React.FC = () => {
   const { language } = useLanguage();
 
@@ -109,21 +70,17 @@ export const InquiriesView: React.FC = () => {
 
     const unsubInq = subscribeInquiries((data) => {
       if (!isMounted) return;
-      if (data && data.length > 0) {
-        setInquiries((prevInqs) => {
-          if (prevInqs.length === 0) return data;
-          // Merge remote data preserving items currently undergoing local optimistic processing
-          return data.map((remoteItem) => {
-            if (processingIdsRef.current.has(remoteItem.id)) {
-              const localItem = prevInqs.find((p) => p.id === remoteItem.id);
-              return localItem || remoteItem;
-            }
-            return remoteItem;
-          });
+      setInquiries((prevInqs) => {
+        if (prevInqs.length === 0) return data;
+        // Merge remote data preserving items currently undergoing local optimistic processing
+        return data.map((remoteItem) => {
+          if (processingIdsRef.current.has(remoteItem.id)) {
+            const localItem = prevInqs.find((p) => p.id === remoteItem.id);
+            return localItem || remoteItem;
+          }
+          return remoteItem;
         });
-      } else {
-        setInquiries((prev) => (prev.length === 0 ? MOCK_INQUIRIES : prev));
-      }
+      });
       setIsLoading(false);
     });
 
@@ -534,11 +491,25 @@ export const InquiriesView: React.FC = () => {
           <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-bold">{t("Arizalar yuklanmoqda...", "Loading inquiries...", "Загрузка заявок...")}</p>
         </div>
+      ) : inquiries.length === 0 ? (
+        <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
+          <PhoneCall className="w-10 h-10 text-amber-500/80 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            {t("Hozircha arizalar mavjud emas", "No inquiries found yet", "Заявки пока отсутствуют")}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            {t(
+              "Lending saytdan yuborilgan arizalar bu yerda real-vaqt rejimida ko'rinadi.",
+              "Submissions from the website landing page will show up here live.",
+              "Заявки с лендинга появятся здесь в реальном времени."
+            )}
+          </p>
+        </div>
       ) : filteredInquiries.length === 0 ? (
         <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
-          <PhoneCall className="w-10 h-10 text-slate-300 mx-auto" />
+          <Search className="w-10 h-10 text-slate-300 mx-auto" />
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            {t("Hech qanday ariza topilmadi", "No inquiries found", "Заявки не найдены")}
+            {t("Qidiruv bo'yicha ariza topilmadi", "No matching inquiries", "Заявки не найдены")}
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {searchQuery

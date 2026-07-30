@@ -491,14 +491,18 @@ export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
           }
           return {
             id: docSnap.id,
-            fullName: data.fullName || data.name || 'Anonymous',
-            phoneNumber: data.phoneNumber || data.phone || '',
+            fullName: data.fullName || data.name || 'Unnamed Lead',
+            phoneNumber: data.phoneNumber || data.phone || 'No phone',
             selectedCourse: data.selectedCourse || data.courseId || 'General English',
             message: data.message || '',
             status: data.status || 'new',
             createdAt: createdAtStr
           };
         });
+
+        // Sort manually by date descending
+        items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         callback(items);
       },
       (error) => {
@@ -686,50 +690,7 @@ export async function seedFirestoreIfEmpty() {
       }
     }
 
-    // 2. Seed Inquiries if empty
-    const inquirySnap = await getDocs(collection(db, INQUIRIES_COL));
-    if (inquirySnap.empty) {
-      const sampleInquiries = [
-        {
-          fullName: 'Shohruh Olimov',
-          phoneNumber: '+998 90 456 78 90',
-          selectedCourse: 'ielts-rocket',
-          message: 'IELTS 7.5+ guruhiga yozilmoqchiman. Darslar soat 14:00 da bo\'ladimi?',
-          status: 'new',
-          createdAt: new Date().toISOString()
-        },
-        {
-          fullName: 'Dilnoza Axmedova',
-          phoneNumber: '+998 93 111 22 33',
-          selectedCourse: 'cefr-fasttrack',
-          message: 'CEFR B2 imtihoniga tayyorlanish uchun 2 oylik kurs kerak.',
-          status: 'contacted',
-          createdAt: new Date().toISOString()
-        },
-        {
-          fullName: 'Sardor Qodirov',
-          phoneNumber: '+998 97 999 88 77',
-          selectedCourse: 'general-english',
-          message: 'Noldan o\'rganmoqchiman. Boshlang\'ich guruh bormi?',
-          status: 'enrolled',
-          createdAt: new Date().toISOString()
-        },
-        {
-          fullName: 'Aziza Yusupova',
-          phoneNumber: '+998 91 333 44 55',
-          selectedCourse: 'kids-english',
-          message: 'Farzandim uchun ingliz tili darsi bo\'yicha ma\'lumot olmoqchiman.',
-          status: 'dismissed',
-          createdAt: new Date().toISOString()
-        }
-      ];
-
-      for (const inq of sampleInquiries) {
-        await addDoc(collection(db, INQUIRIES_COL), inq);
-      }
-    }
-
-    // 3. Seed Security Pins if empty
+    // 2. Seed Security Pins if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
       await saveSecurityPins({

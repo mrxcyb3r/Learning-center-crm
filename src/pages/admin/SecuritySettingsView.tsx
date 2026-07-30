@@ -186,7 +186,7 @@ export const SecuritySettingsView: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
               <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-purple-500" />
-                <span>Admin Access PIN</span>
+                <span>{t("Admin kirish PIN kodi", "Admin Access PIN", "PIN-код для Администраторов")}</span>
               </label>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
                 {t("Admin va SuperAdmin kirish PIN kodi", "Passcode for Admin role", "PIN для Администраторов")}
@@ -208,7 +208,7 @@ export const SecuritySettingsView: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
               <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                 <UserCheck className="w-4 h-4 text-blue-500" />
-                <span>Teacher Access PIN</span>
+                <span>{t("O'qituvchi kirish PIN kodi", "Teacher Access PIN", "PIN-код для Преподавателей")}</span>
               </label>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
                 {t("O'qituvchi kirish PIN kodi", "Passcode for Teacher role", "PIN для Преподавателей")}
@@ -230,10 +230,10 @@ export const SecuritySettingsView: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
               <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
                 <GraduationCap className="w-4 h-4 text-emerald-500" />
-                <span>Student Access PIN</span>
+                <span>{t("O'quvchi kirish PIN kodi", "Student Access PIN", "PIN-код доступа для студентов")}</span>
               </label>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                {t("O'quvchi kirish PIN kodi", "Passcode for Student role", "PIN для Студентов")}
+                {t("O'quvchi kirish PIN kodi (Boshlang'ich: securestudent)", "Passcode for Student role (Default: securestudent)", "PIN для Студентов (По умолчанию: securestudent)")}
               </p>
               <div className="relative">
                 <Key className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

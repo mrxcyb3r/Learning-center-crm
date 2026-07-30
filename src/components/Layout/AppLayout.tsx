@@ -142,15 +142,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
         { id: 'inquiries', label: t('Arizalar & Lids', 'Leads & Inquiries', 'Заявки и Лиды'), icon: <PhoneCall className="w-4 h-4 text-emerald-500" />, badge: newInquiriesCount > 0 ? newInquiriesCount : undefined },
-        { id: 'superadmin_control', label: t('SuperAdmin Boshqaruvi', 'SuperAdmin Control', 'Панель SuperAdmin'), icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
-        { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
-        { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
+        { id: 'landing', label: t('Lending Sayt CMS', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
+        { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Kontrakt", 'Tuition & Payments', 'Оплата и Контракты'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
-        { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
-        { id: 'homework', label: t("Vazifalar & Media", 'Homework & Media', 'Задания и Медиа'), icon: <FileText className="w-4 h-4" /> },
-        { id: 'settings', label: t("Sozlamalar & PIN", 'Settings & Security PINs', 'Настройки и PIN'), icon: <Settings className="w-4 h-4" /> }
+        { id: 'security', label: t("Xavfsizlik va PIN Kodlar", 'Security & PIN Codes', 'Безопасность и PIN-коды'), icon: <Settings className="w-4 h-4" /> },
+        { id: 'superadmin_control', label: t('SuperAdmin Boshqaruvi', 'SuperAdmin Control', 'Панель SuperAdmin'), icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> }
       ];
     }
 
@@ -158,11 +156,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
         { id: 'inquiries', label: t('Arizalar & Lids', 'Leads & Inquiries', 'Заявки и Лиды'), icon: <PhoneCall className="w-4 h-4 text-emerald-500" />, badge: newInquiriesCount > 0 ? newInquiriesCount : undefined },
-        { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
-        { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
+        { id: 'landing', label: t('Lending Sayt CMS', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
-        { id: 'payments', label: t("To'lovlar & Qarzdorlar", 'Tuition & Debtor List', 'Оплата и Должники'), icon: <CreditCard className="w-4 h-4" /> },
-        { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> }
+        { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
+        { id: 'payments', label: t("To'lovlar & Kontrakt", 'Tuition & Payments', 'Оплата и Контракты'), icon: <CreditCard className="w-4 h-4" /> },
+        { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
+        { id: 'security', label: t("Xavfsizlik va PIN Kodlar", 'Security & PIN Codes', 'Безопасность и PIN-коды'), icon: <Settings className="w-4 h-4" /> }
       ];
     }
 
@@ -463,8 +462,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               <ClassesView />
             )
           )}
-          {activeTab === 'blog' && <BlogCMSView />}
-          {activeTab === 'settings' && <SettingsView />}
+          {activeTab === 'blog' && (
+            (activeRole === 'admin' || activeRole === 'superadmin') ? (
+              React.isValidElement(children)
+                ? React.cloneElement(children as React.ReactElement<any>, { onNavigate: handleNavigate })
+                : children
+            ) : <BlogCMSView />
+          )}
+          {(activeTab === 'settings' || activeTab === 'security') && <SettingsView />}
 
           {/* Fallback to Dashboard / children */}
           {(activeTab === 'dashboard' ||
@@ -485,7 +490,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               'payroll',
               'classes',
               'blog',
-              'settings'
+              'settings',
+              'security'
             ].includes(activeTab)) &&
             (React.isValidElement(children)
               ? React.cloneElement(children as React.ReactElement<any>, { onNavigate: handleNavigate })

@@ -144,12 +144,13 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   googleMapsUrl: "https://maps.google.com"
 };
 
+const LANDING_CMS_DOC = doc(db, 'settings', 'landing_cms');
 const LANDING_SETTINGS_DOC = doc(db, 'settings', 'landing_page_content');
 const LOCAL_STORAGE_KEY = 'centerflow_landing_cms_v1';
 
 /**
- * Real-time listener for Landing Page content from Firestore doc(db, 'settings', 'landing_page_content')
- * Fallback smoothly to localStorage or DEFAULT_LANDING_PAGE_CONTENT
+ * Real-time listener for Landing Page content from Firestore doc(db, 'settings', 'landing_cms')
+ * Fallback smoothly to settings/landing_page_content, localStorage or DEFAULT_LANDING_PAGE_CONTENT
  */
 export function subscribeLandingPageContent(callback: (content: LandingPageContent) => void) {
   // Initial local cached value or default
@@ -166,7 +167,7 @@ export function subscribeLandingPageContent(callback: (content: LandingPageConte
 
   try {
     return onSnapshot(
-      LANDING_SETTINGS_DOC,
+      LANDING_CMS_DOC,
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data() as LandingPageContent;
@@ -177,12 +178,26 @@ export function subscribeLandingPageContent(callback: (content: LandingPageConte
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
           callback(merged);
         } else {
-          callback(DEFAULT_LANDING_PAGE_CONTENT);
+          // Fallback check on landing_page_content
+          getDoc(LANDING_SETTINGS_DOC).then((oldSnap) => {
+            if (oldSnap.exists()) {
+              const oldData = oldSnap.data() as LandingPageContent;
+              const merged: LandingPageContent = {
+                ...DEFAULT_LANDING_PAGE_CONTENT,
+                ...oldData
+              };
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
+              callback(merged);
+            } else {
+              callback(DEFAULT_LANDING_PAGE_CONTENT);
+            }
+          }).catch(() => {
+            callback(DEFAULT_LANDING_PAGE_CONTENT);
+          });
         }
       },
       (error) => {
-        console.warn('Firestore landing_page_content snapshot notice:', error);
-        // Retain current state or local fallback
+        console.warn('Firestore landing_cms snapshot notice:', error);
       }
     );
   } catch (err) {
@@ -192,8 +207,8 @@ export function subscribeLandingPageContent(callback: (content: LandingPageConte
 }
 
 /**
- * Publish changes to Firestore doc(db, 'settings', 'landing_page_content')
- * and save to localStorage
+ * Publish changes to Firestore doc(db, 'settings', 'landing_cms')
+ * and doc(db, 'settings', 'landing_page_content') and save to localStorage
  */
 export async function publishLandingPageContent(content: LandingPageContent): Promise<void> {
   const payload = {
@@ -204,9 +219,11 @@ export async function publishLandingPageContent(content: LandingPageContent): Pr
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
 
   try {
-    await setDoc(LANDING_SETTINGS_DOC, payload, { merge: true });
+    await Promise.all([
+      setDoc(LANDING_CMS_DOC, payload, { merge: true }),
+      setDoc(LANDING_SETTINGS_DOC, payload, { merge: true })
+    ]);
   } catch (err) {
     console.warn('Firestore setDoc failed, content saved to local storage fallback:', err);
-    // Not throwing error to allow offline functionality to succeed
   }
 }

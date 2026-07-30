@@ -23,6 +23,7 @@ import { PayrollView } from '../../pages/admin/PayrollView';
 import { ClassesView } from '../../pages/admin/ClassesView';
 import { BlogCMSView } from '../../pages/admin/BlogCMSView';
 import { LandingPageEditor } from '../../pages/admin/LandingPageEditor';
+import { LandingPageCMSView } from '../../pages/admin/LandingPageCMSView';
 import { InquiriesView } from '../../pages/admin/InquiriesView';
 import { SettingsView } from '../../pages/admin/SettingsView';
 import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
@@ -451,7 +452,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {/* Admin & SuperAdmin Role Pages */}
           {(activeTab === 'inquiries' || activeTab === 'leads') && <InquiriesView />}
           {activeTab === 'superadmin_control' && <SuperAdminControlView />}
-          {(activeTab === 'landing' || activeTab === 'landing-editor' || activeTab === 'landing_editor') && <LandingPageEditor />}
+          {(activeTab === 'landing' || activeTab === 'landing-editor' || activeTab === 'landing_editor') && <LandingPageCMSView />}
           {activeTab === 'students' && <StudentsPage />}
           {activeTab === 'payments' && <PaymentsPage />}
           {activeTab === 'payroll' && <PayrollView />}

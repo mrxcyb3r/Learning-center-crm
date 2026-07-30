@@ -14,6 +14,7 @@ import {
 import dayjs from 'dayjs';
 import { TypewriterText } from '../common/TypewriterText';
 import { TrendingUp, DollarSign, AlertCircle, Calendar } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface RevenueDataPoint {
   month: string;
@@ -40,6 +41,7 @@ const formatCurrency = (val: number) => {
 };
 
 export const TuitionRevenueChart: React.FC = () => {
+  const { translate } = useLanguage();
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
   const currentDate = dayjs().format('MMMM YYYY');
 
@@ -54,7 +56,10 @@ export const TuitionRevenueChart: React.FC = () => {
             </span>
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
               <TypewriterText
-                texts={["Tushum & Debtorlar Trendi (2026)", "Revenue & Debt Analytics Stream"]}
+                texts={[
+                  translate("Tushum & Debtorlar Trendi (2026)", "Revenue & Debt Analytics (2026)", "Аналитика доходов и задолженности (2026)"),
+                  translate("Tuition Analytics Stream", "Tuition Analytics Stream", "Аналитика оплаты обучения")
+                ]}
                 speed={40}
                 loop={true}
                 cursorColorClass="text-emerald-500"
@@ -63,7 +68,14 @@ export const TuitionRevenueChart: React.FC = () => {
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-amber-500" />
-            <span>Sinxronlashtirilgan oylik moliya ko'rsatkichlari • {currentDate}</span>
+            <span>
+              {translate(
+                "Sinxronlashtirilgan oylik moliya ko'rsatkichlari",
+                "Synchronized monthly financial metrics",
+                "Синхронизированные ежемесячные финансовые показатели"
+              )}{' '}
+              • {currentDate}
+            </span>
           </p>
         </div>
 
@@ -97,7 +109,7 @@ export const TuitionRevenueChart: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
           <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider">
             <DollarSign className="w-3.5 h-3.5" />
-            <span>Iyul Tushumi</span>
+            <span>{translate("Iyul Tushumi", "July Revenue", "Доход за Июль")}</span>
           </div>
           <p className="text-lg font-black font-mono mt-1">84.0M UZS</p>
         </div>
@@ -105,7 +117,7 @@ export const TuitionRevenueChart: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
           <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider">
             <AlertCircle className="w-3.5 h-3.5" />
-            <span>Qolgan Qarzdorlik</span>
+            <span>{translate("Qolgan Qarzdorlik", "Pending Debt", "Задолженность")}</span>
           </div>
           <p className="text-lg font-black font-mono mt-1">4.8M UZS</p>
         </div>
@@ -113,9 +125,11 @@ export const TuitionRevenueChart: React.FC = () => {
         <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
           <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>O'sish Sur'ati</span>
+            <span>{translate("O'sish Sur'ati", "Growth Rate", "Темп роста")}</span>
           </div>
-          <p className="text-lg font-black font-mono mt-1">+11.2% / oy</p>
+          <p className="text-lg font-black font-mono mt-1">
+            +11.2% / {translate("oy", "month", "мес")}
+          </p>
         </div>
       </div>
 
@@ -152,7 +166,7 @@ export const TuitionRevenueChart: React.FC = () => {
               <Area
                 type="monotone"
                 dataKey="revenue"
-                name="Qabul Qilingan Tushum"
+                name={translate("Qabul Qilingan Tushum", "Collected Revenue", "Полученный доход")}
                 stroke="#10B981"
                 strokeWidth={3}
                 fillOpacity={1}
@@ -161,7 +175,7 @@ export const TuitionRevenueChart: React.FC = () => {
               <Area
                 type="monotone"
                 dataKey="debt"
-                name="Kutilayotgan Qarz"
+                name={translate("Kutilayotgan Qarz", "Pending Debt", "Ожидаемый долг")}
                 stroke="#F59E0B"
                 strokeWidth={2}
                 fillOpacity={1}
@@ -184,8 +198,8 @@ export const TuitionRevenueChart: React.FC = () => {
                 formatter={(value: any) => [formatCurrency(Number(value)), '']}
               />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-              <Bar dataKey="revenue" name="Tushum" fill="#10B981" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="debt" name="Qarzdorlik" fill="#F59E0B" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="revenue" name={translate("Tushum", "Revenue", "Доход")} fill="#10B981" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="debt" name={translate("Qarzdorlik", "Debt", "Задолженность")} fill="#F59E0B" radius={[8, 8, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>

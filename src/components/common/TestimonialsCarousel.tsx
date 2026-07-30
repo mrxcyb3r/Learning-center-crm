@@ -6,12 +6,15 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Star, Award, CheckCircle2 } from 'lucide-react';
 import { TypewriterText } from './TypewriterText';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Achiever {
   name: string;
   score: string;
   course: string;
-  comment: string;
+  commentUz: string;
+  commentEn: string;
+  commentRu: string;
   image: string;
   university?: string;
 }
@@ -21,7 +24,9 @@ const mockAchievers: Achiever[] = [
     name: 'Jasur Rahimov',
     score: 'IELTS 8.5',
     course: 'IELTS Rocket Intensive',
-    comment: 'Renessans Learning Center va AI Tutor yordamida Speaking 8.5 ga chiqdim! Sunʼiy intellect har kuni insholarimni xatosiz tekshirib berdi.',
+    commentUz: 'Renessans Learning Center va AI Tutor yordamida Speaking 8.5 ga chiqdim! Sunʼiy intellect har kuni insholarimni xatosiz tekshirib berdi.',
+    commentEn: 'Achieved IELTS Speaking 8.5 with Renessans Learning Center & AI Tutor! The AI graded my daily essays with detailed feedback.',
+    commentRu: 'С помощью Renessans Learning Center и AI Tutor поднял Speaking до 8.5! ИИ ежедневно детально проверял мои эссе.',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
     university: 'Westminster Int. University',
   },
@@ -29,7 +34,9 @@ const mockAchievers: Achiever[] = [
     name: 'Madina Ismoilova',
     score: 'IELTS 8.0',
     course: 'General & Academic English',
-    comment: 'Real-vaqt rejimida qatnashilgan darslar va toʼlovlar monitoringi tizimi juda qulay. Ota-onam ham Telegram orqali natijamni koʼrib turishdi.',
+    commentUz: 'Real-vaqt rejimida qatnashilgan darslar va toʼlovlar monitoringi tizimi juda qulay. Ota-onam ham Telegram orqali natijamni koʼrib turishdi.',
+    commentEn: 'Real-time interactive classes and automated tuition tracking are super smooth. My parents also stayed updated via Telegram.',
+    commentRu: 'Интерактивные занятия и отслеживание оплаты очень удобны. Мои родители получали отчеты через Telegram.',
     image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=300',
     university: 'Tashkent State Law Univ.',
   },
@@ -37,7 +44,9 @@ const mockAchievers: Achiever[] = [
     name: 'Sardorbek Aliyev',
     score: 'IELTS 8.0',
     course: 'SAT & IELTS Mastery',
-    comment: 'Oʻqituvchilar yuqori malakali. Ayniqsa IELTS Mock imtihonlari va AI Coaching xizmati imtihondagi hayajonni butunlay yoʻqotdi.',
+    commentUz: 'Oʻqituvchilar yuqori malakali. Ayniqsa IELTS Mock imtihonlari va AI Coaching xizmati imtihondagi hayajonni butunlay yoʻqotdi.',
+    commentEn: 'Teachers are highly experienced. The IELTS Mock exams and AI Coaching completely built my confidence for the test day.',
+    commentRu: 'Преподаватели очень квалифицированные. Пробные экзамены IELTS и AI Coaching сняли волнение пред экзаменом.',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
     university: 'INHA University in Tashkent',
   },
@@ -45,25 +54,29 @@ const mockAchievers: Achiever[] = [
     name: 'Gulnoza Karimova',
     score: 'IELTS 7.5',
     course: 'IELTS Foundation',
-    comment: '3 oy ichida 6.0 dan 7.5 gacha koʻtarildim. Renessans markazining interaktiv kabineti va davomat nazorati intizomni oshirdi.',
+    commentUz: '3 oy ichida 6.0 dan 7.5 gacha koʻtarildim. Renessans markazining interaktiv kabineti va davomat nazorati intizomni oshirdi.',
+    commentEn: 'Improved from 6.0 to 7.5 in 3 months. Renessans student dashboard and attendance tracking kept me strictly disciplined.',
+    commentRu: 'Подняла результат с 6.0 до 7.5 за 3 месяца. Личный кабинет и контроль посещаемости помогли соблюдать дисциплину.',
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300',
     university: 'TUIT / TATU',
   },
 ];
 
 export const TestimonialsCarousel: React.FC = () => {
+  const { translate } = useLanguage();
+
   return (
     <div className="w-full space-y-6">
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider border border-amber-500/30 inline-block">
-          Yuqori Natijalar va Sharhlar
+          {translate("Yuqori Natijalar va Sharhlar", "Top Achievers & Reviews", "Высокие результаты и отзывы")}
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
           <TypewriterText
             texts={[
-              "Bizning O'quvchilar Muvaffaqiyati",
-              "Top IELTS Achievers & Testimonials",
-              "100% Shaffof Natijalar va Sertifikatlar"
+              translate("Bizning O'quvchilar Muvaffaqiyati", "Our Student Success Stories", "Успехи наших студентов"),
+              translate("Top IELTS Achievers & Testimonials", "Top IELTS Achievers & Testimonials", "Отзывы лучших выпускников IELTS"),
+              translate("100% Shaffof Natijalar va Sertifikatlar", "100% Transparent Results & Certificates", "100% прозрачные результаты и сертификаты")
             ]}
             speed={45}
             loop={true}
@@ -71,7 +84,11 @@ export const TestimonialsCarousel: React.FC = () => {
           />
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-          Renessans Learning Center bitiruvchilarining erishgan natijalari va haqiqiy fikrlari
+          {translate(
+            "Renessans Learning Center bitiruvchilarining erishgan natijalari va haqiqiy fikrlari",
+            "Real reviews and verified band scores from Renessans Learning Center graduates",
+            "Реальные отзывы и подтвержденные результаты выпускников Renessans Learning Center"
+          )}
         </p>
       </div>
 
@@ -108,7 +125,7 @@ export const TestimonialsCarousel: React.FC = () => {
                   </div>
 
                   <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed font-medium">
-                    "{item.comment}"
+                    "{translate(item.commentUz, item.commentEn, item.commentRu)}"
                   </p>
                 </div>
 

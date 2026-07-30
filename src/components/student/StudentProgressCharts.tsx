@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { Award, Target, CalendarCheck } from 'lucide-react';
 import { TypewriterText } from '../common/TypewriterText';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ieltsRadarData = [
   { subject: 'Listening', score: 8.5, target: 8.5 },
@@ -35,6 +36,8 @@ const weeklyScoresData = [
 ];
 
 export const StudentProgressCharts: React.FC = () => {
+  const { translate } = useLanguage();
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {/* 1. IELTS Skills Breakdown Radar */}
@@ -47,7 +50,10 @@ export const StudentProgressCharts: React.FC = () => {
               </span>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                 <TypewriterText
-                  texts={["IELTS Ko'nikmalar Radiusi", "IELTS Band Breakdown (Target 8.0)"]}
+                  texts={[
+                    translate("IELTS Ko'nikmalar Radiusi", "IELTS Skills Breakdown", "Радиус навыков IELTS"),
+                    translate("Target 8.0 Band Breakdown", "Target 8.0 Band Breakdown", "Анализ балла Target 8.0")
+                  ]}
                   speed={40}
                   loop={true}
                   cursorColorClass="text-amber-500"
@@ -55,7 +61,11 @@ export const StudentProgressCharts: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Listening, Reading, Writing va Speaking bo'yicha tahlil
+              {translate(
+                "Listening, Reading, Writing va Speaking bo'yicha tahlil",
+                "Detailed evaluation across Listening, Reading, Writing & Speaking",
+                "Детальный анализ по Listening, Reading, Writing и Speaking"
+              )}
             </p>
           </div>
           <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono text-xs font-bold border border-amber-500/30">
@@ -107,7 +117,10 @@ export const StudentProgressCharts: React.FC = () => {
               </span>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                 <TypewriterText
-                  texts={["Haftalik Mock Natijalari", "Weekly Test & Attendance Trend"]}
+                  texts={[
+                    translate("Haftalik Mock Natijalari", "Weekly Mock Test Trend", "Динамика еженедельных тестов"),
+                    translate("Attendance & Performance Stream", "Attendance & Performance Stream", "Тренд успеваемости и посещаемости")
+                  ]}
                   speed={40}
                   loop={true}
                   cursorColorClass="text-blue-500"
@@ -115,12 +128,16 @@ export const StudentProgressCharts: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              So'nggi 6 haftalik sinov va dars davomati dinamikasi
+              {translate(
+                "So'nggi 6 haftalik sinov va dars davomati dinamikasi",
+                "Last 6-week test results & lesson attendance rate",
+                "Динамика тестирования и посещаемости за последние 6 недель"
+              )}
             </p>
           </div>
           <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold border border-blue-500/30 flex items-center gap-1">
             <CalendarCheck className="w-3 h-3" />
-            98% Attendance
+            98% {translate("Davomat", "Attendance", "Посещаемость")}
           </span>
         </div>
 

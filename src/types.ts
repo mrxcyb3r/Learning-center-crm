@@ -211,6 +211,10 @@ export interface LandingPageContent {
   locationBadgeUz: string;
   locationBadgeEn: string;
   locationBadgeRu?: string;
+
+  aiBadgeUz?: string;
+  aiBadgeEn?: string;
+  aiBadgeRu?: string;
   
   heroTitleUz: string;
   heroTitleEn: string;
@@ -248,6 +252,12 @@ export interface LandingPageContent {
   results: StudentResult[];
 
   // Testimonials / Reviews
+  reviewSectionTitleUz?: string;
+  reviewSectionTitleEn?: string;
+  reviewSectionTitleRu?: string;
+  reviewSectionSubtitleUz?: string;
+  reviewSectionSubtitleEn?: string;
+  reviewSectionSubtitleRu?: string;
   testimonials: LandingTestimonial[];
 
   // Courses & Pricing

@@ -8,6 +8,7 @@ import {
   publishLandingPageContent,
   DEFAULT_LANDING_PAGE_CONTENT
 } from '../../services/landingCms';
+import { polishLandingCopy } from '../../services/gemini';
 import {
   Sparkles,
   Save,
@@ -31,6 +32,55 @@ import {
   Phone,
   Send
 } from 'lucide-react';
+
+interface AIPolishButtonProps {
+  currentText: string;
+  lang?: 'uz' | 'en' | 'ru';
+  onPolished: (newText: string) => void;
+  label?: string;
+}
+
+const AIPolishButton: React.FC<AIPolishButtonProps> = ({
+  currentText,
+  lang = 'en',
+  onPolished,
+  label = "✨ Auto-Polish Copy with AI"
+}) => {
+  const [loading, setLoading] = useState(false);
+
+  const handlePolish = async () => {
+    if (!currentText || !currentText.trim()) {
+      toast.info('Matnni AI yordamida mukammallashtirish uchun avval matn kiriting');
+      return;
+    }
+    setLoading(true);
+    try {
+      const polished = await polishLandingCopy(currentText, lang);
+      if (polished && polished.trim()) {
+        onPolished(polished);
+        toast.success('✨ Matn AI yordamida mukammallashtirildi!');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('AI polish error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handlePolish}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-extrabold border border-amber-500/30 transition cursor-pointer shrink-0 disabled:opacity-50"
+      title="Enhance text with Gemini AI"
+    >
+      <Sparkles className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-500' : 'text-amber-500'}`} />
+      <span>{loading ? 'Bajarilmoqda...' : label}</span>
+    </button>
+  );
+};
 
 export const LandingPageEditor: React.FC = () => {
   const { language, translate: t } = useLanguage();
@@ -283,10 +333,18 @@ export const LandingPageEditor: React.FC = () => {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Location Badge */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Location Badge Text (UZ)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Location Badge Text (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.locationBadgeUz}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('locationBadgeUz', txt)}
+                  />
+                </div>
                 <input
                   type="text"
                   value={content.locationBadgeUz}
@@ -295,9 +353,16 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Location Badge Text (EN)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Location Badge Text (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.locationBadgeEn}
+                    lang="en"
+                    onPolished={(txt) => handleChange('locationBadgeEn', txt)}
+                  />
+                </div>
                 <input
                   type="text"
                   value={content.locationBadgeEn}
@@ -306,10 +371,58 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
 
+              {/* AI Pill Badge */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Main Headline (UZ)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> AI Pill Badge (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.aiBadgeUz || ''}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('aiBadgeUz', txt)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={content.aiBadgeUz || ''}
+                  onChange={(e) => handleChange('aiBadgeUz', e.target.value)}
+                  placeholder="⚡ Keyingi Avlod 24/7 AI O'quv Murabbiyi bilan Quvvatlantirilgan"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-emerald-500/30 text-xs focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> AI Pill Badge (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.aiBadgeEn || ''}
+                    lang="en"
+                    onPolished={(txt) => handleChange('aiBadgeEn', txt)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={content.aiBadgeEn || ''}
+                  onChange={(e) => handleChange('aiBadgeEn', e.target.value)}
+                  placeholder="⚡ Powered by Next-Gen 24/7 AI Learning Coach"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-emerald-500/30 text-xs focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Headlines */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Main Headline (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroTitleUz}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('heroTitleUz', txt)}
+                  />
+                </div>
                 <input
                   type="text"
                   value={content.heroTitleUz}
@@ -318,9 +431,16 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Main Headline (EN)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Main Headline (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroTitleEn}
+                    lang="en"
+                    onPolished={(txt) => handleChange('heroTitleEn', txt)}
+                  />
+                </div>
                 <input
                   type="text"
                   value={content.heroTitleEn}
@@ -329,10 +449,18 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
 
+              {/* Subtitles */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Subtitle (UZ)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Subtitle (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroSubtitleUz}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('heroSubtitleUz', txt)}
+                  />
+                </div>
                 <textarea
                   rows={2}
                   value={content.heroSubtitleUz}
@@ -341,9 +469,16 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Subtitle (EN)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Subtitle (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroSubtitleEn}
+                    lang="en"
+                    onPolished={(txt) => handleChange('heroSubtitleEn', txt)}
+                  />
+                </div>
                 <textarea
                   rows={2}
                   value={content.heroSubtitleEn}
@@ -352,10 +487,18 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
 
+              {/* Description Paragraphs */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Description Paragraph (UZ)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Description Paragraph (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroDescUz}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('heroDescUz', txt)}
+                  />
+                </div>
                 <textarea
                   rows={3}
                   value={content.heroDescUz}
@@ -364,9 +507,16 @@ export const LandingPageEditor: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Description Paragraph (EN)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Description Paragraph (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.heroDescEn}
+                    lang="en"
+                    onPolished={(txt) => handleChange('heroDescEn', txt)}
+                  />
+                </div>
                 <textarea
                   rows={3}
                   value={content.heroDescEn}
@@ -973,6 +1123,92 @@ export const LandingPageEditor: React.FC = () => {
             </button>
           </div>
 
+          {/* Section Header Controls */}
+          <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Reviews Section Custom Header & Subtitle
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Section Title (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.reviewSectionTitleUz || ''}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('reviewSectionTitleUz', txt)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={content.reviewSectionTitleUz || ''}
+                  onChange={(e) => handleChange('reviewSectionTitleUz', e.target.value)}
+                  placeholder="100% Tasdiqlangan Natijalar va Talabalar Muvaffaqiyat Tarixlari"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Section Title (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.reviewSectionTitleEn || ''}
+                    lang="en"
+                    onPolished={(txt) => handleChange('reviewSectionTitleEn', txt)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={content.reviewSectionTitleEn || ''}
+                  onChange={(e) => handleChange('reviewSectionTitleEn', e.target.value)}
+                  placeholder="100% Verified Results & Student Success Stories"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Section Subtitle (UZ)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.reviewSectionSubtitleUz || ''}
+                    lang="uz"
+                    onPolished={(txt) => handleChange('reviewSectionSubtitleUz', txt)}
+                  />
+                </div>
+                <textarea
+                  rows={2}
+                  value={content.reviewSectionSubtitleUz || ''}
+                  onChange={(e) => handleChange('reviewSectionSubtitleUz', e.target.value)}
+                  placeholder="Renessans Learning Center bitiruvchilarining erishgan rasmiy ballari"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Section Subtitle (EN)
+                  </label>
+                  <AIPolishButton
+                    currentText={content.reviewSectionSubtitleEn || ''}
+                    lang="en"
+                    onPolished={(txt) => handleChange('reviewSectionSubtitleEn', txt)}
+                  />
+                </div>
+                <textarea
+                  rows={2}
+                  value={content.reviewSectionSubtitleEn || ''}
+                  onChange={(e) => handleChange('reviewSectionSubtitleEn', e.target.value)}
+                  placeholder="Real reviews and official band scores from Renessans Learning Center graduates."
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {content.testimonials.map((item) => (
               <div
@@ -1021,7 +1257,17 @@ export const LandingPageEditor: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Review Quote (UZ):</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Review Quote (UZ):</label>
+                    <AIPolishButton
+                      currentText={item.quoteUz}
+                      lang="uz"
+                      onPolished={(txt) => {
+                        const updated = content.testimonials.map((t) => (t.id === item.id ? { ...t, quoteUz: txt } : t));
+                        handleChange('testimonials', updated);
+                      }}
+                    />
+                  </div>
                   <textarea
                     rows={2}
                     value={item.quoteUz}
@@ -1034,7 +1280,17 @@ export const LandingPageEditor: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Review Quote (EN):</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Review Quote (EN):</label>
+                    <AIPolishButton
+                      currentText={item.quoteEn}
+                      lang="en"
+                      onPolished={(txt) => {
+                        const updated = content.testimonials.map((t) => (t.id === item.id ? { ...t, quoteEn: txt } : t));
+                        handleChange('testimonials', updated);
+                      }}
+                    />
+                  </div>
                   <textarea
                     rows={2}
                     value={item.quoteEn}

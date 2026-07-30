@@ -403,3 +403,27 @@ Evaluation requirements:
     return response.text || 'Essay evaluation completed.';
   });
 }
+
+export async function polishLandingCopy(
+  inputText: string,
+  targetLanguage: UserLanguage = 'en'
+): Promise<string> {
+  if (!inputText.trim()) return inputText;
+
+  const systemInstruction = `You are a senior ed-tech copywriter. Enhance the input text to make it compelling, grammatically flawless, professional, and engaging for prospective students while maintaining its core meaning. Return only the polished text in English, Uzbek, or Russian as requested. Do not include quotes, extra intro text, or markdown code blocks.`;
+
+  try {
+    const res = await generateInsaneAIResponse({
+      prompt: `Polish and enhance this text in ${targetLanguage === 'uz' ? "Uzbek (O'zbekcha)" : targetLanguage === 'ru' ? 'Russian (Русский)' : 'English'}:\n"""${inputText}"""`,
+      userLanguage: targetLanguage,
+      customSystemInstruction: systemInstruction,
+      model: 'gemini-3.6-flash',
+      role: 'admin'
+    });
+    return res.text.replace(/^["'\s]+|["'\s]+$/g, '');
+  } catch (err) {
+    console.error('Error polishing text with Gemini:', err);
+    return inputText;
+  }
+}
+

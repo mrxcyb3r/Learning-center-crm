@@ -11,13 +11,17 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   locationBadgeEn: "Tashkent / Main Branch",
   locationBadgeRu: "Ташкент / Главный Филиал",
 
+  aiBadgeUz: "⚡ Keyingi Avlod 24/7 AI O'quv Murabbiyi Bilan",
+  aiBadgeEn: "⚡ Powered by Next-Gen 24/7 AI Learning Coach",
+  aiBadgeRu: "⚡ Работает на ИИ-коуче 24/7 Нового Поколения",
+
   heroTitleUz: "INNOVATSION TA'LIM VA YUQORI NATIJALAR",
-  heroTitleEn: "INNOVATIVE EDUCATION & HIGH RESULTS",
+  heroTitleEn: "Build Your Future with High-Quality Education & Expert Mentors",
   heroTitleRu: "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ",
 
-  heroSubtitleUz: "Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.",
-  heroSubtitleEn: "Build your future with high-quality education, expert mentors, and a modern learning environment.",
-  heroSubtitleRu: "Постройте свое будущее с качественным образованием, опытными преподавателями и современной учебной средой.",
+  heroSubtitleUz: "Renessans Learning Center bilan IELTS, CEFR va Python dasturlashni xalqaro sertifikatli ustozlar va 24/7 AI yordamida chuqur egallang.",
+  heroSubtitleEn: "Master IELTS, CEFR, and Python Programming with certified international tutors, personalized study paths, and round-the-clock AI guidance at Renessans Learning Center.",
+  heroSubtitleRu: "Освойте IELTS, CEFR и программирование на Python с сертифицированными международными преподавателями и 24/7 ИИ-поддержкой в Renessans Learning Center.",
 
   heroDescUz: "Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.",
   heroDescEn: "Achieve top goals in IT and English language learning with modern educational standards and experienced international tutors at Renessans Learning Center.",
@@ -82,11 +86,19 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   teachers: mockTeachers,
   results: mockResults,
 
+  reviewSectionTitleUz: "100% Tasdiqlangan Natijalar va O'quvchilar Muvaffaqiyati",
+  reviewSectionTitleEn: "100% Verified Results & Student Success Stories",
+  reviewSectionTitleRu: "100% Проверенные Результаты и Истории Успеха",
+
+  reviewSectionSubtitleUz: "Renessans Learning Center bitiruvchilarining real fikrlari va rasmiy natijalari.",
+  reviewSectionSubtitleEn: "Real reviews and official band scores from Renessans Learning Center graduates.",
+  reviewSectionSubtitleRu: "Реальные отзывы и официальные результаты выпускников Renessans Learning Center.",
+
   testimonials: [
     {
       id: 't1',
       quoteUz: "Renessans LC dagi intensiv IELTS kursi va Jasur ustozning feedbacklari tufayli birinchi urinishdayoq 8.5 ball oldim va Westminster universitetiga 100% grant yutdim!",
-      quoteEn: "Thanks to the intensive IELTS course at Renessans LC and mentor Jasur's detailed feedback, I secured an overall 8.5 score on my first try and earned a 100% scholarship at Westminster University!",
+      quoteEn: "Thanks to the intensive IELTS course at Renessans LC and mentor Jasur's detailed feedback, I secured an overall 8.5 band score on my first try and earned a 100% scholarship at Westminster University!",
       quoteRu: "Благодаря интенсивному курсу IELTS в Renessans LC и фидбеку преподавателя Жасура я с первой попытки получила балл 8.5 и 100% грант в Вестминстерский университет!",
       studentName: "Diyorbek Toshpulatov",
       scoreBadge: "IELTS 8.5",

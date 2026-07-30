@@ -65,10 +65,33 @@ const mockAchievers: Achiever[] = [
 
 interface TestimonialsCarouselProps {
   testimonials?: LandingTestimonial[];
+  titleUz?: string;
+  titleEn?: string;
+  titleRu?: string;
+  subtitleUz?: string;
+  subtitleEn?: string;
+  subtitleRu?: string;
 }
 
-export const TestimonialsCarousel: React.FC<TestimonialsCarouselProps> = ({ testimonials }) => {
+export const TestimonialsCarousel: React.FC<TestimonialsCarouselProps> = ({
+  testimonials,
+  titleUz,
+  titleEn,
+  titleRu,
+  subtitleUz,
+  subtitleEn,
+  subtitleRu
+}) => {
   const { translate, language } = useLanguage();
+
+  const getLangText = (uz?: string, en?: string, ru?: string): string => {
+    if (language === 'RU') return ru || en || uz || '';
+    if (language === 'EN') return en || uz || '';
+    return uz || en || '';
+  };
+
+  const sectionTitle = getLangText(titleUz, titleEn, titleRu);
+  const sectionSubtitle = getLangText(subtitleUz, subtitleEn, subtitleRu);
 
   const displayItems = testimonials && testimonials.length > 0
     ? testimonials.map((t) => ({
@@ -90,22 +113,26 @@ export const TestimonialsCarousel: React.FC<TestimonialsCarouselProps> = ({ test
           {translate("Yuqori Natijalar va Sharhlar", "Top Achievers & Reviews", "Высокие результаты и отзывы")}
         </span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          <TypewriterText
-            texts={[
-              translate("Bizning O'quvchilar Muvaffaqiyati", "Our Student Success Stories", "Успехи наших студентов"),
-              translate("Top IELTS Achievers & Testimonials", "Top IELTS Achievers & Testimonials", "Отзывы лучших выпускников IELTS"),
-              translate("100% Shaffof Natijalar va Sertifikatlar", "100% Transparent Results & Certificates", "100% прозрачные результаты и сертификаты")
-            ]}
-            speed={45}
-            loop={true}
-            cursorColorClass="text-amber-500 font-black"
-          />
+          {sectionTitle ? (
+            sectionTitle
+          ) : (
+            <TypewriterText
+              texts={[
+                translate("Bizning O'quvchilar Muvaffaqiyati", "Our Student Success Stories", "Успехи наших студентов"),
+                translate("100% Verified Results & Student Success Stories", "100% Verified Results & Student Success Stories", "100% Проверенные Результаты и Истории Успеха"),
+                translate("100% Shaffof Natijalar va Sertifikatlar", "100% Transparent Results & Certificates", "100% прозрачные результаты и сертификаты")
+              ]}
+              speed={45}
+              loop={true}
+              cursorColorClass="text-amber-500 font-black"
+            />
+          )}
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-          {translate(
+          {sectionSubtitle || translate(
             "Renessans Learning Center bitiruvchilarining erishgan natijalari va haqiqiy fikrlari",
-            "Real reviews and verified band scores from Renessans Learning Center graduates",
-            "Реальные отзывы и подтвержденные результаты выпускников Renessans Learning Center"
+            "Real reviews and official band scores from Renessans Learning Center graduates.",
+            "Реальные отзывы и официальные результаты выпускников Renessans Learning Center."
           )}
         </p>
       </div>

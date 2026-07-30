@@ -77,7 +77,7 @@ export const TestimonialsCarousel: React.FC<TestimonialsCarouselProps> = ({ test
         course: t.targetCourse,
         commentUz: t.quoteUz,
         commentEn: t.quoteEn,
-        commentRu: t.quoteUz,
+        commentRu: t.quoteRu || t.quoteEn || t.quoteUz,
         image: t.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
         university: t.university
       }))

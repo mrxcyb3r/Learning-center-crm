@@ -9,21 +9,27 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
 
   locationBadgeUz: "Toshkent / Markaziy Filial",
   locationBadgeEn: "Tashkent / Main Branch",
+  locationBadgeRu: "Ташкент / Главный Филиал",
 
   heroTitleUz: "INNOVATSION TA'LIM VA YUQORI NATIJALAR",
   heroTitleEn: "INNOVATIVE EDUCATION & HIGH RESULTS",
+  heroTitleRu: "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ",
 
   heroSubtitleUz: "Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.",
   heroSubtitleEn: "Build your future with high-quality education, expert mentors, and a modern learning environment.",
+  heroSubtitleRu: "Постройте свое будущее с качественным образованием, опытными преподавателями и современной учебной средой.",
 
   heroDescUz: "Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.",
   heroDescEn: "Achieve top goals in IT and English language learning with modern educational standards and experienced international tutors at Renessans Learning Center.",
+  heroDescRu: "Достигайте высоких целей в сфере IT и английского языка благодаря современным стандартам обучения и международному опыту в Renessans Learning Center.",
 
   ctaPrimaryUz: "Kurslarni ko'rish",
   ctaPrimaryEn: "Explore Courses",
+  ctaPrimaryRu: "Посмотреть курсы",
 
   ctaSecondaryUz: "Bog'lanish",
   ctaSecondaryEn: "Get in Touch",
+  ctaSecondaryRu: "Связаться с нами",
 
   activeStudentsCount: "1,500+",
   ieltsHighResults: "280+",
@@ -36,32 +42,40 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
       iconNumber: 1,
       titleUz: "Individual Yondashuv",
       titleEn: "Individual Approach",
+      titleRu: "Индивидуальный Подход",
       descUz: "Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.",
-      descEn: "Personalized study plans tailored to each student level and goals."
+      descEn: "Personalized study plans tailored to each student level and goals.",
+      descRu: "Персональные учебные планы для каждого студента с учетом его уровня и целей."
     },
     {
       id: 'w2',
       iconNumber: 2,
       titleUz: "Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)",
       titleEn: "Experienced Mentors (IELTS 8.0+ & CEFR C1)",
+      titleRu: "Опытные Менторы (IELTS 8.0+ & CEFR C1)",
       descUz: "Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.",
-      descEn: "Qualified specialists with international certificates and teaching experience."
+      descEn: "Qualified specialists with international certificates and teaching experience.",
+      descRu: "Квалифицированные специалисты с международными сертификатами и опытом преподавания."
     },
     {
       id: 'w3',
       iconNumber: 3,
       titleUz: "IT va Zamonaviy Sharoit",
       titleEn: "IT & Modern Facilities",
+      titleRu: "IT и Современные Условия",
       descUz: "Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.",
-      descEn: "State-of-the-art computer labs, comfortable classrooms, and high-speed internet."
+      descEn: "State-of-the-art computer labs, comfortable classrooms, and high-speed internet.",
+      descRu: "Современные компьютерные классы, комфортные аудитории и высокоскоростной интернет."
     },
     {
       id: 'w4',
       iconNumber: 4,
       titleUz: "Muntazam Mock Testlar",
       titleEn: "Regular Mock Tests",
+      titleRu: "Регулярные Mock Тесты",
       descUz: "Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.",
-      descEn: "Simulated real exam conditions with detailed performance analytics."
+      descEn: "Simulated real exam conditions with detailed performance analytics.",
+      descRu: "Симуляция реальных экзаменов с подробным анализом и индивидуальным фидбеком."
     }
   ],
 
@@ -73,6 +87,7 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
       id: 't1',
       quoteUz: "Renessans LC dagi intensiv IELTS kursi va Jasur ustozning feedbacklari tufayli birinchi urinishdayoq 8.5 ball oldim va Westminster universitetiga 100% grant yutdim!",
       quoteEn: "Thanks to the intensive IELTS course at Renessans LC and mentor Jasur's detailed feedback, I secured an overall 8.5 score on my first try and earned a 100% scholarship at Westminster University!",
+      quoteRu: "Благодаря интенсивному курсу IELTS в Renessans LC и фидбеку преподавателя Жасура я с первой попытки получила балл 8.5 и 100% грант в Вестминстерский университет!",
       studentName: "Diyorbek Toshpulatov",
       scoreBadge: "IELTS 8.5",
       targetCourse: "IELTS Intensive",
@@ -83,6 +98,7 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
       id: 't2',
       quoteUz: "CEFR FastTrack kursi va Malika opaning maxsus grammatika va reading usullari menga Milliy sertifikatdan C1 darajasini olishda juda katta yordam berdi.",
       quoteEn: "The CEFR FastTrack course along with Malika's specialized grammar and reading techniques helped me achieve a C1 National Certificate effortlessly.",
+      quoteRu: "Курс CEFR FastTrack и авторская методика Малики очень помогли мне без труда получить сертификат C1.",
       studentName: "Nigora Shavkatova",
       scoreBadge: "CEFR C1",
       targetCourse: "CEFR FastTrack",
@@ -93,6 +109,7 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
       id: 't3',
       quoteUz: "IT & Python dasturlash kursida noldan boshlab o'rgandim. Ustozimiz Nodirbek amaliy loyihalar va algoritmlar ustida ishlashni o'rgatdilar.",
       quoteEn: "I learned Python from scratch at Renessans LC. Instructor Nodirbek helped us build real production-ready projects and algorithms.",
+      quoteRu: "Я изучил программирование на Python с нуля. Наш ментор Нодирбек научил нас создавать реальные проекты и алгоритмы.",
       studentName: "Sardorbek Umarov",
       scoreBadge: "Senior Python Dev",
       targetCourse: "IT & Python Programming",
@@ -106,10 +123,12 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
 
   addressUz: "Toshkent / Markaziy Filial",
   addressEn: "Tashkent / Main Branch",
+  addressRu: "Ташкент / Главный Филиал",
   phone: "+998 90 123 45 67",
   telegramHandle: "@renessans_lc_official",
   operatingHoursUz: "Ish vaqti: Dushanba - Shanba 08:00 - 20:00",
   operatingHoursEn: "Operating Hours: Mon-Sat 08:00 - 20:00",
+  operatingHoursRu: "Режим работы: Пн-Сб 08:00 - 20:00",
   googleMapsUrl: "https://maps.google.com"
 };
 

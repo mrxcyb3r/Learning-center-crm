@@ -36,6 +36,19 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  // Multi-language string resolver
+  const getLangText = (uz?: string, en?: string, ru?: string): string => {
+    if (language === 'RU') return ru || en || uz || '';
+    if (language === 'EN') return en || uz || '';
+    return uz || en || '';
+  };
+
+  const getLangArray = (uz?: string[], en?: string[], ru?: string[]): string[] => {
+    if (language === 'RU' && ru && ru.length > 0) return ru;
+    if (language === 'EN' && en && en.length > 0) return en;
+    return uz || en || [];
+  };
+
   // Live Firestore landing CMS content
   const [cmsContent, setCmsContent] = useState<LandingPageContent>(DEFAULT_LANDING_PAGE_CONTENT);
 
@@ -104,8 +117,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   // Filtered FAQs from CMS content
   const filteredFAQs = (cmsContent.faqs || []).filter((faq) => {
     const query = faqSearch.toLowerCase();
-    const qText = language === 'UZ' ? faq.questionUz : faq.questionEn;
-    const aText = language === 'UZ' ? faq.answerUz : faq.answerEn;
+    const qText = getLangText(faq.questionUz, faq.questionEn, faq.questionRu);
+    const aText = getLangText(faq.answerUz, faq.answerEn, faq.answerRu);
     return qText.toLowerCase().includes(query) || aText.toLowerCase().includes(query);
   });
 
@@ -144,7 +157,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Location Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold mb-6 tracking-wide">
               <MapPin className="w-3.5 h-3.5 text-amber-500" />
-              <span>{language === 'UZ' ? cmsContent.locationBadgeUz : cmsContent.locationBadgeEn}</span>
+              <span>{getLangText(cmsContent.locationBadgeUz, cmsContent.locationBadgeEn, cmsContent.locationBadgeRu)}</span>
             </div>
 
             {/* Main Headline */}
@@ -152,7 +165,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <span className="block text-amber-500 font-extrabold drop-shadow-sm min-h-[3.5rem] sm:min-h-[4.5rem]">
                 <TypewriterText
                   texts={[
-                    language === 'UZ' ? cmsContent.heroTitleUz : cmsContent.heroTitleEn,
+                    getLangText(cmsContent.heroTitleUz, cmsContent.heroTitleEn, cmsContent.heroTitleRu),
                     t("Real-vaqtda to'lovlar, davomat va IELTS progressi", "Track tuition, attendance, and IELTS progress in real-time", "Отслеживайте оплату, посещаемость и прогресс IELTS"),
                     t("24/7 AI Mentori va zamonaviy tahlillar bilan", "Powered by 24/7 AI Mentors and modern analytics", "С поддержкой 24/7 ИИ-менторов и современной аналитики")
                   ]}
@@ -163,13 +176,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 />
               </span>
               <span className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mt-3 block leading-relaxed">
-                {language === 'UZ' ? cmsContent.heroSubtitleUz : cmsContent.heroSubtitleEn}
+                {getLangText(cmsContent.heroSubtitleUz, cmsContent.heroSubtitleEn, cmsContent.heroSubtitleRu)}
               </span>
             </h1>
 
             {/* Description */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8 mt-4">
-              {language === 'UZ' ? cmsContent.heroDescUz : cmsContent.heroDescEn}
+              {getLangText(cmsContent.heroDescUz, cmsContent.heroDescEn, cmsContent.heroDescRu)}
             </p>
 
             {/* CTA Buttons */}
@@ -178,14 +191,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 href="#courses"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{language === 'UZ' ? cmsContent.ctaPrimaryUz : cmsContent.ctaPrimaryEn}</span>
+                <span>{getLangText(cmsContent.ctaPrimaryUz, cmsContent.ctaPrimaryEn, cmsContent.ctaPrimaryRu)}</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="#contact"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 backdrop-blur-md dark:bg-slate-800/80 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm border border-slate-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{language === 'UZ' ? cmsContent.ctaSecondaryUz : cmsContent.ctaSecondaryEn}</span>
+                <span>{getLangText(cmsContent.ctaSecondaryUz, cmsContent.ctaSecondaryEn, cmsContent.ctaSecondaryRu)}</span>
                 <Phone className="w-4 h-4 text-amber-400" />
               </a>
             </div>
@@ -274,10 +287,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   {card.iconNumber || idx + 1}
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                  {language === 'UZ' ? card.titleUz : card.titleEn}
+                  {getLangText(card.titleUz, card.titleEn, card.titleRu)}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {language === 'UZ' ? card.descUz : card.descEn}
+                  {getLangText(card.descUz, card.descEn, card.descRu)}
                 </p>
               </motion.div>
             ))}
@@ -338,7 +351,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
-                      {language === 'UZ' ? teacher.bioUz : teacher.bioEn}
+                      {getLangText(teacher.bioUz, teacher.bioEn, teacher.bioRu)}
                     </p>
 
                     <div className="flex flex-wrap gap-1.5 mt-4">
@@ -523,31 +536,31 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       {course.id === 'c4' ? <Code className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
                     </div>
                     <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                      {language === 'UZ' ? course.titleUz : course.titleEn}
+                      {getLangText(course.titleUz, course.titleEn, course.titleRu)}
                     </h3>
                   </div>
 
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-                    {language === 'UZ' ? course.descUz : course.descEn}
+                    {getLangText(course.descUz, course.descEn, course.descRu)}
                   </p>
 
                   <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 mb-6 text-xs">
                     <div>
                       <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Davomiyligi", "Duration", "Длительность")}</p>
                       <p className="font-bold text-slate-800 dark:text-slate-200">
-                        {language === 'UZ' ? course.durationUz : course.durationEn}
+                        {getLangText(course.durationUz, course.durationEn, course.durationRu)}
                       </p>
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Darajasi", "Target Level", "Уровень")}</p>
                       <p className="font-bold text-amber-500">
-                        {language === 'UZ' ? course.levelUz : course.levelEn}
+                        {getLangText(course.levelUz, course.levelEn, course.levelRu)}
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-2.5 mb-8">
-                    {(language === 'UZ' ? course.featuresUz : course.featuresEn).map((feat, i) => (
+                    {getLangArray(course.featuresUz, course.featuresEn, course.featuresRu).map((feat, i) => (
                       <div key={i} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
                         <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{feat}</span>
@@ -560,7 +573,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   <div>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Oylik to'lov", "Monthly Fee", "Ежемесячная оплата")}</p>
                     <p className="text-xl font-black text-slate-900 dark:text-white">
-                      {language === 'UZ' ? course.priceUz : course.priceEn}
+                      {getLangText(course.priceUz, course.priceEn, course.priceRu)}
                     </p>
                   </div>
                   <a
@@ -612,8 +625,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div className="space-y-4">
             {filteredFAQs.map((faq) => {
               const isExpanded = expandedFaqId === faq.id;
-              const question = language === 'UZ' ? faq.questionUz : faq.questionEn;
-              const answer = language === 'UZ' ? faq.answerUz : faq.answerEn;
+              const question = getLangText(faq.questionUz, faq.questionEn, faq.questionRu);
+              const answer = getLangText(faq.answerUz, faq.answerEn, faq.answerRu);
 
               return (
                 <div
@@ -717,7 +730,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       <option value="">{t("Kursni tanlang...", "Choose a course...", "Выберите курс...")}</option>
                       {(cmsContent.courses || []).map((c) => (
                         <option key={c.id} value={c.id}>
-                          {language === 'UZ' ? c.titleUz : c.titleEn}
+                          {getLangText(c.titleUz, c.titleEn, c.titleRu)}
                         </option>
                       ))}
                     </select>
@@ -760,7 +773,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{t("Manzil:", "Address:", "Адрес:")}</p>
-                      <p>{language === 'UZ' ? cmsContent.addressUz : cmsContent.addressEn}</p>
+                      <p>{getLangText(cmsContent.addressUz, cmsContent.addressEn, cmsContent.addressRu)}</p>
                     </div>
                   </div>
 
@@ -782,7 +795,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400">
-                  {language === 'UZ' ? cmsContent.operatingHoursUz : cmsContent.operatingHoursEn}
+                  {getLangText(cmsContent.operatingHoursUz, cmsContent.operatingHoursEn, cmsContent.operatingHoursRu)}
                 </div>
               </div>
 
@@ -794,7 +807,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     Renessans Learning Center
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {language === 'UZ' ? cmsContent.addressUz : cmsContent.addressEn}
+                    {getLangText(cmsContent.addressUz, cmsContent.addressEn, cmsContent.addressRu)}
                   </p>
                   <a
                     href={cmsContent.googleMapsUrl || "https://maps.google.com"}

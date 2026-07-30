@@ -21,6 +21,7 @@ export interface Teacher {
   experience: string;
   bioUz: string;
   bioEn: string;
+  bioRu?: string;
   image: string;
   specialization: string[];
   resultsCount: number;
@@ -30,16 +31,22 @@ export interface Course {
   id: string;
   titleUz: string;
   titleEn: string;
+  titleRu?: string;
   descUz: string;
   descEn: string;
+  descRu?: string;
   durationUz: string;
   durationEn: string;
+  durationRu?: string;
   levelUz: string;
   levelEn: string;
+  levelRu?: string;
   priceUz: string;
   priceEn: string;
+  priceRu?: string;
   featuresUz: string[];
   featuresEn: string[];
+  featuresRu?: string[];
   iconName: string;
   isPopular?: boolean;
 }
@@ -74,8 +81,10 @@ export interface FAQItem {
   id: string;
   questionUz: string;
   questionEn: string;
+  questionRu?: string;
   answerUz: string;
   answerEn: string;
+  answerRu?: string;
   category: 'general' | 'courses' | 'exams' | 'schedule';
 }
 
@@ -169,14 +178,17 @@ export interface WhyRenessansCard {
   iconNumber: number;
   titleUz: string;
   titleEn: string;
+  titleRu?: string;
   descUz: string;
   descEn: string;
+  descRu?: string;
 }
 
 export interface LandingTestimonial {
   id: string;
   quoteUz: string;
   quoteEn: string;
+  quoteRu?: string;
   studentName: string;
   scoreBadge: string;
   targetCourse: string;
@@ -188,6 +200,7 @@ export interface MetricCardConfig {
   value: string;
   labelUz: string;
   labelEn: string;
+  labelRu?: string;
 }
 
 export interface LandingPageContent {
@@ -197,21 +210,27 @@ export interface LandingPageContent {
   // Hero section
   locationBadgeUz: string;
   locationBadgeEn: string;
+  locationBadgeRu?: string;
   
   heroTitleUz: string;
   heroTitleEn: string;
+  heroTitleRu?: string;
 
   heroSubtitleUz: string;
   heroSubtitleEn: string;
+  heroSubtitleRu?: string;
 
   heroDescUz: string;
   heroDescEn: string;
+  heroDescRu?: string;
 
   ctaPrimaryUz: string;
   ctaPrimaryEn: string;
+  ctaPrimaryRu?: string;
 
   ctaSecondaryUz: string;
   ctaSecondaryEn: string;
+  ctaSecondaryRu?: string;
 
   // Metric Stats
   activeStudentsCount: string;
@@ -240,10 +259,12 @@ export interface LandingPageContent {
   // Contact & Footer
   addressUz: string;
   addressEn: string;
+  addressRu?: string;
   phone: string;
   telegramHandle: string;
   operatingHoursUz: string;
   operatingHoursEn: string;
+  operatingHoursRu?: string;
   googleMapsUrl: string;
 
   updatedAt?: string;

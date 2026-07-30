@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { subscribeSecurityPins, SecurityPinsData } from '../../services/firestore';
 import {
   X,
   Mail,
@@ -54,23 +55,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
 
+  const [livePins, setLivePins] = useState<SecurityPinsData>({
+    adminPin: 'secureadmin',
+    teacherPin: 'secureteacher',
+    studentPin: 'securestudent'
+  });
+
+  useEffect(() => {
+    const unsub = subscribeSecurityPins((pins) => {
+      setLivePins(pins);
+    });
+    return () => unsub();
+  }, []);
+
   if (!isOpen) return null;
 
   // Validate security PIN before executing authentication
   const validatePin = (): boolean => {
+    const entered = securityPin.trim();
     if (selectedRole === 'student') {
-      if (securityPin.trim() !== 'securestudent') {
-        setErrorMsg(t.auth.invalidPinStudent || "Xato PIN! Student sifatida kirish uchun PIN: 'securestudent'");
+      const expected = livePins.studentPin || 'securestudent';
+      if (entered !== expected) {
+        setErrorMsg(
+          t.auth.invalidPinStudent || `Xato PIN! Student sifatida kirish uchun PIN: '${expected}'`
+        );
         return false;
       }
     } else if (selectedRole === 'teacher') {
-      if (securityPin.trim() !== 'secureteacher') {
-        setErrorMsg(t.auth.invalidPinTeacher || "Xato PIN! O'qituvchi sifatida kirish uchun PIN: 'secureteacher'");
+      const expected = livePins.teacherPin || 'secureteacher';
+      if (entered !== expected) {
+        setErrorMsg(
+          t.auth.invalidPinTeacher || `Xato PIN! O'qituvchi sifatida kirish uchun PIN: '${expected}'`
+        );
         return false;
       }
     } else if (selectedRole === 'admin' || selectedRole === 'superadmin') {
-      if (securityPin.trim() !== 'secureadmin') {
-        setErrorMsg(t.auth.invalidPinAdmin || "Xato PIN! Admin sifatida kirish uchun PIN: 'secureadmin'");
+      const expected = livePins.adminPin || 'secureadmin';
+      if (entered !== expected) {
+        setErrorMsg(
+          t.auth.invalidPinAdmin || `Xato PIN! Admin sifatida kirish uchun PIN: '${expected}'`
+        );
         return false;
       }
     }

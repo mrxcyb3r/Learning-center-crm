@@ -527,11 +527,12 @@ export async function updateInquiryStatus(
   status: 'new' | 'contacted' | 'enrolled' | 'dismissed'
 ) {
   try {
-    await updateDoc(doc(db, INQUIRIES_COL, id), { status });
+    // Use setDoc with merge: true so non-existent docs are created gracefully
+    await setDoc(doc(db, INQUIRIES_COL, id), { status }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${INQUIRIES_COL}/${id}`);
     try {
-      await updateDoc(doc(db, LEADS_COL, id), { status });
+      await setDoc(doc(db, LEADS_COL, id), { status }, { merge: true });
     } catch (e) {
       // ignore
     }
@@ -564,9 +565,9 @@ export async function convertInquiryToStudentBatch(
       createdAt: new Date().toISOString()
     });
 
-    // 3. Update inquiry status to enrolled
+    // 3. Update inquiry status to enrolled using setDoc with merge semantics in batch
     const inquiryRef = doc(db, INQUIRIES_COL, inquiryId);
-    batch.update(inquiryRef, { status: 'enrolled' });
+    batch.set(inquiryRef, { status: 'enrolled' }, { merge: true });
 
     await batch.commit();
     return studentRef.id;
@@ -580,10 +581,66 @@ export async function convertInquiryToStudentBatch(
 }
 
 /* =========================================================================
+   SECURITY PINS SERVICE
+   ========================================================================= */
+export interface SecurityPinsData {
+  adminPin: string;
+  teacherPin: string;
+  studentPin: string;
+}
+
+export function subscribeSecurityPins(callback: (pins: SecurityPinsData) => void) {
+  const defaultPins: SecurityPinsData = {
+    adminPin: 'secureadmin',
+    teacherPin: 'secureteacher',
+    studentPin: 'securestudent'
+  };
+
+  try {
+    return onSnapshot(
+      doc(db, 'settings', 'security_pins'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          callback({
+            adminPin: data.adminPin || 'secureadmin',
+            teacherPin: data.teacherPin || 'secureteacher',
+            studentPin: data.studentPin || 'securestudent'
+          });
+        } else {
+          callback(defaultPins);
+        }
+      },
+      (error) => {
+        console.warn('Firestore subscribeSecurityPins notice:', error);
+        callback(defaultPins);
+      }
+    );
+  } catch (error) {
+    console.warn('Firestore subscribeSecurityPins error:', error);
+    callback(defaultPins);
+    return () => {};
+  }
+}
+
+export async function saveSecurityPins(pins: SecurityPinsData) {
+  try {
+    await setDoc(doc(db, 'settings', 'security_pins'), {
+      ...pins,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'settings/security_pins');
+    throw error;
+  }
+}
+
+/* =========================================================================
    INITIAL DB SEEDER (IF EMPTY)
    ========================================================================= */
 export async function seedFirestoreIfEmpty() {
   try {
+    // 1. Seed Groups & Students if empty
     const groupSnap = await getDocs(collection(db, GROUPS_COL));
     if (groupSnap.empty) {
       const g1Id = await addGroup({
@@ -627,6 +684,59 @@ export async function seedFirestoreIfEmpty() {
           lastPaymentDate: '2026-06-15'
         });
       }
+    }
+
+    // 2. Seed Inquiries if empty
+    const inquirySnap = await getDocs(collection(db, INQUIRIES_COL));
+    if (inquirySnap.empty) {
+      const sampleInquiries = [
+        {
+          fullName: 'Shohruh Olimov',
+          phoneNumber: '+998 90 456 78 90',
+          selectedCourse: 'ielts-rocket',
+          message: 'IELTS 7.5+ guruhiga yozilmoqchiman. Darslar soat 14:00 da bo\'ladimi?',
+          status: 'new',
+          createdAt: new Date().toISOString()
+        },
+        {
+          fullName: 'Dilnoza Axmedova',
+          phoneNumber: '+998 93 111 22 33',
+          selectedCourse: 'cefr-fasttrack',
+          message: 'CEFR B2 imtihoniga tayyorlanish uchun 2 oylik kurs kerak.',
+          status: 'contacted',
+          createdAt: new Date().toISOString()
+        },
+        {
+          fullName: 'Sardor Qodirov',
+          phoneNumber: '+998 97 999 88 77',
+          selectedCourse: 'general-english',
+          message: 'Noldan o\'rganmoqchiman. Boshlang\'ich guruh bormi?',
+          status: 'enrolled',
+          createdAt: new Date().toISOString()
+        },
+        {
+          fullName: 'Aziza Yusupova',
+          phoneNumber: '+998 91 333 44 55',
+          selectedCourse: 'kids-english',
+          message: 'Farzandim uchun ingliz tili darsi bo\'yicha ma\'lumot olmoqchiman.',
+          status: 'dismissed',
+          createdAt: new Date().toISOString()
+        }
+      ];
+
+      for (const inq of sampleInquiries) {
+        await addDoc(collection(db, INQUIRIES_COL), inq);
+      }
+    }
+
+    // 3. Seed Security Pins if empty
+    const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
+    if (!pinDoc.exists()) {
+      await saveSecurityPins({
+        adminPin: 'secureadmin',
+        teacherPin: 'secureteacher',
+        studentPin: 'securestudent'
+      });
     }
   } catch (err) {
     console.warn('seedFirestoreIfEmpty notice:', err);

@@ -10,7 +10,8 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy
+  orderBy,
+  writeBatch
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import {
@@ -534,6 +535,47 @@ export async function updateInquiryStatus(
     } catch (e) {
       // ignore
     }
+  }
+}
+
+export async function convertInquiryToStudentBatch(
+  inquiryId: string,
+  studentData: Omit<Student, 'id'>,
+  defaultPassword?: string
+) {
+  try {
+    const batch = writeBatch(db);
+
+    // 1. Create new student document
+    const studentRef = doc(collection(db, STUDENTS_COL));
+    batch.set(studentRef, {
+      ...studentData,
+      createdAt: new Date().toISOString()
+    });
+
+    // 2. Create user record for student login portal
+    const userRef = doc(collection(db, 'users'));
+    batch.set(userRef, {
+      fullName: studentData.fullName,
+      phone: studentData.phone,
+      role: 'student',
+      groupId: studentData.groupId,
+      groupName: studentData.groupName,
+      createdAt: new Date().toISOString()
+    });
+
+    // 3. Update inquiry status to enrolled
+    const inquiryRef = doc(db, INQUIRIES_COL, inquiryId);
+    batch.update(inquiryRef, { status: 'enrolled' });
+
+    await batch.commit();
+    return studentRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${INQUIRIES_COL}/${inquiryId}`);
+    // Fallback if batch write hits offline or error
+    const studentId = await addStudent(studentData);
+    await updateInquiryStatus(inquiryId, 'enrolled');
+    return studentId;
   }
 }
 

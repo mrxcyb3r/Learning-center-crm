@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   subscribeInquiries,
   updateInquiryStatus,
   subscribeGroups,
-  addStudent
+  convertInquiryToStudentBatch
 } from '../../services/firestore';
 import { Inquiry, Group } from '../../types';
 import {
   PhoneCall,
   Search,
-  Filter,
   CheckCircle2,
   Clock,
   XCircle,
@@ -24,8 +23,9 @@ import {
   DollarSign,
   X,
   Copy,
-  Users,
-  Check
+  Check,
+  Loader2,
+  Lock
 } from 'lucide-react';
 
 const MOCK_INQUIRIES: Inquiry[] = [
@@ -36,7 +36,7 @@ const MOCK_INQUIRIES: Inquiry[] = [
     selectedCourse: 'ielts-rocket',
     message: 'IELTS 7.5+ guruhiga yozilmoqchiman. Darslar soat 14:00 da bo\'ladimi?',
     status: 'new',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 mins ago
+    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString()
   },
   {
     id: 'inq-2',
@@ -45,7 +45,7 @@ const MOCK_INQUIRIES: Inquiry[] = [
     selectedCourse: 'cefr-fasttrack',
     message: 'CEFR B2 imtihoniga tayyorlanish uchun 2 oylik kurs kerak.',
     status: 'new',
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString() // 3 hours ago
+    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString()
   },
   {
     id: 'inq-3',
@@ -54,7 +54,7 @@ const MOCK_INQUIRIES: Inquiry[] = [
     selectedCourse: 'general-english',
     message: 'Noldan o\'rganmoqchiman. Boshlang\'ich guruh bormi?',
     status: 'contacted',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
   },
   {
     id: 'inq-4',
@@ -63,22 +63,32 @@ const MOCK_INQUIRIES: Inquiry[] = [
     selectedCourse: 'kids-english',
     message: 'Farzandim uchun ingliz tili darsi bo\'yicha ma\'lumot olmoqchiman.',
     status: 'enrolled',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() // 2 days ago
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
   }
 ];
 
 export const InquiriesView: React.FC = () => {
   const { language } = useLanguage();
 
-  const t = (uz: string, en: string, ru: string) => {
-    if (language === 'UZ') return uz;
-    if (language === 'RU') return ru;
-    return en;
-  };
+  const t = useCallback(
+    (uz: string, en: string, ru: string) => {
+      if (language === 'UZ') return uz;
+      if (language === 'RU') return ru;
+      return en;
+    },
+    [language]
+  );
 
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Per-item debouncing & processing loading indicators
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const processingIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    processingIdsRef.current = processingIds;
+  }, [processingIds]);
 
   // Filters
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'contacted' | 'enrolled' | 'dismissed'>('all');
@@ -90,18 +100,29 @@ export const InquiriesView: React.FC = () => {
   const [studentPhone, setStudentPhone] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [tuitionFee, setTuitionFee] = useState('650000');
+  const [studentPassword, setStudentPassword] = useState('renessans123');
   const [isSubmittingEnroll, setIsSubmittingEnroll] = useState(false);
 
-  // Real-time Firestore Subscribers
+  // Real-time Firestore Subscribers with Optimistic Guard
   useEffect(() => {
     let isMounted = true;
 
     const unsubInq = subscribeInquiries((data) => {
       if (!isMounted) return;
       if (data && data.length > 0) {
-        setInquiries(data);
+        setInquiries((prevInqs) => {
+          if (prevInqs.length === 0) return data;
+          // Merge remote data preserving items currently undergoing local optimistic processing
+          return data.map((remoteItem) => {
+            if (processingIdsRef.current.has(remoteItem.id)) {
+              const localItem = prevInqs.find((p) => p.id === remoteItem.id);
+              return localItem || remoteItem;
+            }
+            return remoteItem;
+          });
+        });
       } else {
-        setInquiries(MOCK_INQUIRIES);
+        setInquiries((prev) => (prev.length === 0 ? MOCK_INQUIRIES : prev));
       }
       setIsLoading(false);
     });
@@ -126,62 +147,95 @@ export const InquiriesView: React.FC = () => {
     };
   }, []);
 
-  // Actions
-  const handleMarkStatus = async (inquiryId: string, newStatus: 'new' | 'contacted' | 'enrolled' | 'dismissed') => {
-    try {
-      await updateInquiryStatus(inquiryId, newStatus);
-      setInquiries((prev) =>
-        prev.map((item) => (item.id === inquiryId ? { ...item, status: newStatus } : item))
-      );
+  // Fast Optimistic Status Update Handler
+  const handleMarkStatus = useCallback(
+    async (inquiryId: string, newStatus: 'new' | 'contacted' | 'enrolled' | 'dismissed') => {
+      if (processingIdsRef.current.has(inquiryId)) return;
 
+      // 1. Instant local optimistic update
+      let previousInquiry: Inquiry | undefined;
+      setInquiries((prev) => {
+        previousInquiry = prev.find((item) => item.id === inquiryId);
+        return prev.map((item) => (item.id === inquiryId ? { ...item, status: newStatus } : item));
+      });
+
+      // Mark item as processing for debouncing & spinner
+      setProcessingIds((prev) => new Set(prev).add(inquiryId));
+
+      // Instant feedback toast
       const statusLabels = {
         contacted: t("Arizachi bilan bog'lanildi deb belgilandi 🟡", "Marked as Contacted 🟡", "Отмечено как Связались 🟡"),
         enrolled: t("O'quvchi safiga qo'shildi 🟢", "Converted to Student 🟢", "Зачислен в студенты 🟢"),
         dismissed: t("Ariza rad etildi / arxivlandi ⚪", "Inquiry Dismissed ⚪", "Отклонено ⚪"),
         new: t("Yangi deb belgilandi 🔴", "Marked as New 🔴", "Отмечено как Новый 🔴")
       };
-
       toast.success(statusLabels[newStatus]);
-    } catch (err) {
-      console.error(err);
-      toast.error(t("Statusni yangilashda xatolik", "Error updating status", "Ошибка обновления статуса"));
-    }
-  };
 
-  const handleOpenConversionModal = (inquiry: Inquiry) => {
-    setConversionModalInquiry(inquiry);
-    setStudentFullName(inquiry.fullName);
-    setStudentPhone(inquiry.phoneNumber);
-    if (groups.length > 0) {
-      setSelectedGroupId(groups[0].id);
-    }
-  };
+      // 2. Fire-and-forget background write with revert fallback on failure
+      try {
+        await updateInquiryStatus(inquiryId, newStatus);
+      } catch (err) {
+        console.error('Failed to update inquiry status:', err);
+        // Revert state on network error
+        if (previousInquiry) {
+          const revertStatus = previousInquiry.status;
+          setInquiries((prev) =>
+            prev.map((item) => (item.id === inquiryId ? { ...item, status: revertStatus } : item))
+          );
+        }
+        toast.error(t("Statusni yangilashda xatolik yuz berdi", "Error updating status", "Ошибка обновления статуса"));
+      } finally {
+        setProcessingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(inquiryId);
+          return next;
+        });
+      }
+    },
+    [t]
+  );
 
-  const handleConfirmConvertStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!conversionModalInquiry) return;
-    if (!studentFullName.trim() || !studentPhone.trim()) {
-      toast.error(t("Ism va telefon raqamini to'ldiring", "Fill in name and phone", "Заполните имя и телефон"));
-      return;
-    }
+  const handleOpenConversionModal = useCallback(
+    (inquiry: Inquiry) => {
+      setConversionModalInquiry(inquiry);
+      setStudentFullName(inquiry.fullName);
+      setStudentPhone(inquiry.phoneNumber);
+      setStudentPassword('renessans123');
+      if (groups.length > 0) {
+        setSelectedGroupId(groups[0].id);
+      }
+    },
+    [groups]
+  );
 
-    setIsSubmittingEnroll(true);
-    try {
-      const selectedGroup = groups.find((g) => g.id === selectedGroupId);
-      const groupName = selectedGroup ? selectedGroup.name : 'Unassigned';
+  // Fast Atomic Conversion with WriteBatch
+  const handleConfirmConvertStudent = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!conversionModalInquiry) return;
+      const inquiryId = conversionModalInquiry.id;
 
-      await addStudent({
-        fullName: studentFullName.trim(),
-        phone: studentPhone.trim(),
-        groupId: selectedGroupId || 'default-group',
-        groupName,
-        tuitionFee: Number(tuitionFee) || 650000,
-        paymentStatus: 'pending',
-        lastPaymentDate: new Date().toISOString().split('T')[0]
+      if (processingIdsRef.current.has(inquiryId)) return;
+
+      if (!studentFullName.trim() || !studentPhone.trim()) {
+        toast.error(t("Ism va telefon raqamini to'ldiring", "Fill in name and phone", "Заполните имя и телефон"));
+        return;
+      }
+
+      setIsSubmittingEnroll(true);
+      setProcessingIds((prev) => new Set(prev).add(inquiryId));
+
+      // 1. Instant local optimistic update & close modal
+      let previousInquiry: Inquiry | undefined;
+      setInquiries((prev) => {
+        previousInquiry = prev.find((item) => item.id === inquiryId);
+        return prev.map((item) => (item.id === inquiryId ? { ...item, status: 'enrolled' } : item));
       });
 
-      // Update inquiry status to enrolled
-      await handleMarkStatus(conversionModalInquiry.id, 'enrolled');
+      const assignedGroup = groups.find((g) => g.id === selectedGroupId);
+      const groupName = assignedGroup ? assignedGroup.name : 'Unassigned';
+
+      setConversionModalInquiry(null);
 
       toast.success(
         t(
@@ -191,19 +245,59 @@ export const InquiriesView: React.FC = () => {
         )
       );
 
-      setConversionModalInquiry(null);
-    } catch (err) {
-      console.error(err);
-      toast.error(t("O'quvchini qo'shishda xatolik", "Error registering student", "Ошибка при регистрации"));
-    } finally {
-      setIsSubmittingEnroll(false);
-    }
-  };
+      // 2. Fire atomic writeBatch in background
+      try {
+        await convertInquiryToStudentBatch(
+          inquiryId,
+          {
+            fullName: studentFullName.trim(),
+            phone: studentPhone.trim(),
+            groupId: selectedGroupId || 'default-group',
+            groupName,
+            tuitionFee: Number(tuitionFee) || 650000,
+            paymentStatus: 'pending',
+            lastPaymentDate: new Date().toISOString().split('T')[0]
+          },
+          studentPassword
+        );
+      } catch (err) {
+        console.error('Error converting student in batch:', err);
+        // Revert local state on error
+        if (previousInquiry) {
+          const revertStatus = previousInquiry.status;
+          setInquiries((prev) =>
+            prev.map((item) => (item.id === inquiryId ? { ...item, status: revertStatus } : item))
+          );
+        }
+        toast.error(t("O'quvchini qo'shishda xatolik yuz berdi", "Error registering student", "Ошибка при регистрации"));
+      } finally {
+        setIsSubmittingEnroll(false);
+        setProcessingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(inquiryId);
+          return next;
+        });
+      }
+    },
+    [
+      conversionModalInquiry,
+      studentFullName,
+      studentPhone,
+      selectedGroupId,
+      tuitionFee,
+      studentPassword,
+      groups,
+      t
+    ]
+  );
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.info(t("Nusxalandi!", "Copied to clipboard!", "Скопировано!"));
-  };
+  const copyToClipboard = useCallback(
+    (text: string) => {
+      navigator.clipboard.writeText(text);
+      toast.info(t("Nusxalandi!", "Copied to clipboard!", "Скопировано!"));
+    },
+    [t]
+  );
 
   // Helper course titles map
   const getCourseBadgeTitle = (courseId: string) => {
@@ -225,11 +319,9 @@ export const InquiriesView: React.FC = () => {
 
   // Filtered list
   const filteredInquiries = inquiries.filter((inq) => {
-    // Status filter
     if (activeTab !== 'all' && inq.status !== activeTab) {
       return false;
     }
-    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = inq.fullName.toLowerCase().includes(q);
@@ -461,6 +553,7 @@ export const InquiriesView: React.FC = () => {
             const isContacted = inquiry.status === 'contacted';
             const isEnrolled = inquiry.status === 'enrolled';
             const isDismissed = inquiry.status === 'dismissed';
+            const isProcessing = processingIds.has(inquiry.id);
 
             return (
               <div
@@ -565,9 +658,16 @@ export const InquiriesView: React.FC = () => {
                     {!isContacted && !isEnrolled && (
                       <button
                         onClick={() => handleMarkStatus(inquiry.id, 'contacted')}
-                        className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                        disabled={isProcessing}
+                        className={`px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                          isProcessing ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                       >
-                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        {isProcessing ? (
+                          <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                        ) : (
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        )}
                         <span>{t("Bog'lanildi deb belgilash", "Mark Contacted", "Отметить звонок")}</span>
                       </button>
                     )}
@@ -576,9 +676,16 @@ export const InquiriesView: React.FC = () => {
                     {!isEnrolled && (
                       <button
                         onClick={() => handleOpenConversionModal(inquiry)}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20"
+                        disabled={isProcessing}
+                        className={`px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 ${
+                          isProcessing ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                       >
-                        <UserPlus className="w-3.5 h-3.5" />
+                        {isProcessing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <UserPlus className="w-3.5 h-3.5" />
+                        )}
                         <span>{t("O'quvchiga aylantirish", "Convert to Student", "Зачислить в группу")}</span>
                       </button>
                     )}
@@ -588,10 +695,17 @@ export const InquiriesView: React.FC = () => {
                   {!isDismissed && (
                     <button
                       onClick={() => handleMarkStatus(inquiry.id, 'dismissed')}
-                      className="px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                      disabled={isProcessing}
+                      className={`px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
+                        isProcessing ? 'opacity-60 cursor-not-allowed' : ''
+                      }`}
                       title="Dismiss inquiry"
                     >
-                      <XCircle className="w-3.5 h-3.5" />
+                      {isProcessing ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5" />
+                      )}
                       <span>{t("Bekor qilish", "Dismiss", "Отклонить")}</span>
                     </button>
                   )}
@@ -692,6 +806,22 @@ export const InquiriesView: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  {t("Tizimga kirish paroli (Default)", "Portal Password (Default)", "Пароль для входа")}
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={studentPassword}
+                    onChange={(e) => setStudentPassword(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 font-mono"
+                  />
+                </div>
+              </div>
+
               <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
@@ -703,10 +833,13 @@ export const InquiriesView: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmittingEnroll}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSubmittingEnroll ? (
-                    <span>{t("Saqlanmoqda...", "Saving...", "Сохранение...")}</span>
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{t("Saqlanmoqda...", "Saving...", "Сохранение...")}</span>
+                    </>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />

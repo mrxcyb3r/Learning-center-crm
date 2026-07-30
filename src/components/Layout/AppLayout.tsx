@@ -22,6 +22,7 @@ import { SuperAdminControlView } from '../../pages/admin/SuperAdminControlView';
 import { PayrollView } from '../../pages/admin/PayrollView';
 import { ClassesView } from '../../pages/admin/ClassesView';
 import { BlogCMSView } from '../../pages/admin/BlogCMSView';
+import { LandingPageEditor } from '../../pages/admin/LandingPageEditor';
 import { SettingsView } from '../../pages/admin/SettingsView';
 import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
 import {
@@ -46,6 +47,7 @@ import {
   CreditCard,
   FileText,
   Newspaper,
+  LayoutTemplate,
   Key,
   DollarSign,
   TrendingUp,
@@ -126,6 +128,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
         { id: 'superadmin_control', label: t('SuperAdmin Boshqaruvi', 'SuperAdmin Control', 'Панель SuperAdmin'), icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
+        { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
+        { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Kontrakt", 'Tuition & Payments', 'Оплата и Контракты'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
@@ -138,6 +142,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     if (activeRole === 'admin') {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
+        { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Qarzdorlar", 'Tuition & Debtor List', 'Оплата и Должники'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> }
@@ -177,6 +183,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       setActiveTab('leaderboard');
     } else if (normalized === 'mock-tests' || normalized === 'mock_tests' || normalized === 'progress') {
       setActiveTab('progress');
+    } else if (normalized === 'landing-editor' || normalized === 'landing_editor' || normalized === 'landing-page' || normalized === 'landing') {
+      setActiveTab('landing');
     } else {
       setActiveTab(normalized);
     }
@@ -427,6 +435,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
           {/* Admin & SuperAdmin Role Pages */}
           {activeTab === 'superadmin_control' && <SuperAdminControlView />}
+          {(activeTab === 'landing' || activeTab === 'landing-editor' || activeTab === 'landing_editor') && <LandingPageEditor />}
           {activeTab === 'students' && <StudentsPage />}
           {activeTab === 'payments' && <PaymentsPage />}
           {activeTab === 'payroll' && <PayrollView />}
@@ -451,6 +460,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               'homework',
               'gradebook',
               'superadmin_control',
+              'landing',
+              'landing-editor',
+              'landing_editor',
               'students',
               'payments',
               'payroll',

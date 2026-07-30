@@ -82,37 +82,6 @@ export const LandingPageCMSView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30 mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Landing Page CMS Manager</span>
-          </div>
-          <h2 className="text-2xl font-black">
-            {t("Lending Sayt Kontent Muharriri (CMS)", "Landing Page Content Editor (CMS)", "CMS Главной Страницы")}
-          </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl">
-            {t(
-              "Renessans LC ning barcha matnlari, o'qituvchilar, IELTS natijalari, sharhlar va narxlarni doc(db, 'settings', 'landing_cms') da jonli boshqaring.",
-              "Edit hero text, mentor cards, IELTS achievements, reviews, courses, and map location URLs rendered live across the landing page.",
-              "Управление заголовками, менторами, результатами IELTS, отзывами и ценами на лендинге."
-            )}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSaveAll}
-            disabled={isSaving}
-            className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSaving ? t("Saqlanmoqda...", "Saving...", "Сохранение...") : t("💾 Save Landing Page Changes", "💾 Save Landing Page Changes", "💾 Сохранить Изменения")}</span>
-          </button>
-        </div>
-      </div>
-
       {/* 5-Tab Navigation Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
         <button

@@ -78,7 +78,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   useEffect(() => {
     const unsub = subscribeInquiries((items) => {
       const newCount = items.filter((i) => i.status === 'new').length;
-      setNewInquiriesCount(newCount > 0 ? newCount : 2);
+      setNewInquiriesCount(newCount);
     });
     return () => unsub();
   }, []);

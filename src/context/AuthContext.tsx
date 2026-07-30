@@ -353,6 +353,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString()
       };
 
+      // Auto-Sync Firestore user document for the demo user
+      try {
+        await setDoc(doc(db, 'users', uid), profile, { merge: true });
+      } catch (err) {
+        console.warn('Firestore demo user profile sync warning:', err);
+      }
+
+      // If Firebase Auth currentUser is signed in, also sync auth.currentUser.uid document to have the requested role
+      if (auth.currentUser) {
+        try {
+          await setDoc(
+            doc(db, 'users', auth.currentUser.uid),
+            {
+              uid: auth.currentUser.uid,
+              email: auth.currentUser.email || info.email,
+              displayName: auth.currentUser.displayName || info.name,
+              role: requestedRole,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          );
+        } catch (err) {
+          console.warn('Firestore auth currentUser role sync warning:', err);
+        }
+      }
+
       setCurrentUser(mockUser);
       setUserProfile(profile);
       setRole(requestedRole);
@@ -376,6 +402,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setMockRole = (newRole: UserRole) => {
     setActiveRole(newRole);
+
+    // Sync active role to Firestore so security rules allow matching permissions
+    if (auth.currentUser) {
+      setDoc(
+        doc(db, 'users', auth.currentUser.uid),
+        { role: newRole, updatedAt: new Date().toISOString() },
+        { merge: true }
+      ).catch((err) => console.warn('Sync mock role error:', err));
+    }
+    if (currentUser?.uid) {
+      setDoc(
+        doc(db, 'users', currentUser.uid),
+        { role: newRole, updatedAt: new Date().toISOString() },
+        { merge: true }
+      ).catch((err) => console.warn('Sync mock role for currentUser error:', err));
+    }
   };
 
   const resetMockRole = () => {

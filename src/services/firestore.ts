@@ -474,7 +474,10 @@ export function subscribeLeads(callback: (leads: LeadSubmission[]) => void) {
 /* =========================================================================
    INQUIRIES SERVICE
    ========================================================================= */
-export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
+export function subscribeInquiries(
+  callback: (inquiries: Inquiry[]) => void,
+  onError?: (error: any) => void
+) {
   try {
     return onSnapshot(
       collection(db, INQUIRIES_COL),
@@ -485,8 +488,10 @@ export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
           if (data.createdAt) {
             if (typeof data.createdAt === 'string') {
               createdAtStr = data.createdAt;
-            } else if (data.createdAt?.toDate) {
+            } else if (typeof data.createdAt?.toDate === 'function') {
               createdAtStr = data.createdAt.toDate().toISOString();
+            } else if (typeof data.createdAt === 'number') {
+              createdAtStr = new Date(data.createdAt).toISOString();
             }
           }
           return {
@@ -507,14 +512,46 @@ export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
       },
       (error) => {
         console.warn('Firestore subscribeInquiries notice:', error);
+        if (onError) onError(error);
         callback([]);
       }
     );
   } catch (error) {
     console.warn('Firestore subscribeInquiries error:', error);
+    if (onError) onError(error);
     callback([]);
     return () => {};
   }
+}
+
+export async function fetchInquiriesOnce(): Promise<Inquiry[]> {
+  const snapshot = await getDocs(collection(db, INQUIRIES_COL));
+  console.log('Raw inquiries count:', snapshot.docs.length);
+  const items: Inquiry[] = snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    let createdAtStr = new Date().toISOString();
+    if (data.createdAt) {
+      if (typeof data.createdAt === 'string') {
+        createdAtStr = data.createdAt;
+      } else if (typeof data.createdAt?.toDate === 'function') {
+        createdAtStr = data.createdAt.toDate().toISOString();
+      } else if (typeof data.createdAt === 'number') {
+        createdAtStr = new Date(data.createdAt).toISOString();
+      }
+    }
+    return {
+      id: docSnap.id,
+      fullName: data.fullName || data.name || 'Unnamed Lead',
+      phoneNumber: data.phoneNumber || data.phone || 'No phone',
+      selectedCourse: data.selectedCourse || data.courseId || 'General English',
+      message: data.message || '',
+      status: data.status || 'new',
+      createdAt: createdAtStr
+    };
+  });
+
+  items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return items;
 }
 
 export async function addInquiry(inquiry: Omit<Inquiry, 'id'>) {

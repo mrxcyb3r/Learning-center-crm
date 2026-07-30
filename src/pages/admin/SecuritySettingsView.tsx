@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { Settings, Lock, MapPin, Phone, MessageCircle, Save, CheckCircle2, ShieldCheck, Key, GraduationCap, UserCheck, Loader2 } from 'lucide-react';
 import { subscribeSecurityPins, saveSecurityPins, SecurityPinsData } from '../../services/firestore';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { SUPER_ADMIN_UID } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 
 export const SecuritySettingsView: React.FC = () => {
@@ -43,6 +46,25 @@ export const SecuritySettingsView: React.FC = () => {
         teacherPin: teacherPin.trim() || 'secureteacher',
         studentPin: studentPin.trim() || 'securestudent'
       });
+
+      // Update Super Admin user metadata document alongside PIN settings
+      try {
+        await setDoc(
+          doc(db, 'users', SUPER_ADMIN_UID),
+          {
+            uid: SUPER_ADMIN_UID,
+            role: 'superadmin',
+            displayName: 'Super Admin',
+            email: 'admin@admin.com',
+            centerName,
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      } catch (adminErr) {
+        console.warn('Super Admin user doc update warning:', adminErr);
+      }
+
       setSavedSuccess(true);
       toast.success(t("Sozlamalar va PIN kodlar saqlandi!", "Settings & PIN codes saved!", "Настройки и PIN коды сохранены!"));
       setTimeout(() => setSavedSuccess(false), 3000);

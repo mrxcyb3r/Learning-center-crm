@@ -59,6 +59,8 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   return null;
 }
 
+export const SUPER_ADMIN_UID = 'CI1sJzLxSrQHvvCwFQnHqeVHxrs2';
+
 // Collections
 const GROUPS_COL = 'groups';
 const STUDENTS_COL = 'students';
@@ -727,7 +729,7 @@ export async function seedFirestoreIfEmpty() {
       }
     }
 
-    // 2. Seed Security Pins if empty
+    // 2. Seed Security Pins & Super Admin User Doc if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
       await saveSecurityPins({
@@ -735,6 +737,22 @@ export async function seedFirestoreIfEmpty() {
         teacherPin: 'secureteacher',
         studentPin: 'securestudent'
       });
+    }
+
+    // Ensure Super Admin user doc exists
+    try {
+      const superAdminDoc = await getDoc(doc(db, 'users', SUPER_ADMIN_UID));
+      if (!superAdminDoc.exists()) {
+        await setDoc(doc(db, 'users', SUPER_ADMIN_UID), {
+          uid: SUPER_ADMIN_UID,
+          email: 'admin@admin.com',
+          displayName: 'Super Admin',
+          role: 'superadmin',
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Super Admin seed doc check notice:', e);
     }
   } catch (err) {
     console.warn('seedFirestoreIfEmpty notice:', err);

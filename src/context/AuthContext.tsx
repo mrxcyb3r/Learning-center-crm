@@ -16,7 +16,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
 import { UserRole, UserProfile } from '../types';
 
-export const SUPER_ADMIN_UUID = 'ISLveDBeEndRC0U6jQ0lEmEn68l2';
+export const SUPER_ADMIN_UID = 'CI1sJzLxSrQHvvCwFQnHqeVHxrs2';
+export const SUPER_ADMIN_UUID = SUPER_ADMIN_UID;
 
 interface AuthContextType {
   currentUser: User | null;

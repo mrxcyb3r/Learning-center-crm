@@ -31,7 +31,8 @@ import {
   XCircle,
   TrendingUp,
   RefreshCw,
-  Send
+  Send,
+  PhoneCall
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -316,6 +317,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button
+            onClick={() => {
+              showToast(t("Arizalar va Lids bo'limiga o'tilmoqda...", "Navigating to Leads & Inquiries...", "Переход к заявкам..."));
+              onNavigate?.('inquiries');
+            }}
+            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-emerald-500/50 transition text-left cursor-pointer flex items-center gap-3 group"
+          >
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition shrink-0 relative">
+              <PhoneCall className="w-4 h-4" />
+              <span className="w-2 h-2 rounded-full bg-rose-500 absolute -top-0.5 -right-0.5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-slate-900 dark:text-white">
+                {t("Arizalar & Lids", "Leads & Inquiries", "Заявки и Лиды")}
+              </p>
+              <p className="text-[10px] text-slate-400">Pipeline & Auto-Enroll</p>
+            </div>
+          </button>
+
           <button
             onClick={() => {
               showToast(t("Lending sayt tahrirchisiga o'tilmoqda...", "Navigating to Landing Page CMS...", "Переход к редактору лендинга..."));

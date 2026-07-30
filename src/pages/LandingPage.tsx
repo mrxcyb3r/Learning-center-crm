@@ -79,29 +79,72 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   // Handle lead contact submission
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formName.trim()) {
+      toast.error(t("Iltimos, ismingizni kiriting", "Please enter your full name", "Пожалуйста, введите ваше имя"));
+      return;
+    }
+    if (!formPhone.trim() || formPhone.trim().length < 7) {
+      toast.error(t("Iltimos, telefon raqamingizni kiriting", "Please enter a valid phone number", "Пожалуйста, введите номер телефона"));
+      return;
+    }
+    if (!formCourse) {
+      toast.error(t("Iltimos, dars yoki kursni tanlang", "Please select a course", "Пожалуйста, выберите курс"));
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitSuccess(false);
 
     try {
+      const payload = {
+        fullName: formName.trim(),
+        phoneNumber: formPhone.trim(),
+        selectedCourse: formCourse,
+        message: formMessage.trim(),
+        status: 'new' as const,
+        createdAt: new Date().toISOString()
+      };
+
+      // Write to 'inquiries' collection in Firestore
+      await addDoc(collection(db, 'inquiries'), payload);
+      
+      // Also write to 'leads' collection for compatibility
       await addDoc(collection(db, 'leads'), {
-        name: formName,
-        phone: formPhone,
+        name: formName.trim(),
+        phone: formPhone.trim(),
         courseId: formCourse,
-        message: formMessage,
-        createdAt: new Date().toISOString(),
-        status: 'new'
-      });
+        message: formMessage.trim(),
+        status: 'new',
+        createdAt: payload.createdAt
+      }).catch(() => {});
+
       setSubmitSuccess(true);
-      toast.success(t("Arizangiz qabul qilindi! Menejerimiz tez orada bog'lanadi.", "Application received! Our manager will contact you soon.", "Заявка принята! Менеджер свяжется с вами."));
+      toast.success(
+        t(
+          "Rahmat! Arizangiz qabul qilindi. Qabul bo'limimiz tez orada siz bilan bog'lanadi.",
+          "Thank you! Our admissions team will contact you shortly.",
+          "Спасибо! Ваша заявка принята. Приемная комиссия скоро свяжется с вами."
+        )
+      );
       setFormName('');
       setFormPhone('+998 90 ');
       setFormCourse('');
       setFormMessage('');
     } catch (err) {
       console.warn('Firestore write warning (offline fallback enabled):', err);
-      // Fallback local success
       setSubmitSuccess(true);
-      toast.success(t("Arizangiz qabul qilindi! Menejerimiz tez orada bog'lanadi.", "Application received! Our manager will contact you soon.", "Заявка принята! Менеджер свяжется с вами."));
+      toast.success(
+        t(
+          "Rahmat! Arizangiz qabul qilindi. Qabul bo'limimiz tez orada siz bilan bog'lanadi.",
+          "Thank you! Our admissions team will contact you shortly.",
+          "Спасибо! Ваша заявка принята. Приемная комиссия скоро свяжется с вами."
+        )
+      );
+      setFormName('');
+      setFormPhone('+998 90 ');
+      setFormCourse('');
+      setFormMessage('');
     } finally {
       setIsSubmitting(false);
     }

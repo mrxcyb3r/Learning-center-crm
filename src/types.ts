@@ -67,6 +67,16 @@ export interface StudentResult {
   badge: string;
 }
 
+export interface Inquiry {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  selectedCourse: string;
+  message?: string;
+  status: 'new' | 'contacted' | 'enrolled' | 'dismissed';
+  createdAt: string;
+}
+
 export interface LeadSubmission {
   id?: string;
   name: string;
@@ -74,7 +84,7 @@ export interface LeadSubmission {
   courseId: string;
   message?: string;
   createdAt: string;
-  status: 'new' | 'contacted' | 'enrolled';
+  status: 'new' | 'contacted' | 'enrolled' | 'dismissed';
 }
 
 export interface FAQItem {

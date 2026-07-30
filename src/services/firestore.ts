@@ -21,7 +21,8 @@ import {
   Assignment,
   FeedPost,
   MockTestScore,
-  LeadSubmission
+  LeadSubmission,
+  Inquiry
 } from '../types';
 
 enum OperationType {
@@ -66,6 +67,7 @@ const ASSIGNMENTS_COL = 'assignments';
 const FEED_POSTS_COL = 'feed_posts';
 const MOCK_SCORES_COL = 'mock_scores';
 const LEADS_COL = 'leads';
+const INQUIRIES_COL = 'inquiries';
 
 /* =========================================================================
    GROUPS SERVICE
@@ -465,6 +467,73 @@ export function subscribeLeads(callback: (leads: LeadSubmission[]) => void) {
     console.warn('Firestore subscribeLeads error:', error);
     callback([]);
     return () => {};
+  }
+}
+
+/* =========================================================================
+   INQUIRIES SERVICE
+   ========================================================================= */
+export function subscribeInquiries(callback: (inquiries: Inquiry[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, INQUIRIES_COL),
+      (snapshot) => {
+        const items: Inquiry[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          let createdAtStr = new Date().toISOString();
+          if (data.createdAt) {
+            if (typeof data.createdAt === 'string') {
+              createdAtStr = data.createdAt;
+            } else if (data.createdAt?.toDate) {
+              createdAtStr = data.createdAt.toDate().toISOString();
+            }
+          }
+          return {
+            id: docSnap.id,
+            fullName: data.fullName || data.name || 'Anonymous',
+            phoneNumber: data.phoneNumber || data.phone || '',
+            selectedCourse: data.selectedCourse || data.courseId || 'General English',
+            message: data.message || '',
+            status: data.status || 'new',
+            createdAt: createdAtStr
+          };
+        });
+        callback(items);
+      },
+      (error) => {
+        console.warn('Firestore subscribeInquiries notice:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.warn('Firestore subscribeInquiries error:', error);
+    callback([]);
+    return () => {};
+  }
+}
+
+export async function addInquiry(inquiry: Omit<Inquiry, 'id'>) {
+  try {
+    const docRef = await addDoc(collection(db, INQUIRIES_COL), inquiry);
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, INQUIRIES_COL);
+  }
+}
+
+export async function updateInquiryStatus(
+  id: string,
+  status: 'new' | 'contacted' | 'enrolled' | 'dismissed'
+) {
+  try {
+    await updateDoc(doc(db, INQUIRIES_COL, id), { status });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${INQUIRIES_COL}/${id}`);
+    try {
+      await updateDoc(doc(db, LEADS_COL, id), { status });
+    } catch (e) {
+      // ignore
+    }
   }
 }
 

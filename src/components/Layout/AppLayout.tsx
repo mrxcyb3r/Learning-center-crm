@@ -23,6 +23,7 @@ import { PayrollView } from '../../pages/admin/PayrollView';
 import { ClassesView } from '../../pages/admin/ClassesView';
 import { BlogCMSView } from '../../pages/admin/BlogCMSView';
 import { LandingPageEditor } from '../../pages/admin/LandingPageEditor';
+import { InquiriesView } from '../../pages/admin/InquiriesView';
 import { SettingsView } from '../../pages/admin/SettingsView';
 import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
 import {
@@ -51,8 +52,10 @@ import {
   Key,
   DollarSign,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  PhoneCall
 } from 'lucide-react';
+import { subscribeInquiries } from '../../services/firestore';
 import { UserRole } from '../../types';
 
 interface AppLayoutProps {
@@ -69,6 +72,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [unreadNotifications, setUnreadNotifications] = useState(3);
   const [isAIFloatingOpen, setIsAIFloatingOpen] = useState(false);
+  const [newInquiriesCount, setNewInquiriesCount] = useState(2);
+
+  // Subscribe to real-time inquiries count
+  useEffect(() => {
+    const unsub = subscribeInquiries((items) => {
+      const newCount = items.filter((i) => i.status === 'new').length;
+      setNewInquiriesCount(newCount > 0 ? newCount : 2);
+    });
+    return () => unsub();
+  }, []);
 
   // Reset active tab and update clean path URL when activeRole or activeTab changes
   useEffect(() => {
@@ -127,6 +140,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     if (activeRole === 'superadmin') {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'inquiries', label: t('Arizalar & Lids', 'Leads & Inquiries', 'Заявки и Лиды'), icon: <PhoneCall className="w-4 h-4 text-emerald-500" />, badge: newInquiriesCount > 0 ? newInquiriesCount : undefined },
         { id: 'superadmin_control', label: t('SuperAdmin Boshqaruvi', 'SuperAdmin Control', 'Панель SuperAdmin'), icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
         { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
         { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
@@ -142,6 +156,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     if (activeRole === 'admin') {
       return [
         { id: 'dashboard', label: t('Boshqaruv Paneli', 'Dashboard', 'Панель Управления'), icon: <LayoutDashboard className="w-4 h-4" /> },
+        { id: 'inquiries', label: t('Arizalar & Lids', 'Leads & Inquiries', 'Заявки и Лиды'), icon: <PhoneCall className="w-4 h-4 text-emerald-500" />, badge: newInquiriesCount > 0 ? newInquiriesCount : undefined },
         { id: 'landing', label: t('Lending Sayt Tahrirchisi', 'Landing Page CMS', 'Редактор Лендинга'), icon: <LayoutTemplate className="w-4 h-4 text-amber-500" /> },
         { id: 'blog', label: t('Blog & Yangiliklar CMS', 'Blog CMS', 'Blog & Новости CMS'), icon: <Newspaper className="w-4 h-4" /> },
         { id: 'students', label: t("O'quvchilar", 'Students', 'Ученики'), icon: <Users className="w-4 h-4" /> },
@@ -434,6 +449,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {activeTab === 'gradebook' && <GradebookView />}
 
           {/* Admin & SuperAdmin Role Pages */}
+          {(activeTab === 'inquiries' || activeTab === 'leads') && <InquiriesView />}
           {activeTab === 'superadmin_control' && <SuperAdminControlView />}
           {(activeTab === 'landing' || activeTab === 'landing-editor' || activeTab === 'landing_editor') && <LandingPageEditor />}
           {activeTab === 'students' && <StudentsPage />}

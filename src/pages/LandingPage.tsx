@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'react-toastify';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { TypewriterText } from '../components/common/TypewriterText';
 import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel';
-import { mockTeachers, mockCourses, mockResults, mockFAQs } from '../data/mockData';
-import { StudentResult } from '../types';
+import { StudentResult, LandingPageContent } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { subscribeLandingPageContent, DEFAULT_LANDING_PAGE_CONTENT } from '../services/landingCms';
 import {
   ArrowRight,
   Award,
@@ -35,6 +35,16 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   const { language, t: dict, translate: t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  // Live Firestore landing CMS content
+  const [cmsContent, setCmsContent] = useState<LandingPageContent>(DEFAULT_LANDING_PAGE_CONTENT);
+
+  useEffect(() => {
+    const unsub = subscribeLandingPageContent((data) => {
+      setCmsContent(data);
+    });
+    return () => unsub();
+  }, []);
 
   // State
   const [selectedResult, setSelectedResult] = useState<StudentResult | null>(null);
@@ -83,21 +93,24 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
     }
   };
 
-  // Filtered results
-  const filteredResults = mockResults.filter((r) => {
+  // Filtered results from CMS content
+  const filteredResults = (cmsContent.results || []).filter((r) => {
     if (resultFilter === '8.0') return parseFloat(r.score) >= 8.0;
     if (resultFilter === '7.5') return parseFloat(r.score) >= 7.5;
     if (resultFilter === 'CEFR') return r.testType === 'CEFR';
     return true;
   });
 
-  // Filtered FAQs
-  const filteredFAQs = mockFAQs.filter((faq) => {
+  // Filtered FAQs from CMS content
+  const filteredFAQs = (cmsContent.faqs || []).filter((faq) => {
     const query = faqSearch.toLowerCase();
     const qText = language === 'UZ' ? faq.questionUz : faq.questionEn;
     const aText = language === 'UZ' ? faq.answerUz : faq.answerEn;
     return qText.toLowerCase().includes(query) || aText.toLowerCase().includes(query);
   });
+
+  const lightBgUrl = cmsContent.lightModeBgImage || 'https://i.ibb.co/YTjMPbcZ/image.png';
+  const darkBgUrl = cmsContent.darkModeBgImage || 'https://i.ibb.co/Wv1yrFwC/image.png';
 
   return (
     <div className="relative min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-200">
@@ -106,8 +119,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center bg-fixed transition-all duration-300"
         style={{
           backgroundImage: isDark
-            ? `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('https://i.ibb.co/Wv1yrFwC/image.png')`
-            : `linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.92)), url('https://i.ibb.co/Wv1yrFwC/image.png')`,
+            ? `linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.65)), url('${darkBgUrl}')`
+            : `linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.92)), url('${lightBgUrl}')`,
           filter: isDark ? 'none' : 'invert(0.85) hue-rotate(180deg) brightness(1.1)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -131,7 +144,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Location Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold mb-6 tracking-wide">
               <MapPin className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}</span>
+              <span>{language === 'UZ' ? cmsContent.locationBadgeUz : cmsContent.locationBadgeEn}</span>
             </div>
 
             {/* Main Headline */}
@@ -139,7 +152,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <span className="block text-amber-500 font-extrabold drop-shadow-sm min-h-[3.5rem] sm:min-h-[4.5rem]">
                 <TypewriterText
                   texts={[
-                    t("INNOVATSION TA'LIM VA YUQORI NATIJALAR", "INNOVATIVE EDUCATION & HIGH RESULTS", "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ"),
+                    language === 'UZ' ? cmsContent.heroTitleUz : cmsContent.heroTitleEn,
                     t("Real-vaqtda to'lovlar, davomat va IELTS progressi", "Track tuition, attendance, and IELTS progress in real-time", "Отслеживайте оплату, посещаемость и прогресс IELTS"),
                     t("24/7 AI Mentori va zamonaviy tahlillar bilan", "Powered by 24/7 AI Mentors and modern analytics", "С поддержкой 24/7 ИИ-менторов и современной аналитики")
                   ]}
@@ -150,21 +163,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 />
               </span>
               <span className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 mt-3 block leading-relaxed">
-                {t(
-                  "Sifatli ta'lim, kuchli o'qituvchilar va zamonaviy o'quv muhiti bilan kelajagingizni biz bilan quring.",
-                  "Build your future with high-quality education, expert mentors, and a modern learning environment.",
-                  "Постройте свое будущее с качественным образованием, опытными преподавателями и современной учебной средой."
-                )}
+                {language === 'UZ' ? cmsContent.heroSubtitleUz : cmsContent.heroSubtitleEn}
               </span>
             </h1>
 
             {/* Description */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8 mt-4">
-              {t(
-                "Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.",
-                "Achieve top goals in IT and English language learning with modern educational standards and experienced international tutors at Renessans Learning Center.",
-                "Достигайте высоких целей в сфере IT и английского языка благодаря современным стандартам обучения и международному опыту в Renessans Learning Center."
-              )}
+              {language === 'UZ' ? cmsContent.heroDescUz : cmsContent.heroDescEn}
             </p>
 
             {/* CTA Buttons */}
@@ -173,14 +178,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 href="#courses"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t("Kurslarni ko'rish", "Explore Courses", "Посмотреть курсы")}</span>
+                <span>{language === 'UZ' ? cmsContent.ctaPrimaryUz : cmsContent.ctaPrimaryEn}</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="#contact"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 backdrop-blur-md dark:bg-slate-800/80 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-sm border border-slate-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t("Bog'lanish", "Get in Touch", "Связаться с нами")}</span>
+                <span>{language === 'UZ' ? cmsContent.ctaSecondaryUz : cmsContent.ctaSecondaryEn}</span>
                 <Phone className="w-4 h-4 text-amber-400" />
               </a>
             </div>
@@ -193,7 +198,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
             >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                1,500+
+                {cmsContent.activeStudentsCount}
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("O'quvchilar soni", "Active Students", "Учеников")}
@@ -205,7 +210,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
             >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                280+
+                {cmsContent.ieltsHighResults}
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("IELTS 7.0+ Natijalar", "IELTS 7.0+ Results", "Результатов IELTS 7.0+")}
@@ -217,7 +222,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
             >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                95%
+                {cmsContent.admissionRate}
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("OTMga Kirish Ko'rsatkichi", "University Admission Rate", "Поступление в ВУЗы")}
@@ -229,7 +234,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl text-center"
             >
               <div className="text-3xl sm:text-4xl font-black text-amber-500 mb-1">
-                4+ Yil
+                {cmsContent.yearsExperience}
               </div>
               <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                 {t("Muvaffaqiyatli Tajriba", "Years of Experience", "Успешного опыта")}
@@ -259,81 +264,23 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ scale: 1.03, y: -4 }}
-              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
-                1
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                {t("Individual Yondashuv", "Individual Approach", "Индивидуальный Подход")}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t(
-                  "Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.",
-                  "Personalized study plans tailored to each student level and goals.",
-                  "Персональные учебные планы для каждого студента."
-                )}
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.03, y: -4 }}
-              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
-                2
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                {t("Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)", "Experienced Mentors (IELTS 8.0+ & CEFR C1)", "Опытные Менторы (IELTS 8.0+ & CEFR C1)")}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t(
-                  "Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.",
-                  "Qualified specialists with international certificates and teaching experience.",
-                  "Квалифицированные специалисты с международными сертификатами."
-                )}
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.03, y: -4 }}
-              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
-                3
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                {t("IT va Zamonaviy Sharoit", "IT & Modern Facilities", "IT и Современные Условия")}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t(
-                  "Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.",
-                  "State-of-the-art computer labs, comfortable classrooms, and high-speed internet.",
-                  "Современные компьютерные классы и высокоскоростной интернет."
-                )}
-              </p>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.03, y: -4 }}
-              className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
-                4
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                {t("Muntazam Mock Testlar", "Regular Mock Tests", "Регулярные Mock Тесты")}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t(
-                  "Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.",
-                  "Simulated real exam conditions with detailed performance analytics.",
-                  "Симуляция реальных экзаменов с подробным анализом."
-                )}
-              </p>
-            </motion.div>
+            {(cmsContent.whyRenessans || []).map((card, idx) => (
+              <motion.div
+                key={card.id || idx}
+                whileHover={{ scale: 1.03, y: -4 }}
+                className="p-6 rounded-2xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 shadow-md hover:shadow-xl group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
+                  {card.iconNumber || idx + 1}
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                  {language === 'UZ' ? card.titleUz : card.titleEn}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {language === 'UZ' ? card.descUz : card.descEn}
+                </p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </motion.section>
@@ -363,7 +310,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
           {/* Grid of Teachers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {mockTeachers.map((teacher) => (
+            {(cmsContent.teachers || []).map((teacher) => (
               <motion.div
                 key={teacher.id}
                 whileHover={{ scale: 1.02, y: -4 }}
@@ -525,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
       {/* SWIPER TESTIMONIALS & ACHIEVERS CAROUSEL */}
       <section className="py-16 bg-slate-100/60 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <TestimonialsCarousel />
+          <TestimonialsCarousel testimonials={cmsContent.testimonials} />
         </div>
       </section>
 
@@ -554,7 +501,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {mockCourses.map((course) => (
+            {(cmsContent.courses || []).map((course) => (
               <motion.div
                 key={course.id}
                 whileHover={{ scale: 1.02, y: -4 }}
@@ -768,7 +715,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       <option value="">{t("Kursni tanlang...", "Choose a course...", "Выберите курс...")}</option>
-                      {mockCourses.map((c) => (
+                      {(cmsContent.courses || []).map((c) => (
                         <option key={c.id} value={c.id}>
                           {language === 'UZ' ? c.titleUz : c.titleEn}
                         </option>
@@ -813,7 +760,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{t("Manzil:", "Address:", "Адрес:")}</p>
-                      <p>{t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}</p>
+                      <p>{language === 'UZ' ? cmsContent.addressUz : cmsContent.addressEn}</p>
                     </div>
                   </div>
 
@@ -821,7 +768,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     <Phone className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{t("Telefon:", "Phone:", "Телефон:")}</p>
-                      <p>+998 90 123 45 67</p>
+                      <p>{cmsContent.phone}</p>
                     </div>
                   </div>
 
@@ -829,13 +776,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">Telegram:</p>
-                      <p>@renessans_lc_official</p>
+                      <p>{cmsContent.telegramHandle}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400">
-                  {t("Ish vaqti: Dushanba - Shanba 08:00 - 20:00", "Operating Hours: Mon-Sat 08:00 - 20:00", "Режим работы: Пн-Сб 08:00 - 20:00")}
+                  {language === 'UZ' ? cmsContent.operatingHoursUz : cmsContent.operatingHoursEn}
                 </div>
               </div>
 
@@ -847,10 +794,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     Renessans Learning Center
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {t("Toshkent / Markaziy Filial", "Tashkent / Main Branch", "Ташкент / Главный Филиал")}
+                    {language === 'UZ' ? cmsContent.addressUz : cmsContent.addressEn}
                   </p>
                   <a
-                    href="https://maps.google.com"
+                    href={cmsContent.googleMapsUrl || "https://maps.google.com"}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-block mt-2 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
@@ -903,3 +850,4 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
     </div>
   );
 };
+

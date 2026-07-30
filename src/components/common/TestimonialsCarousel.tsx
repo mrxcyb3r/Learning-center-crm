@@ -7,6 +7,7 @@ import 'swiper/css/navigation';
 import { Star, Award, CheckCircle2 } from 'lucide-react';
 import { TypewriterText } from './TypewriterText';
 import { useLanguage } from '../../context/LanguageContext';
+import { LandingTestimonial } from '../../types';
 
 interface Achiever {
   name: string;
@@ -62,8 +63,25 @@ const mockAchievers: Achiever[] = [
   },
 ];
 
-export const TestimonialsCarousel: React.FC = () => {
-  const { translate } = useLanguage();
+interface TestimonialsCarouselProps {
+  testimonials?: LandingTestimonial[];
+}
+
+export const TestimonialsCarousel: React.FC<TestimonialsCarouselProps> = ({ testimonials }) => {
+  const { translate, language } = useLanguage();
+
+  const displayItems = testimonials && testimonials.length > 0
+    ? testimonials.map((t) => ({
+        name: t.studentName,
+        score: t.scoreBadge,
+        course: t.targetCourse,
+        commentUz: t.quoteUz,
+        commentEn: t.quoteEn,
+        commentRu: t.quoteUz,
+        image: t.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+        university: t.university
+      }))
+    : mockAchievers;
 
   return (
     <div className="w-full space-y-6">
@@ -108,7 +126,7 @@ export const TestimonialsCarousel: React.FC = () => {
           pagination={{ clickable: true }}
           className="pb-12 pt-2"
         >
-          {mockAchievers.map((item, idx) => (
+          {displayItems.map((item, idx) => (
             <SwiperSlide key={idx} className="h-auto">
               <div className="h-full p-6 rounded-3xl bg-white/90 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-xl flex flex-col justify-between space-y-4 hover:border-amber-500/50 transition duration-300">
                 <div className="space-y-3">
@@ -154,3 +172,4 @@ export const TestimonialsCarousel: React.FC = () => {
     </div>
   );
 };
+

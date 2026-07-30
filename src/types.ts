@@ -164,3 +164,88 @@ export interface MockTestScore {
   teacherFeedback?: string;
 }
 
+export interface WhyRenessansCard {
+  id: string;
+  iconNumber: number;
+  titleUz: string;
+  titleEn: string;
+  descUz: string;
+  descEn: string;
+}
+
+export interface LandingTestimonial {
+  id: string;
+  quoteUz: string;
+  quoteEn: string;
+  studentName: string;
+  scoreBadge: string;
+  targetCourse: string;
+  university: string;
+  photoUrl?: string;
+}
+
+export interface MetricCardConfig {
+  value: string;
+  labelUz: string;
+  labelEn: string;
+}
+
+export interface LandingPageContent {
+  lightModeBgImage: string;
+  darkModeBgImage: string;
+
+  // Hero section
+  locationBadgeUz: string;
+  locationBadgeEn: string;
+  
+  heroTitleUz: string;
+  heroTitleEn: string;
+
+  heroSubtitleUz: string;
+  heroSubtitleEn: string;
+
+  heroDescUz: string;
+  heroDescEn: string;
+
+  ctaPrimaryUz: string;
+  ctaPrimaryEn: string;
+
+  ctaSecondaryUz: string;
+  ctaSecondaryEn: string;
+
+  // Metric Stats
+  activeStudentsCount: string;
+  ieltsHighResults: string;
+  admissionRate: string;
+  yearsExperience: string;
+
+  // Why Renessans cards
+  whyRenessans: WhyRenessansCard[];
+
+  // Mentors roster
+  teachers: Teacher[];
+
+  // Student achievements
+  results: StudentResult[];
+
+  // Testimonials / Reviews
+  testimonials: LandingTestimonial[];
+
+  // Courses & Pricing
+  courses: Course[];
+
+  // FAQs
+  faqs: FAQItem[];
+
+  // Contact & Footer
+  addressUz: string;
+  addressEn: string;
+  phone: string;
+  telegramHandle: string;
+  operatingHoursUz: string;
+  operatingHoursEn: string;
+  googleMapsUrl: string;
+
+  updatedAt?: string;
+}
+

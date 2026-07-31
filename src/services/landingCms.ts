@@ -7,79 +7,79 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   lightModeBgImage: 'https://i.ibb.co/YTjMPbcZ/image.png',
   darkModeBgImage: 'https://i.ibb.co/Wv1yrFwC/image.png',
 
-  locationBadgeUz: "Toshkent / Markaziy Filial",
-  locationBadgeEn: "Tashkent / Main Branch",
-  locationBadgeRu: "Ташкент / Главный Филиал",
+  locationBadgeUz: "CenterFlow / O'quv Markazlari Operatsion Tizimi",
+  locationBadgeEn: "CenterFlow / Learning Center Operating System",
+  locationBadgeRu: "CenterFlow / Операционная Система Учебных Центров",
 
-  aiBadgeUz: "⚡ Keyingi Avlod 24/7 AI O'quv Murabbiyi Bilan",
-  aiBadgeEn: "⚡ Powered by Next-Gen 24/7 AI Learning Coach",
-  aiBadgeRu: "⚡ Работает на ИИ-коуче 24/7 Нового Поколения",
+  aiBadgeUz: "⚡ Barcha Fanlar: Matematika, IT, Fizika, IELTS va SAT Bilan Ishlaydi",
+  aiBadgeEn: "⚡ Multi-Subject OS: Math, Coding, Physics, SAT & Languages",
+  aiBadgeRu: "⚡ Мультипредметная ОС: Математика, IT, Физика, SAT и Языки",
 
-  heroTitleUz: "INNOVATSION TA'LIM VA YUQORI NATIJALAR",
-  heroTitleEn: "Build Your Future with High-Quality Education & Expert Mentors",
-  heroTitleRu: "ИННОВАЦИОННОЕ ОБУЧЕНИЕ И ВЫСОКИЕ РЕЗУЛЬТАТЫ",
+  heroTitleUz: "CenterFlow: Zamonaviy O'quv Markazlari Boshqaruv Platformasi",
+  heroTitleEn: "CenterFlow: The Operating System for Modern Learning Centers",
+  heroTitleRu: "CenterFlow: Операционная Система для Современных Учебных Центров",
 
-  heroSubtitleUz: "Renessans Learning Center bilan IELTS, CEFR va Python dasturlashni xalqaro sertifikatli ustozlar va 24/7 AI yordamida chuqur egallang.",
-  heroSubtitleEn: "Master IELTS, CEFR, and Python Programming with certified international tutors, personalized study paths, and round-the-clock AI guidance at Renessans Learning Center.",
-  heroSubtitleRu: "Освойте IELTS, CEFR и программирование на Python с сертифицированными международными преподавателями и 24/7 ИИ-поддержкой в Renessans Learning Center.",
+  heroSubtitleUz: "Matematika, IT/Dasturlash, Fizika, SAT va Tillar markazlari uchun davomat, to'lovlar, ko'p fanli baholash va jonli guruh guruh lentasini bir joyda boshqaring.",
+  heroSubtitleEn: "Streamline rosters, 1-tap attendance, multi-subject gradebooks, homework feeds, and automated tuition billing for Math, IT, Physics, SAT, and Language academies.",
+  heroSubtitleRu: "Управляйте группами, посещаемостью в 1 клик, оценками по любым предметам, лентой заданий и оплатой обучения для центров математики, IT, физики и языков.",
 
-  heroDescUz: "Renessans Learning Center bilan zamonaviy ta'lim standartlari, xalqaro tajribaga ega ustozlar hamda IT va ingliz tili bo'yicha yuqori marralarni zabt eting.",
-  heroDescEn: "Achieve top goals in IT and English language learning with modern educational standards and experienced international tutors at Renessans Learning Center.",
-  heroDescRu: "Достигайте высоких целей в сфере IT и английского языка благодаря современным стандартам обучения и международному опыту в Renessans Learning Center.",
+  heroDescUz: "CenterFlow o'quv markazlari faoliyatini to'liq avtomatlashtiradi: o'quvchilar kontingenti, o'qituvchilar dars jadvali, oylik to'lovlar monitoringi hamda interaktiv uy vazifalari va kod/formula tekshiruvchisi.",
+  heroDescEn: "CenterFlow completely automates learning center operations: student rosters, instructor schedules, monthly tuition tracking, interactive problem sets, and code/formula submissions.",
+  heroDescRu: "CenterFlow полностью автоматизирует работу учебного центра: списки учащихся, расписание, учет оплаты, интерактивные задания и проверку кода и формул.",
 
-  ctaPrimaryUz: "Kurslarni ko'rish",
-  ctaPrimaryEn: "Explore Courses",
-  ctaPrimaryRu: "Посмотреть курсы",
+  ctaPrimaryUz: "Demo Tizimni Sinash",
+  ctaPrimaryEn: "Try Live Platform Demo",
+  ctaPrimaryRu: "Попробовать Демо",
 
-  ctaSecondaryUz: "Bog'lanish",
-  ctaSecondaryEn: "Get in Touch",
-  ctaSecondaryRu: "Связаться с нами",
+  ctaSecondaryUz: "Markazni Ro'yxatdan O'tkazish",
+  ctaSecondaryEn: "Register Your Center",
+  ctaSecondaryRu: "Зарегистрировать Центр",
 
-  activeStudentsCount: "1,500+",
-  ieltsHighResults: "280+",
-  admissionRate: "95%",
-  yearsExperience: "4+ Yil",
+  activeStudentsCount: "12,500+",
+  ieltsHighResults: "99.4%",
+  admissionRate: "100%",
+  yearsExperience: "24/7 Live",
 
   whyRenessans: [
     {
       id: 'w1',
       iconNumber: 1,
-      titleUz: "Individual Yondashuv",
-      titleEn: "Individual Approach",
-      titleRu: "Индивидуальный Подход",
-      descUz: "Har bir o'quvchining bilim darajasi va shaxsiy maqsadlariga moslashtirilgan o'quv rejasi.",
-      descEn: "Personalized study plans tailored to each student level and goals.",
-      descRu: "Персональные учебные планы для каждого студента с учетом его уровня и целей."
+      titleUz: "IT va Kodlash Tizimi (Code IDE)",
+      titleEn: "IT & Computer Science Ready",
+      titleRu: "IT и Программирование (Code IDE)",
+      descUz: "Python, JavaScript, C++ uchun sintaksisli kod muhiti va GitHub omborlariga havola yuborish imkoniyati.",
+      descEn: "Built-in code editor for Python, JS, C++ with GitHub repo link tracking and ZIP submissions.",
+      descRu: "Встроенный редактор кода Python, JS, C++ с привязкой GitHub репозиториев и загрузкой ZIP."
     },
     {
       id: 'w2',
       iconNumber: 2,
-      titleUz: "Tajribali Mentorlar (IELTS 8.0+ & CEFR C1)",
-      titleEn: "Experienced Mentors (IELTS 8.0+ & CEFR C1)",
-      titleRu: "Опытные Менторы (IELTS 8.0+ & CEFR C1)",
-      descUz: "Xalqaro sertifikat va ko'p yillik amaliy pedagogik tajribaga ega bo'lgan kuchli ustozlar jamoasi.",
-      descEn: "Qualified specialists with international certificates and teaching experience.",
-      descRu: "Квалифицированные специалисты с международными сертификатами и опытом преподавания."
+      titleUz: "Matematika va Fizika Yechimlari",
+      titleEn: "Math & Physics Problem Sets",
+      titleRu: "Математика и Физика (Формулы)",
+      descUz: "Interaktiv formula tugmalari (√, x², π, ∫) va qo'lda yozilgan masalalar suratini yuklash imkoniyati.",
+      descEn: "Formula helper toolbar with step-by-step problem solver and photo uploads for handwritten scratchwork.",
+      descRu: "Панель математических символов с пошаговым решением и загрузкой фото решений от руки."
     },
     {
       id: 'w3',
       iconNumber: 3,
-      titleUz: "IT va Zamonaviy Sharoit",
-      titleEn: "IT & Modern Facilities",
-      titleRu: "IT и Современные Условия",
-      descUz: "Zamonaviy kompyuter sinflari, qulay va shinam o'quv xonalari hamda yuqori tezlikdagi internet.",
-      descEn: "State-of-the-art computer labs, comfortable classrooms, and high-speed internet.",
-      descRu: "Современные компьютерные классы, комфортные аудитории и высокоскоростной интернет."
+      titleUz: "Til va Imtihonlar (IELTS & SAT)",
+      titleEn: "Languages, IELTS & SAT Hub",
+      titleRu: "Языки и Экзамены (IELTS & SAT)",
+      descUz: "Ovozli darslar (speaking drills), insho so'zlar hisoblagichi va xalqaro band ballar monitoringi.",
+      descEn: "Audio voice practice recorder, essay word counters, and comprehensive band score gradebooks.",
+      descRu: "Аудиозапись устной речи, счетчик слов для эссе и учет баллов IELTS/CEFR."
     },
     {
       id: 'w4',
       iconNumber: 4,
-      titleUz: "Muntazam Mock Testlar",
-      titleEn: "Regular Mock Tests",
-      titleRu: "Регулярные Mock Тесты",
-      descUz: "Haqiqiy imtihon muhitidagi doimiy sinovlar, individual feedback va natijalar tahlili.",
-      descEn: "Simulated real exam conditions with detailed performance analytics.",
-      descRu: "Симуляция реальных экзаменов с подробным анализом и индивидуальным фидбеком."
+      titleUz: "Avtomatlashtirilgan To'lov va Davomat",
+      titleEn: "1-Tap Attendance & Invoicing",
+      titleRu: "Посещаемость в 1 Клик и Оплата",
+      descUz: "Guruhlar davomati, qarzdorliklar monitoringi, SMS/Telegram bildirishnomalari va cheklar.",
+      descEn: "Instant attendance check-ins, tuition tracking, automated payment balance receipts, and SMS updates.",
+      descRu: "Мгновенный учет посещаемости, отслеживание оплаты, балансов и автоматические SMS."
     }
   ],
 

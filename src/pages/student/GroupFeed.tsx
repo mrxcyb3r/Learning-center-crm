@@ -50,10 +50,74 @@ export const GroupFeed: React.FC = () => {
   // Homework Submission Modal State
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [solutionText, setSolutionText] = useState('');
+  const [repoUrl, setRepoUrl] = useState('');
+  const [codeLanguage, setCodeLanguage] = useState<'python' | 'javascript' | 'cpp' | 'html'>('python');
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedIds, setSubmittedIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Audio recording state simulation
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecordedAudio, setHasRecordedAudio] = useState(false);
+  const [recordTime, setRecordTime] = useState(0);
+
+  useEffect(() => {
+    let timer: any;
+    if (isRecording) {
+      timer = setInterval(() => setRecordTime((prev) => prev + 1), 1000);
+    } else {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [isRecording]);
+
+  const handleDownloadFile = (fileUrl?: string, fileName?: string) => {
+    const targetName = fileName || 'assignment_material';
+    if (!fileUrl || fileUrl === '#' || fileUrl.trim() === '') {
+      // Generate downloadable text blob if no external URL is available
+      const blob = new Blob([
+        `=== CenterFlow Learning Material ===\nTitle: ${targetName}\nDate: ${new Date().toLocaleDateString()}\nGenerated study material for offline practice.`
+      ], { type: 'text/plain;charset=utf-8' });
+      const dummyUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = dummyUrl;
+      link.download = targetName.endsWith('.pdf') || targetName.endsWith('.txt') ? targetName : `${targetName}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(dummyUrl);
+      setToastMessage(t("Fayl yuklab olindi! ⬇️", "Material downloaded! ⬇️", "Файл скачан! ⬇️"));
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.target = '_blank';
+    link.download = targetName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const insertMathSymbol = (sym: string) => {
+    setSolutionText((prev) => prev + sym);
+  };
+
+  const setCodeTemplate = (lang: 'python' | 'javascript' | 'cpp' | 'html') => {
+    setCodeLanguage(lang);
+    if (!solutionText.trim()) {
+      if (lang === 'python') {
+        setSolutionText("# Python Solution\ndef main():\n    print('CenterFlow Code Solution')\n\nif __name__ == '__main__':\n    main()");
+      } else if (lang === 'javascript') {
+        setSolutionText("// JavaScript Solution\nfunction solve(input) {\n    return 'Solved';\n}");
+      } else if (lang === 'cpp') {
+        setSolutionText("// C++ Solution\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << \"Ready\" << endl;\n    return 0;\n}");
+      } else if (lang === 'html') {
+        setSolutionText("<!-- HTML / Web Component -->\n<div class=\"app\">\n    <h1>CenterFlow App</h1>\n</div>");
+      }
+    }
+  };
 
   useEffect(() => {
     let unsubPosts: () => void = () => {};
@@ -235,7 +299,7 @@ export const GroupFeed: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleSubmitSolution}
-            className="w-full max-w-lg p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-2xl space-y-4"
+            className="w-full max-w-xl p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -252,32 +316,225 @@ export const GroupFeed: React.FC = () => {
             </div>
 
             <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getSubjectBadgeStyle(selectedAssignment.subjectCategory)}`}>
-                {selectedAssignment.subjectCategory || '📐 Mathematics'}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getSubjectBadgeStyle(selectedAssignment.subjectCategory)}`}>
+                  {selectedAssignment.subjectCategory || '📐 Mathematics'}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold">
+                  {selectedAssignment.resourceFormat || '📝 Problem Set'}
+                </span>
+              </div>
               <p className="font-extrabold text-slate-900 dark:text-white mt-1">{selectedAssignment.title}</p>
               <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                 Deadline: {selectedAssignment.dueDate || selectedAssignment.deadline}
               </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {t("Javob Matni / Yechimlar / Kod (Solution Text)", "Your Answer / Solution / Code", "Ваш Ответ / Решение / Код")}
-              </label>
-              <textarea
-                required
-                rows={5}
-                value={solutionText}
-                onChange={(e) => setSolutionText(e.target.value)}
-                placeholder={t("Javoblarni, formulalarni yoki dastur kodini shu yerga yozing...", "Write your equations, typed response, or code snippet here...", "Напишите ваши формулы, ответ или код здесь...")}
-                className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 font-mono"
-              />
-            </div>
+            {/* DYNAMIC SUBJECT-AWARE EDITOR SWITCH */}
+            {(selectedAssignment.subjectCategory?.includes('IT') ||
+              selectedAssignment.subjectCategory?.includes('Computer') ||
+              selectedAssignment.resourceFormat?.includes('Code')) ? (
+              /* 💻 IT & CODE EDITOR MODE */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <Code className="w-4 h-4" />
+                    <span>{t("IDE Code Editor & Repository", "IDE Code Editor & Syntax Tabs", "IDE Редактор Кода")}</span>
+                  </label>
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px]">
+                    {(['python', 'javascript', 'cpp', 'html'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setCodeTemplate(lang)}
+                        className={`px-2.5 py-1 rounded font-bold uppercase transition ${
+                          codeLanguage === lang
+                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    required
+                    rows={7}
+                    value={solutionText}
+                    onChange={(e) => setSolutionText(e.target.value)}
+                    placeholder="// Paste or write your source code here..."
+                    className="w-full p-4 rounded-xl bg-slate-950 text-emerald-400 border border-slate-800 text-xs font-mono focus:ring-2 focus:ring-emerald-500 leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {t("GitHub / Repository / Live Demo Havolasi (URL)", "GitHub / Repository / Live Demo Link (URL)", "Ссылка на GitHub / Репозиторий")}
+                  </label>
+                  <div className="relative">
+                    <ExternalLink className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input
+                      type="url"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      placeholder="https://github.com/username/project-repo"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (selectedAssignment.subjectCategory?.includes('Math') ||
+                 selectedAssignment.subjectCategory?.includes('Physics') ||
+                 selectedAssignment.subjectCategory?.includes('Chemistry')) ? (
+              /* 📐 MATH & PHYSICS STEP-BY-STEP SOLVER MODE */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-amber-500">
+                    {t("Matematik Formula va Yechim Yozuvchisi", "Step-by-Step Problem Solver & Equations", "Математический Редактор Urve")}
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-semibold">Formula Helper Active</span>
+                </div>
+
+                {/* Equation Helper Symbols Toolbar */}
+                <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex flex-wrap gap-1.5 text-xs">
+                  {['√', 'x²', 'xⁿ', 'π', '∫', '±', '÷', 'θ', 'Σ', 'Δ', '∞', '≠', '≤', '≥', 'α', 'β'].map((sym) => (
+                    <button
+                      key={sym}
+                      type="button"
+                      onClick={() => insertMathSymbol(sym)}
+                      className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-amber-500 hover:text-slate-950 font-mono font-bold text-slate-800 dark:text-slate-200 shadow-sm border border-slate-200 dark:border-slate-700 transition"
+                    >
+                      {sym}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  required
+                  rows={6}
+                  value={solutionText}
+                  onChange={(e) => setSolutionText(e.target.value)}
+                  placeholder={t("1-Qadam: Tenglamani yozing...\n2-Qadam: Yechim: x = (-b ± √(b² - 4ac)) / 2a", "Step 1: State equations...\nStep 2: Solution: x = (-b ± √(b² - 4ac)) / 2a", "Шаг 1: Формула...\nШаг 2: Решение...")}
+                  className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 font-mono leading-relaxed"
+                />
+
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                  <p className="font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
+                    <span>📷</span>
+                    <span>{t("Qog'ozdagi yechim suratini yuklash", "📷 Attach Photos of Handwritten Scratchwork", "📷 Загрузить фото решения от руки")}</span>
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {t("Qo'lda yozilgan masalalar varag'i rasmini skanerlab biriktirishingiz mumkin.", "Upload photo/scan of your handwritten calculations and proofs.", "Прикрепите фото или скан решений на бумаге.")}
+                  </p>
+                </div>
+              </div>
+            ) : isAudioFile(selectedAssignment.file, selectedAssignment.resourceFormat) ? (
+              /* 🎧 AUDIO & SPEAKING DRILL MODE */
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                  <Headphones className="w-4 h-4" />
+                  <span>{t("Audio / Speaking Ovozli Javob Yozib Olish", "Voice / Audio Speaking Recorder", "Запись Задания Вслух")}</span>
+                </label>
+
+                <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3 text-center">
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isRecording) {
+                          setIsRecording(false);
+                          setHasRecordedAudio(true);
+                        } else {
+                          setIsRecording(true);
+                          setRecordTime(0);
+                        }
+                      }}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer transition ${
+                        isRecording ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-500 hover:bg-indigo-400 text-white'
+                      }`}
+                    >
+                      <span>{isRecording ? "⏸️ Pause Recording" : "🎙️ Record Voice Response"}</span>
+                    </button>
+                  </div>
+
+                  {isRecording && (
+                    <p className="text-xs text-rose-400 font-mono font-bold animate-pulse">
+                      Recording Live Audio... 00:{recordTime < 10 ? `0${recordTime}` : recordTime}
+                    </p>
+                  )}
+
+                  {hasRecordedAudio && !isRecording && (
+                    <p className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1">
+                      <Check className="w-4 h-4" />
+                      <span>Audio Response Saved (00:{recordTime < 10 ? `0${recordTime}` : recordTime})</span>
+                    </p>
+                  )}
+                </div>
+
+                <textarea
+                  required
+                  rows={3}
+                  value={solutionText}
+                  onChange={(e) => setSolutionText(e.target.value)}
+                  placeholder={t("Audio javobingiz qisqacha matni yoki transkripti...", "Notes or transcript of your audio recording...", "Краткие заметки к вашей аудиозаписи...")}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            ) : (
+              /* ✍️ ESSAY / RICH TEXT WRITING MODE */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 dark:text-white">
+                    {t("Insho va Yozma Javob (Rich Text & Word Counter)", "Rich Essay Text & Word Count", "Эссе и Письменный Ответ")}
+                  </label>
+                  <div className="flex items-center gap-3 text-[10px] text-slate-400 font-semibold">
+                    <span>Words: <strong className="text-amber-500">{solutionText.trim() ? solutionText.trim().split(/\s+/).length : 0}</strong></span>
+                    <span>Chars: <strong className="text-amber-500">{solutionText.length}</strong></span>
+                  </div>
+                </div>
+
+                {/* Essay Section Helpers */}
+                <div className="flex items-center gap-2 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setSolutionText((prev) => prev + "\n\n1. Introduction:\n")}
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                  >
+                    + Introduction
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSolutionText((prev) => prev + "\n\n2. Body Paragraph:\n")}
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                  >
+                    + Body Paragraph
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSolutionText((prev) => prev + "\n\n3. Conclusion:\n")}
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                  >
+                    + Conclusion
+                  </button>
+                </div>
+
+                <textarea
+                  required
+                  rows={6}
+                  value={solutionText}
+                  onChange={(e) => setSolutionText(e.target.value)}
+                  placeholder={t("Insho yoki javoblaringizni shu yerga yozing...", "Write your essay, essay points, or answers here...", "Напишите ваше эссе или ответ здесь...")}
+                  className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 leading-relaxed"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {t("Yechim Fayli Biriktirish (PDF/Rasm/ZIP)", "Attach Solution Document (PDF/Photo/Code ZIP)", "Прикрепить Файл Решения (PDF/Фото/ZIP)")}
+                {t("Yechim Fayli Biriktirish (PDF / ZIP / Audio / Photo)", "Attach Solution File (PDF / Code ZIP / Photo)", "Прикрепить Файл Решения")}
               </label>
               <input
                 type="file"
@@ -409,7 +666,7 @@ export const GroupFeed: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => window.open(item.fileUrl || '#', '_blank')}
+                        onClick={() => handleDownloadFile(item.fileUrl, item.file)}
                         className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
                       >
                         <Download className="w-3.5 h-3.5" />

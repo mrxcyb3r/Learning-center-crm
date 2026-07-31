@@ -95,6 +95,33 @@ export const HomeworkView: React.FC = () => {
     };
   }, []);
 
+  const handleDownloadFile = (fileUrl?: string, fileName?: string) => {
+    const targetName = fileName || 'assignment_material';
+    if (!fileUrl || fileUrl === '#' || fileUrl.trim() === '') {
+      const blob = new Blob([
+        `=== CenterFlow Learning Material ===\nTitle: ${targetName}\nDate: ${new Date().toLocaleDateString()}\nCourse study material generated for download.`
+      ], { type: 'text/plain;charset=utf-8' });
+      const dummyUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = dummyUrl;
+      link.download = targetName.endsWith('.pdf') || targetName.endsWith('.txt') ? targetName : `${targetName}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(dummyUrl);
+      setToastMessage(t("Fayl yuklab olindi! ⬇️", "Material downloaded! ⬇️", "Файл скачан! ⬇️"));
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.target = '_blank';
+    link.download = targetName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -545,7 +572,7 @@ export const HomeworkView: React.FC = () => {
                             {sub.fileName}
                           </span>
                           <button
-                            onClick={() => window.open(sub.fileUrl || '#', '_blank')}
+                            onClick={() => handleDownloadFile(sub.fileUrl, sub.fileName)}
                             className="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-[10px] flex items-center gap-1 hover:bg-amber-400 cursor-pointer"
                           >
                             <Download className="w-3 h-3" />

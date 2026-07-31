@@ -27,7 +27,8 @@ import {
   subscribeAssignments,
   addPostComment,
   submitHomework,
-  seedFirestoreIfEmpty
+  seedFirestoreIfEmpty,
+  notifyTeacherNewSubmission
 } from '../../services/firestore';
 import { FeedPost, Assignment } from '../../types';
 import { WPSEditor } from '../../components/UI/WPSEditor';
@@ -186,6 +187,13 @@ export const GroupFeed: React.FC = () => {
         fileName: submissionFile ? submissionFile.name : undefined,
         date: new Date().toISOString().split('T')[0]
       });
+
+      await notifyTeacherNewSubmission(
+        selectedAssignment.title,
+        studentName,
+        studentId,
+        selectedAssignment.groupId
+      );
 
       setSubmittedIds((prev) => [...prev, selectedAssignment.id]);
       setSelectedAssignment(null);

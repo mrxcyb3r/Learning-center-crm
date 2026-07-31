@@ -23,8 +23,11 @@ import {
   FeedPost,
   MockTestScore,
   LeadSubmission,
-  Inquiry
+  Inquiry,
+  AppNotification
 } from '../types';
+
+const NOTIFICATIONS_COL = 'notifications';
 
 enum OperationType {
   CREATE = 'create',
@@ -878,6 +881,138 @@ export function subscribeHomeworkSubmissions(callback: (submissions: any[]) => v
 }
 
 /* =========================================================================
+   NOTIFICATION CENTER SERVICE
+   ========================================================================= */
+export function subscribeNotifications(
+  recipientId?: string,
+  recipientRole?: string,
+  callback?: (notifications: AppNotification[]) => void
+) {
+  if (!callback) return () => {};
+  try {
+    return onSnapshot(
+      collection(db, NOTIFICATIONS_COL),
+      (snapshot) => {
+        const items: AppNotification[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          title: docSnap.data().title || '',
+          description: docSnap.data().description || '',
+          category: docSnap.data().category || 'announcement',
+          isRead: docSnap.data().isRead ?? false,
+          createdAt: docSnap.data().createdAt || new Date().toISOString(),
+          recipientId: docSnap.data().recipientId,
+          recipientRole: docSnap.data().recipientRole || 'all',
+          linkId: docSnap.data().linkId,
+          groupId: docSnap.data().groupId,
+          senderName: docSnap.data().senderName
+        }));
+
+        // Filter for user or role
+        const filtered = items.filter((n) => {
+          if (n.recipientId && recipientId && n.recipientId === recipientId) return true;
+          if (n.recipientRole) {
+            if (n.recipientRole === 'all') return true;
+            if (recipientRole && (n.recipientRole === recipientRole || recipientRole === 'superadmin' || recipientRole === 'admin')) return true;
+          }
+          if (!n.recipientId && !n.recipientRole) return true;
+          return false;
+        });
+
+        // Sort by createdAt desc
+        filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        callback(filtered);
+      },
+      (error) => {
+        console.warn('Firestore subscribeNotifications notice:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.warn('Firestore subscribeNotifications error:', error);
+    callback([]);
+    return () => {};
+  }
+}
+
+export async function createNotification(data: Omit<AppNotification, 'id'>) {
+  try {
+    const payload = cleanData({
+      ...data,
+      isRead: false,
+      createdAt: data.createdAt || new Date().toISOString()
+    });
+    const docRef = await addDoc(collection(db, NOTIFICATIONS_COL), payload);
+    console.log("✅ Firestore Write Success: notification created", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, NOTIFICATIONS_COL);
+  }
+}
+
+export async function markNotificationAsRead(id: string) {
+  try {
+    await updateDoc(doc(db, NOTIFICATIONS_COL, id), { isRead: true });
+  } catch (error) {
+    console.warn('Error marking notification read:', error);
+  }
+}
+
+export async function markAllNotificationsAsRead(notifications: AppNotification[]) {
+  try {
+    const unread = notifications.filter((n) => !n.isRead);
+    const batch = writeBatch(db);
+    unread.forEach((n) => {
+      batch.update(doc(db, NOTIFICATIONS_COL, n.id), { isRead: true });
+    });
+    await batch.commit();
+  } catch (error) {
+    console.warn('Error marking all notifications as read:', error);
+  }
+}
+
+// Helper Triggers for Workflow Events
+export async function notifyStudentsNewAssignment(title: string, groupName: string, groupId?: string, teacherName?: string, assignmentId?: string) {
+  return createNotification({
+    category: 'assignment_created',
+    recipientRole: 'student',
+    groupId,
+    linkId: assignmentId,
+    senderName: teacherName || 'Instructor',
+    title: `Yangi Vazifa: ${title}`,
+    description: `${teacherName || 'Ustozingiz'} ${groupName || 'guruhingiz'} uchun yangi vazifa e'lon qildi. Bugunoq bajaring!`,
+    isRead: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
+export async function notifyTeacherNewSubmission(assignmentTitle: string, studentName: string, studentId?: string, groupId?: string) {
+  return createNotification({
+    category: 'submission_received',
+    recipientRole: 'teacher',
+    groupId,
+    linkId: studentId,
+    senderName: studentName,
+    title: `Yangi Vazifa Topshirildi 📩`,
+    description: `${studentName} "${assignmentTitle}" mavzusidagi vazifasiga yechim topshirdi.`,
+    isRead: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
+export async function notifyStudentGradePublished(studentId: string, studentName: string, subjectName: string, gradeDisplay: string, feedback?: string) {
+  return createNotification({
+    category: 'grade_published',
+    recipientId: studentId,
+    senderName: 'Academic Teacher',
+    title: `Baho va Feedback e'lon qilindi 🎯`,
+    description: `${subjectName} bo'yicha bahoyingiz: ${gradeDisplay}.${feedback ? ` Ustoz mulohazasi: "${feedback}"` : ''}`,
+    isRead: false,
+    createdAt: new Date().toISOString()
+  });
+}
+
+/* =========================================================================
    INITIAL DB SEEDER (IF EMPTY)
    ========================================================================= */
 export async function seedFirestoreIfEmpty() {
@@ -982,7 +1117,30 @@ export async function seedFirestoreIfEmpty() {
       });
     }
 
-    // 4. Seed Security Pins & Super Admin User Doc if empty
+    // 4. Seed Notifications if empty
+    const notifSnap = await getDocs(collection(db, NOTIFICATIONS_COL));
+    if (notifSnap.empty) {
+      await createNotification({
+        category: 'assignment_created',
+        recipientRole: 'student',
+        senderName: 'Mr. Javohirbek',
+        title: 'Yangi Vazifa: IELTS Writing Task 2 Essay',
+        description: "Mr. Javohirbek IELTS Intensive #12 guruhi uchun yangi vazifa joyladi. Muddat: 2026-08-05.",
+        isRead: false,
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+      });
+      await createNotification({
+        category: 'announcement',
+        recipientRole: 'all',
+        senderName: 'Renessans Center',
+        title: "CenterFlow O'quv Markazi Tizimiga Xush Kelibsiz! 🚀",
+        description: "Yangi bildirishnomalar markazi ishga tushdi. Dars jadvali, baholar va vazifalar o'zgarishini shu yerdan kuzatib boring.",
+        isRead: false,
+        createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
+      });
+    }
+
+    // 5. Seed Security Pins & Super Admin User Doc if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
       await saveSecurityPins({

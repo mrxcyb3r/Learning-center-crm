@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { Award, CheckCircle2, Save, Sparkles, User, History, Loader2, BookOpen, Layers, Sliders, CheckSquare } from 'lucide-react';
-import { saveMockScore, subscribeMockScores, subscribeStudents } from '../../services/firestore';
+import { saveMockScore, subscribeMockScores, subscribeStudents, notifyStudentGradePublished } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_SCORES } from '../../data/mockData';
 import { roundToIELTSBand } from '../../services/gemini';
 import { MockTestScore, Student } from '../../types';
@@ -126,8 +126,9 @@ export const GradebookView: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const stId = selectedStudentId || Date.now().toString();
       await saveMockScore({
-        studentId: selectedStudentId || Date.now().toString(),
+        studentId: stId,
         studentName: studentName || 'Student',
         date: new Date().toISOString().split('T')[0],
         subjectCategory,
@@ -141,6 +142,16 @@ export const GradebookView: React.FC = () => {
         speaking: gradingSystem === 'Test Score' ? roundToIELTSBand(parseFloat(speaking || '0')) : undefined,
         teacherFeedback: feedback
       });
+
+      // Notify student
+      await notifyStudentGradePublished(
+        stId,
+        studentName || 'Student',
+        subjectCategory,
+        calculateOverallDisplay(),
+        feedback
+      );
+
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {

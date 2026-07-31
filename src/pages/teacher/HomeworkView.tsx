@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { FileText, Upload, Clock, Trash2, Paperclip, Plus, Edit2, Eye, X, Download, Code, Headphones, BookOpen, Layers } from 'lucide-react';
-import { subscribeAssignments, addAssignment, updateAssignment, deleteAssignment, subscribeGroups, subscribeHomeworkSubmissions } from '../../services/firestore';
+import { subscribeAssignments, addAssignment, updateAssignment, deleteAssignment, subscribeGroups, subscribeHomeworkSubmissions, notifyStudentsNewAssignment } from '../../services/firestore';
 import { Assignment, Group, HomeworkSubmission } from '../../types';
 import { WPSEditor } from '../../components/UI/WPSEditor';
 
@@ -146,7 +146,7 @@ export const HomeworkView: React.FC = () => {
         });
         setToastMessage(t("Topshiriq yangilandi!", "Assignment updated successfully!", "Задание обновлено!"));
       } else {
-        await addAssignment({
+        const newId = await addAssignment({
           title: title.trim(),
           description: description.trim(),
           subjectCategory,
@@ -161,6 +161,16 @@ export const HomeworkView: React.FC = () => {
           file: file ? file.name : 'Assignment_Guide.pdf',
           fileName: file ? file.name : 'Assignment_Guide.pdf'
         });
+
+        // Trigger notification for students
+        await notifyStudentsNewAssignment(
+          title.trim(),
+          selectedGroup,
+          targetGroup ? targetGroup.id : 'Br2GDIO86SR5GcqfbmOD',
+          'Mr. Javohirbek',
+          newId
+        );
+
         setToastMessage(t("Topshiriq e'lon qilindi!", "Assignment posted successfully!", "Задание успешно опубликовано!"));
       }
 

@@ -321,3 +321,17 @@ export interface LandingPageContent {
   updatedAt?: string;
 }
 
+export interface AppNotification {
+  id: string;
+  recipientId?: string;
+  recipientRole?: 'all' | 'student' | 'teacher' | 'admin' | 'superadmin' | string;
+  category: 'assignment_created' | 'submission_received' | 'grade_published' | 'announcement';
+  title: string;
+  description: string;
+  isRead: boolean;
+  createdAt: string;
+  linkId?: string;
+  groupId?: string;
+  senderName?: string;
+}
+

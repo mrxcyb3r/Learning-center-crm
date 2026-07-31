@@ -893,28 +893,37 @@ export function subscribeNotifications(
     return onSnapshot(
       collection(db, NOTIFICATIONS_COL),
       (snapshot) => {
-        const items: AppNotification[] = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          title: docSnap.data().title || '',
-          description: docSnap.data().description || '',
-          category: docSnap.data().category || 'announcement',
-          isRead: docSnap.data().isRead ?? false,
-          createdAt: docSnap.data().createdAt || new Date().toISOString(),
-          recipientId: docSnap.data().recipientId,
-          recipientRole: docSnap.data().recipientRole || 'all',
-          linkId: docSnap.data().linkId,
-          groupId: docSnap.data().groupId,
-          senderName: docSnap.data().senderName
-        }));
+        const rawDocs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        console.log('🔔 Notifications received in listener:', rawDocs);
+
+        const items: AppNotification[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            title: data.title || data.subject || 'Notification',
+            description: data.description || data.message || '',
+            category: data.category || data.type || 'announcement',
+            isRead: data.isRead ?? false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            recipientId: data.recipientId,
+            recipientRole: data.recipientRole || 'all',
+            linkId: data.linkId,
+            groupId: data.groupId,
+            senderName: data.senderName
+          };
+        });
 
         // Filter for user or role
         const filtered = items.filter((n) => {
           if (n.recipientId && recipientId && n.recipientId === recipientId) return true;
           if (n.recipientRole) {
             if (n.recipientRole === 'all') return true;
-            if (recipientRole && (n.recipientRole === recipientRole || recipientRole === 'superadmin' || recipientRole === 'admin')) return true;
+            if (!recipientRole) return true; // Show student broadcasts if role is pending
+            if (recipientRole === 'student' && n.recipientRole === 'student') return true;
+            if (recipientRole === 'teacher' && n.recipientRole === 'teacher') return true;
+            if (recipientRole === 'admin' || recipientRole === 'superadmin') return true;
           }
-          if (!n.recipientId && !n.recipientRole) return true;
+          if (!n.recipientId && (!n.recipientRole || n.recipientRole === 'all')) return true;
           return false;
         });
 
@@ -942,8 +951,9 @@ export async function createNotification(data: Omit<AppNotification, 'id'>) {
       isRead: false,
       createdAt: data.createdAt || new Date().toISOString()
     });
+    console.log('🚀 Creating Notification Payload:', payload);
     const docRef = await addDoc(collection(db, NOTIFICATIONS_COL), payload);
-    console.log("✅ Firestore Write Success: notification created", docRef.id);
+    console.log("✅ Firestore Write Success: notification created with ID", docRef.id);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, NOTIFICATIONS_COL);
@@ -972,18 +982,28 @@ export async function markAllNotificationsAsRead(notifications: AppNotification[
 }
 
 // Helper Triggers for Workflow Events
-export async function notifyStudentsNewAssignment(title: string, groupName: string, groupId?: string, teacherName?: string, assignmentId?: string) {
-  return createNotification({
-    category: 'assignment_created',
-    recipientRole: 'student',
-    groupId,
+export async function notifyStudentsNewAssignment(
+  title: string,
+  groupName: string,
+  groupId?: string,
+  teacherName?: string,
+  assignmentId?: string,
+  dueDate?: string
+) {
+  const payload = {
+    category: 'assignment_created' as const,
+    recipientRole: 'student' as const,
+    groupId: groupId || 'Br2GDIO86SR5GcqfbmOD',
     linkId: assignmentId,
-    senderName: teacherName || 'Instructor',
-    title: `Yangi Vazifa: ${title}`,
-    description: `${teacherName || 'Ustozingiz'} ${groupName || 'guruhingiz'} uchun yangi vazifa e'lon qildi. Bugunoq bajaring!`,
+    senderName: teacherName || 'Mr. Javohirbek',
+    title: `New Assignment: ${title}`,
+    description: `New homework posted for ${groupName || 'your group'}.${dueDate ? ` Due date: ${dueDate}.` : ' Please submit your solution on time.'}`,
     isRead: false,
     createdAt: new Date().toISOString()
-  });
+  };
+
+  console.log('🚀 Dispatching homework notification to students:', payload);
+  return createNotification(payload);
 }
 
 export async function notifyTeacherNewSubmission(assignmentTitle: string, studentName: string, studentId?: string, groupId?: string) {

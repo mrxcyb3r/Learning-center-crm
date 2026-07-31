@@ -53,6 +53,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       currentUser?.uid,
       activeRole,
       (data) => {
+        console.log('🔔 Notifications received in drawer listener:', data);
         setNotifications(data);
         setIsLoading(false);
       }

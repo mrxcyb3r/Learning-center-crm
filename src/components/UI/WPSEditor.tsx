@@ -18,7 +18,6 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Type,
   FileText,
   Undo,
   Redo,
@@ -27,14 +26,14 @@ import {
   Highlighter,
   Link,
   Image as ImageIcon,
-  Paperclip,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
   Outdent,
   Indent,
-  HelpCircle,
   Plus,
-  Minus
+  Minus,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface WPSEditorProps {
@@ -88,17 +87,17 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   const [selectedFont, setSelectedFont] = useState(FONT_FAMILIES[0].value);
   const [selectedFontSize, setSelectedFontSize] = useState('16');
+  const [canvasMode, setCanvasMode] = useState<'light' | 'dark'>('light');
   const [showMathToolbar, setShowMathToolbar] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
 
-  // Synchronize initial or external value changes safely without losing cursor position when typing
+  // Synchronize initial or external value changes safely
   useEffect(() => {
     if (editorRef.current) {
       if (editorRef.current.innerHTML !== value) {
-        // If empty or plain string, format properly
         if (!value) {
           editorRef.current.innerHTML = `<p style="font-family: ${selectedFont}; font-size: ${selectedFontSize}px;"><br></p>`;
         } else if (!value.startsWith('<') && !value.endsWith('>')) {
@@ -116,7 +115,14 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
     }
   };
 
+  const focusEditor = () => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+  };
+
   const execCmd = (command: string, valueArg: string | undefined = undefined) => {
+    focusEditor();
     document.execCommand(command, false, valueArg);
     handleInput();
   };
@@ -124,12 +130,11 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
   // Font family change handler
   const handleFontFamilyChange = (fontVal: string) => {
     setSelectedFont(fontVal);
-    // Apply font family to selection or document
+    focusEditor();
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
       document.execCommand('fontName', false, fontVal);
     } else if (editorRef.current) {
-      // Apply style to entire container if no selection
       editorRef.current.style.fontFamily = fontVal;
       execCmd('formatBlock', 'p');
     }
@@ -139,12 +144,22 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
   // Font size change handler
   const handleFontSizeChange = (sizeVal: string) => {
     setSelectedFontSize(sizeVal);
+    focusEditor();
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      const span = document.createElement('span');
-      span.style.fontSize = `${sizeVal}px`;
       const range = sel.getRangeAt(0);
-      range.surroundContents(span);
+      const selectedText = range.toString();
+      if (selectedText) {
+        const span = document.createElement('span');
+        span.style.fontSize = `${sizeVal}px`;
+        span.textContent = selectedText;
+        range.deleteContents();
+        range.insertNode(span);
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
     } else if (editorRef.current) {
       editorRef.current.style.fontSize = `${sizeVal}px`;
     }
@@ -160,6 +175,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   // Clear formatting
   const clearFormatting = () => {
+    focusEditor();
     document.execCommand('removeFormat', false);
     if (editorRef.current) {
       editorRef.current.style.fontFamily = FONT_FAMILIES[0].value;
@@ -170,9 +186,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   // Insert HTML snippet at current caret
   const insertHTML = (html: string) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
+    focusEditor();
     document.execCommand('insertHTML', false, html);
     handleInput();
   };
@@ -184,7 +198,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   // Insert Table
   const insertTableGrid = (rows: number = 3, cols: number = 3) => {
-    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #cbd5e1;"><thead><tr style="background-color: #f8fafc;">`;
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #cbd5e1;"><thead><tr style="background-color: ${canvasMode === 'dark' ? '#1e293b' : '#f8fafc'};">`;
     for (let c = 1; c <= cols; c++) {
       tableHtml += `<th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-weight: bold;">Header ${c}</th>`;
     }
@@ -207,7 +221,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
     reader.onload = (e) => {
       const imgSrc = e.target?.result as string;
       if (imgSrc) {
-        insertHTML(`<div style="margin: 12px 0; text-align: center;"><img src="${imgSrc}" alt="Uploaded image" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; display: inline-block;" /><p style="font-size: 11px; color: #64748b; margin-top: 4px;">${file.name}</p></div><p><br></p>`);
+        insertHTML(`<div style="margin: 12px 0; text-align: center;"><img src="${imgSrc}" alt="Uploaded image" style="max-width: 100%; max-height: 420px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #cbd5e1; display: inline-block;" /><p style="font-size: 11px; color: #64748b; margin-top: 4px;">📷 ${file.name || 'Pasted image'}</p></div><p><br></p>`);
       }
     };
     reader.readAsDataURL(file);
@@ -223,9 +237,16 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   // Handle Paste Clipboard Images
   const handlePaste = (e: React.ClipboardEvent) => {
-    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
-      e.preventDefault();
-      Array.from(e.clipboardData.files).forEach((file) => handleImageFile(file));
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) handleImageFile(file);
+          return;
+        }
+      }
     }
   };
 
@@ -240,235 +261,280 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
       {/* WPS Ribbon Toolbar Container */}
       <div className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300 text-xs">
         
-        {/* ROW 1: Undo/Redo, Font Family, Font Size, Formatting, Colors, Lists */}
-        <div className="p-2 flex flex-wrap items-center gap-1.5 overflow-x-auto">
-          {/* Undo / Redo */}
-          <div className="flex items-center gap-0.5 pr-1.5 border-r border-slate-300 dark:border-slate-800">
-            <button
-              type="button"
-              title="Undo (Ctrl+Z)"
-              onClick={() => execCmd('undo')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
-            >
-              <Undo className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Redo (Ctrl+Y)"
-              onClick={() => execCmd('redo')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
-            >
-              <Redo className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Format Painter"
-              onClick={() => {
-                const sel = window.getSelection()?.toString();
-                if (sel) alert(`Format copied for: "${sel}"`);
-              }}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 cursor-pointer"
-            >
-              <Paintbrush className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Font Family Dropdown */}
-          <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800">
-            <select
-              value={selectedFont}
-              onChange={(e) => handleFontFamilyChange(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
-              title="Font Family"
-            >
-              {FONT_FAMILIES.map((font) => (
-                <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
-                  {font.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Font Size Dropdown */}
-          <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800 flex items-center gap-1">
-            <select
-              value={selectedFontSize}
-              onChange={(e) => handleFontSizeChange(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
-              title="Font Size"
-            >
-              {FONT_SIZES.map((size) => (
-                <option key={size} value={size}>
-                  {size} px
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              title="Increase Font Size"
-              onClick={() => adjustFontSize(2)}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-xs"
-            >
-              <Plus className="w-3 h-3 text-slate-700 dark:text-slate-200" />
-            </button>
-            <button
-              type="button"
-              title="Decrease Font Size"
-              onClick={() => adjustFontSize(-2)}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-xs"
-            >
-              <Minus className="w-3 h-3 text-slate-700 dark:text-slate-200" />
-            </button>
-          </div>
-
-          {/* Bold, Italic, Underline, Strikethrough */}
-          <div className="flex items-center gap-0.5 px-1.5 border-r border-slate-300 dark:border-slate-800">
-            <button
-              type="button"
-              title="Bold (Ctrl+B)"
-              onClick={() => execCmd('bold')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Bold className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Italic (Ctrl+I)"
-              onClick={() => execCmd('italic')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 italic text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Italic className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Underline (Ctrl+U)"
-              onClick={() => execCmd('underline')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 underline text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Underline className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Strikethrough"
-              onClick={() => execCmd('strikeThrough')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 line-through text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Strikethrough className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Colors: Highlight & Text Color */}
-          <div className="flex items-center gap-1 px-1.5 border-r border-slate-300 dark:border-slate-800 relative">
-            {/* Highlight Marker */}
-            <div className="relative">
+        {/* ROW 1: Undo/Redo, Font Family, Font Size, Formatting, Colors, Lists, Theme Toggle */}
+        <div className="p-2 flex flex-wrap items-center justify-between gap-2 overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/* Undo / Redo */}
+            <div className="flex items-center gap-0.5 pr-1.5 border-r border-slate-300 dark:border-slate-800">
               <button
                 type="button"
-                title="Highlight Background Marker"
-                onClick={() => {
-                  setShowHighlightPicker(!showHighlightPicker);
-                  setShowTextColorPicker(false);
-                }}
-                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 cursor-pointer flex items-center gap-0.5"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Undo (Ctrl+Z)"
+                onClick={() => execCmd('undo')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
               >
-                <Highlighter className="w-3.5 h-3.5" />
+                <Undo className="w-3.5 h-3.5" />
               </button>
-              {showHighlightPicker && (
-                <div className="absolute left-0 top-full mt-1 z-30 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex gap-1.5 animate-fadeIn">
-                  {HIGHLIGHT_COLORS.map((hc) => (
-                    <button
-                      key={hc.label}
-                      type="button"
-                      title={hc.label}
-                      onClick={() => {
-                        execCmd('hiliteColor', hc.color);
-                        setShowHighlightPicker(false);
-                      }}
-                      className="w-5 h-5 rounded-full border border-slate-300 shadow-sm transition hover:scale-110 cursor-pointer"
-                      style={{ backgroundColor: hc.color }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Text Color */}
-            <div className="relative">
               <button
                 type="button"
-                title="Font Text Color"
-                onClick={() => {
-                  setShowTextColorPicker(!showTextColorPicker);
-                  setShowHighlightPicker(false);
-                }}
-                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-900 dark:text-white cursor-pointer flex items-center gap-0.5 font-bold"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Redo (Ctrl+Y)"
+                onClick={() => execCmd('redo')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
               >
-                <Palette className="w-3.5 h-3.5 text-blue-500" />
+                <Redo className="w-3.5 h-3.5" />
               </button>
-              {showTextColorPicker && (
-                <div className="absolute left-0 top-full mt-1 z-30 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex gap-1.5 animate-fadeIn">
-                  {TEXT_COLORS.map((tc) => (
-                    <button
-                      key={tc.label}
-                      type="button"
-                      title={tc.label}
-                      onClick={() => {
-                        execCmd('foreColor', tc.color);
-                        setShowTextColorPicker(false);
-                      }}
-                      className="w-5 h-5 rounded-full border border-slate-300 shadow-sm transition hover:scale-110 cursor-pointer"
-                      style={{ backgroundColor: tc.color }}
-                    />
-                  ))}
-                </div>
-              )}
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Format Painter"
+                onClick={() => {
+                  const sel = window.getSelection()?.toString();
+                  if (sel) alert(`Format copied for selection`);
+                }}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 cursor-pointer"
+              >
+                <Paintbrush className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            {/* Clear Formatting */}
-            <button
-              type="button"
-              title="Clear Formatting"
-              onClick={clearFormatting}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-rose-500 cursor-pointer"
-            >
-              <Eraser className="w-3.5 h-3.5" />
-            </button>
+            {/* Font Family Dropdown */}
+            <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800">
+              <select
+                value={selectedFont}
+                onChange={(e) => handleFontFamilyChange(e.target.value)}
+                className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                title="Font Family"
+              >
+                {FONT_FAMILIES.map((font) => (
+                  <option key={font.name} value={font.value} style={{ fontFamily: font.value }}>
+                    {font.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Font Size Dropdown */}
+            <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800 flex items-center gap-1">
+              <select
+                value={selectedFontSize}
+                onChange={(e) => handleFontSizeChange(e.target.value)}
+                className="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                title="Font Size"
+              >
+                {FONT_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size} px
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Increase Font Size"
+                onClick={() => adjustFontSize(2)}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-xs cursor-pointer"
+              >
+                <Plus className="w-3 h-3 text-slate-700 dark:text-slate-200" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Decrease Font Size"
+                onClick={() => adjustFontSize(-2)}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-xs cursor-pointer"
+              >
+                <Minus className="w-3 h-3 text-slate-700 dark:text-slate-200" />
+              </button>
+            </div>
+
+            {/* Bold, Italic, Underline, Strikethrough */}
+            <div className="flex items-center gap-0.5 px-1.5 border-r border-slate-300 dark:border-slate-800">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Bold (Ctrl+B)"
+                onClick={() => execCmd('bold')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Bold className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Italic (Ctrl+I)"
+                onClick={() => execCmd('italic')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 italic text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Italic className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Underline (Ctrl+U)"
+                onClick={() => execCmd('underline')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 underline text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Underline className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Strikethrough"
+                onClick={() => execCmd('strikeThrough')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 line-through text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Strikethrough className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Colors: Highlight & Text Color */}
+            <div className="flex items-center gap-1 px-1.5 border-r border-slate-300 dark:border-slate-800 relative">
+              {/* Highlight Marker */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  title="Highlight Background Marker"
+                  onClick={() => {
+                    setShowHighlightPicker(!showHighlightPicker);
+                    setShowTextColorPicker(false);
+                  }}
+                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 cursor-pointer flex items-center gap-0.5"
+                >
+                  <Highlighter className="w-3.5 h-3.5" />
+                </button>
+                {showHighlightPicker && (
+                  <div className="absolute left-0 top-full mt-1 z-30 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex gap-1.5 animate-fadeIn">
+                    {HIGHLIGHT_COLORS.map((hc) => (
+                      <button
+                        key={hc.label}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        title={hc.label}
+                        onClick={() => {
+                          execCmd('hiliteColor', hc.color);
+                          setShowHighlightPicker(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-slate-300 shadow-sm transition hover:scale-110 cursor-pointer"
+                        style={{ backgroundColor: hc.color }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Text Color */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  title="Font Text Color"
+                  onClick={() => {
+                    setShowTextColorPicker(!showTextColorPicker);
+                    setShowHighlightPicker(false);
+                  }}
+                  className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-900 dark:text-white cursor-pointer flex items-center gap-0.5 font-bold"
+                >
+                  <Palette className="w-3.5 h-3.5 text-blue-500" />
+                </button>
+                {showTextColorPicker && (
+                  <div className="absolute left-0 top-full mt-1 z-30 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 flex gap-1.5 animate-fadeIn">
+                    {TEXT_COLORS.map((tc) => (
+                      <button
+                        key={tc.label}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        title={tc.label}
+                        onClick={() => {
+                          execCmd('foreColor', tc.color);
+                          setShowTextColorPicker(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-slate-300 shadow-sm transition hover:scale-110 cursor-pointer"
+                        style={{ backgroundColor: tc.color }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Clear Formatting */}
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Clear Formatting"
+                onClick={clearFormatting}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-rose-500 cursor-pointer"
+              >
+                <Eraser className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Lists & Indents */}
+            <div className="flex items-center gap-0.5 pl-1.5">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Bulleted List"
+                onClick={() => execCmd('insertUnorderedList')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Numbered List"
+                onClick={() => execCmd('insertOrderedList')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Decrease Indent"
+                onClick={() => execCmd('outdent')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Outdent className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                title="Increase Indent"
+                onClick={() => execCmd('indent')}
+                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <Indent className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Lists & Indents */}
-          <div className="flex items-center gap-0.5 pl-1.5">
-            <button
-              type="button"
-              title="Bulleted List"
-              onClick={() => execCmd('insertUnorderedList')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Numbered List"
-              onClick={() => execCmd('insertOrderedList')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <ListOrdered className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Decrease Indent"
-              onClick={() => execCmd('outdent')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Outdent className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              title="Increase Indent"
-              onClick={() => execCmd('indent')}
-              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
-            >
-              <Indent className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Canvas Mode Toggle Switch (☀️ Light / 🌙 Dark) */}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setCanvasMode(canvasMode === 'light' ? 'dark' : 'light')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+              canvasMode === 'dark'
+                ? 'bg-slate-800 text-amber-400 border border-slate-700 hover:bg-slate-700'
+                : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100'
+            }`}
+            title="Toggle Document Sheet Canvas Light/Dark Mode"
+          >
+            {canvasMode === 'dark' ? (
+              <>
+                <Moon className="w-3.5 h-3.5 text-amber-400" />
+                <span>🌙 Dark Sheet</span>
+              </>
+            ) : (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>☀️ Light Sheet</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* ROW 2: Alignment, Headings, Sub/Super, Hyperlink, Media, Table, Math, Code */}
@@ -477,6 +543,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-0.5 pr-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Align Left"
               onClick={() => execCmd('justifyLeft')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -485,6 +552,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Align Center"
               onClick={() => execCmd('justifyCenter')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -493,6 +561,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Align Right"
               onClick={() => execCmd('justifyRight')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -501,6 +570,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Justify"
               onClick={() => execCmd('justifyFull')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -513,6 +583,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-0.5 px-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Heading 1"
               onClick={() => execCmd('formatBlock', 'h1')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold"
@@ -521,6 +592,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Heading 2"
               onClick={() => execCmd('formatBlock', 'h2')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold"
@@ -529,6 +601,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Heading 3"
               onClick={() => execCmd('formatBlock', 'h3')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold"
@@ -537,6 +610,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Blockquote"
               onClick={() => execCmd('formatBlock', 'blockquote')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
@@ -545,6 +619,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Subscript"
               onClick={() => execCmd('subscript')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 font-bold text-[10px]"
@@ -553,6 +628,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             </button>
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Superscript"
               onClick={() => execCmd('superscript')}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-amber-500 font-bold text-[10px]"
@@ -565,6 +641,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 px-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Insert Hyperlink"
               onClick={() => setShowLinkModal(!showLinkModal)}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-blue-500 cursor-pointer"
@@ -575,6 +652,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             {/* Upload/Attach Image */}
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Insert Image (Upload or Drag & Drop)"
               onClick={() => fileInputRef.current?.click()}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-emerald-500 cursor-pointer flex items-center gap-1 font-semibold text-[11px]"
@@ -597,6 +675,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 pl-1.5">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Insert Grid Table"
               onClick={() => insertTableGrid(3, 3)}
               className="flex items-center gap-1 px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-bold text-[11px] transition cursor-pointer"
@@ -607,6 +686,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Math Formulas & Equation Bar"
               onClick={() => setShowMathToolbar(!showMathToolbar)}
               className={`flex items-center gap-1 px-2 py-1 rounded font-bold text-[11px] transition cursor-pointer ${
@@ -621,6 +701,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               title="Insert Monospace Code Block"
               onClick={() =>
                 insertHTML(
@@ -677,6 +758,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               <button
                 key={sym}
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => insertMathSymbol(sym)}
                 className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-mono font-bold text-slate-800 dark:text-slate-200 text-xs shadow-sm border border-slate-200 dark:border-slate-700 transition cursor-pointer"
               >
@@ -702,7 +784,11 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           fontFamily: selectedFont,
           fontSize: `${selectedFontSize}px`
         }}
-        className="w-full p-6 bg-white text-slate-900 leading-relaxed focus:outline-none resize-y transition overflow-y-auto cursor-text selection:bg-amber-300 selection:text-slate-900 shadow-inner"
+        className={`w-full p-6 leading-relaxed focus:outline-none resize-y transition overflow-y-auto cursor-text shadow-inner ${
+          canvasMode === 'dark'
+            ? 'bg-slate-900 text-slate-50 selection:bg-amber-500 selection:text-slate-950 caret-amber-400'
+            : 'bg-white text-slate-900 selection:bg-amber-300 selection:text-slate-900 caret-slate-900'
+        }`}
       />
 
       {/* Document Footer Bar: Word, Char, Read Time */}

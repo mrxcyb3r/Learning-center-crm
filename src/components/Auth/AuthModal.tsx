@@ -162,8 +162,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
     } catch (err: any) {
       console.error('Auth Error:', err);
-      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+      const code = err?.code || '';
+      const message = err?.message || '';
+
+      if (code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain')) {
         setErrorMsg('Domain error: This preview host is not listed under Firebase Auth Authorized Domains. Use Email & Password or Demo Quick Login.');
+      } else if (
+        code === 'auth/invalid-credential' ||
+        message.includes('auth/invalid-credential') ||
+        code === 'auth/user-not-found' ||
+        code === 'auth/wrong-password' ||
+        message.includes('invalid-credential')
+      ) {
+        setErrorMsg(
+          activeTab === 'login'
+            ? "Noto'g'ri email yoki parol (auth/invalid-credential). Agar hisobingiz bo'lmasa, Ro'yxatdan o'tish (Register) bo'limiga o'ting yoki Fast Demo login tugmasidan foydalaning."
+            : "Kiritilgan ma'lumotlar mos kelmadi. Iltimos, boshqa email va parol kiriting."
+        );
+      } else if (code === 'auth/email-already-in-use' || message.includes('email-already-in-use')) {
+        setErrorMsg("Ushbu email bilan allaqachon hisob yaratilgan. Kirish (Sign In) bo'limiga o'ting.");
+      } else if (code === 'auth/invalid-email' || message.includes('invalid-email')) {
+        setErrorMsg("Email manzili noto'g'ri formatda kiritilgan.");
+      } else if (code === 'auth/weak-password' || message.includes('weak-password')) {
+        setErrorMsg("Parol juda qisqa (kamida 6 ta belgi bo'lishi kerak).");
       } else {
         setErrorMsg(err?.message || 'Authentication failed. Please check credentials.');
       }
@@ -413,9 +434,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
             {/* Error Alert Box */}
             {errorMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2 animate-shake">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex flex-col gap-2 animate-shake">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{errorMsg}</span>
+                </div>
+                {(errorMsg.includes('invalid-credential') || errorMsg.includes("Noto'g'ri email") || errorMsg.includes('Ro\'yxatdan o\'tish')) && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-red-500/20 mt-1">
+                    {activeTab === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('register');
+                          setErrorMsg('');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-300 font-bold text-[11px] transition cursor-pointer"
+                      >
+                        👉 Ro'yxatdan o'tish (Sign Up)
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await loginAsDemoUser(selectedRole);
+                        onClose();
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[11px] transition cursor-pointer"
+                    >
+                      ⚡ 1-Click Fast Demo Login
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

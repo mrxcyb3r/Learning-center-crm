@@ -1,10 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow full read and write access for all collections (groups, students, payments, attendance, assignments, feed_posts, mock_scores, leads, users, blogs)
+    // Wildcard match for full development / center operation access
     match /{document=**} {
       allow read, write: if true;
     }
+
+    // Explicit subcollection & core collection rules
+    match /homework/{docId} { allow read, write: if true; }
+    match /assignments/{docId} { allow read, write: if true; }
+    match /homework_submissions/{docId} { allow read, write: if true; }
+    match /feed_posts/{docId} { allow read, write: if true; }
+    match /attendance/{docId} { allow read, write: if true; }
+    match /groups/{docId} { allow read, write: if true; }
+    
+    match /students/{studentId} {
+      allow read, write: if true;
+      match /mock_scores/{scoreId} {
+        allow read, write: if true;
+      }
+    }
   }
 }
+

@@ -27,10 +27,12 @@ export const ProgressGraphs: React.FC = () => {
 
   useEffect(() => {
     let unsub: () => void = () => {};
+    let isMounted = true;
     setIsLoading(true);
 
     try {
       unsub = subscribeMockScores((data) => {
+        if (!isMounted) return;
         // Filter scores for current user if applicable
         const filtered = data.filter(
           (s) =>
@@ -43,10 +45,18 @@ export const ProgressGraphs: React.FC = () => {
       });
     } catch (err) {
       console.error('Error fetching mock scores:', err);
-      setIsLoading(false);
+      if (isMounted) setIsLoading(false);
     }
 
-    return () => unsub();
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      unsub();
+    };
   }, [currentUser]);
 
   const latestScore = scores.length > 0 ? scores[scores.length - 1] : null;

@@ -45,6 +45,24 @@ interface FirestoreErrorInfo {
   };
 }
 
+// Utility to recursively strip undefined keys from objects before sending to Firestore
+export function cleanData<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(cleanData) as unknown as T;
+  }
+  const cleaned: any = {};
+  for (const key of Object.keys(obj as any)) {
+    const value = (obj as any)[key];
+    if (value !== undefined) {
+      cleaned[key] = typeof value === 'object' && value !== null ? cleanData(value) : value;
+    }
+  }
+  return cleaned as T;
+}
+
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
@@ -55,7 +73,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     operationType,
     path
   };
-  console.warn('Firestore Operation Notice:', JSON.stringify(errInfo));
+  console.error("❌ Firestore Write Error:", JSON.stringify(errInfo));
   return null;
 }
 
@@ -274,18 +292,22 @@ export async function saveAttendanceRecord(
 ) {
   try {
     const recordId = `${groupId}_${date}`;
-    await setDoc(doc(db, ATTENDANCE_COL, recordId), {
+    const payload = cleanData({
       groupId,
       date,
       records,
       recordedBy,
       updatedAt: new Date().toISOString()
     });
+    await setDoc(doc(db, ATTENDANCE_COL, recordId), payload, { merge: true });
+    console.log("✅ Firestore Write Success: attendance", recordId, payload);
     return recordId;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${ATTENDANCE_COL}/${groupId}_${date}`);
   }
 }
+
+export const saveGroupAttendance = saveAttendanceRecord;
 
 export async function getAttendanceRecord(groupId: string, date: string): Promise<AttendanceRecord | null> {
   try {
@@ -329,19 +351,32 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
 
 export async function addAssignment(data: Omit<Assignment, 'id'>) {
   try {
-    const docRef = await addDoc(collection(db, ASSIGNMENTS_COL), {
+    const payload = cleanData({
       ...data,
       createdAt: new Date().toISOString()
     });
+    const docRef = await addDoc(collection(db, ASSIGNMENTS_COL), payload);
+    try {
+      await setDoc(doc(db, "homework", docRef.id), payload, { merge: true });
+    } catch (e) {
+      // secondary fallback write
+    }
+    console.log("✅ Firestore Write Success: assignments", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, ASSIGNMENTS_COL);
   }
 }
 
+export const createHomework = addAssignment;
+
 export async function deleteAssignment(id: string) {
   try {
     await deleteDoc(doc(db, ASSIGNMENTS_COL, id));
+    try {
+      await deleteDoc(doc(db, "homework", id));
+    } catch (e) {}
+    console.log("✅ Firestore Delete Success: assignments", id);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `${ASSIGNMENTS_COL}/${id}`);
   }
@@ -375,7 +410,9 @@ export function subscribeFeedPosts(callback: (posts: FeedPost[]) => void) {
 
 export async function addFeedPost(data: Omit<FeedPost, 'id'>) {
   try {
-    const docRef = await addDoc(collection(db, FEED_POSTS_COL), data);
+    const payload = cleanData(data);
+    const docRef = await addDoc(collection(db, FEED_POSTS_COL), payload);
+    console.log("✅ Firestore Write Success: feed_posts", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, FEED_POSTS_COL);
@@ -397,6 +434,7 @@ export async function addPostComment(postId: string, commentText: string, author
       await updateDoc(postRef, {
         comments: [...currentComments, newComment]
       });
+      console.log("✅ Firestore Write Success: feed_post comment", postId);
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${FEED_POSTS_COL}/${postId}`);
@@ -431,12 +469,31 @@ export function subscribeMockScores(callback: (scores: MockTestScore[]) => void)
 
 export async function saveMockScore(data: Omit<MockTestScore, 'id'>) {
   try {
-    const docRef = await addDoc(collection(db, MOCK_SCORES_COL), data);
+    const payload = cleanData(data);
+    const docRef = await addDoc(collection(db, MOCK_SCORES_COL), payload);
+
+    // Also write to nested subcollection if studentId exists
+    if (payload.studentId) {
+      try {
+        await setDoc(doc(db, STUDENTS_COL, payload.studentId, "mock_scores", docRef.id), payload, { merge: true });
+        // Update parent student document overall band score
+        await setDoc(doc(db, STUDENTS_COL, payload.studentId), {
+          overallBand: payload.overall,
+          targetBand: payload.overall
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Subcollection or student doc update notice:", e);
+      }
+    }
+
+    console.log("✅ Firestore Write Success: mock_scores", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, MOCK_SCORES_COL);
   }
 }
+
+export const saveStudentMockScore = saveMockScore;
 
 /* =========================================================================
    LEADS SERVICE
@@ -693,15 +750,19 @@ export async function submitHomework(submission: {
   date: string;
 }) {
   try {
-    const docRef = await addDoc(collection(db, SUBMISSIONS_COL), {
+    const payload = cleanData({
       ...submission,
       createdAt: new Date().toISOString()
     });
+    const docRef = await addDoc(collection(db, SUBMISSIONS_COL), payload);
+    console.log("✅ Firestore Write Success: homework_submissions", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, SUBMISSIONS_COL);
   }
 }
+
+export const submitHomeworkSolution = submitHomework;
 
 export function subscribeHomeworkSubmissions(callback: (submissions: any[]) => void) {
   try {

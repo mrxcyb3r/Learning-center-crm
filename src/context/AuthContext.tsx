@@ -10,7 +10,8 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendEmailVerification,
-  reload
+  reload,
+  signInAnonymously
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
@@ -325,6 +326,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginAsDemoUser = async (requestedRole: UserRole = 'student') => {
     setIsLoading(true);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (anonErr) {
+          console.warn('Anonymous auth signin fallback warning:', anonErr);
+        }
+      }
+
       const isSuperAdmin = requestedRole === 'superadmin';
       const uid = isSuperAdmin ? SUPER_ADMIN_UUID : `demo_${requestedRole}_${Date.now().toString(36)}`;
       

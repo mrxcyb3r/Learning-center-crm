@@ -31,10 +31,9 @@ import {
   Outdent,
   Indent,
   Plus,
-  Minus,
-  Sun,
-  Moon
+  Minus
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface WPSEditorProps {
   value: string;
@@ -82,12 +81,20 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
   placeholder = 'Write document, essay, problem set or code notes...',
   minHeight = '220px'
 }) => {
+  // Access global app theme synchronously
+  let isDark = false;
+  try {
+    const { theme } = useTheme();
+    isDark = theme === 'dark';
+  } catch {
+    isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  }
+
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFont, setSelectedFont] = useState(FONT_FAMILIES[0].value);
   const [selectedFontSize, setSelectedFontSize] = useState('16');
-  const [canvasMode, setCanvasMode] = useState<'light' | 'dark'>('light');
   const [showMathToolbar, setShowMathToolbar] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
@@ -198,7 +205,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
 
   // Insert Table
   const insertTableGrid = (rows: number = 3, cols: number = 3) => {
-    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #cbd5e1;"><thead><tr style="background-color: ${canvasMode === 'dark' ? '#1e293b' : '#f8fafc'};">`;
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #cbd5e1;"><thead><tr style="background-color: ${isDark ? '#1e293b' : '#f8fafc'};">`;
     for (let c = 1; c <= cols; c++) {
       tableHtml += `<th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-weight: bold;">Header ${c}</th>`;
     }
@@ -261,7 +268,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
       {/* WPS Ribbon Toolbar Container */}
       <div className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300 text-xs">
         
-        {/* ROW 1: Undo/Redo, Font Family, Font Size, Formatting, Colors, Lists, Theme Toggle */}
+        {/* ROW 1: Undo/Redo, Font Family, Font Size, Formatting, Colors, Lists */}
         <div className="p-2 flex flex-wrap items-center justify-between gap-2 overflow-x-auto">
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Undo / Redo */}
@@ -510,31 +517,6 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Canvas Mode Toggle Switch (☀️ Light / 🌙 Dark) */}
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setCanvasMode(canvasMode === 'light' ? 'dark' : 'light')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
-              canvasMode === 'dark'
-                ? 'bg-slate-800 text-amber-400 border border-slate-700 hover:bg-slate-700'
-                : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100'
-            }`}
-            title="Toggle Document Sheet Canvas Light/Dark Mode"
-          >
-            {canvasMode === 'dark' ? (
-              <>
-                <Moon className="w-3.5 h-3.5 text-amber-400" />
-                <span>🌙 Dark Sheet</span>
-              </>
-            ) : (
-              <>
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>☀️ Light Sheet</span>
-              </>
-            )}
-          </button>
         </div>
 
         {/* ROW 2: Alignment, Headings, Sub/Super, Hyperlink, Media, Table, Math, Code */}
@@ -769,7 +751,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
         </div>
       )}
 
-      {/* WPS Document Sheet Canvas (ContentEditable Engine) */}
+      {/* WPS Document Sheet Canvas (ContentEditable Engine synced to Global Theme) */}
       <div
         ref={editorRef}
         contentEditable
@@ -785,8 +767,8 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           fontSize: `${selectedFontSize}px`
         }}
         className={`w-full p-6 leading-relaxed focus:outline-none resize-y transition overflow-y-auto cursor-text shadow-inner ${
-          canvasMode === 'dark'
-            ? 'bg-slate-900 text-slate-50 selection:bg-amber-500 selection:text-slate-950 caret-amber-400'
+          isDark
+            ? 'bg-slate-900 text-slate-100 selection:bg-amber-500 selection:text-slate-950 caret-amber-400'
             : 'bg-white text-slate-900 selection:bg-amber-300 selection:text-slate-900 caret-slate-900'
         }`}
       />

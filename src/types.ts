@@ -144,16 +144,40 @@ export interface Assignment {
   title: string;
   group: string;
   groupName?: string;
+  groupId?: string;
   dueDate: string;
+  deadline?: string;
   submittedCount: number;
   submissionsCount?: number;
   totalStudents: number;
   file?: string;
+  fileName?: string;
+  fileUrl?: string;
   audioUrl?: string;
   pdfUrl?: string;
   createdAt?: string;
   description?: string;
   instructions?: string;
+  subjectCategory?: string;
+  resourceFormat?: string;
+  teacherName?: string;
+  teacherEmail?: string;
+}
+
+export interface HomeworkSubmission {
+  id: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  studentId: string;
+  studentName: string;
+  solutionText: string;
+  fileName?: string;
+  fileUrl?: string;
+  date: string;
+  submittedAt?: string;
+  status?: 'submitted' | 'graded' | 'pending';
+  grade?: string;
+  feedback?: string;
 }
 
 export interface FeedPost {
@@ -166,6 +190,8 @@ export interface FeedPost {
   content: string;
   attachment?: string;
   attachmentSize?: string;
+  subjectCategory?: string;
+  resourceFormat?: string;
   likes: number;
   comments?: { id?: string; author: string; text: string; date?: string }[];
 }
@@ -176,10 +202,15 @@ export interface MockTestScore {
   studentName: string;
   date: string;
   overall: number;
-  listening: number;
-  reading: number;
-  writing: number;
-  speaking: number;
+  listening?: number;
+  reading?: number;
+  writing?: number;
+  speaking?: number;
+  gradingSystem?: 'percentage' | 'letter' | 'sat_band' | 'rubric_points' | string;
+  letterGrade?: string;
+  percentage?: number;
+  subjectCategory?: string;
+  scoreDisplay?: string;
   teacherFeedback?: string;
 }
 

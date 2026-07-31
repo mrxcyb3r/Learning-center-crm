@@ -135,10 +135,13 @@ export const ClassesView: React.FC = () => {
                 onChange={(e) => setCourseType(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
               >
+                <option value="Mathematics & Geometry">Mathematics & Geometry</option>
+                <option value="Physics & Engineering">Physics & Engineering</option>
+                <option value="IT & Programming (Python/Web)">IT & Programming (Python/Web)</option>
+                <option value="Chemistry & Biology">Chemistry & Biology</option>
+                <option value="SAT / GMAT Prep">SAT / GMAT Prep</option>
                 <option value="IELTS Intensive">IELTS Intensive</option>
-                <option value="General English">General English</option>
-                <option value="CEFR C1">CEFR C1</option>
-                <option value="IT Coding">IT & Programming</option>
+                <option value="General English / CEFR">General English / CEFR</option>
               </select>
             </div>
           </div>

@@ -338,10 +338,24 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
               id: docSnap.id,
               title: d.title || 'Assignment',
               group: d.group || d.groupName || 'IELTS Intensive #12',
+              groupName: d.groupName || d.group || 'IELTS Intensive #12',
+              groupId: d.groupId || 'Br2GDIO86SR5GcqfbmOD',
               dueDate: d.dueDate || d.deadline || '2026-08-15',
+              deadline: d.deadline || d.dueDate || '2026-08-15',
               submittedCount: d.submittedCount ?? 0,
               totalStudents: d.totalStudents ?? 14,
-              file: d.file || d.fileName || 'Assignment.pdf'
+              file: d.file || d.fileName || 'Assignment.pdf',
+              fileName: d.fileName || d.file || 'Assignment.pdf',
+              fileUrl: d.fileUrl || '',
+              audioUrl: d.audioUrl || '',
+              pdfUrl: d.pdfUrl || '',
+              description: d.description || '',
+              instructions: d.instructions || d.description || '',
+              subjectCategory: d.subjectCategory || 'Mathematics & Geometry',
+              resourceFormat: d.resourceFormat || 'Problem Set / Quiz Sheet',
+              teacherName: d.teacherName || 'Mr. Javohirbek',
+              teacherEmail: d.teacherEmail || '',
+              createdAt: d.createdAt
             };
           });
           callback(items);
@@ -354,10 +368,24 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
                 id: docSnap.id,
                 title: d.title || 'Assignment',
                 group: d.group || d.groupName || 'IELTS Intensive #12',
+                groupName: d.groupName || d.group || 'IELTS Intensive #12',
+                groupId: d.groupId || 'Br2GDIO86SR5GcqfbmOD',
                 dueDate: d.dueDate || d.deadline || '2026-08-15',
+                deadline: d.deadline || d.dueDate || '2026-08-15',
                 submittedCount: d.submittedCount ?? 0,
                 totalStudents: d.totalStudents ?? 14,
-                file: d.file || d.fileName || 'Assignment.pdf'
+                file: d.file || d.fileName || 'Assignment.pdf',
+                fileName: d.fileName || d.file || 'Assignment.pdf',
+                fileUrl: d.fileUrl || '',
+                audioUrl: d.audioUrl || '',
+                pdfUrl: d.pdfUrl || '',
+                description: d.description || '',
+                instructions: d.instructions || d.description || '',
+                subjectCategory: d.subjectCategory || 'Mathematics & Geometry',
+                resourceFormat: d.resourceFormat || 'Problem Set / Quiz Sheet',
+                teacherName: d.teacherName || 'Mr. Javohirbek',
+                teacherEmail: d.teacherEmail || '',
+                createdAt: d.createdAt
               };
             });
             callback(legacyItems);
@@ -384,8 +412,14 @@ export async function addAssignment(data: any) {
       group: data.group || data.groupName || 'IELTS Intensive #12',
       title: data.title || '',
       description: data.description || '',
+      instructions: data.instructions || data.description || '',
+      subjectCategory: data.subjectCategory || 'Mathematics & Geometry',
+      resourceFormat: data.resourceFormat || 'Problem Set / Quiz Sheet',
       fileName: data.file || data.fileName || 'Assignment_Guide.pdf',
       file: data.file || data.fileName || 'Assignment_Guide.pdf',
+      fileUrl: data.fileUrl || '',
+      audioUrl: data.audioUrl || '',
+      pdfUrl: data.pdfUrl || '',
       dueDate: data.dueDate || data.deadline || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       deadline: data.dueDate || data.deadline || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       submittedCount: data.submittedCount ?? 0,
@@ -405,6 +439,22 @@ export async function addAssignment(data: any) {
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, "homework");
+  }
+}
+
+export async function updateAssignment(id: string, data: any) {
+  try {
+    const payload = cleanData({
+      ...data,
+      updatedAt: new Date().toISOString()
+    });
+    await setDoc(doc(db, "homework", id), payload, { merge: true });
+    try {
+      await setDoc(doc(db, ASSIGNMENTS_COL, id), payload, { merge: true });
+    } catch (e) {}
+    console.log("✅ Firestore Write Success (Homework Updated):", id, payload);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `homework/${id}`);
   }
 }
 

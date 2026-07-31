@@ -679,6 +679,54 @@ export async function saveSecurityPins(pins: SecurityPinsData) {
 }
 
 /* =========================================================================
+   HOMEWORK SUBMISSIONS & FEED POSTS SERVICE
+   ========================================================================= */
+const SUBMISSIONS_COL = 'homework_submissions';
+
+export async function submitHomework(submission: {
+  assignmentId: string;
+  assignmentTitle: string;
+  studentId: string;
+  studentName: string;
+  solutionText: string;
+  fileName?: string;
+  date: string;
+}) {
+  try {
+    const docRef = await addDoc(collection(db, SUBMISSIONS_COL), {
+      ...submission,
+      createdAt: new Date().toISOString()
+    });
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, SUBMISSIONS_COL);
+  }
+}
+
+export function subscribeHomeworkSubmissions(callback: (submissions: any[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, SUBMISSIONS_COL),
+      (snapshot) => {
+        const items = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }));
+        callback(items);
+      },
+      (error) => {
+        console.warn('Firestore subscribeHomeworkSubmissions notice:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.warn('Firestore subscribeHomeworkSubmissions error:', error);
+    callback([]);
+    return () => {};
+  }
+}
+
+/* =========================================================================
    INITIAL DB SEEDER (IF EMPTY)
    ========================================================================= */
 export async function seedFirestoreIfEmpty() {
@@ -707,7 +755,7 @@ export async function seedFirestoreIfEmpty() {
       });
 
       if (g1Id) {
-        await addStudent({
+        const st1Id = await addStudent({
           fullName: 'Jasur Rahimov',
           phone: '+998 90 123 45 67',
           groupId: g1Id,
@@ -726,10 +774,64 @@ export async function seedFirestoreIfEmpty() {
           paymentStatus: 'pending',
           lastPaymentDate: '2026-06-15'
         });
+
+        if (st1Id) {
+          await saveMockScore({
+            studentId: st1Id,
+            studentName: 'Jasur Rahimov',
+            date: new Date().toISOString().split('T')[0],
+            overall: 7.5,
+            listening: 8.0,
+            reading: 7.5,
+            writing: 7.0,
+            speaking: 7.5,
+            teacherFeedback: "A'lo natija! Listening va Speaking yuqori darajada."
+          });
+        }
       }
     }
 
-    // 2. Seed Security Pins & Super Admin User Doc if empty
+    // 2. Seed Assignments if empty
+    const assignSnap = await getDocs(collection(db, ASSIGNMENTS_COL));
+    if (assignSnap.empty) {
+      await addAssignment({
+        title: 'IELTS Writing Task 2 Essay: Technology in Education',
+        group: 'IELTS Intensive #12',
+        dueDate: '2026-08-05',
+        submittedCount: 8,
+        totalStudents: 14,
+        file: 'IELTS_Writing_Task2_Guide.pdf'
+      });
+      await addAssignment({
+        title: 'Listening Test #4 - Section 3 & 4 Audio Drills',
+        group: 'IELTS Intensive #12',
+        dueDate: '2026-08-08',
+        submittedCount: 12,
+        totalStudents: 14,
+        file: 'Listening_Section3_Audio.mp3'
+      });
+    }
+
+    // 3. Seed Feed Posts if empty
+    const feedSnap = await getDocs(collection(db, FEED_POSTS_COL));
+    if (feedSnap.empty) {
+      await addFeedPost({
+        author: 'Mr. Javohirbek',
+        avatar: 'J',
+        role: "Bosh IELTS O'qituvchi",
+        date: 'Bugun, 10:30',
+        title: "Dars Materiallari va Yangi Task 2 Topshirig'i E'lon Qilindi 🚀",
+        content: "Hurmatli IELTS Intensive #12 guruhi o'quvchilari! Bugungi darsimizda ko'rilgan Writing Task 2 shabloni va lisoniy birikmalarni quyidagi biriktirilgan PDF faylda yuklab olishingiz mumkin. Keyingi darsgacha topshiriqni yakunlang!",
+        attachment: 'IELTS_Writing_Task2_Template_2026.pdf',
+        attachmentSize: '2.4 MB',
+        likes: 12,
+        comments: [
+          { id: '1', author: 'Jasur Rahimov', text: "Rahmat ustoz, yuklab oldim!", date: 'Bugun, 11:00' }
+        ]
+      });
+    }
+
+    // 4. Seed Security Pins & Super Admin User Doc if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
       await saveSecurityPins({

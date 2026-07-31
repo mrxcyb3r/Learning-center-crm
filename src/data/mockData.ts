@@ -1,4 +1,4 @@
-import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore, Payment } from '../types';
+import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore, Payment, FeedPost } from '../types';
 
 export const mockTeachers: Teacher[] = [
   {
@@ -396,6 +396,24 @@ export const DEFAULT_MOCK_ASSIGNMENTS: Assignment[] = [
     submittedCount: 10,
     submissionsCount: 10,
     totalStudents: 12
+  }
+];
+
+export const DEFAULT_MOCK_POSTS: FeedPost[] = [
+  {
+    id: 'post-1',
+    author: 'Mr. Javohirbek',
+    avatar: 'J',
+    role: "Bosh IELTS O'qituvchi",
+    date: 'Bugun, 10:30',
+    title: "Dars Materiallari va Yangi Task 2 Topshirig'i E'lon Qilindi 🚀",
+    content: "Hurmatli IELTS Intensive #12 guruhi o'quvchilari! Bugungi darsimizda ko'rilgan Writing Task 2 shabloni va lisoniy birikmalarni quyidagi biriktirilgan PDF faylda yuklab olishingiz mumkin. Keyingi darsgacha topshiriqni yakunlang!",
+    attachment: 'IELTS_Writing_Task2_Template_2026.pdf',
+    attachmentSize: '2.4 MB',
+    likes: 12,
+    comments: [
+      { id: '1', author: 'Jasur Rahimov', text: "Rahmat ustoz, yuklab oldim!", date: 'Bugun, 11:00' }
+    ]
   }
 ];
 

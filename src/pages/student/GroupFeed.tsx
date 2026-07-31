@@ -24,7 +24,6 @@ import {
   submitHomework,
   seedFirestoreIfEmpty
 } from '../../services/firestore';
-import { DEFAULT_MOCK_POSTS, DEFAULT_MOCK_ASSIGNMENTS } from '../../data/mockData';
 import { FeedPost, Assignment } from '../../types';
 
 export const GroupFeed: React.FC = () => {
@@ -62,13 +61,13 @@ export const GroupFeed: React.FC = () => {
     try {
       unsubPosts = subscribeFeedPosts((data) => {
         if (!isMounted) return;
-        setPosts(data.length > 0 ? data : DEFAULT_MOCK_POSTS);
+        setPosts(data);
         setIsLoading(false);
       });
 
       unsubAssignments = subscribeAssignments((data) => {
         if (!isMounted) return;
-        setAssignments(data.length > 0 ? data : DEFAULT_MOCK_ASSIGNMENTS);
+        setAssignments(data);
         setIsLoading(false);
       });
     } catch (err) {

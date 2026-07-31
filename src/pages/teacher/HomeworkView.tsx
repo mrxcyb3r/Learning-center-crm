@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { FileText, Upload, CheckCircle2, Clock, AlertCircle, Trash2, Paperclip, Plus } from 'lucide-react';
+import { FileText, Upload, Clock, Trash2, Paperclip, Plus } from 'lucide-react';
 import { subscribeAssignments, addAssignment, deleteAssignment, subscribeGroups } from '../../services/firestore';
-import { DEFAULT_MOCK_ASSIGNMENTS, DEFAULT_MOCK_GROUPS } from '../../data/mockData';
 import { Assignment, Group } from '../../types';
 
 export const HomeworkView: React.FC = () => {
@@ -34,16 +33,15 @@ export const HomeworkView: React.FC = () => {
     try {
       unsubAssignments = subscribeAssignments((data) => {
         if (!isMounted) return;
-        setAssignments(data.length > 0 ? data : DEFAULT_MOCK_ASSIGNMENTS);
+        setAssignments(data);
         setIsLoading(false);
       });
 
       unsubGroups = subscribeGroups((gList) => {
         if (!isMounted) return;
-        const effectiveGroups = gList.length > 0 ? gList : DEFAULT_MOCK_GROUPS;
-        setGroups(effectiveGroups);
-        if (effectiveGroups.length > 0) {
-          setSelectedGroup(effectiveGroups[0].name);
+        setGroups(gList);
+        if (gList.length > 0) {
+          setSelectedGroup(gList[0].name);
         }
       });
     } catch (err) {

@@ -329,13 +329,40 @@ export async function getAttendanceRecord(groupId: string, date: string): Promis
 export function subscribeAssignments(callback: (assignments: Assignment[]) => void) {
   try {
     return onSnapshot(
-      collection(db, ASSIGNMENTS_COL),
+      collection(db, "homework"),
       (snapshot) => {
-        const items: Assignment[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Assignment, 'id'>)
-        }));
-        callback(items);
+        if (!snapshot.empty) {
+          const items: Assignment[] = snapshot.docs.map((docSnap) => {
+            const d = docSnap.data();
+            return {
+              id: docSnap.id,
+              title: d.title || 'Assignment',
+              group: d.group || d.groupName || 'IELTS Intensive #12',
+              dueDate: d.dueDate || d.deadline || '2026-08-15',
+              submittedCount: d.submittedCount ?? 0,
+              totalStudents: d.totalStudents ?? 14,
+              file: d.file || d.fileName || 'Assignment.pdf'
+            };
+          });
+          callback(items);
+        } else {
+          // Fallback to legacy assignments collection if homework is empty
+          getDocs(collection(db, ASSIGNMENTS_COL)).then((legacySnap) => {
+            const legacyItems: Assignment[] = legacySnap.docs.map((docSnap) => {
+              const d = docSnap.data();
+              return {
+                id: docSnap.id,
+                title: d.title || 'Assignment',
+                group: d.group || d.groupName || 'IELTS Intensive #12',
+                dueDate: d.dueDate || d.deadline || '2026-08-15',
+                submittedCount: d.submittedCount ?? 0,
+                totalStudents: d.totalStudents ?? 14,
+                file: d.file || d.fileName || 'Assignment.pdf'
+              };
+            });
+            callback(legacyItems);
+          }).catch(() => callback([]));
+        }
       },
       (error) => {
         console.warn('Firestore subscribeAssignments notice:', error);
@@ -349,22 +376,35 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
   }
 }
 
-export async function addAssignment(data: Omit<Assignment, 'id'>) {
+export async function addAssignment(data: any) {
   try {
     const payload = cleanData({
-      ...data,
-      createdAt: new Date().toISOString()
+      groupId: data.groupId || 'Br2GDIO86SR5GcqfbmOD',
+      groupName: data.group || data.groupName || 'IELTS Intensive #12',
+      group: data.group || data.groupName || 'IELTS Intensive #12',
+      title: data.title || '',
+      description: data.description || '',
+      fileName: data.file || data.fileName || 'Assignment_Guide.pdf',
+      file: data.file || data.fileName || 'Assignment_Guide.pdf',
+      dueDate: data.dueDate || data.deadline || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      deadline: data.dueDate || data.deadline || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      submittedCount: data.submittedCount ?? 0,
+      totalStudents: data.totalStudents ?? 14,
+      createdAt: new Date().toISOString(),
+      teacherEmail: auth.currentUser?.email || '',
+      teacherName: auth.currentUser?.displayName || "Mr. Javohirbek"
     });
-    const docRef = await addDoc(collection(db, ASSIGNMENTS_COL), payload);
+
+    const docRef = await addDoc(collection(db, "homework"), payload);
     try {
-      await setDoc(doc(db, "homework", docRef.id), payload, { merge: true });
+      await setDoc(doc(db, ASSIGNMENTS_COL, docRef.id), payload, { merge: true });
     } catch (e) {
-      // secondary fallback write
+      // secondary write
     }
-    console.log("✅ Firestore Write Success: assignments", docRef.id, payload);
+    console.log("✅ Firestore Write Success (Homework Created):", docRef.id, payload);
     return docRef.id;
   } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, ASSIGNMENTS_COL);
+    handleFirestoreError(error, OperationType.CREATE, "homework");
   }
 }
 
@@ -372,13 +412,13 @@ export const createHomework = addAssignment;
 
 export async function deleteAssignment(id: string) {
   try {
-    await deleteDoc(doc(db, ASSIGNMENTS_COL, id));
+    await deleteDoc(doc(db, "homework", id));
     try {
-      await deleteDoc(doc(db, "homework", id));
+      await deleteDoc(doc(db, ASSIGNMENTS_COL, id));
     } catch (e) {}
-    console.log("✅ Firestore Delete Success: assignments", id);
+    console.log("✅ Firestore Delete Success (Homework Deleted):", id);
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `${ASSIGNMENTS_COL}/${id}`);
+    handleFirestoreError(error, OperationType.DELETE, `homework/${id}`);
   }
 }
 

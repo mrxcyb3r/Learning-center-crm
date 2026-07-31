@@ -65,14 +65,20 @@ export const HomeworkView: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    const targetGroup = groups.find((g) => g.name === selectedGroup);
+
     try {
       await addAssignment({
         title: title.trim(),
         group: selectedGroup,
+        groupName: selectedGroup,
+        groupId: targetGroup ? targetGroup.id : 'Br2GDIO86SR5GcqfbmOD',
         dueDate: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+        deadline: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
         submittedCount: 0,
-        totalStudents: 14,
-        file: file ? file.name : 'Assignment_Guide.pdf'
+        totalStudents: targetGroup ? targetGroup.activeStudentsCount : 14,
+        file: file ? file.name : 'Assignment_Guide.pdf',
+        fileName: file ? file.name : 'Assignment_Guide.pdf'
       });
 
       setTitle('');

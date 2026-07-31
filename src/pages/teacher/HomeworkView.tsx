@@ -3,6 +3,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { FileText, Upload, Clock, Trash2, Paperclip, Plus, Edit2, Eye, X, Download, Code, Headphones, BookOpen, Layers } from 'lucide-react';
 import { subscribeAssignments, addAssignment, updateAssignment, deleteAssignment, subscribeGroups, subscribeHomeworkSubmissions } from '../../services/firestore';
 import { Assignment, Group, HomeworkSubmission } from '../../types';
+import { WPSEditor } from '../../components/UI/WPSEditor';
 
 const SUBJECT_CATEGORIES = [
   '📐 Mathematics & Geometry',
@@ -354,14 +355,13 @@ export const HomeworkView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              {t("Tavsif & Ko'rsatmalar", "Description & Instructions", "Описание и Инструкции")}
+              {t("Tavsif & Ko'rsatmalar (WPS Rich Text)", "Description & Instructions (WPS Office Suite)", "Описание и Инструкции (WPS Office)")}
             </label>
-            <textarea
-              rows={2}
+            <WPSEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Masalan: 1-15 masalalarni yechib, formulalarni yozib faylda biriktiring..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white resize-none"
+              onChange={setDescription}
+              placeholder="Masalan: 1-15 masalalarni yechib, formulalar va hisoblarni kiriting..."
+              minHeight="140px"
             />
           </div>
 

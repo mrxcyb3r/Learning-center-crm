@@ -30,6 +30,7 @@ import {
   seedFirestoreIfEmpty
 } from '../../services/firestore';
 import { FeedPost, Assignment } from '../../types';
+import { WPSEditor } from '../../components/UI/WPSEditor';
 
 export const GroupFeed: React.FC = () => {
   const { language } = useLanguage();
@@ -488,46 +489,40 @@ export const GroupFeed: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t("Insho va Yozma Javob (Rich Text & Word Counter)", "Rich Essay Text & Word Count", "Эссе и Письменный Ответ")}
+                    {t("Insho va Yozma Javob (WPS Office Suite & Word Counter)", "WPS Rich Text Essay & Word Count", "Эссе и Письменный Ответ (WPS Office)")}
                   </label>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 font-semibold">
-                    <span>Words: <strong className="text-amber-500">{solutionText.trim() ? solutionText.trim().split(/\s+/).length : 0}</strong></span>
-                    <span>Chars: <strong className="text-amber-500">{solutionText.length}</strong></span>
-                  </div>
                 </div>
 
-                {/* Essay Section Helpers */}
+                {/* Essay Section Quick Helpers */}
                 <div className="flex items-center gap-2 text-[10px]">
                   <button
                     type="button"
                     onClick={() => setSolutionText((prev) => prev + "\n\n1. Introduction:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
                   >
-                    + Introduction
+                    + Intro
                   </button>
                   <button
                     type="button"
                     onClick={() => setSolutionText((prev) => prev + "\n\n2. Body Paragraph:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
                   >
-                    + Body Paragraph
+                    + Body
                   </button>
                   <button
                     type="button"
                     onClick={() => setSolutionText((prev) => prev + "\n\n3. Conclusion:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950"
+                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
                   >
                     + Conclusion
                   </button>
                 </div>
 
-                <textarea
-                  required
-                  rows={6}
+                <WPSEditor
                   value={solutionText}
-                  onChange={(e) => setSolutionText(e.target.value)}
-                  placeholder={t("Insho yoki javoblaringizni shu yerga yozing...", "Write your essay, essay points, or answers here...", "Напишите ваше эссе или ответ здесь...")}
-                  className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 leading-relaxed"
+                  onChange={setSolutionText}
+                  placeholder={t("Insho, javoblar yoki formulalarni WPS Office uslubida yozing...", "Write your essay, solutions, or equations in WPS style...", "Напишите ваше эссе или решение в стиле WPS Office...")}
+                  minHeight="180px"
                 />
               </div>
             )}

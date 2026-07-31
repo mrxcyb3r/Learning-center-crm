@@ -85,6 +85,10 @@ const TEXT_COLORS = [
   { label: 'White', color: '#ffffff' }
 ];
 
+const MATH_SYMBOLS = [
+  '√x', 'x²', 'xⁿ', 'π', '∫', '±', '÷', 'θ', 'Σ', 'Δ', '∞', '≠', '≤', '≥', 'α', 'β', 'f(x) = ', 'lim_{x→∞}', '∫ f(x)dx'
+];
+
 export const WPSEditor: React.FC<WPSEditorProps> = ({
   value,
   onChange,
@@ -110,6 +114,10 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+
+  const preventDef = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
 
   const editor = useEditor({
     extensions: [
@@ -151,36 +159,30 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
         class: 'prose dark:prose-invert max-w-none focus:outline-none leading-relaxed'
       },
       handlePaste: (view, event) => {
-        const items = event.clipboardData?.items;
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-              event.preventDefault();
-              const file = items[i].getAsFile();
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const src = e.target?.result as string;
-                  if (src && view) {
-                    const { schema } = view.state;
-                    const node = schema.nodes.image.create({
-                      src,
-                      alt: file.name || 'Pasted image'
-                    });
-                    const transaction = view.state.tr.replaceSelectionWith(node);
-                    view.dispatch(transaction);
-                  }
-                };
-                reader.readAsDataURL(file);
-                return true;
-              }
+        const items = Array.from(event.clipboardData?.files || []);
+        const imageFile = items.find((item) => item.type.startsWith('image/'));
+        if (imageFile) {
+          event.preventDefault();
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const src = e.target?.result as string;
+            if (src && view) {
+              const { schema } = view.state;
+              const node = schema.nodes.image.create({
+                src,
+                alt: imageFile.name || 'Pasted image'
+              });
+              const transaction = view.state.tr.replaceSelectionWith(node);
+              view.dispatch(transaction);
             }
-          }
+          };
+          reader.readAsDataURL(imageFile);
+          return true;
         }
         return false;
       },
       handleDrop: (view, event, slice, moved) => {
-        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        if (!moved && event.dataTransfer?.files?.length) {
           const file = event.dataTransfer.files[0];
           if (file.type.startsWith('image/')) {
             event.preventDefault();
@@ -188,13 +190,19 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             reader.onload = (e) => {
               const src = e.target?.result as string;
               if (src && view) {
+                const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
                 const { schema } = view.state;
                 const node = schema.nodes.image.create({
                   src,
                   alt: file.name || 'Dropped image'
                 });
-                const transaction = view.state.tr.replaceSelectionWith(node);
-                view.dispatch(transaction);
+                if (coordinates) {
+                  const transaction = view.state.tr.insert(coordinates.pos, node);
+                  view.dispatch(transaction);
+                } else {
+                  const transaction = view.state.tr.replaceSelectionWith(node);
+                  view.dispatch(transaction);
+                }
               }
             };
             reader.readAsDataURL(file);
@@ -243,7 +251,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
     editor
       .chain()
       .focus()
-      .insertContent(`<span style="font-family: 'Fira Code', monospace; font-weight: bold; padding: 0 3px;">${symbol}</span> `)
+      .insertContent(symbol)
       .run();
   };
 
@@ -304,6 +312,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
       >
         <button
           type="button"
+          onMouseDown={preventDef}
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`p-1.5 rounded hover:bg-slate-800 ${editor.isActive('bold') ? 'text-amber-400 font-bold' : ''}`}
           title="Bold"
@@ -312,6 +321,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
         </button>
         <button
           type="button"
+          onMouseDown={preventDef}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={`p-1.5 rounded hover:bg-slate-800 ${editor.isActive('italic') ? 'text-amber-400 italic' : ''}`}
           title="Italic"
@@ -320,6 +330,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
         </button>
         <button
           type="button"
+          onMouseDown={preventDef}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={`p-1.5 rounded hover:bg-slate-800 ${editor.isActive('underline') ? 'text-amber-400 underline' : ''}`}
           title="Underline"
@@ -328,6 +339,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
         </button>
         <button
           type="button"
+          onMouseDown={preventDef}
           onClick={() => editor.chain().focus().toggleHighlight({ color: '#fef08a' }).run()}
           className="p-1.5 rounded hover:bg-slate-800 text-amber-300"
           title="Highlight"
@@ -347,6 +359,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             <div className="flex items-center gap-0.5 pr-1.5 border-r border-slate-300 dark:border-slate-800">
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().undo()}
                 title="Undo (Ctrl+Z)"
@@ -356,6 +369,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().redo()}
                 title="Redo (Ctrl+Y)"
@@ -369,6 +383,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800">
               <select
                 value={selectedFont}
+                onMouseDown={preventDef}
                 onChange={(e) => {
                   const fontVal = e.target.value;
                   setSelectedFont(fontVal);
@@ -388,6 +403,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             {/* Headings Dropdown */}
             <div className="pr-1.5 border-r border-slate-300 dark:border-slate-800">
               <select
+                onMouseDown={preventDef}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === 'p') editor.chain().focus().setParagraph().run();
@@ -413,10 +429,11 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </select>
             </div>
 
-            {/* B, I, U, S */}
+            {/* B, I, U, S, Sub, Super */}
             <div className="flex items-center gap-0.5 px-1.5 border-r border-slate-300 dark:border-slate-800">
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('bold') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -427,6 +444,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('italic') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -437,6 +455,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('underline') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -447,6 +466,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('strike') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -457,6 +477,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleSubscript().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('subscript') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -467,6 +488,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleSuperscript().run()}
                 className={`p-1.5 rounded transition cursor-pointer ${
                   editor.isActive('superscript') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -482,6 +504,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               <div className="relative">
                 <button
                   type="button"
+                  onMouseDown={preventDef}
                   onClick={() => {
                     setShowHighlightPicker(!showHighlightPicker);
                     setShowTextColorPicker(false);
@@ -497,6 +520,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
                       <button
                         key={hc.label}
                         type="button"
+                        onMouseDown={preventDef}
                         onClick={() => {
                           if (hc.color === 'transparent') editor.chain().focus().unsetHighlight().run();
                           else editor.chain().focus().toggleHighlight({ color: hc.color }).run();
@@ -514,6 +538,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               <div className="relative">
                 <button
                   type="button"
+                  onMouseDown={preventDef}
                   onClick={() => {
                     setShowTextColorPicker(!showTextColorPicker);
                     setShowHighlightPicker(false);
@@ -529,6 +554,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
                       <button
                         key={tc.label}
                         type="button"
+                        onMouseDown={preventDef}
                         onClick={() => {
                           if (!tc.color) editor.chain().focus().unsetColor().run();
                           else editor.chain().focus().setColor(tc.color).run();
@@ -548,6 +574,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             <div className="flex items-center gap-0.5 px-1.5 border-r border-slate-300 dark:border-slate-800">
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive({ textAlign: 'left' }) ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -558,6 +585,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive({ textAlign: 'center' }) ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -568,6 +596,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive({ textAlign: 'right' }) ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -578,6 +607,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().setTextAlign('justify').run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive({ textAlign: 'justify' }) ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -592,6 +622,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
             <div className="flex items-center gap-0.5 pl-1.5">
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive('bulletList') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -602,6 +633,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive('orderedList') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -612,6 +644,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive('blockquote') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -622,6 +655,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={preventDef}
                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                 className={`p-1.5 rounded cursor-pointer ${
                   editor.isActive('codeBlock') ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'
@@ -640,6 +674,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 pr-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={preventDef}
               onClick={() => setShowLinkModal(!showLinkModal)}
               className={`p-1.5 rounded cursor-pointer ${
                 editor.isActive('link') ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-blue-500'
@@ -654,6 +689,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 px-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={preventDef}
               onClick={() => fileInputRef.current?.click()}
               className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-emerald-500 cursor-pointer flex items-center gap-1 font-semibold text-[11px]"
               title="Upload / Insert Image (Drag & Drop or Ctrl+V Supported)"
@@ -676,6 +712,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 px-1.5 border-r border-slate-300 dark:border-slate-800">
             <button
               type="button"
+              onMouseDown={preventDef}
               onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-bold text-[11px] transition cursor-pointer"
               title="Insert 3x3 Table"
@@ -687,6 +724,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  onMouseDown={preventDef}
                   onClick={() => editor.chain().focus().addRowAfter().run()}
                   className="px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-bold cursor-pointer"
                   title="Add Row"
@@ -695,6 +733,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
                 </button>
                 <button
                   type="button"
+                  onMouseDown={preventDef}
                   onClick={() => editor.chain().focus().addColumnAfter().run()}
                   className="px-1.5 py-0.5 rounded bg-blue-500 text-white text-[10px] font-bold cursor-pointer"
                   title="Add Column"
@@ -703,6 +742,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
                 </button>
                 <button
                   type="button"
+                  onMouseDown={preventDef}
                   onClick={() => editor.chain().focus().deleteTable().run()}
                   className="p-1 rounded bg-rose-500 text-white cursor-pointer"
                   title="Delete Table"
@@ -717,6 +757,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           <div className="flex items-center gap-1 pl-1.5">
             <button
               type="button"
+              onMouseDown={preventDef}
               onClick={() => setShowMathToolbar(!showMathToolbar)}
               className={`flex items-center gap-1 px-2 py-1 rounded font-bold text-[11px] transition cursor-pointer ${
                 showMathToolbar
@@ -745,6 +786,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           />
           <button
             type="button"
+            onMouseDown={preventDef}
             onClick={() => {
               if (linkUrl) {
                 editor.chain().focus().setLink({ href: linkUrl }).run();
@@ -759,6 +801,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           {editor.isActive('link') && (
             <button
               type="button"
+              onMouseDown={preventDef}
               onClick={() => {
                 editor.chain().focus().unsetLink().run();
                 setShowLinkModal(false);
@@ -770,6 +813,7 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
           )}
           <button
             type="button"
+            onMouseDown={preventDef}
             onClick={() => setShowLinkModal(false)}
             className="px-2 py-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
           >
@@ -781,18 +825,17 @@ export const WPSEditor: React.FC<WPSEditorProps> = ({
       {/* Math Symbols Toolbar */}
       {showMathToolbar && (
         <div className="p-2 bg-amber-500/10 border-b border-amber-500/20 flex flex-wrap gap-1.5 text-xs animate-fadeIn">
-          {['√x', 'x²', 'xⁿ', 'π', '∫', '±', '÷', 'θ', 'Σ', 'Δ', '∞', '≠', '≤', '≥', 'α', 'β', 'f(x) = ', 'lim_{x→∞}', '∫ f(x)dx'].map(
-            (sym) => (
-              <button
-                key={sym}
-                type="button"
-                onClick={() => insertMathSymbol(sym)}
-                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-mono font-bold text-slate-800 dark:text-slate-200 text-xs shadow-sm border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-              >
-                {sym}
-              </button>
-            )
-          )}
+          {MATH_SYMBOLS.map((sym) => (
+            <button
+              key={sym}
+              type="button"
+              onMouseDown={preventDef}
+              onClick={() => insertMathSymbol(sym)}
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-mono font-bold text-slate-800 dark:text-slate-200 text-xs shadow-sm border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+            >
+              {sym}
+            </button>
+          ))}
         </div>
       )}
 

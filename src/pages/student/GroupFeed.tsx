@@ -361,13 +361,11 @@ export const GroupFeed: React.FC = () => {
                 </div>
 
                 <div className="relative">
-                  <textarea
-                    required
-                    rows={7}
+                  <WPSEditor
                     value={solutionText}
-                    onChange={(e) => setSolutionText(e.target.value)}
-                    placeholder="// Paste or write your source code here..."
-                    className="w-full p-4 rounded-xl bg-slate-950 text-emerald-400 border border-slate-800 text-xs font-mono focus:ring-2 focus:ring-emerald-500 leading-relaxed"
+                    onChange={setSolutionText}
+                    placeholder="// Paste or write your source code, explanations, and repository details in WPS Word style..."
+                    minHeight="180px"
                   />
                 </div>
 
@@ -413,13 +411,11 @@ export const GroupFeed: React.FC = () => {
                   ))}
                 </div>
 
-                <textarea
-                  required
-                  rows={6}
+                <WPSEditor
                   value={solutionText}
-                  onChange={(e) => setSolutionText(e.target.value)}
+                  onChange={setSolutionText}
                   placeholder={t("1-Qadam: Tenglamani yozing...\n2-Qadam: Yechim: x = (-b ± √(b² - 4ac)) / 2a", "Step 1: State equations...\nStep 2: Solution: x = (-b ± √(b² - 4ac)) / 2a", "Шаг 1: Формула...\nШаг 2: Решение...")}
-                  className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 font-mono leading-relaxed"
+                  minHeight="180px"
                 />
 
                 <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs">
@@ -475,13 +471,11 @@ export const GroupFeed: React.FC = () => {
                   )}
                 </div>
 
-                <textarea
-                  required
-                  rows={3}
+                <WPSEditor
                   value={solutionText}
-                  onChange={(e) => setSolutionText(e.target.value)}
+                  onChange={setSolutionText}
                   placeholder={t("Audio javobingiz qisqacha matni yoki transkripti...", "Notes or transcript of your audio recording...", "Краткие заметки к вашей аудиозаписи...")}
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  minHeight="140px"
                 />
               </div>
             ) : (
@@ -625,9 +619,16 @@ export const GroupFeed: React.FC = () => {
                     <h5 className="text-base font-extrabold text-slate-900 dark:text-white mb-1">
                       {item.title}
                     </h5>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      {item.content}
-                    </p>
+                    {item.content?.includes('<') ? (
+                      <div
+                        className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed prose dark:prose-invert max-w-none font-sans overflow-x-auto"
+                        dangerouslySetInnerHTML={{ __html: item.content }}
+                      />
+                    ) : (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {item.content}
+                      </p>
+                    )}
                   </div>
 
                   {/* Audio File Player Preview */}

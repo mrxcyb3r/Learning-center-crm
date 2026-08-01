@@ -131,12 +131,22 @@ export interface Payment {
   status?: 'paid' | 'pending' | 'refunded';
 }
 
+export interface AttendanceStudentEntry {
+  status: 'present' | 'absent' | 'late' | 'excused';
+  lateMinutes?: number;
+  note?: string;
+}
+
 export interface AttendanceRecord {
   id: string;
   groupId: string;
   date: string;
-  records: { [studentId: string]: 'present' | 'absent' | 'late' };
+  records: {
+    [studentId: string]: 'present' | 'absent' | 'late' | 'excused' | AttendanceStudentEntry;
+  };
   recordedBy: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface Assignment {

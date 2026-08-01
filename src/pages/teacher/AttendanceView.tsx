@@ -1,8 +1,8 @@
 import React from 'react';
-import { TeacherAttendance } from '../TeacherAttendance';
+import { AttendanceManager } from '../../components/teacher/AttendanceManager';
 
 export const AttendanceView: React.FC<{ initialGroupId?: string }> = ({ initialGroupId }) => {
-  return <TeacherAttendance initialGroupId={initialGroupId} />;
+  return <AttendanceManager initialGroupId={initialGroupId} />;
 };
 
 export default AttendanceView;

@@ -290,7 +290,7 @@ export async function updatePaymentStatus(paymentId: string, status: 'paid' | 'p
 export async function saveAttendanceRecord(
   groupId: string,
   date: string,
-  records: { [studentId: string]: 'present' | 'absent' | 'late' },
+  records: { [studentId: string]: any },
   recordedBy: string
 ) {
   try {
@@ -300,6 +300,7 @@ export async function saveAttendanceRecord(
       date,
       records,
       recordedBy,
+      updatedBy: recordedBy,
       updatedAt: new Date().toISOString()
     });
     await setDoc(doc(db, ATTENDANCE_COL, recordId), payload, { merge: true });

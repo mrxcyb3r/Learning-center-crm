@@ -1,30 +1,109 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Wildcard match for full development / center operation access
-    match /{document=**} {
-      allow read, write: if true;
+
+    // Helper function: Check if user is logged in
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Explicit subcollection & core collection rules
-    match /homework/{docId} { allow read, write: if true; }
-    match /assignments/{docId} { allow read, write: if true; }
-    match /homework_submissions/{docId} { allow read, write: if true; }
-    match /feed_posts/{docId} { allow read, write: if true; }
-    match /attendance/{docId} { allow read, write: if true; }
-    match /groups/{docId} { allow read, write: if true; }
-    match /notifications/{docId} { allow read, write: if true; }
-    match /inquiries/{docId} { allow read, write: if true; }
-    match /leads/{docId} { allow read, write: if true; }
-    match /payments/{docId} { allow read, write: if true; }
-    match /settings/{docId} { allow read, write: if true; }
-    
-    match /students/{studentId} {
-      allow read, write: if true;
-      match /mock_scores/{scoreId} {
-        allow read, write: if true;
+    // Helper function: Check role (Checks Firestore user document as fallback)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' || 
+        request.auth.token.role == 'superadmin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin']
+      );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'teacher' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' ||
+        isAdmin()
+      );
+    }
+
+    // 📩 1. Inquiries Collection (Landing Page Lead Submissions)
+    match /inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ⚙️ 2. Settings Collection (Security PINs, Landing Page CMS Content)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 👤 3. Users Collection (Profiles & AI Chat)
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+
+      match /chats/{chatId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+    }
+
+    // 🎓 4. Students Collection
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+
+      match /mock_scores/{scoreId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // 💳 5. Payments Collection
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.studentId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // 📅 6. Attendance Collection
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    // 📚 7. Homework & Assignments Collection
+    match /homework/{homeworkId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /homework_submissions/{subId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /feed_posts/{postId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 🏫 8. Groups Collection
+    match /groups/{groupId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 🔔 9. Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.recipientId == request.auth.uid || 
+        resource.data.recipientRole in ['student', 'teacher', 'admin', 'all'] ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
     }
   }
 }
-

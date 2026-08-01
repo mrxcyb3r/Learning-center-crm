@@ -184,6 +184,7 @@ export const HomeworkView: React.FC = () => {
           newId,
           formattedDueDate
         );
+        console.log('✅ Notification created in Firestore');
 
         setToastMessage(t("Topshiriq e'lon qilindi!", "Assignment posted successfully!", "Задание успешно опубликовано!"));
       }

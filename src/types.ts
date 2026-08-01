@@ -210,12 +210,20 @@ export interface HomeworkSubmission {
   status?: 'submitted' | 'graded' | 'pending';
   grade?: string | number;
   score?: string | number;
-  gradingSystem?: 'IELTS Band' | 'Points / Percentage';
+  gradingSystem?: 'IELTS Band' | 'STEM & Exact Sciences' | 'IT & Programming Code' | 'CEFR Framework' | 'Points / Percentage' | string;
   breakdown?: {
     taskAchievement?: number;
     coherenceCohesion?: number;
     lexicalResource?: number;
     grammaticalAccuracy?: number;
+    formulaChoice?: number;
+    calculationAccuracy?: number;
+    logicFormatting?: number;
+    codeExecutionPass?: boolean;
+    codeReadability?: number;
+    algorithmEfficiency?: number;
+    cefrLevel?: string;
+    qualitativeTag?: string;
     points?: number;
     maxPoints?: number;
     rubricStatus?: string;

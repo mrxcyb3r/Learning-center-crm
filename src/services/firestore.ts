@@ -939,16 +939,8 @@ export async function gradeHomeworkSubmission(
     status?: 'graded' | 'submitted';
     score: string | number;
     grade?: string | number;
-    gradingSystem: 'IELTS Band' | 'Points / Percentage';
-    breakdown?: {
-      taskAchievement?: number;
-      coherenceCohesion?: number;
-      lexicalResource?: number;
-      grammaticalAccuracy?: number;
-      points?: number;
-      maxPoints?: number;
-      rubricStatus?: string;
-    };
+    gradingSystem: string;
+    breakdown?: Record<string, any>;
     rubricStatus?: string;
     feedback: string;
     teacherName?: string;

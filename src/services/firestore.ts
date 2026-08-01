@@ -312,6 +312,29 @@ export async function saveAttendanceRecord(
 
 export const saveGroupAttendance = saveAttendanceRecord;
 
+export function subscribeAttendance(callback: (records: AttendanceRecord[]) => void) {
+  try {
+    return onSnapshot(
+      collection(db, ATTENDANCE_COL),
+      (snapshot) => {
+        const items: AttendanceRecord[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<AttendanceRecord, 'id'>)
+        }));
+        callback(items);
+      },
+      (error) => {
+        console.warn('Firestore subscribeAttendance notice:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.warn('Firestore subscribeAttendance error:', error);
+    callback([]);
+    return () => {};
+  }
+}
+
 export async function getAttendanceRecord(groupId: string, date: string): Promise<AttendanceRecord | null> {
   try {
     const recordId = `${groupId}_${date}`;

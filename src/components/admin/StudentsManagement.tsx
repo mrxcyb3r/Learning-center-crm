@@ -29,8 +29,11 @@ import {
   X,
   Sparkles,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  Award
 } from 'lucide-react';
+import { StudentCRMProfile } from '../student/StudentCRMProfile';
 
 export const StudentsManagement: React.FC = () => {
   const { currentUser, activeRole } = useAuth();
@@ -53,6 +56,7 @@ export const StudentsManagement: React.FC = () => {
   // Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [crmStudent, setCrmStudent] = useState<Student | null>(null);
 
   // Form Fields
   const [fullName, setFullName] = useState('');
@@ -403,6 +407,14 @@ export const StudentsManagement: React.FC = () => {
                     <td className="py-3.5 px-2 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
+                          onClick={() => setCrmStudent(st)}
+                          className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer border border-amber-500/20"
+                          title="CRM Profile & Hybrid Portfolio"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>CRM Record</span>
+                        </button>
+                        <button
                           onClick={() => handleOpenEditModal(st)}
                           className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-500 transition cursor-pointer"
                           title="Tahrirlash"
@@ -547,6 +559,16 @@ export const StudentsManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Student CRM Profile & Hybrid Portfolio View Modal */}
+      <StudentCRMProfile
+        isOpen={Boolean(crmStudent)}
+        onClose={() => setCrmStudent(null)}
+        student={crmStudent}
+        onUpdateStudent={(updated) => {
+          setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+        }}
+      />
     </div>
   );
 };

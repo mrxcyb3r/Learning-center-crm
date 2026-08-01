@@ -173,11 +173,29 @@ export interface HomeworkSubmission {
   solutionText: string;
   fileName?: string;
   fileUrl?: string;
+  groupName?: string;
+  groupId?: string;
   date: string;
   submittedAt?: string;
   status?: 'submitted' | 'graded' | 'pending';
-  grade?: string;
+  grade?: string | number;
+  score?: string | number;
+  gradingSystem?: 'IELTS Band' | 'Points / Percentage';
+  breakdown?: {
+    taskAchievement?: number;
+    coherenceCohesion?: number;
+    lexicalResource?: number;
+    grammaticalAccuracy?: number;
+    points?: number;
+    maxPoints?: number;
+    rubricStatus?: string;
+  };
+  rubricStatus?: string;
   feedback?: string;
+  gradedAt?: string;
+  gradedBy?: string;
+  correctedFileName?: string;
+  correctedFileUrl?: string;
 }
 
 export interface FeedPost {

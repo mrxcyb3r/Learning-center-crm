@@ -892,6 +892,95 @@ export function subscribeHomeworkSubmissions(callback: (submissions: any[]) => v
   }
 }
 
+export async function gradeHomeworkSubmission(
+  submissionId: string,
+  gradeData: {
+    status?: 'graded' | 'submitted';
+    score: string | number;
+    grade?: string | number;
+    gradingSystem: 'IELTS Band' | 'Points / Percentage';
+    breakdown?: {
+      taskAchievement?: number;
+      coherenceCohesion?: number;
+      lexicalResource?: number;
+      grammaticalAccuracy?: number;
+      points?: number;
+      maxPoints?: number;
+      rubricStatus?: string;
+    };
+    rubricStatus?: string;
+    feedback: string;
+    teacherName?: string;
+    studentId?: string;
+    studentName?: string;
+    assignmentTitle?: string;
+    correctedFileName?: string;
+    correctedFileUrl?: string;
+  }
+) {
+  try {
+    const payload = cleanData({
+      ...gradeData,
+      status: 'graded',
+      score: gradeData.score,
+      grade: gradeData.score,
+      gradedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    if (submissionId && !submissionId.startsWith('local_')) {
+      await setDoc(doc(db, SUBMISSIONS_COL, submissionId), payload, { merge: true });
+      console.log('✅ Homework submission graded in Firestore:', submissionId, payload);
+    }
+
+    const teacherName = gradeData.teacherName || auth.currentUser?.displayName || 'Mr. Javohirbek';
+    const assignmentTitle = gradeData.assignmentTitle || 'Homework Assignment';
+    const overallScore = gradeData.score;
+
+    // 🔔 Dispatch grade_published notification directly to notifications collection
+    try {
+      const notifPayload = {
+        title: `Grade Published: ${assignmentTitle}`,
+        message: `Your work was evaluated by ${teacherName}. Final Score: ${overallScore}`,
+        type: 'grade_published',
+        category: 'grade_published',
+        recipientId: gradeData.studentId || 'all',
+        recipientRole: 'student' as const,
+        linkId: submissionId,
+        senderName: teacherName,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      await addDoc(collection(db, 'notifications'), notifPayload);
+      console.log('✅ Notification created in Firestore:', notifPayload);
+    } catch (notifErr) {
+      console.warn('Notification dispatch notice:', notifErr);
+    }
+
+    // Save to student mock scores if studentId is provided
+    if (gradeData.studentId) {
+      try {
+        await saveMockScore({
+          studentId: gradeData.studentId,
+          studentName: gradeData.studentName || 'Student',
+          date: new Date().toISOString().split('T')[0],
+          subjectCategory: gradeData.gradingSystem === 'IELTS Band' ? 'IELTS' : 'General English',
+          gradingSystem: gradeData.gradingSystem === 'IELTS Band' ? 'Test Score' : 'Percentage',
+          overall: typeof gradeData.score === 'number' ? gradeData.score : parseFloat(String(gradeData.score)) || 8.0,
+          teacherFeedback: gradeData.feedback
+        });
+      } catch (scoreErr) {
+        console.warn('Mock score sync notice:', scoreErr);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${SUBMISSIONS_COL}/${submissionId}`);
+    return false;
+  }
+}
+
 /* =========================================================================
    NOTIFICATION CENTER SERVICE
    ========================================================================= */

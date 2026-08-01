@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { FileText, Upload, Clock, Trash2, Paperclip, Plus, Edit2, Eye, X, Download, Code, Headphones, BookOpen, Layers } from 'lucide-react';
+import { FileText, Upload, Clock, Trash2, Paperclip, Plus, Edit2, Eye, X, Download, Code, Headphones, BookOpen, Layers, Award, CheckCircle2, Sparkles } from 'lucide-react';
 import { subscribeAssignments, addAssignment, updateAssignment, deleteAssignment, subscribeGroups, subscribeHomeworkSubmissions, notifyStudentsNewAssignment } from '../../services/firestore';
 import { Assignment, Group, HomeworkSubmission } from '../../types';
 import { WPSEditor } from '../../components/UI/WPSEditor';
+import { GradingModal } from '../../components/Teacher/GradingModal';
 
 const SUBJECT_CATEGORIES = [
   '📐 Mathematics & Geometry',
@@ -49,6 +50,7 @@ export const HomeworkView: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [viewSubmissionsAssignment, setViewSubmissionsAssignment] = useState<Assignment | null>(null);
+  const [gradingSubmission, setGradingSubmission] = useState<HomeworkSubmission | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -612,6 +614,35 @@ export const HomeworkView: React.FC = () => {
                           </button>
                         </div>
                       )}
+
+                      {/* Evaluation & Grading Action Bar */}
+                      <div className="flex items-center justify-between text-xs border-t border-slate-200 dark:border-slate-700/60 pt-3 mt-2">
+                        <div>
+                          {sub.status === 'graded' ? (
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-[11px] border border-emerald-500/20 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{t("Baholandi", "Graded", "Оценено")}: {sub.score || sub.grade}</span>
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20 flex items-center gap-1">
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>{t("Tekshirilmoqda", "Pending Review", "На проверке")}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => setGradingSubmission({
+                            ...sub,
+                            assignmentTitle: viewSubmissionsAssignment.title,
+                            groupName: viewSubmissionsAssignment.group
+                          })}
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          <span>{sub.status === 'graded' ? t("Qayta Baholash", "Re-evaluate", "Переоценить") : t("Baholash & Feedback", "Evaluate & Grade", "Оценить")}</span>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -629,6 +660,17 @@ export const HomeworkView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Production Teacher Grading & Feedback Modal */}
+      <GradingModal
+        isOpen={Boolean(gradingSubmission)}
+        onClose={() => setGradingSubmission(null)}
+        submission={gradingSubmission}
+        onGradeSubmitted={() => {
+          setToastMessage(t("Baho va bildirishnoma e'lon qilindi!", "Grade & notification published!", "Оценка и уведомление опубликованы!"));
+          setTimeout(() => setToastMessage(null), 3500);
+        }}
+      />
     </div>
   );
 };

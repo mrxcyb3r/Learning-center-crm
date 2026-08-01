@@ -366,6 +366,14 @@ export interface LandingPageContent {
   operatingHoursRu?: string;
   googleMapsUrl: string;
 
+  // Announcement Ticker Banner
+  announcementBannerUz?: string;
+  announcementBannerEn?: string;
+  announcementBannerRu?: string;
+  announcementBannerActive?: boolean;
+  announcementBannerLink?: string;
+  announcementBannerTheme?: 'amber' | 'emerald' | 'indigo' | 'rose' | string;
+
   updatedAt?: string;
 }
 

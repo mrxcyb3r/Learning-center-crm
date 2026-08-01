@@ -130,6 +130,16 @@ export const GradingModal: React.FC<GradingModalProps> = ({
 
   // Load state when submission changes
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
     if (submission) {
       if (submission.feedback) {
         setFeedbackText(submission.feedback);
@@ -395,8 +405,14 @@ export const GradingModal: React.FC<GradingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-7xl w-full p-4 sm:p-6 shadow-2xl space-y-5 max-h-[96vh] flex flex-col my-auto transition-all">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-7xl w-full p-4 sm:p-6 shadow-2xl space-y-5 max-h-[96vh] flex flex-col my-auto transition-all"
+      >
 
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">

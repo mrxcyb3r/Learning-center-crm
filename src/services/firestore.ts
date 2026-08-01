@@ -248,20 +248,33 @@ export async function recordPaymentAndSetPaid(
   studentName: string,
   amount: number,
   paymentMethod: 'cash' | 'card' | 'click' | 'payme' | string,
-  recordedBy: string
+  recordedBy: string,
+  extraDetails?: {
+    cohortGroup?: string;
+    subjectCategory?: string;
+    paymentPeriod?: string;
+    receiptRef?: string;
+    notes?: string;
+  }
 ) {
   try {
     const todayStr = new Date().toISOString().split('T')[0];
 
-    const paymentData: Omit<Payment, 'id'> = {
+    const rawPaymentData = {
       studentId,
       studentName,
       amount,
       paymentMethod,
       date: todayStr,
       recordedBy,
-      status: 'paid'
+      status: 'paid',
+      cohortGroup: extraDetails?.cohortGroup,
+      subjectCategory: extraDetails?.subjectCategory,
+      paymentPeriod: extraDetails?.paymentPeriod,
+      receiptRef: extraDetails?.receiptRef,
+      notes: extraDetails?.notes
     };
+    const paymentData = cleanData(rawPaymentData);
     const paymentRef = await addDoc(collection(db, PAYMENTS_COL), paymentData);
 
     if (studentId) {

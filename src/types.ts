@@ -118,6 +118,9 @@ export interface Student {
   tuitionFee: number;
   paymentStatus: 'paid' | 'pending' | 'overdue';
   lastPaymentDate: string;
+  subjectCategory?: string;
+  nextDueDate?: string;
+  telegramHandle?: string;
 }
 
 export interface Payment {
@@ -129,6 +132,11 @@ export interface Payment {
   date: string;
   recordedBy: string;
   status?: 'paid' | 'pending' | 'refunded';
+  cohortGroup?: string;
+  subjectCategory?: string;
+  paymentPeriod?: string;
+  receiptRef?: string;
+  notes?: string;
 }
 
 export interface AttendanceStudentEntry {

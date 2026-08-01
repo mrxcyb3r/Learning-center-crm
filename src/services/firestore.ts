@@ -24,7 +24,8 @@ import {
   MockTestScore,
   LeadSubmission,
   Inquiry,
-  AppNotification
+  AppNotification,
+  SubmissionAttachment
 } from '../types';
 
 const NOTIFICATIONS_COL = 'notifications';
@@ -876,6 +877,9 @@ export async function submitHomework(submission: {
   studentName: string;
   solutionText: string;
   fileName?: string;
+  fileUrl?: string;
+  attachments?: SubmissionAttachment[];
+  groupName?: string;
   date: string;
 }) {
   try {

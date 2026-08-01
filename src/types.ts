@@ -174,6 +174,17 @@ export interface Assignment {
   teacherEmail?: string;
 }
 
+export interface SubmissionAttachment {
+  id: string;
+  url: string;
+  type: 'image' | 'audio' | 'pdf' | 'code' | 'file';
+  name: string;
+  subjectCategory?: 'math' | 'physics' | 'it' | 'english' | 'sat' | 'general';
+  rotation?: number;
+  size?: string;
+  codeSnippet?: string;
+}
+
 export interface HomeworkSubmission {
   id: string;
   assignmentId: string;
@@ -183,6 +194,7 @@ export interface HomeworkSubmission {
   solutionText: string;
   fileName?: string;
   fileUrl?: string;
+  attachments?: SubmissionAttachment[];
   groupName?: string;
   groupId?: string;
   date: string;

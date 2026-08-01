@@ -14,7 +14,12 @@ import {
   ExternalLink,
   ChevronRight,
   Zap,
-  HelpCircle
+  HelpCircle,
+  Maximize2,
+  RotateCw,
+  Volume2,
+  FileCode,
+  Camera
 } from 'lucide-react';
 import { HomeworkSubmission } from '../../types';
 import { gradeHomeworkSubmission } from '../../services/firestore';
@@ -59,6 +64,8 @@ export const GradingModal: React.FC<GradingModalProps> = ({
   // UI States
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [publishedSuccess, setPublishedSuccess] = useState<boolean>(false);
+  const [previewAttachment, setPreviewAttachment] = useState<any | null>(null);
+  const [rotationMap, setRotationMap] = useState<Record<string, number>>({});
 
   // Initialize form state from existing submission if graded
   useEffect(() => {
@@ -295,8 +302,97 @@ export const GradingModal: React.FC<GradingModalProps> = ({
               )}
             </div>
 
-            {/* Attached File / Solution Code */}
-            {submission.fileName && (
+            {/* Multi-Format Media Attachments Gallery */}
+            {submission.attachments && submission.attachments.length > 0 ? (
+              <div className="space-y-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Student Multi-Subject Attachments ({submission.attachments.length})</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {submission.attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2"
+                    >
+                      {/* Image Notebook Scan */}
+                      {att.type === 'image' && (
+                        <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center group">
+                          <img
+                            src={att.url}
+                            alt={att.name}
+                            style={{ transform: `rotate(${rotationMap[att.id] || att.rotation || 0}deg)` }}
+                            className="w-full h-full object-contain transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRotationMap((prev) => ({
+                                  ...prev,
+                                  [att.id]: ((prev[att.id] || att.rotation || 0) + 90) % 360
+                                }))
+                              }
+                              className="p-2 rounded-xl bg-white/20 text-white hover:bg-amber-500 hover:text-slate-950 transition cursor-pointer"
+                              title="Rotate Scan"
+                            >
+                              <RotateCw className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewAttachment(att)}
+                              className="p-2 rounded-xl bg-white/20 text-white hover:bg-amber-500 hover:text-slate-950 transition cursor-pointer"
+                              title="Zoom Fullscreen Lightbox"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Audio Oral Recitation */}
+                      {att.type === 'audio' && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                            <Volume2 className="w-4 h-4 shrink-0" />
+                            <span className="truncate">{att.name}</span>
+                          </div>
+                          <audio src={att.url} controls className="w-full h-8 rounded-lg" />
+                        </div>
+                      )}
+
+                      {/* Code / File Attachment */}
+                      {(att.type === 'code' || att.type === 'file' || att.type === 'pdf') && (
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {att.type === 'code' ? <FileCode className="w-5 h-5 text-blue-500 shrink-0" /> : <FileText className="w-5 h-5 text-amber-500 shrink-0" />}
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{att.name}</p>
+                              <span className="text-[10px] text-slate-400">{att.size || 'File'}</span>
+                            </div>
+                          </div>
+                          <a
+                            href={att.url}
+                            download={att.name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <span className="truncate">{att.name}</span>
+                        <span className="font-mono uppercase">{att.type}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : submission.fileName ? (
               <div className="p-4 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   <div className="p-2 rounded-xl bg-amber-500 text-slate-950 shrink-0">
@@ -324,7 +420,7 @@ export const GradingModal: React.FC<GradingModalProps> = ({
                   </a>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* RIGHT PANE: Evaluation & Feedback Panel */}
@@ -615,6 +711,48 @@ export const GradingModal: React.FC<GradingModalProps> = ({
         </div>
 
       </div>
+
+      {/* Lightbox Modal for Teacher Inspection */}
+      {previewAttachment && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center space-y-4 relative">
+            <button
+              onClick={() => setPreviewAttachment(null)}
+              className="absolute -top-10 right-0 p-2 rounded-full bg-white/10 text-white hover:bg-rose-500 transition cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="relative max-h-[80vh] overflow-auto rounded-2xl border border-slate-700 bg-slate-900 p-2">
+              <img
+                src={previewAttachment.url}
+                alt={previewAttachment.name}
+                style={{
+                  transform: `rotate(${rotationMap[previewAttachment.id] || previewAttachment.rotation || 0}deg)`
+                }}
+                className="max-h-[75vh] w-auto object-contain mx-auto transition-transform duration-300"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 bg-slate-900/90 px-4 py-2 rounded-full border border-slate-700 text-xs text-white">
+              <span className="font-bold">{previewAttachment.name}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setRotationMap((prev) => ({
+                    ...prev,
+                    [previewAttachment.id]: ((prev[previewAttachment.id] || previewAttachment.rotation || 0) + 90) % 360
+                  }))
+                }
+                className="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-black flex items-center gap-1 hover:bg-amber-400 cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Rotate 90°</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

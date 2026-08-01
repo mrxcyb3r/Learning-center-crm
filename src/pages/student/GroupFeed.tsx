@@ -30,8 +30,9 @@ import {
   seedFirestoreIfEmpty,
   notifyTeacherNewSubmission
 } from '../../services/firestore';
-import { FeedPost, Assignment } from '../../types';
+import { FeedPost, Assignment, SubmissionAttachment } from '../../types';
 import { WPSEditor } from '../../components/UI/WPSEditor';
+import { SubmissionUploader } from '../../components/student/SubmissionUploader';
 
 export const GroupFeed: React.FC = () => {
   const { language } = useLanguage();
@@ -52,6 +53,7 @@ export const GroupFeed: React.FC = () => {
   // Homework Submission Modal State
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [solutionText, setSolutionText] = useState('');
+  const [submissionAttachments, setSubmissionAttachments] = useState<SubmissionAttachment[]>([]);
   const [repoUrl, setRepoUrl] = useState('');
   const [codeLanguage, setCodeLanguage] = useState<'python' | 'javascript' | 'cpp' | 'html'>('python');
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
@@ -171,11 +173,13 @@ export const GroupFeed: React.FC = () => {
 
   const handleSubmitSolution = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAssignment || !solutionText.trim()) return;
+    if (!selectedAssignment || (!solutionText.trim() && submissionAttachments.length === 0)) return;
 
     setIsSubmitting(true);
     const studentName = userProfile?.displayName || currentUser?.displayName || 'Student';
     const studentId = currentUser?.uid || Date.now().toString();
+
+    const primaryAttachment = submissionAttachments.length > 0 ? submissionAttachments[0] : null;
 
     try {
       await submitHomework({
@@ -183,8 +187,11 @@ export const GroupFeed: React.FC = () => {
         assignmentTitle: selectedAssignment.title,
         studentId,
         studentName,
-        solutionText: solutionText.trim(),
-        fileName: submissionFile ? submissionFile.name : undefined,
+        solutionText: solutionText.trim() || 'See attached submission files below.',
+        fileName: primaryAttachment ? primaryAttachment.name : (submissionFile ? submissionFile.name : undefined),
+        fileUrl: primaryAttachment ? primaryAttachment.url : undefined,
+        attachments: submissionAttachments,
+        groupName: selectedAssignment.groupId || 'Main Group',
         date: new Date().toISOString().split('T')[0]
       });
 
@@ -198,6 +205,7 @@ export const GroupFeed: React.FC = () => {
       setSubmittedIds((prev) => [...prev, selectedAssignment.id]);
       setSelectedAssignment(null);
       setSolutionText('');
+      setSubmissionAttachments([]);
       setSubmissionFile(null);
       setToastMessage(t("Vazifa muvaffaqiyatli topshirildi! ✅", "Assignment submitted successfully! ✅", "Задание успешно сдано! ✅"));
       setTimeout(() => setToastMessage(null), 3000);
@@ -339,211 +347,23 @@ export const GroupFeed: React.FC = () => {
               </p>
             </div>
 
-            {/* DYNAMIC SUBJECT-AWARE EDITOR SWITCH */}
-            {(selectedAssignment.subjectCategory?.includes('IT') ||
-              selectedAssignment.subjectCategory?.includes('Computer') ||
-              selectedAssignment.resourceFormat?.includes('Code')) ? (
-              /* 💻 IT & CODE EDITOR MODE */
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                    <Code className="w-4 h-4" />
-                    <span>{t("IDE Code Editor & Repository", "IDE Code Editor & Syntax Tabs", "IDE Редактор Кода")}</span>
-                  </label>
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px]">
-                    {(['python', 'javascript', 'cpp', 'html'] as const).map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => setCodeTemplate(lang)}
-                        className={`px-2.5 py-1 rounded font-bold uppercase transition ${
-                          codeLanguage === lang
-                            ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {/* UNIVERSAL MULTI-SUBJECT SUBMISSION UPLOADER */}
+            <SubmissionUploader
+              solutionText={solutionText}
+              onSolutionTextChange={setSolutionText}
+              attachments={submissionAttachments}
+              onAttachmentsChange={setSubmissionAttachments}
+              subjectCategory={selectedAssignment.subjectCategory}
+              disabled={isSubmitting}
+            />
 
-                <div className="relative">
-                  <WPSEditor
-                    value={solutionText}
-                    onChange={setSolutionText}
-                    placeholder="// Paste or write your source code, explanations, and repository details in WPS Word style..."
-                    minHeight="180px"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t("GitHub / Repository / Live Demo Havolasi (URL)", "GitHub / Repository / Live Demo Link (URL)", "Ссылка на GitHub / Репозиторий")}
-                  </label>
-                  <div className="relative">
-                    <ExternalLink className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="url"
-                      value={repoUrl}
-                      onChange={(e) => setRepoUrl(e.target.value)}
-                      placeholder="https://github.com/username/project-repo"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (selectedAssignment.subjectCategory?.includes('Math') ||
-                 selectedAssignment.subjectCategory?.includes('Physics') ||
-                 selectedAssignment.subjectCategory?.includes('Chemistry')) ? (
-              /* 📐 MATH & PHYSICS STEP-BY-STEP SOLVER MODE */
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-amber-500">
-                    {t("Matematik Formula va Yechim Yozuvchisi", "Step-by-Step Problem Solver & Equations", "Математический Редактор Urve")}
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-semibold">Formula Helper Active</span>
-                </div>
-
-                {/* Equation Helper Symbols Toolbar */}
-                <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex flex-wrap gap-1.5 text-xs">
-                  {['√', 'x²', 'xⁿ', 'π', '∫', '±', '÷', 'θ', 'Σ', 'Δ', '∞', '≠', '≤', '≥', 'α', 'β'].map((sym) => (
-                    <button
-                      key={sym}
-                      type="button"
-                      onClick={() => insertMathSymbol(sym)}
-                      className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-amber-500 hover:text-slate-950 font-mono font-bold text-slate-800 dark:text-slate-200 shadow-sm border border-slate-200 dark:border-slate-700 transition"
-                    >
-                      {sym}
-                    </button>
-                  ))}
-                </div>
-
-                <WPSEditor
-                  value={solutionText}
-                  onChange={setSolutionText}
-                  placeholder={t("1-Qadam: Tenglamani yozing...\n2-Qadam: Yechim: x = (-b ± √(b² - 4ac)) / 2a", "Step 1: State equations...\nStep 2: Solution: x = (-b ± √(b² - 4ac)) / 2a", "Шаг 1: Формула...\nШаг 2: Решение...")}
-                  minHeight="180px"
-                />
-
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs">
-                  <p className="font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
-                    <span>📷</span>
-                    <span>{t("Qog'ozdagi yechim suratini yuklash", "📷 Attach Photos of Handwritten Scratchwork", "📷 Загрузить фото решения от руки")}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {t("Qo'lda yozilgan masalalar varag'i rasmini skanerlab biriktirishingiz mumkin.", "Upload photo/scan of your handwritten calculations and proofs.", "Прикрепите фото или скан решений на бумаге.")}
-                  </p>
-                </div>
-              </div>
-            ) : isAudioFile(selectedAssignment.file, selectedAssignment.resourceFormat) ? (
-              /* 🎧 AUDIO & SPEAKING DRILL MODE */
-              <div className="space-y-3">
-                <label className="block text-xs font-bold text-indigo-400 flex items-center gap-1.5">
-                  <Headphones className="w-4 h-4" />
-                  <span>{t("Audio / Speaking Ovozli Javob Yozib Olish", "Voice / Audio Speaking Recorder", "Запись Задания Вслух")}</span>
-                </label>
-
-                <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isRecording) {
-                          setIsRecording(false);
-                          setHasRecordedAudio(true);
-                        } else {
-                          setIsRecording(true);
-                          setRecordTime(0);
-                        }
-                      }}
-                      className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer transition ${
-                        isRecording ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-500 hover:bg-indigo-400 text-white'
-                      }`}
-                    >
-                      <span>{isRecording ? "⏸️ Pause Recording" : "🎙️ Record Voice Response"}</span>
-                    </button>
-                  </div>
-
-                  {isRecording && (
-                    <p className="text-xs text-rose-400 font-mono font-bold animate-pulse">
-                      Recording Live Audio... 00:{recordTime < 10 ? `0${recordTime}` : recordTime}
-                    </p>
-                  )}
-
-                  {hasRecordedAudio && !isRecording && (
-                    <p className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1">
-                      <Check className="w-4 h-4" />
-                      <span>Audio Response Saved (00:{recordTime < 10 ? `0${recordTime}` : recordTime})</span>
-                    </p>
-                  )}
-                </div>
-
-                <WPSEditor
-                  value={solutionText}
-                  onChange={setSolutionText}
-                  placeholder={t("Audio javobingiz qisqacha matni yoki transkripti...", "Notes or transcript of your audio recording...", "Краткие заметки к вашей аудиозаписи...")}
-                  minHeight="140px"
-                />
-              </div>
-            ) : (
-              /* ✍️ ESSAY / RICH TEXT WRITING MODE */
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t("Insho va Yozma Javob (WPS Office Suite & Word Counter)", "WPS Rich Text Essay & Word Count", "Эссе и Письменный Ответ (WPS Office)")}
-                  </label>
-                </div>
-
-                {/* Essay Section Quick Helpers */}
-                <div className="flex items-center gap-2 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => setSolutionText((prev) => prev + "\n\n1. Introduction:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
-                  >
-                    + Intro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSolutionText((prev) => prev + "\n\n2. Body Paragraph:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
-                  >
-                    + Body
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSolutionText((prev) => prev + "\n\n3. Conclusion:\n")}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-amber-500 hover:text-slate-950 transition"
-                  >
-                    + Conclusion
-                  </button>
-                </div>
-
-                <WPSEditor
-                  value={solutionText}
-                  onChange={setSolutionText}
-                  placeholder={t("Insho, javoblar yoki formulalarni WPS Office uslubida yozing...", "Write your essay, solutions, or equations in WPS style...", "Напишите ваше эссе или решение в стиле WPS Office...")}
-                  minHeight="180px"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {t("Yechim Fayli Biriktirish (PDF / ZIP / Audio / Photo)", "Attach Solution File (PDF / Code ZIP / Photo)", "Прикрепить Файл Решения")}
-              </label>
-              <input
-                type="file"
-                onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-500"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => setSelectedAssignment(null)}
+                onClick={() => {
+                  setSelectedAssignment(null);
+                  setSubmissionAttachments([]);
+                }}
                 className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
               >
                 {t("Bekor qilish", "Cancel", "Отмена")}

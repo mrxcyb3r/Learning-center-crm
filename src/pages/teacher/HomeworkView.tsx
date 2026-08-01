@@ -599,7 +599,16 @@ export const HomeworkView: React.FC = () => {
                         )
                       )}
 
-                      {sub.fileName && (
+                      {sub.attachments && sub.attachments.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {sub.attachments.map((att) => (
+                            <span key={att.id} className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20 flex items-center gap-1">
+                              <Paperclip className="w-3 h-3" />
+                              <span className="truncate max-w-[120px]">{att.name}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : sub.fileName ? (
                         <div className="flex items-center justify-between text-xs pt-1">
                           <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
                             <Paperclip className="w-3.5 h-3.5" />
@@ -613,7 +622,7 @@ export const HomeworkView: React.FC = () => {
                             <span>Download</span>
                           </button>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Evaluation & Grading Action Bar */}
                       <div className="flex items-center justify-between text-xs border-t border-slate-200 dark:border-slate-700/60 pt-3 mt-2">

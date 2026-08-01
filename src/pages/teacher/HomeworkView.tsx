@@ -54,6 +54,18 @@ export const HomeworkView: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isCreating) setIsCreating(false);
+        if (viewSubmissionsAssignment) setViewSubmissionsAssignment(null);
+        if (gradingSubmission) setGradingSubmission(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCreating, viewSubmissionsAssignment, gradingSubmission]);
+
+  useEffect(() => {
     let unsubAssignments: () => void = () => {};
     let unsubGroups: () => void = () => {};
     let unsubSubmissions: () => void = () => {};
@@ -542,8 +554,14 @@ export const HomeworkView: React.FC = () => {
 
       {/* View Submissions Drawer / Modal */}
       {viewSubmissionsAssignment && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+        <div
+          onClick={() => setViewSubmissionsAssignment(null)}
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider block">

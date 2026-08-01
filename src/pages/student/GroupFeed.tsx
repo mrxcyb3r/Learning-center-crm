@@ -67,6 +67,16 @@ export const GroupFeed: React.FC = () => {
   const [recordTime, setRecordTime] = useState(0);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedAssignment) {
+        setSelectedAssignment(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedAssignment]);
+
+  useEffect(() => {
     let timer: any;
     if (isRecording) {
       timer = setInterval(() => setRecordTime((prev) => prev + 1), 1000);
@@ -313,8 +323,12 @@ export const GroupFeed: React.FC = () => {
 
       {/* Homework Submission Modal */}
       {selectedAssignment && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          onClick={() => setSelectedAssignment(null)}
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+        >
           <form
+            onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmitSolution}
             className="w-full max-w-xl p-6 rounded-3xl bg-white dark:bg-slate-900 border border-amber-500/50 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
           >

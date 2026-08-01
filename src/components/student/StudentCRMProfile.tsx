@@ -61,7 +61,7 @@ interface LightboxProps {
   date?: string;
 }
 
-const ImageScanLightbox: React.FC<LightboxProps> = ({
+export const ImageScanLightbox: React.FC<LightboxProps> = ({
   isOpen,
   onClose,
   imageSrc,
@@ -185,7 +185,7 @@ const ImageScanLightbox: React.FC<LightboxProps> = ({
 };
 
 // Mini Audio Player Component for Speaking Drills
-const AudioDrillPlayer: React.FC<{ audioUrl: string; title: string }> = ({ audioUrl, title }) => {
+export const AudioDrillPlayer: React.FC<{ audioUrl: string; title: string }> = ({ audioUrl, title }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
@@ -277,6 +277,16 @@ export const StudentCRMProfile: React.FC<StudentCRMProfileProps> = ({
       setCurrentPaymentStatus(student.paymentStatus || 'pending');
     }
   }, [student]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // Subscribe to Firestore collections
   useEffect(() => {
@@ -449,7 +459,10 @@ export const StudentCRMProfile: React.FC<StudentCRMProfileProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+    >
       
       {/* Lightbox Component */}
       <ImageScanLightbox
@@ -462,7 +475,10 @@ export const StudentCRMProfile: React.FC<StudentCRMProfileProps> = ({
       />
 
       {/* Main CRM Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-6xl w-full p-6 shadow-2xl space-y-6 max-h-[94vh] flex flex-col my-auto relative">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-6xl w-full p-6 shadow-2xl space-y-6 max-h-[94vh] flex flex-col my-auto relative"
+      >
         
         {/* Top Header & Administrative Student Card */}
         <div className="bg-slate-900 text-white rounded-2xl p-6 relative overflow-hidden shadow-xl border border-slate-800">

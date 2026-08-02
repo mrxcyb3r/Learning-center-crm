@@ -1325,3 +1325,12 @@ export async function seedFirestoreIfEmpty() {
   }
 }
 
+export async function updateUserProfile(uid: string, data: Record<string, any>) {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await setDoc(userRef, cleanData(data), { merge: true });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `users/${uid}`);
+  }
+}
+

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { subscribeSecurityPins, SecurityPinsData } from '../../services/firestore';
+import { TelegramBotConnectModal } from './TelegramBotConnectModal';
 import {
   X,
   Mail,
@@ -54,6 +55,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
+  const [showTelegramConnect, setShowTelegramConnect] = useState(false);
 
   const [livePins, setLivePins] = useState<SecurityPinsData>({
     adminPin: 'secureadmin',
@@ -158,7 +160,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (isEmailVerified || activeTab === 'register') {
         // Unverified users stay on verification screen
       } else {
-        onClose();
+        if (selectedRole === 'student' || selectedRole === 'teacher') {
+          setShowTelegramConnect(true);
+        } else {
+          onClose();
+        }
       }
     } catch (err: any) {
       console.error('Auth Error:', err);
@@ -201,7 +207,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     try {
       await loginWithGoogle(selectedRole);
-      onClose();
+      if (selectedRole === 'student' || selectedRole === 'teacher') {
+        setShowTelegramConnect(true);
+      } else {
+        onClose();
+      }
     } catch (err: any) {
       console.error('Google Auth Error:', err);
       if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain') || err?.message?.includes('Authorized Domains')) {
@@ -588,8 +598,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </button>
 
             {/* Quick Demo Login Section */}
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-2">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+              {/* Telegram Bot Direct Connection CTA */}
+              <button
+                type="button"
+                onClick={() => setShowTelegramConnect(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#229ED9] hover:bg-[#1f91c7] text-white font-bold text-xs shadow-md shadow-[#229ED9]/20 transition cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                <span>🚀 Connect @CenterFlowBot (Real-Time Alerts)</span>
+              </button>
+
+              <div className="flex items-center justify-between mb-1">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   ⚡ Fast Demo Access
                 </span>
@@ -600,7 +620,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type="button"
                   onClick={async () => {
                     await loginAsDemoUser('student');
-                    onClose();
+                    setShowTelegramConnect(true);
                   }}
                   className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -611,7 +631,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type="button"
                   onClick={async () => {
                     await loginAsDemoUser('teacher');
-                    onClose();
+                    setShowTelegramConnect(true);
                   }}
                   className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
@@ -634,6 +654,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </>
         )}
       </div>
+
+      <TelegramBotConnectModal
+        isOpen={showTelegramConnect}
+        onClose={() => {
+          setShowTelegramConnect(false);
+          onClose();
+        }}
+        onComplete={() => {
+          setShowTelegramConnect(false);
+          onClose();
+        }}
+      />
     </div>
   );
 };

@@ -40,7 +40,8 @@ import {
   Clock,
   Instagram,
   Compass,
-  FileCheck
+  FileCheck,
+  Globe
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -132,8 +133,11 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
-  const { language, t: dict, translate: t } = useLanguage();
+  const { language, setLanguage, t: dict, translate: t } = useLanguage();
   const { theme } = useTheme();
+
+  // Language switcher dropdown state
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   // Multi-language string resolver
   const getLangText = (uz?: string, en?: string, ru?: string): string => {
@@ -406,6 +410,63 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
             {/* Quick Action Buttons */}
             <div className="flex items-center gap-3">
+              {/* Language Switcher Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition cursor-pointer"
+                  title="Switch Language / Tilni o'zgartirish"
+                >
+                  <Globe className="w-4 h-4 text-amber-400" />
+                  <span>{language === 'UZ' ? 'UZ 🇺🇿' : language === 'RU' ? 'RU 🇷🇺' : 'EN 🇬🇧'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isLangDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-36 bg-[#18052b] border border-amber-500/30 rounded-2xl shadow-2xl py-1.5 z-50">
+                    <button
+                      onClick={() => {
+                        setLanguage('UZ');
+                        setIsLangDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
+                        language === 'UZ'
+                          ? 'bg-amber-500/20 text-amber-400 font-black'
+                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span>🇺🇿</span> O'zbek (UZ)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLanguage('EN');
+                        setIsLangDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
+                        language === 'EN'
+                          ? 'bg-amber-500/20 text-amber-400 font-black'
+                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span>🇬🇧</span> English (EN)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLanguage('RU');
+                        setIsLangDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
+                        language === 'RU'
+                          ? 'bg-amber-500/20 text-amber-400 font-black'
+                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span>🇷🇺</span> Русский (RU)
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => setIsEnrollModalOpen(true)}
                 className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer"

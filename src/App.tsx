@@ -63,10 +63,7 @@ function MainApp() {
       <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-amber-500 selection:text-slate-950">
         <ParticleBackground />
         <div className="relative z-10">
-          {/* Public Navigation Bar */}
-          <Navbar onOpenAuth={() => setIsAuthModalOpen(true)} />
-
-          {/* Public Landing Page */}
+          {/* Public Landing Page with Unified Navigation & Language Switcher */}
           <LandingPage onOpenAuth={() => setIsAuthModalOpen(true)} />
 
           {/* Auth Modal (Login & Register) */}

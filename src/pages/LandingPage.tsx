@@ -183,6 +183,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
   // Carousel Scroll Refs
   const teacherCarouselRef = useRef<HTMLDivElement>(null);
+  const resultsCarouselRef = useRef<HTMLDivElement>(null);
 
   // ----------------------------------------------------
   // Dynamic Scroll Spy Hook & Hash Updater
@@ -372,8 +373,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       </div>
 
       <div className="relative z-10">
-        {/* SINGLE UNIFIED STICKY HEADER BAR WITH DYNAMIC ACTIVE STATE */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0d021a]/85 border-b border-white/10 px-4 py-3 sm:px-8 transition-all shadow-xl">
+        {/* SINGLE UNIFIED FIXED HEADER BAR WITH DYNAMIC ACTIVE STATE */}
+        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#0d021a]/90 border-b border-white/10 px-4 py-3 sm:px-8 transition-all shadow-2xl">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Brand Logo */}
             <button
@@ -485,12 +486,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </header>
 
-        {/* 1. HERO SECTION (FADE-DOWN MOTION) */}
-        <section id="hero" className="relative min-h-[88vh] flex items-center justify-center pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10">
+        {/* 1. HERO SECTION (PURE FADE-IN MOTION) */}
+        <section id="hero" className="relative min-h-[88vh] flex items-center justify-center pt-28 sm:pt-36 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10">
           <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, ease: 'easeOut' }}
             className="max-w-7xl mx-auto w-full text-center relative z-10"
           >
             {/* Top Badges */}
@@ -600,16 +601,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </motion.div>
         </section>
 
-        {/* 2. BENTO-GRID FEATURE HIGHLIGHTS ("WHY CHOOSE US" - FLIP/SCALE MOTION) */}
+        {/* 2. BENTO-GRID FEATURE HIGHLIGHTS ("WHY CHOOSE US" - FADE-UP MOTION FOR ALL DIVS) */}
         <section id="why-us" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
-            <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.6 }}
+              className="text-center max-w-2xl mx-auto mb-14"
+            >
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
                 System & Ecosystem
               </span>
@@ -619,12 +620,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
                 {t("An'anaviy darslardan farqli o'laroq, natijaga 100% yo'naltirilgan zamonaviy ta'lim ekotizimi", "An ecosystem designed for maximum learning retention and high scores", "Экосистема, нацеленная на 100% результаты учеников")}
               </p>
-            </div>
+            </motion.div>
 
             {/* Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {/* Bento Card 1: Main Feature (Wide 2-col) */}
-              <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-purple-900/40 via-white/5 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition group">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-purple-900/40 via-white/5 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition group"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
                     <Target className="w-6 h-6" />
@@ -640,10 +647,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   <span>100% Tracking Enabled</span>
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bento Card 2: Team of 9.0 Teachers */}
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold mb-4">
                     <GraduationCap className="w-6 h-6" />
@@ -655,10 +668,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     {t("Xalqaro sertifikatga ega va yillik tajribali mutaxassislar guruhi.", "Top-tier CELTA and IELTS 9.0 certified mentors.", "Преподаватели с международными сертификатами.")}
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bento Card 3: Weekly Mock Tests */}
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold mb-4">
                     <Award className="w-6 h-6" />
@@ -670,10 +689,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     {t("Haqiqiy IDP/BC atmosferasidagi simulyatsiya imtihonlari va AI taxlili.", "Official exam simulation environment with detailed breakdown.", "Симуляция реального экзамена с подробным разбором.")}
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bento Card 4: Free Support Teachers */}
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
                     <Users className="w-6 h-6" />
@@ -685,10 +710,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     {t("Darsdan tashqari tushunmagan mavzularni yakka tartibda o'rganish imkoniyati.", "Dedicated assistant teachers available all day for extra practice.", "Ассистенты помогут вам разобрать любой вопрос после уроков.")}
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bento Card 5: Speaking Clubs */}
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold mb-4">
                     <MessageCircle className="w-6 h-6" />
@@ -700,10 +731,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     {t("C1 va Native Speaker'lar bilan erkin muloqot va nutq o'stirish.", "Daily interactive speaking clubs with native speakers.", "Ежедневная практика устной речи с носителями языка.")}
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bento Card 6: Student Mobile & Web App (Wide 2-col) */}
-              <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-900/30 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition">
+              <motion.div
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-900/30 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+              >
                 <div>
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
                     <Smartphone className="w-6 h-6" />
@@ -721,22 +758,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
-        {/* 3. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL (SLIDE-RIGHT MOTION) */}
+        {/* 3. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL (FADE FROM LEFT & RIGHT MOTION) */}
         <section id="teachers" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-              <div>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 overflow-hidden">
+              <motion.div
+                initial={{ opacity: 0, x: -60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
                 <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
                   Mentors & Experts
                 </span>
@@ -746,10 +782,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <p className="text-xs sm:text-sm text-slate-400 mt-2">
                   {t("Xalqaro sertifikatli ustozlarimiz bilan tanishing va ularning CELTA va IELTS sertifikatlarini ko'ring", "Click on any teacher to view their official TRF score report and CELTA credentials", "Нажмите на любого преподавателя, чтобы посмотреть его официальный сертификат")}
                 </p>
-              </div>
+              </motion.div>
 
-              {/* Swiper Arrow Buttons */}
-              <div className="flex items-center gap-3 mt-6 md:mt-0">
+              {/* Swiper Arrow Buttons (Fade from Right) */}
+              <motion.div
+                initial={{ opacity: 0, x: 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="flex items-center gap-3 mt-6 md:mt-0"
+              >
                 <button
                   onClick={() => scrollCarousel(teacherCarouselRef, 'left')}
                   className="p-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-white transition cursor-pointer"
@@ -762,7 +804,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
-              </div>
+              </motion.div>
             </div>
 
             {/* Horizontal Scroll Deck */}
@@ -771,9 +813,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 cursor-grab"
               style={{ scrollbarWidth: 'none' }}
             >
-              {(cmsContent.teachers || []).map((teacher) => (
-                <div
+              {(cmsContent.teachers || []).map((teacher, index) => (
+                <motion.div
                   key={teacher.id}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -70 : 70 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.6, delay: index * 0.08 }}
                   onClick={() => setSelectedTeacher(teacher)}
                   className="min-w-[280px] sm:min-w-[340px] snap-start rounded-3xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-md hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-xl hover:-translate-y-1"
                 >
@@ -822,21 +868,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       <ExternalLink className="w-3 h-3" />
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </section>
 
-        {/* 4. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL (ZOOM-IN MOTION) */}
+        {/* 4. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL (SLIDER CAROUSEL & ZOOM-IN MOTION) */}
         <section id="results" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
+          <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
               <div>
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
@@ -850,70 +890,99 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </p>
               </div>
 
-              {/* Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2 mt-6 md:mt-0">
-                {(
-                  [
-                    { id: 'all', label: 'Barchasi' },
-                    { id: '8.0', label: 'IELTS 8.0+' },
-                    { id: '7.5', label: 'IELTS 7.5+' },
-                    { id: 'CEFR', label: 'CEFR' }
-                  ] as const
-                ).map((f) => (
+              {/* Filter Pills & Swiper Arrow Controls */}
+              <div className="flex flex-wrap items-center gap-3 mt-6 md:mt-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  {(
+                    [
+                      { id: 'all', label: 'Barchasi' },
+                      { id: '8.0', label: 'IELTS 8.0+' },
+                      { id: '7.5', label: 'IELTS 7.5+' },
+                      { id: 'CEFR', label: 'CEFR' }
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setResultFilter(f.id)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        resultFilter === f.id
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/15 border border-white/10'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pl-2 border-l border-white/10">
                   <button
-                    key={f.id}
-                    onClick={() => setResultFilter(f.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      resultFilter === f.id
-                        ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
-                        : 'bg-white/5 text-slate-300 hover:bg-white/15 border border-white/10'
-                    }`}
+                    onClick={() => scrollCarousel(resultsCarouselRef, 'left')}
+                    className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white transition cursor-pointer"
+                    title="Previous Results"
                   >
-                    {f.label}
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
-                ))}
+                  <button
+                    onClick={() => scrollCarousel(resultsCarouselRef, 'right')}
+                    className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition cursor-pointer"
+                    title="Next Results"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredResults.map((result) => (
-                <div
+            {/* Results Horizontal Swiper / Slider Deck */}
+            <div
+              ref={resultsCarouselRef}
+              className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 cursor-grab"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {filteredResults.map((result, idx) => (
+                <motion.div
                   key={result.id}
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.5, delay: idx * 0.06 }}
                   onClick={() => setSelectedResult(result)}
-                  className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all cursor-pointer group hover:-translate-y-1 shadow-xl"
+                  className="min-w-[280px] sm:min-w-[340px] snap-start p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all cursor-pointer group hover:-translate-y-1 shadow-xl flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-black border border-amber-500/30">
-                      {result.badge}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400">{result.date}</span>
-                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-black border border-amber-500/30">
+                        {result.badge}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400">{result.date}</span>
+                    </div>
 
-                  <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition">
-                    {result.studentName}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {t("Ustoz: ", "Teacher: ", "Учитель: ")}{result.teacherName}
-                  </p>
+                    <h3 className="text-xl font-black text-white group-hover:text-amber-400 transition">
+                      {result.studentName}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {t("Ustoz: ", "Teacher: ", "Учитель: ")}{result.teacherName}
+                    </p>
 
-                  {/* Subscore pills */}
-                  <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/10 text-center text-xs">
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-[10px] text-slate-400 block font-bold">L</span>
-                      <span className="font-mono font-bold text-white">{result.listening}</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-[10px] text-slate-400 block font-bold">R</span>
-                      <span className="font-mono font-bold text-white">{result.reading}</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-[10px] text-slate-400 block font-bold">W</span>
-                      <span className="font-mono font-bold text-white">{result.writing}</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                      <span className="text-[10px] text-slate-400 block font-bold">S</span>
-                      <span className="font-mono font-bold text-white">{result.speaking}</span>
+                    {/* Subscore pills */}
+                    <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/10 text-center text-xs">
+                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-slate-400 block font-bold">L</span>
+                        <span className="font-mono font-bold text-white">{result.listening}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-slate-400 block font-bold">R</span>
+                        <span className="font-mono font-bold text-white">{result.reading}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-slate-400 block font-bold">W</span>
+                        <span className="font-mono font-bold text-white">{result.writing}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                        <span className="text-[10px] text-slate-400 block font-bold">S</span>
+                        <span className="font-mono font-bold text-white">{result.speaking}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -921,22 +990,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <FileCheck className="w-4 h-4" />
                     <span>{t("Sertifikat va TRF ni ko'rish", "View Official Certificate", "Посмотреть сертификат")}</span>
                   </button>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </section>
 
-        {/* 5. COURSE PRICING GRID (FADE-UP MOTION) */}
+        {/* 5. COURSE PRICING GRID (AOS-STYLE ZOOM FROM BEHIND TO FRONT MOTION) */}
         <section id="courses" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
-            <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center max-w-2xl mx-auto mb-14"
+            >
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
                 Flexible Pricing & Plans
               </span>
@@ -946,12 +1015,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
                 {t("Ehtiyojingizga mos keluvchi intensiv va natijali ta'lim dasturini tanlang", "Select the optimal learning path for your goals", "Выберите подходящий курс для достижения ваших целей")}
               </p>
-            </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {(cmsContent.courses || []).map((course) => (
-                <div
+              {(cmsContent.courses || []).map((course, i) => (
+                <motion.div
                   key={course.id}
+                  initial={{ opacity: 0, scale: 0.65, y: 30 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                   className={`relative rounded-3xl p-8 bg-white/5 border backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition-all duration-300 shadow-2xl ${
                     course.isPopular ? 'border-amber-500/80 ring-2 ring-amber-500/30 bg-purple-900/20' : 'border-white/10'
                   }`}
@@ -1018,10 +1091,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       {t("Ro'yxatdan o'tish", "Register Now", "Записаться")}
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* 6. STUDENT APP SPOTLIGHT (FADE-LEFT MOTION) */}

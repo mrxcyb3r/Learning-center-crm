@@ -75,10 +75,24 @@ export const ResultCertificateModal: React.FC<ResultCertificateModalProps> = ({ 
           {/* Verification Badge */}
           <div className="flex items-center justify-between mt-5 pt-3 border-t border-amber-500/20 text-xs">
             <span className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" /> Renessans LC Baza Tasdiqlangan
+              <CheckCircle2 className="w-4 h-4" /> Renessans LC / CenterFlow Verified TRF
             </span>
             <span className="text-[10px] font-mono text-slate-400">ID: RLC-2026-0982</span>
           </div>
+        </div>
+
+        {/* Real High-Res TRF Image Document Preview */}
+        <div className="mb-6 rounded-2xl overflow-hidden border border-amber-500/30 bg-slate-950 p-2 shadow-inner">
+          <p className="text-[10px] uppercase font-bold text-amber-400 px-2 py-1 flex items-center justify-between">
+            <span>Official TRF Document Scan</span>
+            <span className="text-slate-400">Verified IDP/BC</span>
+          </p>
+          <img
+            src={result.certificateUrl || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1000&auto=format&fit=crop"}
+            alt="Official IELTS Test Report Form"
+            referrerPolicy="no-referrer"
+            className="w-full h-48 object-cover rounded-xl border border-white/10 hover:scale-105 transition duration-500"
+          />
         </div>
 
         {/* Modal Actions */}

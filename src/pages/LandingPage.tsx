@@ -7,6 +7,7 @@ import { TypewriterText } from '../components/common/TypewriterText';
 import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel';
 import { StudentResult, Teacher, LandingPageContent } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
+import { TeacherCertificateModal } from '../components/TeacherCertificateModal';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { subscribeLandingPageContent, DEFAULT_LANDING_PAGE_CONTENT } from '../services/landingCms';
@@ -38,12 +39,27 @@ import {
   Target,
   Clock,
   Instagram,
-  Compass
+  Compass,
+  FileCheck
 } from 'lucide-react';
 
 interface LandingPageProps {
   onOpenAuth: () => void;
 }
+
+// ----------------------------------------------------
+// Section List for Scroll Spy
+// ----------------------------------------------------
+const SECTIONS = [
+  { id: 'hero', labelUz: 'Bosh sahifa', labelEn: 'Home', labelRu: 'Главная', path: '/' },
+  { id: 'why-us', labelUz: 'Afzalliklar', labelEn: 'Why Us', labelRu: 'Преимущества', path: '#why-us' },
+  { id: 'teachers', labelUz: "O'qituvchilar", labelEn: 'Teachers', labelRu: 'Преподаватели', path: '#teachers' },
+  { id: 'results', labelUz: 'Natijalar', labelEn: 'Results', labelRu: 'Результаты', path: '#results' },
+  { id: 'courses', labelUz: 'Kurslar', labelEn: 'Courses', labelRu: 'Курсы', path: '#courses' },
+  { id: 'student-app', labelUz: 'Student App', labelEn: 'Student App', labelRu: 'Приложение', path: '#student-app' },
+  { id: 'branches', labelUz: 'Filiallar', labelEn: 'Branches', labelRu: 'Филиалы', path: '#branches' },
+  { id: 'faq', labelUz: 'FAQs', labelEn: 'FAQs', labelRu: 'Вопросы', path: '#faq' }
+];
 
 // ----------------------------------------------------
 // Animated Counter Component (Starts at 0 and counts up)
@@ -85,7 +101,6 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // Ease out cubic
       const easedProgress = 1 - Math.pow(1 - progress, 3);
       
       if (isDecimal) {
@@ -119,7 +134,6 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const { language, t: dict, translate: t } = useLanguage();
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   // Multi-language string resolver
   const getLangText = (uz?: string, en?: string, ru?: string): string => {
@@ -158,7 +172,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const [formCourse, setFormCourse] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // FAQ search & expanded item
   const [faqSearch, setFaqSearch] = useState('');
@@ -166,7 +179,58 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
   // Carousel Scroll Refs
   const teacherCarouselRef = useRef<HTMLDivElement>(null);
-  const resultsCarouselRef = useRef<HTMLDivElement>(null);
+
+  // ----------------------------------------------------
+  // Dynamic Scroll Spy Hook & Hash Updater
+  // ----------------------------------------------------
+  const [activeSection, setActiveSection] = useState<string>('hero');
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: 0
+    };
+
+    const handleIntersect: IntersectionObserverCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id;
+          setActiveSection(sectionId);
+
+          // Update URL bar silently without reloading or page jump
+          if (sectionId === 'hero') {
+            window.history.replaceState(null, '', window.location.pathname);
+          } else {
+            window.history.replaceState(null, '', `#${sectionId}`);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+
+    SECTIONS.forEach((sec) => {
+      const el = document.getElementById(sec.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Smooth scroll handler
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      setActiveSection(id);
+      if (id === 'hero') {
+        window.history.replaceState(null, '', window.location.pathname);
+      } else {
+        window.history.replaceState(null, '', `#${id}`);
+      }
+    }
+  };
 
   const scrollCarousel = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
     if (ref.current) {
@@ -189,7 +253,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     }
 
     setIsSubmitting(true);
-    setSubmitSuccess(false);
 
     try {
       const payload = {
@@ -211,7 +274,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         createdAt: new Date().toISOString()
       }).catch(() => {});
 
-      setSubmitSuccess(true);
       toast.success(
         t(
           "Rahmat! Arizangiz qabul qilindi. Qabul bo'limimiz tez orada siz bilan bog'lanadi.",
@@ -223,9 +285,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       setFormPhone('+998 90 ');
       setFormCourse('');
       setFormMessage('');
+      setIsEnrollModalOpen(false);
     } catch (err) {
       console.warn('Firestore write notice (fallback enabled):', err);
-      setSubmitSuccess(true);
       toast.success(
         t(
           "Rahmat! Arizangiz qabul qilindi. Qabul bo'limimiz tez orada siz bilan bog'lanadi.",
@@ -237,6 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       setFormPhone('+998 90 ');
       setFormCourse('');
       setFormMessage('');
+      setIsEnrollModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -269,8 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       addressEn: 'Tashkent, Chilanzar dist., near Mirzo Ulugbek Metro Station',
       addressRu: 'Ташкент, Чиланзарский р-н, ст. м. Мирзо Улугбек',
       phone: '+998 55 511 09 09',
-      hours: '08:00 - 20:00 (Du - Sha)',
-      mapUrl: 'https://maps.google.com'
+      hours: '08:00 - 20:00 (Du - Sha)'
     },
     {
       id: 'b2',
@@ -281,8 +343,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       addressEn: 'Tashkent, Yunusabad dist., opposite Shahriston Metro',
       addressRu: 'Ташкент, Юнусабадский р-н, напротив ст. м. Шахристон',
       phone: '+998 55 511 09 10',
-      hours: '08:00 - 20:00 (Du - Sha)',
-      mapUrl: 'https://maps.google.com'
+      hours: '08:00 - 20:00 (Du - Sha)'
     },
     {
       id: 'b3',
@@ -293,8 +354,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       addressEn: 'Tashkent, M.Ulugbek dist., near B.Ipak Yoli Metro',
       addressRu: 'Ташкент, М.Улугбекский р-н, возле м. Буюк Ипак Йули',
       phone: '+998 55 511 09 11',
-      hours: '08:00 - 20:00 (Du - Sha)',
-      mapUrl: 'https://maps.google.com'
+      hours: '08:00 - 20:00 (Du - Sha)'
     }
   ];
 
@@ -308,40 +368,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       </div>
 
       <div className="relative z-10">
-        {/* Floating Quick Navigation Header Bar */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0d021a]/80 border-b border-white/10 px-4 py-3 sm:px-8 transition-all">
+        {/* SINGLE UNIFIED STICKY HEADER BAR WITH DYNAMIC ACTIVE STATE */}
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0d021a]/85 border-b border-white/10 px-4 py-3 sm:px-8 transition-all shadow-xl">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Brand Logo */}
-            <a href="#" className="flex items-center gap-2.5 text-white font-black text-xl tracking-tight">
+            <button
+              onClick={() => scrollToSection('hero')}
+              className="flex items-center gap-2.5 text-white font-black text-xl tracking-tight cursor-pointer hover:opacity-90 transition"
+            >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-lg shadow-amber-500/20">
                 CF
               </div>
               <span>Center<span className="text-amber-400">Flow</span></span>
-            </a>
+            </button>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-300">
-              <a href="#why-us" className="hover:text-amber-400 transition cursor-pointer">
-                {t("Aflzalliklar", "Why Us", "Преимущества")}
-              </a>
-              <a href="#teachers" className="hover:text-amber-400 transition cursor-pointer">
-                {t("O'qituvchilar", "Teachers", "Преподаватели")}
-              </a>
-              <a href="#results" className="hover:text-amber-400 transition cursor-pointer">
-                {t("Natijalar", "Results", "Результаты")}
-              </a>
-              <a href="#courses" className="hover:text-amber-400 transition cursor-pointer">
-                {t("Kurslar", "Courses", "Курсы")}
-              </a>
-              <a href="#app-spotlight" className="hover:text-amber-400 transition cursor-pointer">
-                {t("Student App", "Student App", "Приложение")}
-              </a>
-              <a href="#branches" className="hover:text-amber-400 transition cursor-pointer">
-                {t("Filiallar", "Branches", "Филиалы")}
-              </a>
-              <a href="#faq" className="hover:text-amber-400 transition cursor-pointer">
-                {t("FAQs", "FAQs", "Вопросы")}
-              </a>
+            {/* Desktop Navigation Links with Active Scroll-Spy Pill */}
+            <nav className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 rounded-2xl">
+              {SECTIONS.filter(s => s.id !== 'hero').map((sec) => {
+                const isActive = activeSection === sec.id;
+                const label = getLangText(sec.labelUz, sec.labelEn, sec.labelRu);
+
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => scrollToSection(sec.id)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      isActive
+                        ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </nav>
 
             {/* Quick Action Buttons */}
@@ -364,9 +424,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </header>
 
-        {/* 1. HERO SLIDE SECTION */}
-        <section className="relative min-h-[88vh] flex items-center justify-center pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10">
-          <div className="max-w-7xl mx-auto w-full text-center relative z-10">
+        {/* 1. HERO SECTION (FADE-DOWN MOTION) */}
+        <section id="hero" className="relative min-h-[88vh] flex items-center justify-center pt-12 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10">
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="max-w-7xl mx-auto w-full text-center relative z-10"
+          >
             {/* Top Badges */}
             <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold tracking-wide backdrop-blur-md">
@@ -412,13 +477,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <span>{getLangText(cmsContent.ctaPrimaryUz, cmsContent.ctaPrimaryEn, cmsContent.ctaPrimaryRu) || "Bepul Sinov Darsiga Yozilish"}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <a
-                href="#courses"
+              <button
+                onClick={() => scrollToSection('courses')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-white/15 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{t("Kurslar ro'yxatini ko'rish", "Explore Courses", "Посмотреть курсы")}</span>
                 <ChevronDown className="w-4 h-4 text-amber-400" />
-              </a>
+              </button>
             </div>
 
             {/* Dynamic Animated KPI Numbers Grid (Counting up from 0) */}
@@ -471,12 +536,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </div>
               </motion.div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 2. BENTO-GRID FEATURE HIGHLIGHTS ("NEGA ULA BIZNI TANLASHYAPTI?") */}
+        {/* 2. BENTO-GRID FEATURE HIGHLIGHTS ("WHY CHOOSE US" - FLIP/SCALE MOTION) */}
         <section id="why-us" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
                 System & Ecosystem
@@ -584,19 +655,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </p>
                 </div>
                 <div className="mt-6 flex items-center gap-3">
-                  <a href="#app-spotlight" className="text-xs font-black text-amber-400 hover:underline flex items-center gap-1">
+                  <button onClick={() => scrollToSection('student-app')} className="text-xs font-black text-amber-400 hover:underline flex items-center gap-1 cursor-pointer">
                     <span>{t("Ilova haqida ko'proq", "Learn more about app", "Подробнее о приложении")}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 3. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL */}
+        {/* 3. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL (SLIDE-RIGHT MOTION) */}
         <section id="teachers" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
               <div>
                 <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
@@ -606,7 +683,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   {t("Bizning O'qituvchilar", "Our Certified Teachers", "Наши Преподаватели")}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                  {t("Xalqaro sertifikatli ustozlarimiz bilan tanishing va ularning TRF sertifikatlarini ko'ring", "Click on any teacher to view their official TRF score report and CELTA credentials", "Нажмите на любого преподавателя, чтобы посмотреть его официальный сертификат")}
+                  {t("Xalqaro sertifikatli ustozlarimiz bilan tanishing va ularning CELTA va IELTS sertifikatlarini ko'ring", "Click on any teacher to view their official TRF score report and CELTA credentials", "Нажмите на любого преподавателя, чтобы посмотреть его официальный сертификат")}
                 </p>
               </div>
 
@@ -678,20 +755,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
                   <div className="p-6 pt-0 border-t border-white/10 mt-2 flex items-center justify-between text-xs text-slate-400">
                     <span className="font-bold text-amber-400">{teacher.experience}</span>
-                    <span className="font-bold text-slate-200 flex items-center gap-1">
-                      <span>TRF / Certificate</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
+                    <span className="font-bold text-slate-200 flex items-center gap-1 hover:text-amber-400 transition">
+                      <FileCheck className="w-3.5 h-3.5 text-amber-400" />
+                      <span>CELTA / TRF Cert</span>
+                      <ExternalLink className="w-3 h-3" />
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 4. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL */}
+        {/* 4. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL (ZOOM-IN MOTION) */}
         <section id="results" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
-          <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
               <div>
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
@@ -730,11 +814,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               </div>
             </div>
 
-            {/* Results Horizontal Swiper Deck */}
-            <div
-              ref={resultsCarouselRef}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
+            {/* Results Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredResults.map((result) => (
                 <div
                   key={result.id}
@@ -775,18 +856,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </div>
                   </div>
 
-                  <button className="w-full mt-5 py-2.5 rounded-xl bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition">
-                    {t("Sertifikat va TRF ni ko'rish", "View Official Certificate", "Посмотреть сертификат")}
+                  <button className="w-full mt-5 py-2.5 rounded-xl bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5">
+                    <FileCheck className="w-4 h-4" />
+                    <span>{t("Sertifikat va TRF ni ko'rish", "View Official Certificate", "Посмотреть сертификат")}</span>
                   </button>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 5. COURSE PRICING SLIDE ("BIZNING KURSLAR") */}
+        {/* 5. COURSE PRICING GRID (FADE-UP MOTION) */}
         <section id="courses" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
                 Flexible Pricing & Plans
@@ -872,12 +960,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 6. STUDENT APP SPOTLIGHT SLIDE ("STUDENT APP") */}
-        <section id="app-spotlight" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
-          <div className="max-w-7xl mx-auto">
+        {/* 6. STUDENT APP SPOTLIGHT (FADE-LEFT MOTION) */}
+        <section id="student-app" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
               <div className="lg:col-span-6 space-y-6">
                 <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
@@ -906,8 +1000,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white">{t("24/7 AI Tahlil va Yechim Tushuntirishi", "24/7 AI Diagnostics & Explanations", "24/7 ИИ-Аналитика и объяснение ошибок")}</h4>
-                      <p className="text-xs text-slate-400">{t("Matematika, IELTS insho va IT kod xatolarini avtomatik tahlil qiluvchi sun'iy intellekt.", "AI error diagnostics highlighting formula mistakes and grammar fixes.", "ИИ автоматическая диагностика ошибок в коде и эссе.")}</p>
+                      <h4 className="text-sm font-bold text-white">{t("24/7 AI Tahlil va Yechim Tushuntirishi", "24/7 AI Diagnostics & Explanations", "24/7 ИИ-Аналитика и объяснение решений")}</h4>
+                      <p className="text-xs text-slate-400">{t("Xatolar ustida ishlash uchun AI mentoridan qadamba-qadam tushuntirish olasiz.", "AI steps in to analyze incorrect homework options and suggest improvements.", "ИИ помогает разобрать ошибки и дает рекомендации.")}</p>
                     </div>
                   </div>
                 </div>
@@ -915,68 +1009,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <div className="pt-4 flex items-center gap-4">
                   <button
                     onClick={onOpenAuth}
-                    className="px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 transition cursor-pointer"
+                    className="px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 transition cursor-pointer flex items-center gap-2"
                   >
-                    {t("Student Portalga Kirish", "Open Student Portal", "Войти в Студенческий Портал")}
+                    <span>{t("Student Portalga kirish", "Open Student Portal", "Войти в Портал")}</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* App UI Visual Mockup */}
+              {/* Mockup Display */}
               <div className="lg:col-span-6 relative">
-                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-900/50 via-slate-900/80 to-slate-950 border border-white/15 backdrop-blur-xl shadow-2xl space-y-4">
-                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center">
-                        CF
+                <div className="relative mx-auto max-w-sm rounded-3xl bg-slate-900 border-4 border-slate-800 p-4 shadow-2xl overflow-hidden">
+                  <div className="p-4 bg-[#120320] rounded-2xl border border-white/10 text-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                          CF
+                        </div>
+                        <div>
+                          <p className="font-bold text-white text-xs">Jasurbek Aliyev</p>
+                          <p className="text-[10px] text-amber-400">IELTS Rocket 8.5 Group</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-black text-white">Student Dashboard Preview</h4>
-                        <p className="text-[10px] text-amber-400 font-mono">Live Firestore Sync</p>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">
+                        Active
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
+                        <span>Haftalik Progress</span>
+                        <span className="text-amber-400">92% High Performance</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[92%]" />
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                      Active Session
-                    </span>
-                  </div>
 
-                  {/* Sample Homework Card */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-400">IELTS Essay #4: Task 2</span>
-                      <span className="text-[10px] font-mono text-slate-400">Score: Band 8.0</span>
+                    <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-200 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span>AI Feedback: Writing Task 2 Cohesion Band score improved to 8.0!</span>
                     </div>
-                    <p className="text-xs text-slate-300 italic">"Technology impact on modern education system..."</p>
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300">
-                      💡 AI Diagnostic: Excellent lexical resource and cohesive transition paragraphs.
-                    </div>
-                  </div>
-
-                  {/* Attendance Matrix */}
-                  <div className="grid grid-cols-4 gap-2 pt-2 text-center text-[10px]">
-                    <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold">Mon (Present)</div>
-                    <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold">Wed (Present)</div>
-                    <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 font-bold">Fri (Late 5m)</div>
-                    <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold">Sat (Present)</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* 7. BRANCHES SLIDE ("BIZNING FILIALLAR") */}
+        {/* 7. BRANCHES SECTION (FADE-UP MOTION) */}
         <section id="branches" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-7xl mx-auto"
+          >
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-                Locations & Campus
+                Locations & Access
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
-                {t("Bizning Filiallarimiz", "Our Branches", "Наши Филиалы")}
+                {t("Bizning Filiallar", "Our Learning Branches", "Наши Филиалы")}
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                {t("Toshkent shahridagi zamonaviy va qulay metroga yaqin filiallarimiz", "Conveniently located campuses near major metro stations in Tashkent", "Современные филиалы возле станций метро в Ташкенте")}
+                {t("Toshkent shahrining eng qulay hududlaridagi zamonaviy o'quv markazlarimiz", "Modern campuses located right near metro stations", "Удобные филиалы возле станций метро")}
               </p>
             </div>
 
@@ -984,65 +1082,79 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               {branchesList.map((branch) => (
                 <div
                   key={branch.id}
-                  className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all flex flex-col justify-between shadow-xl"
+                  className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all shadow-xl flex flex-col justify-between"
                 >
                   <div>
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
                       <Building className="w-5 h-5" />
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">
                       {getLangText(branch.nameUz, branch.nameEn, branch.nameRu)}
                     </h3>
-                    <p className="text-xs text-slate-400 flex items-start gap-1.5 mb-4 leading-relaxed">
+                    <p className="text-xs text-slate-300 mb-4 flex items-start gap-2 leading-relaxed">
                       <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                       <span>{getLangText(branch.addressUz, branch.addressEn, branch.addressRu)}</span>
                     </p>
-                    <p className="text-xs text-slate-400 flex items-center gap-1.5 mb-2">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <p className="text-xs text-slate-400 flex items-center gap-2 mb-2">
+                      <Phone className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span>{branch.phone}</span>
+                    </p>
+                    <p className="text-xs text-slate-400 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>{branch.hours}</span>
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-white/10 mt-4 flex items-center justify-between">
-                    <a
-                      href={`tel:${branch.phone.replace(/\s+/g, '')}`}
-                      className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{branch.phone}</span>
-                    </a>
-                  </div>
+                  <button
+                    onClick={() => setIsEnrollModalOpen(true)}
+                    className="w-full mt-6 py-2.5 rounded-xl bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition cursor-pointer"
+                  >
+                    {t("Ushbu filialga yozilish", "Enroll at this Branch", "Записаться в этот филиал")}
+                  </button>
                 </div>
               ))}
             </div>
+          </motion.div>
+        </section>
+
+        {/* 8. TESTIMONIALS SECTION */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
+          <div className="max-w-7xl mx-auto">
+            <TestimonialsCarousel testimonials={cmsContent.testimonials || []} />
           </div>
         </section>
 
-        {/* 8. INTERACTIVE FAQ ACCORDION */}
-        <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                {t("Ko'p Beriladigan Savollar", "Frequently Asked Questions", "Часто задаваемые вопросы")}
+        {/* 9. FAQ ACCORDION SECTION (FADE-IN MOTION) */}
+        <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-10">
+              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
+                Support & Info
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
+                {t("Tez-tez beriladigan savollar", "Frequently Asked Questions", "Часто задаваемые вопросы")}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                {t("CenterFlow ta'lim tizimi haqida eng ko'p so'raladigan savollarga javoblar", "Answers to common inquiries about our curriculum and scheduling", "Ответы на частые вопросы об обучении")}
-              </p>
             </div>
 
-            {/* Search Bar */}
+            {/* FAQ Search Bar */}
             <div className="relative mb-8">
-              <Search className="w-4 h-4 absolute left-4 top-3.5 text-slate-400" />
+              <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
-                placeholder={t("Savolni izlang...", "Search question...", "Поиск вопроса...")}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder={t("Savol bo'yicha qidirish...", "Search questions...", "Поиск по вопросам...")}
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition"
               />
             </div>
 
-            {/* Accordion list */}
+            {/* Accordion List */}
             <div className="space-y-4">
               {filteredFAQs.map((faq) => {
                 const isExpanded = expandedFaqId === faq.id;
@@ -1052,328 +1164,168 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 return (
                   <div
                     key={faq.id}
-                    className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden"
+                    className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden transition"
                   >
                     <button
                       onClick={() => setExpandedFaqId(isExpanded ? null : faq.id)}
-                      className="w-full p-5 text-left font-bold text-sm text-white flex items-center justify-between cursor-pointer hover:text-amber-400 transition"
+                      className="w-full p-5 text-left font-bold text-sm text-white flex items-center justify-between gap-4 cursor-pointer hover:text-amber-400 transition"
                     >
                       <span>{question}</span>
                       <ChevronDown
-                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-180 text-amber-400' : ''
+                        className={`w-4 h-4 text-amber-400 transition-transform duration-300 ${
+                          isExpanded ? 'rotate-180' : ''
                         }`}
                       />
                     </button>
-                    {isExpanded && (
-                      <div className="px-5 pb-5 text-xs text-slate-300 border-t border-white/10 pt-3 leading-relaxed">
-                        {answer}
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-white/5 pt-3"
+                        >
+                          {answer}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
             </div>
+          </motion.div>
+        </section>
+
+        {/* 10. LEAD REGISTRATION CTA FOOTER */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-b from-[#0d021a] to-slate-950 text-center">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              {t("Kelajakdagi orzularingizga ilk qadamni tashlang!", "Take the first step toward your dream score!", "Сделайте первый шаг к вашей мечте!")}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              {t("IELTS 8.5+ va grant sohibi bo'lish uchun bugunoq bepul diagnostika darsiga a'zo bo'ling.", "Book a free diagnostic level-check and trial lesson with our senior CELTA mentors.", "Запишитесь на бесплатный пробный урок и диагностику уровня.")}
+            </p>
+            <button
+              onClick={() => setIsEnrollModalOpen(true)}
+              className="px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/30 transition hover:scale-105 cursor-pointer"
+            >
+              {t("Sinov darsiga a'zo bo'lish", "Book Free Trial Lesson", "Записаться на бесплатный урок")}
+            </button>
           </div>
         </section>
 
-        {/* 9. LEAD CONTACT & FOOTER CTA BANNER */}
-        <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 relative">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              {/* Lead Intake Form */}
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
-                <h2 className="text-2xl font-black text-white mb-2">
-                  {t("Bepul Darsga Yozilish", "Book a Free Trial Lesson", "Записаться на пробный урок")}
-                </h2>
-                <p className="text-xs text-slate-400 mb-6">
-                  {t("Ma'lumotlaringizni qoldiring, qabul bo'limimiz 15 daqiqada bog'lanadi!", "Fill in your details and our team will contact you within 15 minutes!", "Оставьте данные, и мы свяжемся с вами в течение 15 минут!")}
-                </p>
-
-                {submitSuccess ? (
-                  <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-center space-y-2">
-                    <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-400" />
-                    <h4 className="text-lg font-bold">{t("Arizangiz Qabul Qilindi!", "Application Received!", "Заявка принята!")}</h4>
-                    <p className="text-xs">{t("Rahmat! Tez orada siz bilan bog'lanamiz.", "Thank you! We will call you soon.", "Спасибо! Мы скоро свяжемся с вами.")}</p>
-                    <button
-                      onClick={() => setSubmitSuccess(false)}
-                      className="mt-4 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold cursor-pointer"
-                    >
-                      {t("Yangi ariza topshirish", "Submit another application", "Отправить другую заявку")}
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleLeadSubmit} className="space-y-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">
-                        {t("Ism va Familiyangiz", "Full Name", "Имя и Фамилия")}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        placeholder="e.g. Jasurbek Rahimov"
-                        className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">
-                        {t("Telefon Raqamingiz", "Phone Number", "Номер телефона")}
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formPhone}
-                        onChange={(e) => setFormPhone(e.target.value)}
-                        placeholder="+998 90 123 45 67"
-                        className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-slate-300 block mb-1">
-                        {t("Tanlangan Kurs", "Select Course", "Выберите курс")}
-                      </label>
-                      <select
-                        value={formCourse}
-                        onChange={(e) => setFormCourse(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-[#120320] border border-white/15 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      >
-                        <option value="">{t("-- Kursni Tanlang --", "-- Select Course --", "-- Выберите курс --")}</option>
-                        <option value="IELTS Standard">IELTS Standard (7.0+ Target)</option>
-                        <option value="IELTS Rocket">IELTS Rocket Intensive (8.5+ Target)</option>
-                        <option value="General English">General English (A1 - C1)</option>
-                        <option value="IT Programming">IT & Web Development</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/20 transition cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <Send className="w-4 h-4" />
-                      <span>{isSubmitting ? 'Yuborilmoqda...' : t("Ariza Topshirish", "Submit Application", "Отправить заявку")}</span>
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              {/* Direct Call & Social Banner */}
-              <div className="space-y-8">
-                <div className="p-8 rounded-3xl bg-gradient-to-br from-purple-900/40 via-white/5 to-white/5 border border-white/10 backdrop-blur-xl">
-                  <span className="text-xs font-mono text-amber-400 block mb-1">Direct Hotline</span>
-                  <h3 className="text-3xl font-black text-white mb-4">
-                    +998 55 511 09 09
-                  </h3>
-                  <p className="text-xs text-slate-300 mb-6 leading-relaxed">
-                    {t("Qabul bo'limimiz haftaning barcha kunlari soat 08:00 dan 20:00 gacha qo'ng'iroqlarga javob beradi.", "Our call center is open 7 days a week from 08:00 to 20:00.", "Колл-центр работает ежедневно с 08:00 до 20:00.")}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <a
-                      href="https://t.me"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-500/30 transition flex items-center gap-2"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Telegram Manager</span>
-                    </a>
-                    <a
-                      href="https://instagram.com"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/30 text-xs font-bold hover:bg-pink-500/30 transition flex items-center gap-2"
-                    >
-                      <Instagram className="w-3.5 h-3.5" />
-                      <span>Instagram</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-8 border-t border-white/10 px-4 text-center text-xs text-slate-500">
-          <p>© 2026 CenterFlow. All rights reserved. Built for IELTS & Multi-Subject Mastery.</p>
+        {/* FOOTER BAR */}
+        <footer className="border-t border-white/10 py-8 px-4 text-center text-xs text-slate-500 bg-slate-950">
+          <p>© 2026 CenterFlow Education System. All rights reserved.</p>
         </footer>
       </div>
 
-      {/* STUDENT RESULT TRF CERTIFICATE MODAL */}
-      <ResultCertificateModal
-        result={selectedResult}
-        onClose={() => setSelectedResult(null)}
-      />
-
-      {/* TEACHER TRF & CREDENTIALS MODAL */}
-      <AnimatePresence>
-        {selectedTeacher && (
-          <div
-            onClick={() => setSelectedTeacher(null)}
-            className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#120320] border border-white/15 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl text-white space-y-6 max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                    <GraduationCap className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black">{selectedTeacher.name}</h3>
-                    <p className="text-xs text-amber-400 font-bold">{selectedTeacher.role}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedTeacher(null)}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Verified Credentials Box */}
-              <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-400 uppercase">Official Certification</span>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-black">
-                    {selectedTeacher.badge} Verified
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {getLangText(selectedTeacher.bioUz, selectedTeacher.bioEn, selectedTeacher.bioRu)}
-                </p>
-
-                <div className="grid grid-cols-2 gap-4 pt-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Tajriba</span>
-                    <span className="font-bold text-amber-400">{selectedTeacher.experience}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Tayyorlangan Studentlar</span>
-                    <span className="font-bold text-emerald-400">{selectedTeacher.resultsCount}+ Natijalar</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sample TRF Scanned Image Graphic */}
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 aspect-video bg-slate-900 group">
-                <img
-                  src={selectedTeacher.image}
-                  alt={selectedTeacher.name}
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex items-end p-6">
-                  <div>
-                    <span className="text-[10px] font-mono text-amber-400 uppercase block">Certified Test Report Form</span>
-                    <h4 className="text-lg font-bold text-white">{selectedTeacher.name} — TRF #789042</h4>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedTeacher(null)}
-                className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase cursor-pointer"
-              >
-                Yopish
-              </button>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* QUICK ENROLLMENT REGISTRATION MODAL */}
+      {/* LEAD CONTACT FORM MODAL */}
       <AnimatePresence>
         {isEnrollModalOpen && (
-          <div
-            onClick={() => setIsEnrollModalOpen(false)}
-            className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#120320] border border-white/15 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl text-white space-y-6"
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#120320] border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black">Ro'yxatdan O'tish</h3>
-                    <p className="text-xs text-slate-400">Sinov darsi va daraja aniqlash testiga yoziling</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsEnrollModalOpen(false)}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+              <button
+                onClick={() => setIsEnrollModalOpen(false)}
+                className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="mb-6">
+                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">
+                  CenterFlow Admissions
+                </span>
+                <h3 className="text-2xl font-black text-white mt-2">
+                  {t("Sinov Darsiga Yozilish", "Enroll for Trial Lesson", "Записаться на Пробный Урок")}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  {t("Ismingiz va telefon raqamingizni qoldiring, mutaxassisimiz bog'lanadi", "Leave your details and our team will contact you shortly", "Оставьте контакты и мы свяжемся с вами")}
+                </p>
               </div>
 
-              <form onSubmit={(e) => { handleLeadSubmit(e); setIsEnrollModalOpen(false); }} className="space-y-4">
+              <form onSubmit={handleLeadSubmit} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
-                    Ism va Familiyangiz
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    {t("Ism va Familiyangiz", "Full Name", "Имя и Фамилия")}
                   </label>
                   <input
                     type="text"
                     required
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="e.g. Jasurbek Rahimov"
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Jasur Aliyev"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
-                    Telefon Raqamingiz
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    {t("Telefon Raqamingiz", "Phone Number", "Номер телефона")}
                   </label>
                   <input
-                    type="tel"
+                    type="text"
                     required
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     placeholder="+998 90 123 45 67"
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
-                    Qaysi dars yoki kursga yozilmoqchisiz?
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    {t("Qiziqtirgan Kurs", "Interested Course", "Интересующий курс")}
                   </label>
                   <select
                     value={formCourse}
                     onChange={(e) => setFormCourse(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-[#120320] border border-white/15 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-3 rounded-xl bg-[#1a082c] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500 transition"
                   >
-                    <option value="IELTS Standard">IELTS Standard (7.0+ Target)</option>
-                    <option value="IELTS Rocket">IELTS Rocket Intensive (8.5+ Target)</option>
-                    <option value="General English">General English (A1 - C1)</option>
-                    <option value="IT Programming">IT & Web Development</option>
+                    <option value="IELTS Rocket 8.5">IELTS Rocket 8.5+</option>
+                    <option value="General English Standard">General English (CEFR)</option>
+                    <option value="Kids & Teens Foundation">Kids & Foundation</option>
+                    <option value="IT & Programming">IT & Web Development</option>
                   </select>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-xl shadow-amber-500/20 transition cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
-                  Ro'yxatdan o'tishni tasdiqlash
+                  {isSubmitting ? (
+                    <span>Yuborilmoqda...</span>
+                  ) : (
+                    <>
+                      <span>{t("Arizani Yuborish", "Submit Registration", "Отправить Заявку")}</span>
+                      <Send className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
-            </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* TEACHER CERTIFICATE MODAL */}
+      <TeacherCertificateModal
+        teacher={selectedTeacher}
+        onClose={() => setSelectedTeacher(null)}
+      />
+
+      {/* RESULT TRF SCORE CARD MODAL */}
+      <ResultCertificateModal
+        result={selectedResult}
+        onClose={() => setSelectedResult(null)}
+      />
     </div>
   );
 };

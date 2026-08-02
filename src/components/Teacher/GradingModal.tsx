@@ -1302,3 +1302,6 @@ export const GradingModal: React.FC<GradingModalProps> = ({
     </div>
   );
 };
+
+export { TeacherEvaluationResponse } from './TeacherEvaluationResponse';
+

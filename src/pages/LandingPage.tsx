@@ -1097,17 +1097,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </section>
 
-        {/* 6. STUDENT APP SPOTLIGHT (FADE-LEFT MOTION) */}
-        <section id="student-app" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
+        {/* 6. STUDENT APP SPOTLIGHT (FADE-RIGHT ON TEXT, FADE-LEFT ON APP CARDS) */}
+        <section id="student-app" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5 overflow-hidden">
+          <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              <div className="lg:col-span-6 space-y-6">
+              {/* Text Side (Fade Right) */}
+              <motion.div
+                initial={{ opacity: 0, x: -60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+                className="lg:col-span-6 space-y-6"
+              >
                 <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
                   Mobile & Web Ecosystem
                 </span>
@@ -1149,10 +1150,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Mockup Display */}
-              <div className="lg:col-span-6 relative">
+              {/* Mockup Display Side (Fade Left) */}
+              <motion.div
+                initial={{ opacity: 0, x: 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
+                className="lg:col-span-6 relative"
+              >
                 <div className="relative mx-auto max-w-sm rounded-3xl bg-slate-900 border-4 border-slate-800 p-4 shadow-2xl overflow-hidden">
                   <div className="p-4 bg-[#120320] rounded-2xl border border-white/10 text-xs space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -1186,9 +1193,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* 7. BRANCHES SECTION (FADE-UP MOTION) */}
@@ -1258,11 +1265,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </section>
 
-        {/* 9. FAQ ACCORDION SECTION (FADE-IN MOTION) */}
+        {/* 9. FAQ ACCORDION SECTION (FADE-UP MOTION) */}
         <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7 }}
             className="max-w-4xl mx-auto"

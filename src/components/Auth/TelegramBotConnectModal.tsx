@@ -36,7 +36,7 @@ export const TelegramBotConnectModal: React.FC<TelegramBotConnectModalProps> = (
   const [showQr, setShowQr] = useState(false);
 
   const token = authToken || currentUser?.uid || 'CF_SESSION_' + Math.random().toString(36).substring(2, 9);
-  const botUsername = 'CenterFlowBot';
+  const botUsername = 'centerflow_bot';
   const telegramDeepLink = `https://t.me/${botUsername}?start=${token}`;
 
   useEffect(() => {

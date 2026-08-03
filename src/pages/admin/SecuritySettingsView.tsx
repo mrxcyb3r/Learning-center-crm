@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Settings, Lock, MapPin, Phone, MessageCircle, Save, CheckCircle2, ShieldCheck, Key, GraduationCap, UserCheck, Loader2 } from 'lucide-react';
+import { Settings, Lock, MapPin, Phone, MessageCircle, Save, CheckCircle2, ShieldCheck, Key, GraduationCap, UserCheck, Loader2, Send } from 'lucide-react';
 import { subscribeSecurityPins, saveSecurityPins, SecurityPinsData } from '../../services/firestore';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { SUPER_ADMIN_UID } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { TelegramAdminPanel } from '../../components/admin/TelegramAdminPanel';
 
 export const SecuritySettingsView: React.FC = () => {
   const { language } = useLanguage();
@@ -268,6 +269,11 @@ export const SecuritySettingsView: React.FC = () => {
           )}
         </button>
       </form>
+
+      {/* TELEGRAM BOT ADMINISTRATOR MANAGEMENT SUITE */}
+      <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
+        <TelegramAdminPanel />
+      </div>
     </div>
   );
 };

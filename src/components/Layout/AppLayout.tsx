@@ -26,6 +26,8 @@ import { LandingPageEditor } from '../../pages/admin/LandingPageEditor';
 import { LandingPageCMSView } from '../../pages/admin/LandingPageCMSView';
 import { InquiriesView } from '../../pages/admin/InquiriesView';
 import { SettingsView } from '../../pages/admin/SettingsView';
+import { TelegramAdminPanel } from '../admin/TelegramAdminPanel';
+import { TelegramSettingsCard } from '../TelegramSettingsCard';
 import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
 import {
   ShieldCheck,
@@ -54,7 +56,8 @@ import {
   DollarSign,
   TrendingUp,
   Sparkles,
-  PhoneCall
+  PhoneCall,
+  Send
 } from 'lucide-react';
 import { subscribeInquiries, subscribeNotifications } from '../../services/firestore';
 import { NotificationCenter } from '../UI/NotificationCenter';
@@ -163,6 +166,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Kontrakt", 'Tuition & Payments', 'Оплата и Контракты'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
+        { id: 'telegram', label: t('Telegram Bot Suite', 'Telegram Bot Suite', 'Telegram Бот Панель'), icon: <Send className="w-4 h-4 text-blue-400" /> },
         { id: 'security', label: t("Xavfsizlik va PIN Kodlar", 'Security & PIN Codes', 'Безопасность и PIN-коды'), icon: <Settings className="w-4 h-4" /> },
         { id: 'superadmin_control', label: t('SuperAdmin Boshqaruvi', 'SuperAdmin Control', 'Панель SuperAdmin'), icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> }
       ];
@@ -177,6 +181,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { id: 'classes', label: t("Guruhlar & Darslar", 'Classes & Groups', 'Группы и Занятия'), icon: <BookOpen className="w-4 h-4" /> },
         { id: 'payments', label: t("To'lovlar & Kontrakt", 'Tuition & Payments', 'Оплата и Контракты'), icon: <CreditCard className="w-4 h-4" /> },
         { id: 'payroll', label: t("Oylik Maosh & Harajatlar", 'Payroll & Expenses', 'Зарплаты и Расходы'), icon: <DollarSign className="w-4 h-4" /> },
+        { id: 'telegram', label: t('Telegram Bot Suite', 'Telegram Bot Suite', 'Telegram Бот Панель'), icon: <Send className="w-4 h-4 text-blue-400" /> },
         { id: 'security', label: t("Xavfsizlik va PIN Kodlar", 'Security & PIN Codes', 'Безопасность и PIN-коды'), icon: <Settings className="w-4 h-4" /> }
       ];
     }
@@ -402,6 +407,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             ) : <BlogCMSView />
           )}
           {(activeTab === 'settings' || activeTab === 'security') && <SettingsView />}
+          {activeTab === 'telegram' && <TelegramAdminPanel />}
 
           {/* Fallback to Dashboard / children */}
           {(activeTab === 'dashboard' ||
@@ -423,7 +429,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               'classes',
               'blog',
               'settings',
-              'security'
+              'security',
+              'telegram'
             ].includes(activeTab)) &&
             (React.isValidElement(children)
               ? React.cloneElement(children as React.ReactElement<any>, { onNavigate: handleNavigate })

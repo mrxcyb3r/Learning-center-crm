@@ -3,6 +3,16 @@ export interface BotStatusResponse {
   telegramUsername?: string;
   chatId?: string;
   chatConnectedAt?: string;
+  isRateLimited?: boolean;
+  errorMessage?: string;
+}
+
+export interface BotHealthResponse {
+  status: string;
+  botUsername: string;
+  mode: 'polling' | 'webhook';
+  bridgeConnected: boolean;
+  serverTime?: string;
 }
 
 export interface NotifyGradePayload {
@@ -18,15 +28,63 @@ export interface AssignPinPayload {
   pin: string;
 }
 
+export interface BroadcastResponse {
+  success: boolean;
+  totalConnected: number;
+  sentCount: number;
+  failedCount: number;
+  message?: string;
+  error?: string;
+  isRateLimited?: boolean;
+}
+
 export const BOT_USERNAME = 'centerflow_bot';
 
 export function getBotDeepLink(userUid: string): string {
   return `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(userUid)}`;
 }
 
+export async function checkBotHealth(): Promise<BotHealthResponse> {
+  try {
+    const response = await fetch('/api/bot/health');
+    if (!response.ok) {
+      return {
+        status: 'error',
+        botUsername: BOT_USERNAME,
+        mode: 'polling',
+        bridgeConnected: false
+      };
+    }
+    const data = await response.json();
+    return {
+      status: data.status || 'ok',
+      botUsername: data.botUsername || BOT_USERNAME,
+      mode: data.mode || 'polling',
+      bridgeConnected: Boolean(data.bridgeConnected),
+      serverTime: data.serverTime
+    };
+  } catch (err) {
+    console.warn('Bot health check failed:', err);
+    return {
+      status: 'offline',
+      botUsername: BOT_USERNAME,
+      mode: 'polling',
+      bridgeConnected: false
+    };
+  }
+}
+
 export async function checkBotStatus(userUid: string): Promise<BotStatusResponse> {
   try {
     const response = await fetch(`/api/bot/status/${encodeURIComponent(userUid)}`);
+    if (response.status === 429) {
+      const errData = await response.json().catch(() => ({}));
+      return {
+        isConnected: false,
+        isRateLimited: true,
+        errorMessage: errData.message || 'Rate limit hit. Please wait a moment.'
+      };
+    }
     if (!response.ok) {
       return { isConnected: false };
     }
@@ -43,17 +101,21 @@ export async function checkBotStatus(userUid: string): Promise<BotStatusResponse
   }
 }
 
-export async function assignUserPin(userUid: string, pin: string): Promise<boolean> {
+export async function assignUserPin(userUid: string, pin: string): Promise<{ success: boolean; message?: string; isRateLimited?: boolean }> {
   try {
     const response = await fetch('/api/bot/assign-pin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userUid, pin })
     });
-    return response.ok;
+    if (response.status === 429) {
+      return { success: false, isRateLimited: true, message: 'Too many PIN assignment attempts. Slow down!' };
+    }
+    const data = await response.json();
+    return { success: response.ok, message: data.message };
   } catch (error) {
     console.error('Error assigning PIN via Telegram service:', error);
-    return false;
+    return { success: false, message: 'Network or server error.' };
   }
 }
 
@@ -68,5 +130,52 @@ export async function sendGradeNotification(payload: NotifyGradePayload): Promis
   } catch (error) {
     console.error('Error sending grade notification via Telegram service:', error);
     return false;
+  }
+}
+
+export async function sendGlobalBroadcast(message: string): Promise<BroadcastResponse> {
+  try {
+    const response = await fetch('/api/bot/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    if (response.status === 429) {
+      const errData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        totalConnected: 0,
+        sentCount: 0,
+        failedCount: 0,
+        isRateLimited: true,
+        error: errData.message || 'Rate limit hit for global broadcasts. Please wait 3 seconds.'
+      };
+    }
+    const data = await response.json();
+    if (!response.ok) {
+      return {
+        success: false,
+        totalConnected: 0,
+        sentCount: 0,
+        failedCount: 0,
+        error: data.error || 'Broadcast failed'
+      };
+    }
+    return {
+      success: true,
+      totalConnected: data.totalConnected || 0,
+      sentCount: data.sentCount || 0,
+      failedCount: data.failedCount || 0,
+      message: data.message
+    };
+  } catch (error: any) {
+    console.error('Error executing broadcast:', error);
+    return {
+      success: false,
+      totalConnected: 0,
+      sentCount: 0,
+      failedCount: 0,
+      error: error?.message || 'Network error executing broadcast'
+    };
   }
 }

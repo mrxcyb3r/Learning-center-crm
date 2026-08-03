@@ -4,6 +4,7 @@ import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { TypewriterText } from '../common/TypewriterText';
 import { StudentProgressCharts } from '../student/StudentProgressCharts';
+import { TelegramSettingsCard } from '../TelegramSettingsCard';
 import { AdminDashboard } from '../../pages/admin/AdminDashboard';
 import {
   subscribeStudents,
@@ -874,6 +875,9 @@ export const StudentDashboardView: React.FC<{
           </table>
         </div>
       </div>
+
+      {/* Telegram Bot Connection & Notification Preferences */}
+      <TelegramSettingsCard />
 
       {/* Recharts Student Progress Radar & Line Charts */}
       <StudentProgressCharts />

@@ -9,6 +9,10 @@ export interface UserProfile {
   photoURL?: string | null;
   phoneNumber?: string | null;
   createdAt?: string;
+  telegramUsername?: string | null;
+  telegramChatId?: string | null;
+  isBotConnected?: boolean;
+  assignedPin?: string | null;
 }
 
 export type Language = 'UZ' | 'EN' | 'RU';

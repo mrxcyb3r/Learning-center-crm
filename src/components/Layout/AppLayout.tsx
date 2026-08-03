@@ -26,7 +26,7 @@ import { LandingPageEditor } from '../../pages/admin/LandingPageEditor';
 import { LandingPageCMSView } from '../../pages/admin/LandingPageCMSView';
 import { InquiriesView } from '../../pages/admin/InquiriesView';
 import { SettingsView } from '../../pages/admin/SettingsView';
-import { TelegramAdminPanel } from '../admin/TelegramAdminPanel';
+import { TelegramPanel } from '../TelegramPanel';
 import { TelegramSettingsCard } from '../TelegramSettingsCard';
 import { PrimeAIAssistant } from '../AI/PrimeAIAssistant';
 import {
@@ -407,7 +407,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             ) : <BlogCMSView />
           )}
           {(activeTab === 'settings' || activeTab === 'security') && <SettingsView />}
-          {activeTab === 'telegram' && <TelegramAdminPanel />}
+          {activeTab === 'telegram' && <TelegramPanel />}
 
           {/* Fallback to Dashboard / children */}
           {(activeTab === 'dashboard' ||

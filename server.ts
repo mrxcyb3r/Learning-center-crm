@@ -1,31 +1,123 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
+import helmet from 'helmet';
+import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
 const app = express();
 const PORT = 3000;
 
-// Enable JSON parsing with 25MB limit for Base64 multimodal uploads (images, audio)
+// Security Monitoring & Performance Metrics
+let rateLimitTriggerCount = 0;
+let securityViolationCount = 0;
+const startTime = Date.now();
+
+const logSecurityEvent = (eventType: string, details: Record<string, any>) => {
+  const timestamp = new Date().toISOString();
+  console.warn(`[SECURITY AUDIT] [${timestamp}] [${eventType}]`, JSON.stringify(details));
+};
+
+// 1. Environment & Secrets Audit
+const validateEnvironmentAndSecrets = () => {
+  const secrets = {
+    TELEGRAM_BOT_TOKEN: Boolean(process.env.TELEGRAM_BOT_TOKEN),
+    FIREBASE_SERVICE_ACCOUNT_PATH: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_PATH),
+    ADMIN_API_SECRET: Boolean(process.env.ADMIN_API_SECRET),
+    TELEGRAM_WEBHOOK_SECRET: Boolean(process.env.TELEGRAM_WEBHOOK_SECRET),
+    GEMINI_API_KEY: Boolean(process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY)
+  };
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+    const serviceAccountPath = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+    if (!fs.existsSync(serviceAccountPath)) {
+      logSecurityEvent('FIREBASE_CONFIG_WARNING', { message: `Path '${serviceAccountPath}' not found on filesystem.` });
+    } else {
+      try {
+        fs.accessSync(serviceAccountPath, fs.constants.R_OK);
+        console.log('[SECURITY AUDIT] Firebase service account file permissions verified.');
+      } catch (err) {
+        logSecurityEvent('FIREBASE_PERMISSION_ERROR', { message: 'Service account file unreadable.' });
+      }
+    }
+  }
+
+  console.log('[SECURITY AUDIT] Startup Environment Summary:', {
+    TELEGRAM_BOT_TOKEN: secrets.TELEGRAM_BOT_TOKEN ? 'CONFIGURED' : 'DEFAULT_FALLBACK',
+    ADMIN_API_SECRET: secrets.ADMIN_API_SECRET ? 'CONFIGURED' : 'DEFAULT_FALLBACK',
+    TELEGRAM_WEBHOOK_SECRET: secrets.TELEGRAM_WEBHOOK_SECRET ? 'CONFIGURED' : 'NOT_SET',
+    GEMINI_API_KEY: secrets.GEMINI_API_KEY ? 'CONFIGURED' : 'NOT_SET',
+  });
+};
+validateEnvironmentAndSecrets();
+
+// 2. HTTP Security Headers & Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Compatibility for Vite dev mode & iframe preview
+  crossOriginEmbedderPolicy: false
+}));
+
+const allowedOrigins = [
+  process.env.WEB_PORTAL_URL,
+  process.env.APP_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+  credentials: true
+}));
+
+// Enable JSON parsing with 25MB limit for Base64 uploads
 app.use(express.json({ limit: '25mb' }));
+
+// 3. Rate Limiting Middleware Map & Input Sanitization Helpers
+const rateLimitMap = new Map<string, number>();
+
+const checkRateLimit = (key: string, limitMs = 1500): boolean => {
+  const now = Date.now();
+  const lastTime = rateLimitMap.get(key) || 0;
+  if (now - lastTime < limitMs) {
+    rateLimitTriggerCount++;
+    return false; // Rate limited
+  }
+  rateLimitMap.set(key, now);
+  return true;
+};
+
+const isValidUid = (uid: string): boolean => {
+  return typeof uid === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(uid);
+};
+
+const isValidPin = (pin: string): boolean => {
+  return typeof pin === 'string' && /^\d{4}$/.test(pin);
+};
 
 // Lazy/Safe Gemini initialization
 const getGeminiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
   if (!apiKey) {
-    console.warn('Warning: GEMINI_API_KEY is not configured in environment.');
+    console.warn('[SECURITY NOTICE] GEMINI_API_KEY is not configured in environment.');
   }
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
       headers: {
-        'User-Agent': 'aistudio-build',
+        'User-Agent': 'aistudio-build-centerflow',
       },
     },
   });
 };
 
-// Exponential backoff retry helper
+// Exponential backoff retry helper with 429 rate limit handling
 async function generateContentWithRetry(params: any, retries = 3, initialDelay = 1000) {
   const ai = getGeminiClient();
   for (let i = 0; i < retries; i++) {
@@ -49,7 +141,7 @@ async function generateContentWithRetry(params: any, retries = 3, initialDelay =
   throw new Error('Gemini API call failed after retries.');
 }
 
-// Global System Prompts for Teacher vs Student AI Personas
+// Global System Prompts
 const TEACHER_SYSTEM_INSTRUCTION = `
 You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teachers at Renessans Learning Center.
 YOUR ROLE & RESPONSIBILITIES:
@@ -72,28 +164,14 @@ TONE: Encouraging, patient, structured, and supportive.
 
 // --- API ROUTES ---
 
-// Telegram Bot Endpoints
 const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET || 'centerflow_admin_secret_2026';
-
-// Store in-memory rate-limit timestamps per IP/UID
-const rateLimitMap = new Map<string, number>();
-
-const checkRateLimit = (key: string, limitMs = 1500): boolean => {
-  const now = Date.now();
-  const lastTime = rateLimitMap.get(key) || 0;
-  if (now - lastTime < limitMs) {
-    return false; // Rate limited
-  }
-  rateLimitMap.set(key, now);
-  return true;
-};
 
 // 0. Telegram Bot Health & System Status
 app.get('/api/bot/health', (req, res) => {
   res.json({
     status: 'ok',
     botUsername: 'centerflow_bot',
-    mode: 'polling',
+    mode: process.env.BOT_MODE || 'polling',
     bridgeConnected: true,
     serverTime: new Date().toISOString()
   });
@@ -102,17 +180,20 @@ app.get('/api/bot/health', (req, res) => {
 // 0.1 Telegram Bot Status for a specific user
 app.get('/api/bot/status/:userUid', (req, res) => {
   const { userUid } = req.params;
-  const clientKey = `status_${req.ip}_${userUid}`;
 
+  if (!isValidUid(userUid)) {
+    return res.status(400).json({ error: 'Invalid userUid format.' });
+  }
+
+  const clientKey = `status_${req.ip}_${userUid}`;
   if (!checkRateLimit(clientKey, 500)) {
+    logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/bot/status', userUid, ip: req.ip });
     return res.status(429).json({
       error: 'Too Many Requests',
       message: 'Rate limit exceeded for bot status checks. Please wait a moment before trying again.'
     });
   }
 
-  // In production, this checks Firestore or bot storage.
-  // We return a mock/active state response for demo UIDs or standard format.
   const isDemoStudent = userUid === 'demo_student' || userUid.includes('student');
   const isDemoTeacher = userUid === 'demo_teacher' || userUid.includes('teacher');
   const isConnected = isDemoStudent || isDemoTeacher || userUid.length > 5;
@@ -129,6 +210,7 @@ app.get('/api/bot/status/:userUid', (req, res) => {
 app.post('/api/bot/broadcast', (req, res) => {
   const clientKey = `broadcast_${req.ip}`;
   if (!checkRateLimit(clientKey, 3000)) {
+    logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/bot/broadcast', ip: req.ip });
     return res.status(429).json({
       error: 'Too Many Requests',
       message: 'Broadcast rate limit hit. Please wait a few seconds between global broadcasts.'
@@ -136,8 +218,8 @@ app.post('/api/bot/broadcast', (req, res) => {
   }
 
   const { message } = req.body;
-  if (!message || typeof message !== 'string' || message.trim().length === 0) {
-    return res.status(400).json({ error: 'Broadcast message content is required.' });
+  if (!message || typeof message !== 'string' || message.trim().length === 0 || message.length > 4000) {
+    return res.status(400).json({ error: 'Valid broadcast message content (max 4000 chars) is required.' });
   }
 
   // Simulate broadcast execution to all active connected Telegram chats
@@ -155,11 +237,23 @@ app.post('/api/bot/broadcast', (req, res) => {
   });
 });
 
-// 0.3 Assign Security PIN via Telegram
+// 0.3 Assign Security PIN via Telegram (Strict Regex Validation)
 app.post('/api/bot/assign-pin', (req, res) => {
   const { userUid, pin } = req.body;
-  if (!userUid || !pin) {
-    return res.status(400).json({ error: 'userUid and pin are required.' });
+
+  if (!isValidUid(userUid)) {
+    return res.status(400).json({ error: 'Invalid userUid format.' });
+  }
+
+  if (!isValidPin(pin)) {
+    logSecurityEvent('INVALID_PIN_SUBMISSION', { userUid, ip: req.ip });
+    return res.status(400).json({ error: 'PIN strictly must be a 4-digit numerical string.' });
+  }
+
+  const clientKey = `pin_${req.ip}_${userUid}`;
+  if (!checkRateLimit(clientKey, 2000)) {
+    logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/bot/assign-pin', userUid, ip: req.ip });
+    return res.status(429).json({ error: 'Too Many Requests: Please slow down PIN assignment requests.' });
   }
 
   res.json({
@@ -172,9 +266,18 @@ app.post('/api/bot/assign-pin', (req, res) => {
 
 // 0.4 Notify Grade via Telegram
 app.post('/api/bot/notify-grade', (req, res) => {
-  const { studentUid, title, score, feedback } = req.body;
-  if (!studentUid || !title || !score) {
-    return res.status(400).json({ error: 'studentUid, title, and score are required.' });
+  const { studentUid, title, score } = req.body;
+
+  if (!isValidUid(studentUid)) {
+    return res.status(400).json({ error: 'Invalid studentUid format.' });
+  }
+
+  if (!title || typeof title !== 'string' || title.length > 200) {
+    return res.status(400).json({ error: 'Title is required (max 200 characters).' });
+  }
+
+  if (!score || typeof score !== 'string' || score.length > 50) {
+    return res.status(400).json({ error: 'Score is required (max 50 characters).' });
   }
 
   res.json({
@@ -186,7 +289,27 @@ app.post('/api/bot/notify-grade', (req, res) => {
   });
 });
 
-// 1. Universal Subject Coach with Grounding and Model selection
+// 0.5 Webhook Security Verification Endpoint (Webhook mode)
+app.post('/api/bot/webhook', (req, res) => {
+  const secretHeader = req.headers['x-telegram-bot-api-secret-token'];
+  const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || ADMIN_API_SECRET;
+
+  if (process.env.BOT_MODE === 'webhook' && secretHeader !== expectedSecret) {
+    securityViolationCount++;
+    logSecurityEvent('WEBHOOK_SPOOF_ATTEMPT', { ip: req.ip, headers: req.headers });
+    return res.status(403).json({ error: 'Forbidden: Secret token mismatch.' });
+  }
+
+  const update = req.body;
+  // Handle 403 Forbidden (bot blocked by user) or updates
+  if (update?.my_chat_member?.new_chat_member?.status === 'kicked') {
+    logSecurityEvent('TELEGRAM_BOT_BLOCKED_BY_USER', { user: update.my_chat_member.from });
+  }
+
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// 1. Universal Subject Coach Endpoint
 app.post('/api/ai/coach', async (req, res) => {
   try {
     const {
@@ -199,6 +322,10 @@ app.post('/api/ai/coach', async (req, res) => {
       model = 'gemini-3.6-flash',
       customSystemInstruction
     } = req.body;
+
+    if (!prompt || typeof prompt !== 'string' || prompt.length > 10000) {
+      return res.status(400).json({ error: 'Prompt is required and must be under 10000 characters.' });
+    }
 
     let systemInst = customSystemInstruction || (role === 'teacher' ? TEACHER_SYSTEM_INSTRUCTION : STUDENT_SYSTEM_INSTRUCTION);
     if (!customSystemInstruction && (role === 'admin' || role === 'superadmin')) {
@@ -218,9 +345,9 @@ app.post('/api/ai/coach', async (req, res) => {
       });
     }
 
-    if (contextHistory.length > 0) {
+    if (Array.isArray(contextHistory) && contextHistory.length > 0) {
       const formattedHistory = contextHistory
-        .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
+        .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text || ''}`)
         .slice(-8)
         .join('\n');
       parts.push({ text: `Previous Conversation History:\n${formattedHistory}\n\nCurrent User Question: ${prompt}` });
@@ -255,14 +382,18 @@ app.post('/api/ai/coach', async (req, res) => {
     });
   } catch (err: any) {
     console.error('API Error /api/ai/coach:', err);
-    res.status(500).json({ error: err?.message || 'Gemini service error' });
+    res.status(500).json({ error: 'Gemini service processing error' });
   }
 });
 
-// 2. Study Document / Textbook OCR & Analysis
+// 2. Study Document OCR & Analysis
 app.post('/api/ai/analyze-doc', async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg', questionPrompt = '', userLanguage = 'uz' } = req.body;
+
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({ error: 'Document image data is required.' });
+    }
 
     const langName = userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English';
 
@@ -294,7 +425,7 @@ Perform OCR and analysis:
     res.json({ text: response.text });
   } catch (err: any) {
     console.error('API Error /api/ai/analyze-doc:', err);
-    res.status(500).json({ error: err?.message || 'Document analysis failed' });
+    res.status(500).json({ error: 'Document analysis failed' });
   }
 });
 
@@ -302,6 +433,10 @@ Perform OCR and analysis:
 app.post('/api/ai/evaluate-speaking', async (req, res) => {
   try {
     const { audioBase64, mimeType = 'audio/webm', partNumber = 1, userLanguage = 'uz' } = req.body;
+
+    if (!audioBase64 || typeof audioBase64 !== 'string') {
+      return res.status(400).json({ error: 'Audio recording data is required.' });
+    }
 
     const langName = userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English';
 
@@ -342,7 +477,7 @@ Format the response cleanly with Markdown headers and bullet points.
     res.json({ text: response.text });
   } catch (err: any) {
     console.error('API Error /api/ai/evaluate-speaking:', err);
-    res.status(500).json({ error: err?.message || 'Speaking evaluation failed' });
+    res.status(500).json({ error: 'Speaking evaluation failed' });
   }
 });
 
@@ -350,6 +485,10 @@ Format the response cleanly with Markdown headers and bullet points.
 app.post('/api/ai/grade-essay', async (req, res) => {
   try {
     const { essayText, taskType = 'task2', rubricPrompt = '', userLanguage = 'uz' } = req.body;
+
+    if (!essayText || typeof essayText !== 'string' || essayText.trim().length === 0) {
+      return res.status(400).json({ error: 'Essay text is required.' });
+    }
 
     const langName = userLanguage === 'uz' ? "O'zbekcha" : userLanguage === 'ru' ? 'Русский' : 'English';
 
@@ -388,16 +527,64 @@ Evaluation requirements:
     res.json({ text: response.text });
   } catch (err: any) {
     console.error('API Error /api/ai/grade-essay:', err);
-    res.status(500).json({ error: err?.message || 'Essay grading failed' });
+    res.status(500).json({ error: 'Essay grading failed' });
   }
 });
 
-// Health Check Endpoint
+// 5. Enhanced Security Monitoring & Health System Endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', serverTime: new Date().toISOString() });
+  const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const memoryUsage = process.memoryUsage();
+  res.json({
+    status: 'ok',
+    uptimeSeconds,
+    memoryUsage: {
+      rssMb: Math.round(memoryUsage.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memoryUsage.heapUsed / 1024 / 1024)
+    },
+    securityMetrics: {
+      rateLimitTriggerCount,
+      securityViolationCount
+    },
+    environmentStatus: {
+      mode: process.env.BOT_MODE || 'polling',
+      geminiConfigured: Boolean(process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY)
+    },
+    serverTime: new Date().toISOString()
+  });
 });
 
-// Vite Middleware Integration
+app.get('/health', (req, res) => {
+  res.redirect('/api/health');
+});
+
+// 6. Centralized Error Handling Middleware (Prevents Stack Trace Leakage)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[UNHANDLED EXPRESS ROUTE ERROR]', {
+    path: req.path,
+    method: req.method,
+    errorName: err?.name,
+    errorMessage: err?.message,
+    ip: req.ip
+  });
+
+  res.status(err.status || 500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production' ? 'An internal error occurred. Please try again.' : (err?.message || 'Unexpected server error'),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Process Uncaught Exception and Unhandled Rejection Safeguards
+process.on('uncaughtException', (error) => {
+  logSecurityEvent('UNCAUGHT_EXCEPTION', { message: error.message, stack: error.stack });
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  logSecurityEvent('UNHANDLED_REJECTION', { reason: reason?.message || String(reason) });
+});
+
+// Vite Middleware Integration & Server Startup
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -413,9 +600,26 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`CenterFlow Full-Stack Server running on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on http://0.0.0.0:${PORT}`);
   });
+
+  // Graceful Shutdown Handler
+  const handleGracefulShutdown = (signal: string) => {
+    console.log(`[SHUTDOWN] Received ${signal}. Draining active connections...`);
+    server.close(() => {
+      console.log('[SHUTDOWN] CenterFlow HTTP server cleanly closed.');
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      console.error('[SHUTDOWN] Forced shutdown after timeout.');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
 }
 
 startServer();

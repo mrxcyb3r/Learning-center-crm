@@ -23,6 +23,9 @@ import { AppLayout } from './components/Layout/AppLayout';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { ParticleBackground } from './components/UI/ParticleBackground';
 import { UserRole } from './types';
+import { SEOHead } from './components/SEOHead';
+import { preloadImages } from './utils/performance';
+import { APP_ASSETS } from './constants/assets';
 import {
   ShieldCheck,
   Loader2,
@@ -262,6 +265,16 @@ function MainAppRoutes() {
       once: true,
       easing: 'ease-out-cubic'
     });
+
+    // Preload critical application images for smooth LCP & transitions
+    preloadImages([
+      APP_ASSETS.bgDarkMode,
+      APP_ASSETS.bgLightMode,
+      APP_ASSETS.highScorerBadge,
+      APP_ASSETS.aiLogo,
+      APP_ASSETS.studentMockup,
+      APP_ASSETS.teacherMockup
+    ]);
   }, []);
 
   if (isLoading) {
@@ -329,6 +342,7 @@ export default function App() {
         <AuthProvider>
           <AppDataProvider>
             <BrowserRouter>
+              <SEOHead />
               <AppBackground />
               <MainAppRoutes />
               <ToastContainer

@@ -8,6 +8,7 @@ import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel'
 import { StudentResult, Teacher, LandingPageContent } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
 import { TeacherCertificateModal } from '../components/TeacherCertificateModal';
+import { RoleShowcaseSection } from '../components/RoleShowcaseSection';
 import { Navbar } from '../components/Navbar';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -648,6 +649,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             </div>
           </div>
         </section>
+
+        {/* INTERACTIVE ROLE SHOWCASE WITH DIRECT MOCKUP IMAGES */}
+        <RoleShowcaseSection onOpenAuth={onOpenAuth} />
 
         {/* 4. ROLE-ADAPTIVE FEATURE EXPLORER (INTERACTIVE 3-TAB SECTION) */}
         <section id="role-demos" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative">

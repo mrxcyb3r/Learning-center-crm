@@ -6,6 +6,7 @@ import { TypewriterText } from '../common/TypewriterText';
 import { StudentProgressCharts } from '../student/StudentProgressCharts';
 import { TelegramSettingsCard } from '../TelegramSettingsCard';
 import { LeaderboardWidget } from '../LeaderboardWidget';
+import { AnimatedLeaderboard } from '../AnimatedLeaderboard';
 import { AiHeader } from '../AiHeader';
 import { AdminDashboard } from '../../pages/admin/Dashboard';
 import { TeacherDashboard } from '../../pages/teacher/Dashboard';
@@ -887,7 +888,7 @@ export const StudentDashboardView: React.FC<{
       <TelegramSettingsCard />
 
       {/* High-Score Student Leaderboard */}
-      <LeaderboardWidget />
+      <AnimatedLeaderboard />
 
       {/* Recharts Student Progress Radar & Line Charts */}
       <StudentProgressCharts />

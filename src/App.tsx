@@ -15,6 +15,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppDataProvider } from './context/AppDataContext';
 import { LandingPage } from './pages/LandingPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AppLayout } from './components/Layout/AppLayout';
@@ -325,21 +326,23 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <MainAppRoutes />
-            <ToastContainer
-              position="bottom-right"
-              autoClose={3500}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-            />
-          </BrowserRouter>
+          <AppDataProvider>
+            <BrowserRouter>
+              <MainAppRoutes />
+              <ToastContainer
+                position="bottom-right"
+                autoClose={3500}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
+            </BrowserRouter>
+          </AppDataProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

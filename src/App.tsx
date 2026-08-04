@@ -16,8 +16,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppDataProvider } from './context/AppDataContext';
+import { AppBackground } from './components/AppBackground';
 import { LandingPage } from './pages/LandingPage';
-import { AuthModal } from './components/Auth/AuthModal';
+import { AnimatedAuthModal as AuthModal } from './components/AnimatedAuthModal';
 import { AppLayout } from './components/Layout/AppLayout';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { ParticleBackground } from './components/UI/ParticleBackground';
@@ -328,6 +329,7 @@ export default function App() {
         <AuthProvider>
           <AppDataProvider>
             <BrowserRouter>
+              <AppBackground />
               <MainAppRoutes />
               <ToastContainer
                 position="bottom-right"

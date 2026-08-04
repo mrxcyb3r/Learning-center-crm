@@ -5,6 +5,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { TypewriterText } from '../common/TypewriterText';
 import { StudentProgressCharts } from '../student/StudentProgressCharts';
 import { TelegramSettingsCard } from '../TelegramSettingsCard';
+import { LeaderboardWidget } from '../LeaderboardWidget';
+import { AiHeader } from '../AiHeader';
 import { AdminDashboard } from '../../pages/admin/Dashboard';
 import { TeacherDashboard } from '../../pages/teacher/Dashboard';
 import {
@@ -571,6 +573,16 @@ export const StudentDashboardView: React.FC<{
 
   return (
     <div className="space-y-6">
+      {/* AI Header Feature Banner */}
+      <AiHeader
+        title={t("CenterFlow AI O'quv Yordamchisi", "CenterFlow AI Learning Copilot", "AI Обучающий Помощник")}
+        subtitle={t(
+          "Insho va esse grading, IELTS speaking audio tahlili va real-vaqtda aqlli savol-javob AI tizimi.",
+          "Automated essay grading, IELTS speaking audio evaluation, and real-time Socratic feedback.",
+          "Автоматическая проверка эссе, анализ устной речи IELTS и обратная связь."
+        )}
+      />
+
       {/* Metric Cards for Course Status, Homework Deadlines, Latest Mock Score, Attendance */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
@@ -873,6 +885,9 @@ export const StudentDashboardView: React.FC<{
 
       {/* Telegram Bot Connection & Notification Preferences */}
       <TelegramSettingsCard />
+
+      {/* High-Score Student Leaderboard */}
+      <LeaderboardWidget />
 
       {/* Recharts Student Progress Radar & Line Charts */}
       <StudentProgressCharts />

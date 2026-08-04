@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FormattedAIResponse } from './FormattedAIResponse';
+import { AiHeader } from '../AiHeader';
+import { APP_ASSETS } from '../../constants/assets';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -989,10 +991,12 @@ Response language: ${userLang}.`;
           )}
 
           <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
+            <img
+              src={APP_ASSETS.aiLogo}
+              alt="AI Copilot Logo"
+              referrerPolicy="no-referrer"
+              className="w-7 h-7 rounded-lg object-cover border border-amber-500/50 shadow-md drop-shadow-[0_0_8px_rgba(245,158,11,0.3)] shrink-0"
+            />
             <div className="flex flex-col">
               <h2 className="text-xs font-black tracking-wide text-slate-100 flex items-center gap-1.5">
                 <span>CenterFlow Neural Copilot</span>

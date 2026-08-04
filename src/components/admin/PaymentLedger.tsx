@@ -12,6 +12,7 @@ import {
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_PAYMENTS } from '../../data/mockData';
 import { Student, Payment } from '../../types';
+import { FinanceOverviewCard } from '../FinanceOverviewCard';
 import {
   CreditCard,
   AlertTriangle,
@@ -354,6 +355,17 @@ export const PaymentLedger: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Financial Overview Hero Panel with Asset */}
+      <FinanceOverviewCard
+        monthlyRevenue={`${(totalRevenue + totalDebtAmount).toLocaleString()} UZS`}
+        totalCollected={`${totalRevenue.toLocaleString()} UZS`}
+        pendingTuitions={`${totalDebtAmount.toLocaleString()} UZS`}
+        overdueCount={overdueCount}
+        onExportReport={() => {
+          toast.info(t("Moliyaviy hisobot eksport qilindi!", "Financial report exported!", "Финансовый отчет экспортирован!"));
+        }}
+      />
 
       {/* Financial Overview Metrics Dashboard */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

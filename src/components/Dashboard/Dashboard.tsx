@@ -5,7 +5,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { TypewriterText } from '../common/TypewriterText';
 import { StudentProgressCharts } from '../student/StudentProgressCharts';
 import { TelegramSettingsCard } from '../TelegramSettingsCard';
-import { AdminDashboard } from '../../pages/admin/AdminDashboard';
+import { AdminDashboard } from '../../pages/admin/Dashboard';
+import { TeacherDashboard } from '../../pages/teacher/Dashboard';
 import {
   subscribeStudents,
   subscribeGroups,
@@ -130,15 +131,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       {/* RENDER ROLE-SPECIFIC DASHBOARD VIEW */}
       {activeRole === 'superadmin' || activeRole === 'admin' ? (
-        <AdminDashboard onNavigate={onNavigate} />
+        <AdminDashboard />
       ) : activeRole === 'teacher' ? (
-        <TeacherDashboardView
-          displayName={displayName}
-          showToast={showToast}
-          groups={groups}
-          students={students}
-          onNavigate={onNavigate}
-        />
+        <TeacherDashboard />
       ) : (
         <StudentDashboardView displayName={displayName} showToast={showToast} onNavigate={onNavigate} />
       )}

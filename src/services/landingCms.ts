@@ -35,10 +35,10 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   ctaSecondaryEn: "Register Your Center",
   ctaSecondaryRu: "Зарегистрировать Центр",
 
-  activeStudentsCount: "12,500+",
-  ieltsHighResults: "99.4%",
-  admissionRate: "100%",
-  yearsExperience: "24/7 Live",
+  activeStudentsCount: "840+",
+  ieltsHighResults: "350+",
+  admissionRate: "94%",
+  yearsExperience: "6+",
 
   whyRenessans: [
     {

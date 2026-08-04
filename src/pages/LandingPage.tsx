@@ -461,7 +461,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.activeStudentsCount || "1,500+"} />
+                  <AnimatedCounter value={cmsContent.activeStudentsCount || "840+"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {t("Aktiv O'quvchilar Soni", "Active Students", "Учеников")}
@@ -485,7 +485,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.admissionRate || "96%"} />
+                  <AnimatedCounter value={cmsContent.admissionRate || "94%"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {t("OTM va Grant Olish Ko'rsatkichi", "Grant & University Rate", "Поступление в ВУЗы")}
@@ -497,7 +497,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.yearsExperience || "8+"} />
+                  <AnimatedCounter value={cmsContent.yearsExperience || "6+"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {t("Yillik Ishonchli Tajriba", "Years of Experience", "Лет опыта")}

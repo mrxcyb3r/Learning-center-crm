@@ -1,5 +1,6 @@
 import React from 'react';
 import { APP_ASSETS } from '../constants/assets';
+import { SafeImage } from './common/SafeImage';
 import { DollarSign, TrendingUp, CreditCard, AlertCircle, ArrowUpRight, ShieldCheck, Download } from 'lucide-react';
 
 interface FinanceOverviewCardProps {
@@ -19,18 +20,18 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
 }) => {
   return (
     <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900 shadow-2xl">
-      {/* Feature Panel Hero Background Image with Gradient Overlay */}
+      {/* Feature Panel Hero Background Image with Frosted Glass Gradient Overlay */}
       <div className="relative h-44 sm:h-52 w-full overflow-hidden">
-        <img
+        <SafeImage
           src={APP_ASSETS.financePanel}
           alt="Finance Ledger Banner"
-          referrerPolicy="no-referrer"
           className="w-full h-full object-cover object-center opacity-40 hover:scale-105 transition-transform duration-700"
+          fallbackClassName="w-full h-full bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-950/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-950/40 backdrop-blur-[1px]" />
 
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-          <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-amber-400 font-extrabold text-xs flex items-center gap-1.5 backdrop-blur-md">
+          <span className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-amber-400 font-extrabold text-xs flex items-center gap-1.5 backdrop-blur-md shadow-md">
             <DollarSign className="w-3.5 h-3.5" />
             <span>CenterFlow Financial Ledger</span>
           </span>
@@ -55,8 +56,8 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/90 backdrop-blur-md">
+      {/* Metrics Row with Glassmorphism Cards */}
+      <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 backdrop-blur-md">
         {/* Monthly Revenue */}
         <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 transition">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">

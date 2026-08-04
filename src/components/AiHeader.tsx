@@ -1,5 +1,6 @@
 import React from 'react';
 import { APP_ASSETS } from '../constants/assets';
+import { SafeImage } from './common/SafeImage';
 import { Sparkles, Bot } from 'lucide-react';
 
 interface AiHeaderProps {
@@ -21,11 +22,11 @@ export const AiHeader: React.FC<AiHeaderProps> = ({
       <div className="flex items-center gap-4 z-10">
         {/* AI Brand Avatar with Glowing Shadow */}
         <div className="relative shrink-0">
-          <img
+          <SafeImage
             src={APP_ASSETS.aiLogo}
             alt="CenterFlow AI Avatar"
-            referrerPolicy="no-referrer"
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-amber-500/50 shadow-lg drop-shadow-[0_0_12px_rgba(245,158,11,0.35)]"
+            fallbackIcon={<Bot className="w-8 h-8 text-amber-400" />}
           />
           <span className="absolute -bottom-1 -right-1 p-1 bg-amber-500 text-slate-950 rounded-full shadow-md">
             <Sparkles className="w-3 h-3 fill-slate-950" />

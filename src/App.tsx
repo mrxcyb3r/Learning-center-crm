@@ -1,82 +1,94 @@
 import React, { useState, useEffect } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation
+} from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Navbar } from './components/Navbar';
 import { LandingPage } from './pages/LandingPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AppLayout } from './components/Layout/AppLayout';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { ParticleBackground } from './components/UI/ParticleBackground';
-import { ShieldCheck, Loader2, MailWarning, RefreshCw, Send, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserRole } from './types';
+import {
+  ShieldCheck,
+  Loader2,
+  MailWarning,
+  RefreshCw,
+  Send,
+  LogOut,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 
-function MainApp() {
-  const {
-    currentUser,
-    isLoading,
-    isEmailVerified,
-    unverifiedUserEmail,
-    resendVerificationEmail,
-    checkEmailVerification,
-    logout
-  } = useAuth();
+// ---------------------------------------------------------------------------
+// Protected Route Component
+// ---------------------------------------------------------------------------
+interface ProtectedRouteProps {
+  allowedRoles?: UserRole[];
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
+  const { currentUser, activeRole, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <ParticleBackground />
+        <div className="relative z-10 flex flex-col items-center gap-3 text-white font-mono text-xs">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+          <span>Verifying Access Rights...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to Landing Page if unauthenticated
+  if (!currentUser) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  // Verify Role Authorization
+  if (allowedRoles && allowedRoles.length > 0) {
+    const currentNormalized = activeRole === 'superadmin' ? 'admin' : activeRole;
+    const isAllowed =
+      allowedRoles.includes(activeRole) ||
+      allowedRoles.includes(currentNormalized) ||
+      (allowedRoles.includes('admin') && activeRole === 'superadmin');
+
+    if (!isAllowed) {
+      // Redirect user to their own role dashboard
+      const userDefaultPath = `/dashboard/${currentNormalized}`;
+      return <Navigate to={userDefaultPath} replace />;
+    }
+  }
+
+  return <>{children}</>;
+};
+
+// ---------------------------------------------------------------------------
+// Main Dashboard Container Component
+// ---------------------------------------------------------------------------
+function AuthenticatedDashboardView() {
+  const { currentUser, isEmailVerified, unverifiedUserEmail, resendVerificationEmail, checkEmailVerification, logout } = useAuth();
   const { t } = useLanguage();
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
-  // Initialize AOS scroll animations
-  useEffect(() => {
-    AOS.init({
-      duration: 600,
-      once: true,
-      easing: 'ease-out-cubic'
-    });
-  }, []);
-
-  // 1. Loading State
-  if (isLoading) {
-    return (
-      <div className="relative min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 transition-colors">
-        <ParticleBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center text-slate-950 font-black shadow-xl shadow-amber-500/20 animate-bounce">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
-          <div className="flex items-center gap-2 text-slate-300 font-bold text-xs tracking-wide">
-            <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-            <span>CenterFlow Yuklanmoqda...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Unauthenticated View (Public Landing Page)
-  if (!currentUser) {
-    return (
-      <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-amber-500 selection:text-slate-950">
-        <ParticleBackground />
-        <div className="relative z-10">
-          {/* Public Landing Page with Unified Navigation & Language Switcher */}
-          <LandingPage onOpenAuth={() => setIsAuthModalOpen(true)} />
-
-          {/* Auth Modal (Login & Register) */}
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={() => setIsAuthModalOpen(false)}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // 3. Email Verification Gate (If logged in via Email/Pass but email not verified)
   const isGoogleUser = currentUser?.providerData?.some((p) => p.providerId === 'google.com');
   const needsVerification = currentUser && !isEmailVerified && !isGoogleUser;
 
@@ -195,7 +207,6 @@ function MainApp() {
     );
   }
 
-  // 4. Authenticated & Verified View (Internal Dashboard)
   return (
     <div className="relative min-h-screen bg-slate-100 dark:bg-slate-950">
       <ParticleBackground />
@@ -208,24 +219,127 @@ function MainApp() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Public Landing Page Container Component
+// ---------------------------------------------------------------------------
+function LandingPageContainer() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  return (
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-amber-500 selection:text-slate-950">
+      <ParticleBackground />
+      <div className="relative z-10">
+        <LandingPage onOpenAuth={() => setIsAuthModalOpen(true)} />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic Dashboard Redirector
+// ---------------------------------------------------------------------------
+function DashboardIndexRedirect() {
+  const { activeRole } = useAuth();
+  const currentNormalized = activeRole === 'superadmin' ? 'admin' : activeRole;
+  return <Navigate to={`/dashboard/${currentNormalized}`} replace />;
+}
+
+// ---------------------------------------------------------------------------
+// Main Application Component with Router
+// ---------------------------------------------------------------------------
+function MainAppRoutes() {
+  const { isLoading } = useAuth();
+
+  useEffect(() => {
+    AOS.init({
+      duration: 600,
+      once: true,
+      easing: 'ease-out-cubic'
+    });
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 transition-colors">
+        <ParticleBackground />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center text-slate-950 font-black shadow-xl shadow-amber-500/20 animate-bounce">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div className="flex items-center gap-2 text-slate-300 font-bold text-xs tracking-wide">
+            <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+            <span>CenterFlow Yuklanmoqda...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Public Landing Page */}
+      <Route path="/" element={<LandingPageContainer />} />
+
+      {/* Role-Based Dashboard Routes */}
+      <Route path="/dashboard" element={<DashboardIndexRedirect />} />
+      
+      <Route
+        path="/dashboard/student/*"
+        element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <AuthenticatedDashboardView />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/teacher/*"
+        element={
+          <ProtectedRoute allowedRoles={['teacher']}>
+            <AuthenticatedDashboardView />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/admin/*"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+            <AuthenticatedDashboardView />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-All Fallback Redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <MainApp />
-          <ToastContainer
-            position="bottom-right"
-            autoClose={3500}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark"
-          />
+          <BrowserRouter>
+            <MainAppRoutes />
+            <ToastContainer
+              position="bottom-right"
+              autoClose={3500}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+          </BrowserRouter>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

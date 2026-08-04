@@ -1,11 +1,28 @@
 export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'guest';
 
+export type SubjectCategory = 'english' | 'ielts' | 'mathematics' | 'physics' | 'cybersecurity' | 'webdev';
+
+export interface SubjectCourse {
+  id: string;
+  title: string;
+  category: SubjectCategory;
+  instructor: string;
+  room?: string;
+  icon?: string;
+  description?: string;
+  level?: string;
+  price?: string;
+  schedule?: string;
+  branch?: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
   fullName?: string | null;
   role: UserRole;
+  enrolledSubjects?: SubjectCourse[];
   photoURL?: string | null;
   phoneNumber?: string | null;
   createdAt?: string;
@@ -164,11 +181,16 @@ export interface AttendanceRecord {
 export interface Assignment {
   id: string;
   title: string;
+  subjectId?: string;
+  subjectCategory?: SubjectCategory | string;
   group: string;
   groupName?: string;
   groupId?: string;
   dueDate: string;
   deadline?: string;
+  score?: number | string;
+  maxScore?: number;
+  status?: 'pending' | 'submitted' | 'graded' | string;
   submittedCount: number;
   submissionsCount?: number;
   totalStudents: number;
@@ -180,10 +202,25 @@ export interface Assignment {
   createdAt?: string;
   description?: string;
   instructions?: string;
-  subjectCategory?: string;
   resourceFormat?: string;
   teacherName?: string;
   teacherEmail?: string;
+}
+
+export interface DiagnosticResult {
+  id: string;
+  subjectId?: string;
+  subjectCategory?: SubjectCategory | string;
+  title: string;
+  bandScore?: number | string;
+  score: number | string;
+  maxScore?: number;
+  feedback?: string;
+  date: string;
+  studentName?: string;
+  studentId?: string;
+  overall?: number | string;
+  teacherName?: string;
 }
 
 export interface SubmissionAttachment {

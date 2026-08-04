@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import {
@@ -21,6 +22,7 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
   onRoleChange
 }) => {
   const { activeRole, setMockRole, loginAsDemoUser } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -82,8 +84,13 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
   const handleSelectRole = async (targetRole: UserRole) => {
     setIsOpen(false);
     setMockRole(targetRole);
-    // If not currently logged in as demo or authenticated user, also trigger demo user state
     await loginAsDemoUser(targetRole);
+    const targetPath = targetRole === 'superadmin' ? '/dashboard/admin' : `/dashboard/${targetRole}`;
+    try {
+      navigate(targetPath);
+    } catch {
+      // Fallback
+    }
     if (onRoleChange) {
       onRoleChange(targetRole);
     }

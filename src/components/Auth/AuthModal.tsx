@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { subscribeSecurityPins, SecurityPinsData } from '../../services/firestore';
@@ -36,6 +37,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     registerWithEmail,
     loginWithGoogle,
     loginAsDemoUser,
+    setRole,
     isLoading,
     currentUser,
     isEmailVerified,
@@ -43,6 +45,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     resendVerificationEmail,
     checkEmailVerification
   } = useAuth();
+
+  const navigate = useNavigate();
 
   // Key binding hook to close modal on Escape
   useKeyboardShortcuts({ onEscape: onClose, enabled: isOpen });
@@ -623,7 +627,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={async () => {
+                    setRole('student');
                     await loginAsDemoUser('student');
+                    navigate('/dashboard/student');
                     setShowTelegramConnect(true);
                   }}
                   className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
@@ -634,7 +640,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={async () => {
+                    setRole('teacher');
                     await loginAsDemoUser('teacher');
+                    navigate('/dashboard/teacher');
                     setShowTelegramConnect(true);
                   }}
                   className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
@@ -645,7 +653,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={async () => {
+                    setRole('admin');
                     await loginAsDemoUser('admin');
+                    navigate('/dashboard/admin');
                     onClose();
                   }}
                   className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"

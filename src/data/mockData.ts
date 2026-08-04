@@ -1,4 +1,203 @@
-import { Teacher, Course, StudentResult, FAQItem, Group, Student, Assignment, MockTestScore, Payment, FeedPost } from '../types';
+import {
+  Teacher,
+  Course,
+  StudentResult,
+  FAQItem,
+  Group,
+  Student,
+  Assignment,
+  MockTestScore,
+  Payment,
+  FeedPost,
+  SubjectCourse,
+  UserProfile,
+  DiagnosticResult
+} from '../types';
+
+export const mockSubjectCourses: SubjectCourse[] = [
+  {
+    id: 'subj-1',
+    title: 'IELTS 7.5+ Intensive Mastery',
+    category: 'ielts',
+    instructor: 'Jasur Rahimov',
+    room: 'Room 3 (Renessans Main)',
+    icon: 'Award',
+    description: 'Targeted band 7.5+ preparation with real weekly Mocks and 1-on-1 speaking feedback.',
+    level: 'B2 - C2',
+    price: "450,000 UZS/mo",
+    schedule: 'Mon/Wed/Fri 14:00 - 16:00',
+    branch: 'Central Branch'
+  },
+  {
+    id: 'subj-2',
+    title: 'Python & Cyber Security Essentials',
+    category: 'cybersecurity',
+    instructor: 'Nodirbek Alimov',
+    room: 'Lab 2 (Tech Wing)',
+    icon: 'Shield',
+    description: 'Ethical hacking fundamentals, Python automation, network security, and cryptography.',
+    level: 'Beginner to Intermediate',
+    price: "500,000 UZS/mo",
+    schedule: 'Tue/Thu/Sat 16:00 - 18:00',
+    branch: 'Tech Campus'
+  },
+  {
+    id: 'subj-3',
+    title: 'Advanced Physics & Quantum Mechanics',
+    category: 'physics',
+    instructor: 'Dr. Rustam Karimov',
+    room: 'Room 5 (Science Hall)',
+    icon: 'Atom',
+    description: 'Classical mechanics, thermodynamics, electromagnetism, and university admission prep.',
+    level: 'Advanced High School / SAT II',
+    price: "480,000 UZS/mo",
+    schedule: 'Mon/Wed/Fri 16:30 - 18:30',
+    branch: 'Central Branch'
+  },
+  {
+    id: 'subj-4',
+    title: 'Full-Stack Web Development (React & Node.js)',
+    category: 'webdev',
+    instructor: 'Nodirbek Alimov',
+    room: 'Lab 1 (Tech Wing)',
+    icon: 'Code',
+    description: 'Build modern responsive applications using TypeScript, React 19, Node.js, and databases.',
+    level: 'Intermediate',
+    price: "550,000 UZS/mo",
+    schedule: 'Tue/Thu/Sat 18:30 - 20:30',
+    branch: 'Tech Campus'
+  },
+  {
+    id: 'subj-5',
+    title: 'SAT & Higher Mathematics',
+    category: 'mathematics',
+    instructor: 'Sardor Qodirov',
+    room: 'Room 2 (Math Lab)',
+    icon: 'Calculator',
+    description: 'Calculus, linear algebra, geometry, and international university math entry exams.',
+    level: 'Upper Intermediate',
+    price: "450,000 UZS/mo",
+    schedule: 'Mon/Wed/Fri 10:00 - 12:00',
+    branch: 'Central Branch'
+  },
+  {
+    id: 'subj-6',
+    title: 'General English Fluency & Communication',
+    category: 'english',
+    instructor: 'Malika Azimova',
+    room: 'Room 1',
+    icon: 'BookOpen',
+    description: 'Comprehensive English grammar, vocabulary expansion, and real-world speaking practice.',
+    level: 'A2 - B2',
+    price: "350,000 UZS/mo",
+    schedule: 'Tue/Thu/Sat 09:00 - 11:00',
+    branch: 'Central Branch'
+  }
+];
+
+export const mockStudentUser: UserProfile = {
+  uid: 'demo-student-uid',
+  email: 'student@centerflow.uz',
+  displayName: 'Jasur Rahimov (Student)',
+  fullName: 'Jasur Rahimov',
+  role: 'student',
+  photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+  phoneNumber: '+998 90 123 45 67',
+  isBotConnected: true,
+  telegramUsername: 'jasur_centerflow',
+  telegramChatId: '87654321',
+  assignedPin: '4321',
+  createdAt: '2026-01-15T10:00:00.000Z',
+  enrolledSubjects: [mockSubjectCourses[0], mockSubjectCourses[1]]
+};
+
+export const mockTeacherUser: UserProfile = {
+  uid: 'demo-teacher-uid',
+  email: 'teacher@centerflow.uz',
+  displayName: 'Nodirbek Alimov (Instructor)',
+  fullName: 'Nodirbek Alimov',
+  role: 'teacher',
+  photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+  phoneNumber: '+998 91 987 65 43',
+  isBotConnected: true,
+  telegramUsername: 'nodir_mentor',
+  telegramChatId: '98765432',
+  assignedPin: '1234',
+  createdAt: '2025-11-01T08:00:00.000Z',
+  enrolledSubjects: [mockSubjectCourses[2], mockSubjectCourses[3]]
+};
+
+export const mockAdminUser: UserProfile = {
+  uid: 'demo-admin-uid',
+  email: 'admin@centerflow.uz',
+  displayName: 'SuperAdmin Director',
+  fullName: 'CenterFlow Global Admin',
+  role: 'superadmin',
+  photoURL: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
+  phoneNumber: '+998 71 200 00 00',
+  isBotConnected: true,
+  telegramUsername: 'centerflow_admin',
+  telegramChatId: '12345678',
+  assignedPin: '9999',
+  createdAt: '2025-09-01T00:00:00.000Z',
+  enrolledSubjects: mockSubjectCourses
+};
+
+export const mockDiagnosticResults: DiagnosticResult[] = [
+  {
+    id: 'diag-1',
+    subjectId: 'subj-1',
+    subjectCategory: 'ielts',
+    title: 'IELTS Full Diagnostic Mock #4',
+    bandScore: '7.5',
+    score: '7.5',
+    maxScore: 9,
+    overall: '7.5',
+    feedback: 'Strong argument flow in Task 2 writing. Practice Section 4 listening distractors.',
+    date: '2026-07-28',
+    studentName: 'Jasur Rahimov',
+    teacherName: 'Jasur Rahimov'
+  },
+  {
+    id: 'diag-2',
+    subjectId: 'subj-2',
+    subjectCategory: 'cybersecurity',
+    title: 'Python Cryptography & Hashing Assessment',
+    score: '92',
+    maxScore: 100,
+    overall: '92%',
+    feedback: 'Excellent execution of SHA-256 implementation and salt hashing logic.',
+    date: '2026-07-25',
+    studentName: 'Jasur Rahimov',
+    teacherName: 'Nodirbek Alimov'
+  },
+  {
+    id: 'diag-3',
+    subjectId: 'subj-3',
+    subjectCategory: 'physics',
+    title: 'Electromagnetism & Circuits Exam',
+    score: '88',
+    maxScore: 100,
+    overall: '88%',
+    feedback: 'Good problem solving in Kirchhoff laws. Review wave diffraction formulas.',
+    date: '2026-07-22',
+    studentName: 'Sardor Ergashev',
+    teacherName: 'Dr. Rustam Karimov'
+  },
+  {
+    id: 'diag-4',
+    subjectId: 'subj-5',
+    subjectCategory: 'mathematics',
+    title: 'SAT II Math Level 2 Practice Test',
+    score: '780',
+    maxScore: 800,
+    overall: '780 / 800',
+    feedback: 'Top 2% score! Minor calculation slip in complex matrix determinants.',
+    date: '2026-07-20',
+    studentName: 'Malika Sharipova',
+    teacherName: 'Sardor Qodirov'
+  }
+];
 
 export const mockTeachers: Teacher[] = [
   {

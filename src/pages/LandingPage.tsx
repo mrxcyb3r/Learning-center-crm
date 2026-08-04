@@ -406,7 +406,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               </div>
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-bold tracking-wide backdrop-blur-md">
                 <Bot className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Instant Telegram PINs</span>
+                <span>Instant Telegram Alerts</span>
               </div>
             </div>
 
@@ -417,7 +417,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <TypewriterText
                   texts={[
                     "Modern Learning Centers",
-                    "Multi-Subject Course Feeds",
+                    "Multi-Subject Courses",
                     "IELTS, IT & Physics Academies",
                     "Automated Telegram Operations"
                   ]}
@@ -430,7 +430,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
-              Streamlining multi-subject course feeds, instant Telegram notifications, diagnostic grade dispatchers, and AI-powered learning across IELTS, Web Dev, Cybersecurity, Physics, and Higher Math.
+              Easily manage multi-subject courses, get instant test scores on Telegram, and practice with AI assistance across IELTS, Programming, Math, and Physics.
             </p>
 
             {/* Primary CTAs */}
@@ -461,7 +461,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.activeStudentsCount || "840+"} />
+                  <AnimatedCounter value={cmsContent.activeStudentsCount || "1,500+"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {t("Aktiv O'quvchilar Soni", "Active Students", "Учеников")}
@@ -473,10 +473,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.ieltsHighResults || "350+"} />
+                  <AnimatedCounter value={cmsContent.ieltsHighResults || "280+"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  {t("IELTS 7.0+ Natijalar", "IELTS 7.0+ Results", "Результатов IELTS 7.0+")}
+                  {t("IELTS 7.0+ Natijalar", "IELTS 7.0+ Band Scores", "Результатов IELTS 7.0+")}
                 </div>
               </motion.div>
 
@@ -485,10 +485,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.admissionRate || "94%"} />
+                  <AnimatedCounter value={cmsContent.admissionRate || "95%"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  {t("OTM va Grant Olish Ko'rsatkichi", "Grant & University Rate", "Поступление в ВУЗы")}
+                  {t("OTM va Grant Olish Ko'rsatkichi", "University Admission Rate", "Поступление в ВУЗы")}
                 </div>
               </motion.div>
 
@@ -497,10 +497,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
-                  <AnimatedCounter value={cmsContent.yearsExperience || "6+"} />
+                  <AnimatedCounter value={cmsContent.yearsExperience || "4+"} />
                 </div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  {t("Yillik Ishonchli Tajriba", "Years of Experience", "Лет опыта")}
+                  {t("Yillik Ishonchli Tajriba", "Years of Teaching Experience", "Лет опыта")}
                 </div>
               </motion.div>
             </div>
@@ -518,13 +518,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               className="text-center max-w-2xl mx-auto mb-14"
             >
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-                Multi-Subject Architecture
+                All Subjects in One Place
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
-                Unified Multi-Subject Hub
+                Multi-Subject Learning Hub
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                One center handles diverse academic disciplines. Experience tailored workflows for languages, code, and science.
+                One platform handles languages, programming, and exact sciences with ease.
               </p>
             </motion.div>
 
@@ -545,20 +545,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">IELTS & Languages</h3>
                   <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                    Designed for band score tracking, Task 1/2 essay diagnostic feedback cards, and daily listening drill logs.
+                    Track band scores from 6.0 to 9.0 with writing feedback cards and listening practice logs.
                   </p>
                   <ul className="space-y-3 text-xs text-slate-300">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Band Score Trackers (6.0 - 9.0)</span>
+                      <span>Band score tracking (6.0 - 9.0)</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Essay Diagnostic Feedback Cards</span>
+                      <span>Writing diagnostic feedback cards</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Speaking & Listening Drill Logs</span>
+                      <span>Listening practice logs</span>
                     </li>
                   </ul>
                 </div>
@@ -584,20 +584,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">Web Dev & Cybersecurity</h3>
                   <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                    Interactive code assignment feeds, terminal-style PIN verifications, GitHub repo linking, and project milestone tracking.
+                    Practice homework feeds, Telegram login PINs, and real project milestone tracking.
                   </p>
                   <ul className="space-y-3 text-xs text-slate-300">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Code Assignment Submissions</span>
+                      <span>Practice homework feeds</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Terminal Security PIN Verifications</span>
+                      <span>Telegram login PINs</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Capstone Project Milestones</span>
+                      <span>Real project milestones</span>
                     </li>
                   </ul>
                 </div>
@@ -623,20 +623,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">Mathematics & Physics</h3>
                   <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                    Practice test leaderboards, formula check-in drills, problem set grading, and automated parent attendance reports.
+                    Exam practice leaderboards, formula checks, and automatic parent progress reports.
                   </p>
                   <ul className="space-y-3 text-xs text-slate-300">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>SAT & University Exam Leaderboards</span>
+                      <span>Exam practice leaderboards</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Formula Check-in Drills</span>
+                      <span>Formula checks</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Problem Set Diagnostic Grading</span>
+                      <span>Automatic parent progress reports</span>
                     </li>
                   </ul>
                 </div>
@@ -654,13 +654,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <div className="max-w-7xl mx-auto">
             <div className="text-center max-w-2xl mx-auto mb-10">
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-                Role-Adaptive Experience
+                Built for Everyone
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
-                Tailored Controls for Every Stakeholder
+                Tailored Views for Students, Teachers & Admins
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                Switch between role perspectives to see how CenterFlow serves students, teachers, and center managers.
+                Switch between views to see how CenterFlow simplifies daily learning and center management.
               </p>
             </div>
 
@@ -934,11 +934,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   </div>
 
                   <h3 className="text-3xl font-black text-white tracking-tight">
-                    Connecting Desktop Portal to Every Mobile Phone
+                    Connect Your Phone to Your Learning Center
                   </h3>
 
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    Our custom Telegram bot bridges web dashboard actions to immediate messaging. Receive security PINs, exam scores, and schedule changes instantly.
+                    Our custom Telegram bot sends login codes, test score notifications, and schedule updates right to your mobile chat.
                   </p>
 
                   <div className="space-y-3 pt-2">
@@ -947,8 +947,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                         <Lock className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">Automated 4-Digit Security PIN Dispatching</h4>
-                        <p className="text-[11px] text-slate-400">Generate secure PINs sent directly to your Telegram chat for 1-click authentication.</p>
+                        <h4 className="text-xs font-bold text-white">Automatic 4-Digit Login Security Codes</h4>
+                        <p className="text-[11px] text-slate-400">Receive quick 4-digit PINs in Telegram for easy 1-click sign in.</p>
                       </div>
                     </div>
 
@@ -957,8 +957,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                         <Zap className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">Instant Score & Feedback Dispatcher</h4>
-                        <p className="text-[11px] text-slate-400">Get notified the exact second a teacher posts mock scores or assignment grades.</p>
+                        <h4 className="text-xs font-bold text-white">Instant Score & Feedback Notifications</h4>
+                        <p className="text-[11px] text-slate-400">Get notified the second your teacher grades your test or homework.</p>
                       </div>
                     </div>
 
@@ -967,8 +967,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                         <Radio className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">Real-Time Class Schedule & Room Alerts</h4>
-                        <p className="text-[11px] text-slate-400">Receive live push messages if a lesson room shifts or an extra mock test is added.</p>
+                        <h4 className="text-xs font-bold text-white">Live Class Schedule & Room Updates</h4>
+                        <p className="text-[11px] text-slate-400">Receive instant alerts if a room changes or extra mock test is added.</p>
                       </div>
                     </div>
                   </div>

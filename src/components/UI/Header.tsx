@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
+import { DevRoleDropdown } from '../DevRoleDropdown';
 import {
   Bell,
   Menu,
@@ -149,11 +150,8 @@ export const Header: React.FC<HeaderProps> = ({
           {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
 
-        {/* User Role Badge */}
-        <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold ${badge.bg}`}>
-          {badge.icon}
-          <span>{badge.label}</span>
-        </div>
+        {/* Interactive Dev Role Dropdown */}
+        <DevRoleDropdown className="hidden sm:inline-block" />
 
         {/* Header Logout Button */}
         <button

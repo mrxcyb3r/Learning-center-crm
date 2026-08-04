@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { subscribeSecurityPins, SecurityPinsData } from '../../services/firestore';
 import { TelegramBotConnectModal } from './TelegramBotConnectModal';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import {
   X,
   Mail,
@@ -42,6 +43,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     resendVerificationEmail,
     checkEmailVerification
   } = useAuth();
+
+  // Key binding hook to close modal on Escape
+  useKeyboardShortcuts({ onEscape: onClose, enabled: isOpen });
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');

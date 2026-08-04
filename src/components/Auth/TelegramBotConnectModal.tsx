@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { updateUserProfile } from '../../services/firestore';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 interface TelegramBotConnectModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const TelegramBotConnectModal: React.FC<TelegramBotConnectModalProps> = (
   authToken
 }) => {
   const { currentUser } = useAuth();
+  useKeyboardShortcuts({ onEscape: onClose, enabled: isOpen });
   const [step, setStep] = useState<'connect' | 'waiting' | 'success'>('connect');
   const [isVerifying, setIsVerifying] = useState(false);
   const [showQr, setShowQr] = useState(false);

@@ -37,6 +37,7 @@ interface AuthContextType {
   loginAsDemoUser: (requestedRole?: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   setMockRole: (role: UserRole) => void;
+  setRole: (role: UserRole) => void;
   resetMockRole: () => void;
 }
 
@@ -453,6 +454,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsDemoUser,
         logout,
         setMockRole,
+        setRole: setMockRole,
         resetMockRole
       }}
     >

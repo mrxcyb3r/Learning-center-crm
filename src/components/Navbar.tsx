@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { DevRoleDropdown } from './DevRoleDropdown';
 import {
   Sun,
   Moon,
@@ -142,6 +143,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                 </div>
               )}
             </div>
+
+            {/* Dev Role Dropdown Switcher */}
+            <DevRoleDropdown />
 
             {/* Dark/Light Mode Toggle */}
             <button

@@ -38,10 +38,22 @@ import {
   Users,
   Target,
   Clock,
-  Instagram,
-  Compass,
   FileCheck,
-  Globe
+  Globe,
+  Bot,
+  Terminal,
+  Activity,
+  Cpu,
+  Layers,
+  Lock,
+  Server,
+  Radio,
+  FileText,
+  LayoutDashboard,
+  Shield,
+  Calculator,
+  Atom,
+  ChevronUp
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -49,17 +61,18 @@ interface LandingPageProps {
 }
 
 // ----------------------------------------------------
-// Section List for Scroll Spy
+// Section List for Scroll Spy & Header Links
 // ----------------------------------------------------
 const SECTIONS = [
-  { id: 'hero', labelUz: 'Bosh sahifa', labelEn: 'Home', labelRu: 'Главная', path: '/' },
-  { id: 'why-us', labelUz: 'Afzalliklar', labelEn: 'Why Us', labelRu: 'Преимущества', path: '#why-us' },
-  { id: 'teachers', labelUz: "O'qituvchilar", labelEn: 'Teachers', labelRu: 'Преподаватели', path: '#teachers' },
-  { id: 'results', labelUz: 'Natijalar', labelEn: 'Results', labelRu: 'Результаты', path: '#results' },
-  { id: 'courses', labelUz: 'Kurslar', labelEn: 'Courses', labelRu: 'Курсы', path: '#courses' },
-  { id: 'student-app', labelUz: 'Student App', labelEn: 'Student App', labelRu: 'Приложение', path: '#student-app' },
-  { id: 'branches', labelUz: 'Filiallar', labelEn: 'Branches', labelRu: 'Филиалы', path: '#branches' },
-  { id: 'faq', labelUz: 'FAQs', labelEn: 'FAQs', labelRu: 'Вопросы', path: '#faq' }
+  { id: 'hero', labelUz: 'Bosh sahifa', labelEn: 'Home', labelRu: 'Главная' },
+  { id: 'why-us', labelUz: 'Afzalliklar', labelEn: 'Features', labelRu: 'Преимущества' },
+  { id: 'multi-subject', labelUz: 'Fanlar Xabi', labelEn: 'Multi-Subject Hub', labelRu: 'Хаб Предметов' },
+  { id: 'role-demos', labelUz: 'Rol Vizualizatsiyasi', labelEn: 'Role Demos', labelRu: 'Демо Ролей' },
+  { id: 'telegram-sec', labelUz: 'Telegram & Xavfsizlik', labelEn: 'Security & Telegram', labelRu: 'Безопасность' },
+  { id: 'teachers', labelUz: "O'qituvchilar", labelEn: 'Teachers', labelRu: 'Преподаватели' },
+  { id: 'results', labelUz: 'Natijalar', labelEn: 'Results', labelRu: 'Результаты' },
+  { id: 'courses', labelUz: 'Kurslar', labelEn: 'Courses', labelRu: 'Курсы' },
+  { id: 'faq', labelUz: 'FAQs', labelEn: 'FAQs', labelRu: 'Вопросы' }
 ];
 
 // ----------------------------------------------------
@@ -70,7 +83,6 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
   const [hasAnimated, setHasAnimated] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
-  // Parse numeric part and suffix
   const match = value.match(/^([\d.,]+)(.*)$/);
   const numericVal = match ? parseFloat(match[1].replace(/,/g, '')) : 0;
   const suffix = match ? match[2] : value;
@@ -103,7 +115,7 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
       const easedProgress = 1 - Math.pow(1 - progress, 3);
-      
+
       if (isDecimal) {
         setCount(parseFloat((easedProgress * numericVal).toFixed(1)));
       } else {
@@ -133,8 +145,7 @@ const AnimatedCounter: React.FC<{ value: string; duration?: number }> = ({ value
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
-  const { language, setLanguage, t: dict, translate: t } = useLanguage();
-  const { theme } = useTheme();
+  const { language, setLanguage, translate: t } = useLanguage();
 
   // Language switcher dropdown state
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -167,6 +178,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
 
+  // Role Tab Explorer State (Student / Teacher / Admin)
+  const [activeRoleTab, setActiveRoleTab] = useState<'student' | 'teacher' | 'admin'>('student');
+
   // Result Filter
   const [resultFilter, setResultFilter] = useState<'all' | '8.0' | '7.5' | 'CEFR'>('all');
 
@@ -185,9 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const teacherCarouselRef = useRef<HTMLDivElement>(null);
   const resultsCarouselRef = useRef<HTMLDivElement>(null);
 
-  // ----------------------------------------------------
-  // Dynamic Scroll Spy Hook & Hash Updater
-  // ----------------------------------------------------
+  // Dynamic Scroll Spy Hook
   const [activeSection, setActiveSection] = useState<string>('hero');
 
   useEffect(() => {
@@ -202,8 +214,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         if (entry.isIntersecting) {
           const sectionId = entry.target.id;
           setActiveSection(sectionId);
-
-          // Update URL bar silently without reloading or page jump
           if (sectionId === 'hero') {
             window.history.replaceState(null, '', window.location.pathname);
           } else {
@@ -263,7 +273,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       const payload = {
         fullName: formName.trim(),
         phoneNumber: formPhone.trim(),
-        selectedCourse: formCourse || 'IELTS Standard',
+        selectedCourse: formCourse || 'IELTS 7.5+ Intensive',
         message: formMessage.trim() || '',
         status: 'new' as const,
         createdAt: serverTimestamp()
@@ -291,8 +301,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       setFormCourse('');
       setFormMessage('');
       setIsEnrollModalOpen(false);
-    } catch (err) {
-      console.warn('Firestore write notice (fallback enabled):', err);
+    } catch {
       toast.success(
         t(
           "Rahmat! Arizangiz qabul qilindi. Qabul bo'limimiz tez orada siz bilan bog'lanadi.",
@@ -310,7 +319,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     }
   };
 
-  // Filtered results from CMS content
+  // Filtered results
   const filteredResults = (cmsContent.results || []).filter((r) => {
     if (resultFilter === '8.0') return parseFloat(r.score) >= 8.0;
     if (resultFilter === '7.5') return parseFloat(r.score) >= 7.5;
@@ -318,7 +327,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     return true;
   });
 
-  // Filtered FAQs from CMS content
+  // Filtered FAQs
   const filteredFAQs = (cmsContent.faqs || []).filter((faq) => {
     const query = faqSearch.toLowerCase();
     const qText = getLangText(faq.questionUz, faq.questionEn, faq.questionRu);
@@ -326,7 +335,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     return qText.toLowerCase().includes(query) || aText.toLowerCase().includes(query);
   });
 
-  // Default Branches Data
+  // Branches Data
   const branchesList = [
     {
       id: 'b1',
@@ -364,31 +373,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#0d021a] text-slate-100 transition-colors duration-200 overflow-x-hidden selection:bg-amber-500 selection:text-slate-950 font-sans">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 transition-colors duration-200 overflow-x-hidden selection:bg-amber-500 selection:text-slate-950 font-sans">
       {/* Background Deep Glow Aesthetics */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-900/30 blur-[120px] rounded-full" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-900/20 blur-[130px] rounded-full" />
         <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full" />
-        <div className="absolute bottom-10 left-1/4 w-[600px] h-[600px] bg-indigo-900/20 blur-[180px] rounded-full" />
+        <div className="absolute bottom-10 left-1/4 w-[600px] h-[600px] bg-indigo-900/15 blur-[180px] rounded-full" />
       </div>
 
       <div className="relative z-10">
-        {/* SINGLE UNIFIED FIXED HEADER BAR WITH DYNAMIC ACTIVE STATE */}
-        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#0d021a]/90 border-b border-white/10 px-4 py-3 sm:px-8 transition-all shadow-2xl">
+        {/* 1. HEADER NAVIGATION COMPONENT */}
+        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/90 border-b border-gray-800 px-4 py-3 sm:px-8 transition-all shadow-2xl">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            {/* Brand Logo */}
-            <button
-              onClick={() => scrollToSection('hero')}
-              className="flex items-center gap-2.5 text-white font-black text-xl tracking-tight cursor-pointer hover:opacity-90 transition"
-            >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-lg shadow-amber-500/20">
-                CF
-              </div>
-              <span>Center<span className="text-amber-400">Flow</span></span>
-            </button>
+            {/* Logo + Renerssans Badge */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => scrollToSection('hero')}
+                className="flex items-center gap-2.5 text-white font-black text-xl tracking-tight cursor-pointer hover:opacity-90 transition"
+              >
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-lg shadow-amber-500/20">
+                  CF
+                </div>
+                <span>Center<span className="text-amber-400">Flow</span></span>
+              </button>
+              <span className="hidden xl:inline-block px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-extrabold text-amber-400 tracking-wider">
+                RENESANS LC PLATFORM
+              </span>
+            </div>
 
-            {/* Desktop Navigation Links with Active Scroll-Spy Pill */}
-            <nav className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 rounded-2xl">
+            {/* Nav Links */}
+            <nav className="hidden lg:flex items-center gap-1.5 bg-gray-900/80 border border-gray-800 p-1.5 rounded-2xl">
               {SECTIONS.filter(s => s.id !== 'hero').map((sec) => {
                 const isActive = activeSection === sec.id;
                 const label = getLangText(sec.labelUz, sec.labelEn, sec.labelRu);
@@ -397,10 +411,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   <button
                     key={sec.id}
                     onClick={() => scrollToSection(sec.id)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       isActive
                         ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
-                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     {label}
@@ -409,14 +423,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               })}
             </nav>
 
-            {/* Quick Action Buttons */}
+            {/* Quick Actions */}
             <div className="flex items-center gap-3">
-              {/* Language Switcher Dropdown */}
+              {/* Language Switcher */}
               <div className="relative">
                 <button
                   onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition cursor-pointer"
-                  title="Switch Language / Tilni o'zgartirish"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gray-900 hover:bg-gray-800 border border-gray-800 transition cursor-pointer"
+                  title="Switch Language"
                 >
                   <Globe className="w-4 h-4 text-amber-400" />
                   <span>{language === 'UZ' ? 'UZ 🇺🇿' : language === 'RU' ? 'RU 🇷🇺' : 'EN 🇬🇧'}</span>
@@ -424,7 +438,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </button>
 
                 {isLangDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-[#18052b] border border-amber-500/30 rounded-2xl shadow-2xl py-1.5 z-50">
+                  <div className="absolute right-0 mt-2 w-36 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl py-1.5 z-50">
                     <button
                       onClick={() => {
                         setLanguage('UZ');
@@ -433,7 +447,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
                         language === 'UZ'
                           ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          : 'text-slate-300 hover:bg-white/5'
                       }`}
                     >
                       <span>🇺🇿</span> O'zbek (UZ)
@@ -446,7 +460,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
                         language === 'EN'
                           ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          : 'text-slate-300 hover:bg-white/5'
                       }`}
                     >
                       <span>🇬🇧</span> English (EN)
@@ -459,7 +473,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
                         language === 'RU'
                           ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          : 'text-slate-300 hover:bg-white/5'
                       }`}
                     >
                       <span>🇷🇺</span> Русский (RU)
@@ -468,26 +482,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 )}
               </div>
 
-              <button
-                onClick={() => setIsEnrollModalOpen(true)}
-                className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer"
-              >
-                {t("Ro'yxatdan o'tish", "Register Now", "Записаться")}
-              </button>
-
+              {/* Portal Access Button */}
               <button
                 onClick={onOpenAuth}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>{t("Tizimga kirish", "Sign In", "Войти")}</span>
+                <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                <span>{t("Sign In / Portal Access", "Sign In / Portal Access", "Вход в Портал")}</span>
               </button>
             </div>
           </div>
         </header>
 
-        {/* 1. HERO SECTION (PURE FADE-IN MOTION) */}
-        <section id="hero" className="relative min-h-[88vh] flex items-center justify-center pt-28 sm:pt-36 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10">
+        {/* 2. HERO SECTION */}
+        <section id="hero" className="relative min-h-[90vh] flex items-center justify-center pt-28 sm:pt-36 pb-16 px-4 sm:px-6 lg:px-8 border-b border-gray-800">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -498,61 +506,67 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold tracking-wide backdrop-blur-md">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                <span>{getLangText(cmsContent.locationBadgeUz, cmsContent.locationBadgeEn, cmsContent.locationBadgeRu) || "Toshkent va Respublika bo'ylab #1 Ta'lim Markazi"}</span>
+                <span>99.8% System Uptime</span>
               </div>
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-xs font-bold tracking-wide backdrop-blur-md">
-                <Zap className="w-3.5 h-3.5 text-indigo-400" />
-                <span>{getLangText(cmsContent.aiBadgeUz, cmsContent.aiBadgeEn, cmsContent.aiBadgeRu) || "24/7 AI Mentori va Avtomatlashtirilgan Tizim"}</span>
+                <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Multi-Subject Support</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-bold tracking-wide backdrop-blur-md">
+                <Bot className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Instant Telegram PINs</span>
               </div>
             </div>
 
-            {/* Main Animated Headline */}
+            {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] mb-6">
-              <span className="block text-amber-400 font-extrabold min-h-[3.5rem] sm:min-h-[5rem]">
+              <span>The Operating System for </span>
+              <span className="text-amber-400 block mt-1">
                 <TypewriterText
                   texts={[
-                    getLangText(cmsContent.heroTitleUz, cmsContent.heroTitleEn, cmsContent.heroTitleRu) || "IELTS 8.5+ & CEFR Garantiya",
-                    t("Real-vaqtda to'lovlar, davomat va IELTS progressi", "Real-time tuition, attendance and IELTS progress", "Отслеживайте оплату, посещаемость и прогресс IELTS"),
-                    t("Xalqaro CELTA va 9.0 Band O'qituvchilar jamoasi", "Team of CELTA & IELTS 9.0 certified instructors", "Команда преподавателей с IELTS 9.0 и CELTA")
+                    "Modern Learning Centers",
+                    "Multi-Subject Course Feeds",
+                    "IELTS, IT & Physics Academies",
+                    "Automated Telegram Operations"
                   ]}
                   speed={45}
                   deleteSpeed={20}
                   pauseDuration={2000}
-                  cursorColorClass="text-amber-400 font-extrabold drop-shadow-[0_0_12px_rgba(245,158,11,0.9)]"
+                  cursorColorClass="text-amber-400 font-extrabold"
                 />
-              </span>
-              <span className="text-xl sm:text-3xl font-bold text-slate-300 mt-2 block leading-relaxed max-w-4xl mx-auto">
-                {getLangText(cmsContent.heroSubtitleUz, cmsContent.heroSubtitleEn, cmsContent.heroSubtitleRu) || "Kelajak ta'limi bugun: IELTS, CEFR va IT sohasida eng yuqori natijalarga erishing"}
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              {getLangText(cmsContent.heroDescUz, cmsContent.heroDescEn, cmsContent.heroDescRu) || "O'quvchilarimiz har bir darsini mobil ilovada kuzatadi, haftalik mock test topshiradi hamda AI diagnostika orqali xatolarini zudlik bilan tuzatadi."}
+            <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
+              Streamlining multi-subject course feeds, instant Telegram notifications, diagnostic grade dispatchers, and AI-powered learning across IELTS, Web Dev, Cybersecurity, Physics, and Higher Math.
             </p>
 
-            {/* Hero CTAs */}
+            {/* Primary CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
-                onClick={() => setIsEnrollModalOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/30 hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer"
+                onClick={onOpenAuth}
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/30 hover:scale-105 transition flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{getLangText(cmsContent.ctaPrimaryUz, cmsContent.ctaPrimaryEn, cmsContent.ctaPrimaryRu) || "Bepul Sinov Darsiga Yozilish"}</span>
-                <ArrowRight className="w-4 h-4" />
+                <Zap className="w-4 h-4 fill-slate-950" />
+                <span>Launch Portal (1-Click Demo)</span>
               </button>
-              <button
-                onClick={() => scrollToSection('courses')}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-white/15 transition flex items-center justify-center gap-2 cursor-pointer"
+              <a
+                href="https://t.me/centerflow_bot"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gray-900 hover:bg-gray-800 text-slate-200 font-bold text-sm border border-gray-800 transition flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t("Kurslar ro'yxatini ko'rish", "Explore Courses", "Посмотреть курсы")}</span>
-                <ChevronDown className="w-4 h-4 text-amber-400" />
-              </button>
+                <Bot className="w-4 h-4 text-emerald-400" />
+                <span>Connect @CenterFlowBot</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
             </div>
 
-            {/* Dynamic Animated KPI Numbers Grid (Counting up from 0) */}
+            {/* Dynamic Animated KPI Numbers Grid */}
             <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
               <motion.div
                 whileHover={{ scale: 1.03, y: -2 }}
-                className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
+                className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
                   <AnimatedCounter value={cmsContent.activeStudentsCount || "1,500+"} />
@@ -564,7 +578,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
               <motion.div
                 whileHover={{ scale: 1.03, y: -2 }}
-                className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
+                className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
                   <AnimatedCounter value={cmsContent.ieltsHighResults || "350+"} />
@@ -576,7 +590,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
               <motion.div
                 whileHover={{ scale: 1.03, y: -2 }}
-                className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
+                className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
                   <AnimatedCounter value={cmsContent.admissionRate || "96%"} />
@@ -588,7 +602,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
               <motion.div
                 whileHover={{ scale: 1.03, y: -2 }}
-                className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
+                className="p-6 rounded-3xl bg-gray-900/60 border border-gray-800 backdrop-blur-xl shadow-2xl text-center group hover:border-amber-500/50 transition-all"
               >
                 <div className="text-3xl sm:text-4xl font-black text-amber-400 mb-1">
                   <AnimatedCounter value={cmsContent.yearsExperience || "8+"} />
@@ -601,170 +615,517 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </motion.div>
         </section>
 
-        {/* 2. BENTO-GRID FEATURE HIGHLIGHTS ("WHY CHOOSE US" - FADE-UP MOTION FOR ALL DIVS) */}
-        <section id="why-us" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
+        {/* 3. INTERACTIVE MULTI-SUBJECT SHOWCASE CAROUSEL / GRID */}
+        <section id="multi-subject" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative bg-gray-900/40">
           <div className="max-w-7xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 35 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6 }}
               className="text-center max-w-2xl mx-auto mb-14"
             >
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-                System & Ecosystem
+                Multi-Subject Architecture
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
-                {t("Nega Aynan CenterFlow?", "Why Choose CenterFlow?", "Почему выбирают CenterFlow?")}
+                Unified Multi-Subject Hub
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                {t("An'anaviy darslardan farqli o'laroq, natijaga 100% yo'naltirilgan zamonaviy ta'lim ekotizimi", "An ecosystem designed for maximum learning retention and high scores", "Экосистема, нацеленная на 100% результаты учеников")}
+                One center handles diverse academic disciplines. Experience tailored workflows for languages, code, and science.
               </p>
             </motion.div>
 
-            {/* Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {/* Bento Card 1: Main Feature (Wide 2-col) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Subject 1: IELTS & Languages */}
               <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-purple-900/40 via-white/5 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition group"
+                whileHover={{ y: -4 }}
+                className="p-8 rounded-3xl bg-gray-900 border border-gray-800 hover:border-amber-500/50 transition-all flex flex-col justify-between shadow-xl"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
-                    <Target className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl">
+                      🇬🇧
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+                      LANGUAGES
+                    </span>
                   </div>
-                  <h3 className="text-2xl font-black text-white mb-2">
-                    {t("Natijaga yo'naltirilgan Intizomiy Tizom", "Result-Driven System", "Система ориентации на результат")}
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {t("Har bir o'quvchining haftalik natijasi, uyga vazifasi va davomati raqamlashtiriladi. Natijasi pastlagan o'quvchiga avtosanaliz va qo'shimcha support darsi biriktiriladi.", "Every homework, attendance record and test score is digitally tracked in real-time.", "Каждое домашнее задание и посещаемость отслеживаются цифровым способом.")}
+                  <h3 className="text-2xl font-black text-white mb-2">IELTS & Languages</h3>
+                  <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                    Designed for band score tracking, Task 1/2 essay diagnostic feedback cards, and daily listening drill logs.
                   </p>
+                  <ul className="space-y-3 text-xs text-slate-300">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Band Score Trackers (6.0 - 9.0)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Essay Diagnostic Feedback Cards</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Speaking & Listening Drill Logs</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-amber-400">
-                  <span>100% Tracking Enabled</span>
-                  <CheckCircle2 className="w-4 h-4" />
+                <div className="mt-8 pt-4 border-t border-gray-800/80 flex items-center justify-between text-xs text-slate-400 font-bold">
+                  <span>Enrolled: 840+ Students</span>
+                  <Award className="w-4 h-4 text-amber-400" />
                 </div>
               </motion.div>
 
-              {/* Bento Card 2: Team of 9.0 Teachers */}
+              {/* Subject 2: Web Dev & Cybersecurity */}
               <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+                whileHover={{ y: -4 }}
+                className="p-8 rounded-3xl bg-gray-900 border border-gray-800 hover:border-amber-500/50 transition-all flex flex-col justify-between shadow-xl"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold mb-4">
-                    <GraduationCap className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl">
+                      💻
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">
+                      ENGINEERING
+                    </span>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {t("IELTS 8.5+ & CELTA Ustozlar", "Team of 9.0 Teachers", "Преподаватели с IELTS 9.0")}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t("Xalqaro sertifikatga ega va yillik tajribali mutaxassislar guruhi.", "Top-tier CELTA and IELTS 9.0 certified mentors.", "Преподаватели с международными сертификатами.")}
+                  <h3 className="text-2xl font-black text-white mb-2">Web Dev & Cybersecurity</h3>
+                  <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                    Interactive code assignment feeds, terminal-style PIN verifications, GitHub repo linking, and project milestone tracking.
                   </p>
+                  <ul className="space-y-3 text-xs text-slate-300">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Code Assignment Submissions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Terminal Security PIN Verifications</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Capstone Project Milestones</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-8 pt-4 border-t border-gray-800/80 flex items-center justify-between text-xs text-slate-400 font-bold">
+                  <span>Enrolled: 420+ Students</span>
+                  <Code className="w-4 h-4 text-indigo-400" />
                 </div>
               </motion.div>
 
-              {/* Bento Card 3: Weekly Mock Tests */}
+              {/* Subject 3: Mathematics & Physics */}
               <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
+                whileHover={{ y: -4 }}
+                className="p-8 rounded-3xl bg-gray-900 border border-gray-800 hover:border-amber-500/50 transition-all flex flex-col justify-between shadow-xl"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold mb-4">
-                    <Award className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl">
+                      📐
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                      EXACT SCIENCES
+                    </span>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {t("Haftalik Rasmiy Mock Testlar", "Weekly Mock System", "Еженедельные Мок-тесты")}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t("Haqiqiy IDP/BC atmosferasidagi simulyatsiya imtihonlari va AI taxlili.", "Official exam simulation environment with detailed breakdown.", "Симуляция реального экзамена с подробным разбором.")}
+                  <h3 className="text-2xl font-black text-white mb-2">Mathematics & Physics</h3>
+                  <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                    Practice test leaderboards, formula check-in drills, problem set grading, and automated parent attendance reports.
                   </p>
+                  <ul className="space-y-3 text-xs text-slate-300">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>SAT & University Exam Leaderboards</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Formula Check-in Drills</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Problem Set Diagnostic Grading</span>
+                    </li>
+                  </ul>
                 </div>
-              </motion.div>
-
-              {/* Bento Card 4: Free Support Teachers */}
-              <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {t("Bepul Support O'qituvchilar", "Free Support Teachers", "Бесплатные ассистенты")}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t("Darsdan tashqari tushunmagan mavzularni yakka tartibda o'rganish imkoniyati.", "Dedicated assistant teachers available all day for extra practice.", "Ассистенты помогут вам разобрать любой вопрос после уроков.")}
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Bento Card 5: Speaking Clubs */}
-              <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold mb-4">
-                    <MessageCircle className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {t("Har kunlik Speaking Club", "Daily Speaking Clubs", "Разговорные клубы")}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {t("C1 va Native Speaker'lar bilan erkin muloqot va nutq o'stirish.", "Daily interactive speaking clubs with native speakers.", "Ежедневная практика устной речи с носителями языка.")}
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Bento Card 6: Student Mobile & Web App (Wide 2-col) */}
-              <motion.div
-                initial={{ opacity: 0, y: 45 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-900/30 to-white/5 border border-white/10 backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
-                    <Smartphone className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-2xl font-black text-white mb-2">
-                    {t("Shaxsiy Student App & Ota-ona Nazorati", "Student Tracking App", "Приложение для учеников и родителей")}
-                  </h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {t("Dars jadvali, baholar, oylik to'lov kvitansiyalari va o'qituvchi sharhlari hammasi bitta qulay ilovada jamlangan.", "Schedule, homework submission, audio drills, and payment ledger in one unified portal.", "Расписание, домашние задания, оценки и чеки оплаты в одном удобном приложении.")}
-                  </p>
-                </div>
-                <div className="mt-6 flex items-center gap-3">
-                  <button onClick={() => scrollToSection('student-app')} className="text-xs font-black text-amber-400 hover:underline flex items-center gap-1 cursor-pointer">
-                    <span>{t("Ilova haqida ko'proq", "Learn more about app", "Подробнее о приложении")}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                <div className="mt-8 pt-4 border-t border-gray-800/80 flex items-center justify-between text-xs text-slate-400 font-bold">
+                  <span>Enrolled: 310+ Students</span>
+                  <Atom className="w-4 h-4 text-emerald-400" />
                 </div>
               </motion.div>
             </div>
           </div>
         </section>
 
-        {/* 3. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL (FADE FROM LEFT & RIGHT MOTION) */}
-        <section id="teachers" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
+        {/* 4. ROLE-ADAPTIVE FEATURE EXPLORER (INTERACTIVE 3-TAB SECTION) */}
+        <section id="role-demos" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
+                Role-Adaptive Experience
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
+                Tailored Controls for Every Stakeholder
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 mt-2">
+                Switch between role perspectives to see how CenterFlow serves students, teachers, and center managers.
+              </p>
+            </div>
+
+            {/* Role Tabs Controls */}
+            <div className="flex justify-center mb-10">
+              <div className="inline-flex p-1.5 rounded-2xl bg-gray-900 border border-gray-800 gap-2">
+                <button
+                  onClick={() => setActiveRoleTab('student')}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                    activeRoleTab === 'student'
+                      ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>🎓 Student View</span>
+                </button>
+                <button
+                  onClick={() => setActiveRoleTab('teacher')}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                    activeRoleTab === 'teacher'
+                      ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>👨‍🏫 Teacher View</span>
+                </button>
+                <button
+                  onClick={() => setActiveRoleTab('admin')}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                    activeRoleTab === 'admin'
+                      ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>🛡️ Administrator View</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Role Tab Content Cards */}
+            <div className="max-w-4xl mx-auto">
+              <AnimatePresence mode="wait">
+                {activeRoleTab === 'student' && (
+                  <motion.div
+                    key="student-tab"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-8 rounded-3xl bg-gray-900 border border-gray-800 shadow-2xl space-y-6"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                          🎓
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white">Student Dashboard & AI Tutor</h3>
+                          <p className="text-xs text-slate-400">Enrolled in IELTS 7.5+ & Python Cybersecurity</p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+                        Bot Connected
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                          <FileText className="w-4 h-4" />
+                          <span>Multi-Subject Assignments</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          View assignments across IELTS and Cyber Security in one centralized timeline. Submit audio or code attachments easily.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          <span>24/7 AI Tutor Assistant</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Ask questions about essay structures or Python code syntax anytime with automated step-by-step diagnostics.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                          <Bot className="w-4 h-4 text-emerald-400" />
+                          <span>Telegram Grade Notices</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Instant mobile alerts via <code className="text-amber-400">@centerflow_bot</code> as soon as mock scores or homework marks are recorded.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                          <Activity className="w-4 h-4 text-indigo-400" />
+                          <span>Diagnostic Score Trends</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Visual subscore breakdowns for Listening, Reading, Writing, and Speaking to spot exact weak areas.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeRoleTab === 'teacher' && (
+                  <motion.div
+                    key="teacher-tab"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-8 rounded-3xl bg-gray-900 border border-gray-800 shadow-2xl space-y-6"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+                          👨‍🏫
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white">Teacher Command Center</h3>
+                          <p className="text-xs text-slate-400">Managing Web Development & Advanced Physics Groups</p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
+                        Instructor Tier
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1.5">
+                          <Users className="w-4 h-4" />
+                          <span>1-Click Group Attendance Markers</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Mark Present/Absent with a single tap. Absent alerts dispatch automatically to parent Telegram numbers.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1.5">
+                          <Send className="w-4 h-4" />
+                          <span>Telegram Grade Dispatcher</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Submit mock test scores or assignment marks directly into students' personal Telegram notifications in real time.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1.5">
+                          <Layers className="w-4 h-4" />
+                          <span>Multi-Subject Syllabus Builder</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Organize course modules, lesson materials, homework deadlines, and classroom audio files across groups.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-indigo-400 mb-2 flex items-center gap-1.5">
+                          <Award className="w-4 h-4" />
+                          <span>Diagnostic Test Publisher</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Create mock diagnostic exams and publish band score results with customized teacher feedback notes.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeRoleTab === 'admin' && (
+                  <motion.div
+                    key="admin-tab"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-8 rounded-3xl bg-gray-900 border border-gray-800 shadow-2xl space-y-6"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                          🛡️
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white">Administrator Control Panel</h3>
+                          <p className="text-xs text-slate-400">Global Center Management & Security Auditor</p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+                        SuperAdmin Level
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                          <Activity className="w-4 h-4" />
+                          <span>Live Health Monitor</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Real-time Node.js uptime, memory allocation stats, active WebSocket connections, and latency metrics.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                          <Radio className="w-4 h-4 text-emerald-400" />
+                          <span>Mass Telegram Broadcast Tools</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Send center-wide announcements or subject-specific exam schedules directly to student Telegram bots instantly.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Security Audit Event Logging</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Track 4-digit security PIN verify events, role switches, login IPs, and access timestamps across all accounts.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-gray-800">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                          <Building className="w-4 h-4 text-emerald-400" />
+                          <span>Multi-Branch Analytics</span>
+                        </h4>
+                        <p className="text-xs text-slate-300">
+                          Compare enrollment numbers, tuition payment completion rates, and instructor performance across all branches.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. TELEGRAM INTEGRATION HIGHLIGHT BANNER */}
+        <section id="telegram-sec" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative bg-gray-900/50">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.6 }}
+              className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-gray-900 via-slate-950 to-gray-900 border border-gray-800 shadow-2xl relative overflow-hidden backdrop-blur-xl"
+            >
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
+                    <Bot className="w-4 h-4" />
+                    <span>Official Telegram Integration (@centerflow_bot)</span>
+                  </div>
+
+                  <h3 className="text-3xl font-black text-white tracking-tight">
+                    Connecting Desktop Portal to Every Mobile Phone
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Our custom Telegram bot bridges web dashboard actions to immediate messaging. Receive security PINs, exam scores, and schedule changes instantly.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">Automated 4-Digit Security PIN Dispatching</h4>
+                        <p className="text-[11px] text-slate-400">Generate secure PINs sent directly to your Telegram chat for 1-click authentication.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">Instant Score & Feedback Dispatcher</h4>
+                        <p className="text-[11px] text-slate-400">Get notified the exact second a teacher posts mock scores or assignment grades.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                        <Radio className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">Real-Time Class Schedule & Room Alerts</h4>
+                        <p className="text-[11px] text-slate-400">Receive live push messages if a lesson room shifts or an extra mock test is added.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <a
+                      href="https://t.me/centerflow_bot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                    >
+                      <Bot className="w-4 h-4" />
+                      <span>Start @CenterFlowBot on Telegram</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5 flex justify-center">
+                  <div className="w-full max-w-xs p-4 rounded-3xl bg-slate-950 border border-gray-800 font-mono text-xs space-y-3 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">
+                          CF
+                        </div>
+                        <span className="text-white font-bold text-[11px]">CenterFlow Bot</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-400">bot • active</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 space-y-1">
+                      <p className="font-bold">🔑 Security Verification Code</p>
+                      <p className="text-xs text-white">Your 4-digit PIN is: <span className="font-mono text-amber-400 font-bold">4321</span></p>
+                      <p className="text-[9px] text-slate-400">Valid for 10 minutes. Do not share.</p>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-[11px] text-slate-300 space-y-1">
+                      <p className="font-bold text-amber-400">📊 New Diagnostic Result Released!</p>
+                      <p className="text-[10px]">IELTS Mock Test #4 Result: <span className="font-bold text-white">7.5 Overall</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 6. TEACHERS SLIDE CAROUSEL WITH CERTIFICATE MODAL */}
+        <section id="teachers" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 overflow-hidden">
               <motion.div
@@ -784,7 +1145,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </p>
               </motion.div>
 
-              {/* Swiper Arrow Buttons (Fade from Right) */}
+              {/* Swiper Arrow Buttons */}
               <motion.div
                 initial={{ opacity: 0, x: 60 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -794,7 +1155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               >
                 <button
                   onClick={() => scrollCarousel(teacherCarouselRef, 'left')}
-                  className="p-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-white transition cursor-pointer"
+                  className="p-3 rounded-2xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-white transition cursor-pointer"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -821,7 +1182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.6, delay: index * 0.08 }}
                   onClick={() => setSelectedTeacher(teacher)}
-                  className="min-w-[280px] sm:min-w-[340px] snap-start rounded-3xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-md hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-xl hover:-translate-y-1"
+                  className="min-w-[280px] sm:min-w-[340px] snap-start rounded-3xl bg-gray-900 border border-gray-800 overflow-hidden hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-xl hover:-translate-y-1"
                 >
                   <div>
                     <div className="relative h-64 overflow-hidden bg-slate-900">
@@ -851,7 +1212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                         {teacher.specialization.map((spec, i) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 rounded-lg bg-white/10 text-[10px] font-bold text-slate-300"
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-[10px] font-bold text-slate-300"
                           >
                             {spec}
                           </span>
@@ -860,7 +1221,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </div>
                   </div>
 
-                  <div className="p-6 pt-0 border-t border-white/10 mt-2 flex items-center justify-between text-xs text-slate-400">
+                  <div className="p-6 pt-0 border-t border-gray-800 mt-2 flex items-center justify-between text-xs text-slate-400">
                     <span className="font-bold text-amber-400">{teacher.experience}</span>
                     <span className="font-bold text-slate-200 flex items-center gap-1 hover:text-amber-400 transition">
                       <FileCheck className="w-3.5 h-3.5 text-amber-400" />
@@ -874,8 +1235,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </section>
 
-        {/* 4. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL (SLIDER CAROUSEL & ZOOM-IN MOTION) */}
-        <section id="results" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
+        {/* 7. STUDENT RESULTS CAROUSEL WITH TRF SCORE MODAL */}
+        <section id="results" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative bg-gray-900/30">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
               <div>
@@ -907,7 +1268,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                         resultFilter === f.id
                           ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
-                          : 'bg-white/5 text-slate-300 hover:bg-white/15 border border-white/10'
+                          : 'bg-gray-900 text-slate-300 hover:bg-gray-800 border border-gray-800'
                       }`}
                     >
                       {f.label}
@@ -915,10 +1276,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+                <div className="flex items-center gap-2 pl-2 border-l border-gray-800">
                   <button
                     onClick={() => scrollCarousel(resultsCarouselRef, 'left')}
-                    className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white transition cursor-pointer"
+                    className="p-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-white transition cursor-pointer"
                     title="Previous Results"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -934,7 +1295,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               </div>
             </div>
 
-            {/* Results Horizontal Swiper / Slider Deck */}
+            {/* Results Deck */}
             <div
               ref={resultsCarouselRef}
               className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 cursor-grab"
@@ -943,12 +1304,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               {filteredResults.map((result, idx) => (
                 <motion.div
                   key={result.id}
-                  initial={{ opacity: 0, scale: 0.88 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.5, delay: idx * 0.06 }}
                   onClick={() => setSelectedResult(result)}
-                  className="min-w-[280px] sm:min-w-[340px] snap-start p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all cursor-pointer group hover:-translate-y-1 shadow-xl flex flex-col justify-between"
+                  className="min-w-[280px] sm:min-w-[340px] snap-start p-6 rounded-3xl bg-gray-900 border border-gray-800 hover:border-amber-500/50 backdrop-blur-md transition-all cursor-pointer group hover:-translate-y-1 shadow-xl flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">
@@ -966,27 +1327,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </p>
 
                     {/* Subscore pills */}
-                    <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/10 text-center text-xs">
-                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                    <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-gray-800 text-center text-xs">
+                      <div className="p-2 rounded-xl bg-slate-950 border border-gray-800">
                         <span className="text-[10px] text-slate-400 block font-bold">L</span>
                         <span className="font-mono font-bold text-white">{result.listening}</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                      <div className="p-2 rounded-xl bg-slate-950 border border-gray-800">
                         <span className="text-[10px] text-slate-400 block font-bold">R</span>
                         <span className="font-mono font-bold text-white">{result.reading}</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                      <div className="p-2 rounded-xl bg-slate-950 border border-gray-800">
                         <span className="text-[10px] text-slate-400 block font-bold">W</span>
                         <span className="font-mono font-bold text-white">{result.writing}</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                      <div className="p-2 rounded-xl bg-slate-950 border border-gray-800">
                         <span className="text-[10px] text-slate-400 block font-bold">S</span>
                         <span className="font-mono font-bold text-white">{result.speaking}</span>
                       </div>
                     </div>
                   </div>
 
-                  <button className="w-full mt-5 py-2.5 rounded-xl bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5">
+                  <button className="w-full mt-5 py-2.5 rounded-xl bg-gray-800 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition flex items-center justify-center gap-1.5">
                     <FileCheck className="w-4 h-4" />
                     <span>{t("Sertifikat va TRF ni ko'rish", "View Official Certificate", "Посмотреть сертификат")}</span>
                   </button>
@@ -996,14 +1357,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </section>
 
-        {/* 5. COURSE PRICING GRID (AOS-STYLE ZOOM FROM BEHIND TO FRONT MOTION) */}
-        <section id="courses" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
+        {/* 8. COURSE PRICING GRID */}
+        <section id="courses" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative">
           <div className="max-w-7xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.6 }}
               className="text-center max-w-2xl mx-auto mb-14"
             >
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
@@ -1021,12 +1382,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               {(cmsContent.courses || []).map((course, i) => (
                 <motion.div
                   key={course.id}
-                  initial={{ opacity: 0, scale: 0.65, y: 30 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                  className={`relative rounded-3xl p-8 bg-white/5 border backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition-all duration-300 shadow-2xl ${
-                    course.isPopular ? 'border-amber-500/80 ring-2 ring-amber-500/30 bg-purple-900/20' : 'border-white/10'
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className={`relative rounded-3xl p-8 bg-gray-900 border backdrop-blur-md flex flex-col justify-between hover:border-amber-500/50 transition-all duration-300 shadow-2xl ${
+                    course.isPopular ? 'border-amber-500/80 ring-2 ring-amber-500/30 bg-purple-950/20' : 'border-gray-800'
                   }`}
                 >
                   {course.isPopular && (
@@ -1049,7 +1410,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       {getLangText(course.descUz, course.descEn, course.descRu)}
                     </p>
 
-                    <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-white/5 mb-6 text-xs">
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-950 mb-6 text-xs border border-gray-800">
                       <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Davomiyligi", "Duration", "Длительность")}</p>
                         <p className="font-bold text-slate-200">
@@ -1074,7 +1435,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+                  <div className="pt-6 border-t border-gray-800 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] text-slate-400 uppercase font-bold">{t("Oylik to'lov", "Monthly Fee", "Ежемесячно")}</p>
                       <p className="text-2xl font-black text-white">
@@ -1097,176 +1458,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </div>
         </section>
 
-        {/* 6. STUDENT APP SPOTLIGHT (FADE-RIGHT ON TEXT, FADE-LEFT ON APP CARDS) */}
-        <section id="student-app" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5 overflow-hidden">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Text Side (Fade Right) */}
-              <motion.div
-                initial={{ opacity: 0, x: -60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
-                className="lg:col-span-6 space-y-6"
-              >
-                <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider">
-                  Mobile & Web Ecosystem
-                </span>
-                <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-                  {t("Barcha natija va vazifalar — kaftingizda!", "All grades & tasks right in your hand!", "Все оценки и домашние задания в одном месте!")}
-                </h2>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  {t("CenterFlow Student Portal orqali har bir o'quvchi o'zining uyga vazifasini audio/rasm shaklida topshiradi, baho hamda AI xatolar tahlilini zudlik bilan qabul qiladi.", "Students submit homework, review audio drills, track tuition balances and receive AI solution diagnostic cards instantenously.", "Студенты сдают домашние задания, смотрят аналитику ИИ и отслеживают оплату в реальном времени.")}
-                </p>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                      <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{t("Real-vaqtda Davomat va Baholar", "Real-time Attendance & Grades", "Посещаемость и оценки в реальном времени")}</h4>
-                      <p className="text-xs text-slate-400">{t("Dars o'tilishi bilan o'qituvchi qo'ygan baho va sharhlar student portalida aks etadi.", "Instant grade and commentary sync via Firestore listeners.", "Мгновенная синхронизация оценок и комментариев.")}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{t("24/7 AI Tahlil va Yechim Tushuntirishi", "24/7 AI Diagnostics & Explanations", "24/7 ИИ-Аналитика и объяснение решений")}</h4>
-                      <p className="text-xs text-slate-400">{t("Xatolar ustida ishlash uchun AI mentoridan qadamba-qadam tushuntirish olasiz.", "AI steps in to analyze incorrect homework options and suggest improvements.", "ИИ помогает разобрать ошибки и дает рекомендации.")}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex items-center gap-4">
-                  <button
-                    onClick={onOpenAuth}
-                    className="px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/20 transition cursor-pointer flex items-center gap-2"
-                  >
-                    <span>{t("Student Portalga kirish", "Open Student Portal", "Войти в Портал")}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-
-              {/* Mockup Display Side (Fade Left) */}
-              <motion.div
-                initial={{ opacity: 0, x: 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
-                className="lg:col-span-6 relative"
-              >
-                <div className="relative mx-auto max-w-sm rounded-3xl bg-slate-900 border-4 border-slate-800 p-4 shadow-2xl overflow-hidden">
-                  <div className="p-4 bg-[#120320] rounded-2xl border border-white/10 text-xs space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                          CF
-                        </div>
-                        <div>
-                          <p className="font-bold text-white text-xs">Jasurbek Aliyev</p>
-                          <p className="text-[10px] text-amber-400">IELTS Rocket 8.5 Group</p>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">
-                        Active
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
-                        <span>Haftalik Progress</span>
-                        <span className="text-amber-400">92% High Performance</span>
-                      </div>
-                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div className="bg-amber-400 h-full w-[92%]" />
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-200 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-                      <span>AI Feedback: Writing Task 2 Cohesion Band score improved to 8.0!</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. BRANCHES SECTION (FADE-UP MOTION) */}
-        <section id="branches" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-7xl mx-auto"
-          >
-            <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-                Locations & Access
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
-                {t("Bizning Filiallar", "Our Learning Branches", "Наши Филиалы")}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-2">
-                {t("Toshkent shahrining eng qulay hududlaridagi zamonaviy o'quv markazlarimiz", "Modern campuses located right near metro stations", "Удобные филиалы возле станций метро")}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {branchesList.map((branch) => (
-                <div
-                  key={branch.id}
-                  className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-amber-500/50 backdrop-blur-md transition-all shadow-xl flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-4">
-                      <Building className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {getLangText(branch.nameUz, branch.nameEn, branch.nameRu)}
-                    </h3>
-                    <p className="text-xs text-slate-300 mb-4 flex items-start gap-2 leading-relaxed">
-                      <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                      <span>{getLangText(branch.addressUz, branch.addressEn, branch.addressRu)}</span>
-                    </p>
-                    <p className="text-xs text-slate-400 flex items-center gap-2 mb-2">
-                      <Phone className="w-4 h-4 text-indigo-400 shrink-0" />
-                      <span>{branch.phone}</span>
-                    </p>
-                    <p className="text-xs text-slate-400 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>{branch.hours}</span>
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setIsEnrollModalOpen(true)}
-                    className="w-full mt-6 py-2.5 rounded-xl bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-white font-bold text-xs transition cursor-pointer"
-                  >
-                    {t("Ushbu filialga yozilish", "Enroll at this Branch", "Записаться в этот филиал")}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </section>
-
-        {/* 8. TESTIMONIALS SECTION */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative bg-white/5">
+        {/* 9. TESTIMONIALS */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative bg-gray-900/30">
           <div className="max-w-7xl mx-auto">
             <TestimonialsCarousel testimonials={cmsContent.testimonials || []} />
           </div>
         </section>
 
-        {/* 9. FAQ ACCORDION SECTION (FADE-UP MOTION) */}
-        <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative">
+        {/* 10. FAQ ACCORDION SECTION */}
+        <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800 relative">
           <motion.div
             initial={{ opacity: 0, y: 35 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1291,7 +1491,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
                 placeholder={t("Savol bo'yicha qidirish...", "Search questions...", "Поиск по вопросам...")}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-gray-900 border border-gray-800 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition"
               />
             </div>
 
@@ -1305,7 +1505,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 return (
                   <div
                     key={faq.id}
-                    className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden transition"
+                    className="rounded-2xl bg-gray-900 border border-gray-800 overflow-hidden transition"
                   >
                     <button
                       onClick={() => setExpandedFaqId(isExpanded ? null : faq.id)}
@@ -1325,7 +1525,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-white/5 pt-3"
+                          className="px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-gray-800 pt-3"
                         >
                           {answer}
                         </motion.div>
@@ -1338,8 +1538,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </motion.div>
         </section>
 
-        {/* 10. LEAD REGISTRATION CTA FOOTER */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-b from-[#0d021a] to-slate-950 text-center">
+        {/* 11. LEAD REGISTRATION CTA FOOTER */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-b from-slate-950 to-gray-900 text-center">
           <div className="max-w-3xl mx-auto space-y-6">
             <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
               {t("Kelajakdagi orzularingizga ilk qadamni tashlang!", "Take the first step toward your dream score!", "Сделайте первый шаг к вашей мечте!")}
@@ -1347,18 +1547,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               {t("IELTS 8.5+ va grant sohibi bo'lish uchun bugunoq bepul diagnostika darsiga a'zo bo'ling.", "Book a free diagnostic level-check and trial lesson with our senior CELTA mentors.", "Запишитесь на бесплатный пробный урок и диагностику уровня.")}
             </p>
-            <button
-              onClick={() => setIsEnrollModalOpen(true)}
-              className="px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/30 transition hover:scale-105 cursor-pointer"
-            >
-              {t("Sinov darsiga a'zo bo'lish", "Book Free Trial Lesson", "Записаться на бесплатный урок")}
-            </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => setIsEnrollModalOpen(true)}
+                className="px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/30 transition hover:scale-105 cursor-pointer"
+              >
+                {t("Sinov darsiga a'zo bo'lish", "Book Free Trial Lesson", "Записаться на бесплатный урок")}
+              </button>
+              <button
+                onClick={onOpenAuth}
+                className="px-8 py-4 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm border border-gray-800 transition cursor-pointer flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>Sign In to Portal</span>
+              </button>
+            </div>
           </div>
         </section>
 
         {/* FOOTER BAR */}
-        <footer className="border-t border-white/10 py-8 px-4 text-center text-xs text-slate-500 bg-slate-950">
-          <p>© 2026 CenterFlow Education System. All rights reserved.</p>
+        <footer className="border-t border-gray-800 py-8 px-4 text-center text-xs text-slate-500 bg-slate-950">
+          <p>© 2026 CenterFlow Education Platform (RENESANS LC). All rights reserved.</p>
         </footer>
       </div>
 
@@ -1370,7 +1579,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md bg-[#120320] border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
+              className="relative w-full max-w-md bg-gray-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
             >
               <button
                 onClick={() => setIsEnrollModalOpen(false)}
@@ -1402,7 +1611,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     placeholder="Jasur Aliyev"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-gray-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
 
@@ -1416,7 +1625,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     placeholder="+998 90 123 45 67"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-gray-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
                   />
                 </div>
 
@@ -1427,12 +1636,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                   <select
                     value={formCourse}
                     onChange={(e) => setFormCourse(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-[#1a082c] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500 transition"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-gray-800 text-xs text-white focus:outline-none focus:border-amber-500 transition"
                   >
-                    <option value="IELTS Rocket 8.5">IELTS Rocket 8.5+</option>
-                    <option value="General English Standard">General English (CEFR)</option>
-                    <option value="Kids & Teens Foundation">Kids & Foundation</option>
-                    <option value="IT & Programming">IT & Web Development</option>
+                    <option value="IELTS 7.5+ Intensive">IELTS 7.5+ Intensive Mastery</option>
+                    <option value="Python & Cyber Security">Python & Cyber Security Essentials</option>
+                    <option value="Full-Stack Web Development">Full-Stack Web Development</option>
+                    <option value="Advanced Physics">Advanced Physics & Mechanics</option>
+                    <option value="SAT & Higher Mathematics">SAT & Higher Mathematics</option>
+                    <option value="General English">General English Fluency</option>
                   </select>
                 </div>
 

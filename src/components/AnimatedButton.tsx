@@ -27,7 +27,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'relative inline-flex items-center justify-center font-black tracking-wide rounded-2xl transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
+    'relative inline-flex items-center justify-center font-black tracking-wide rounded-2xl transition-all cursor-pointer select-none overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary:
@@ -57,6 +57,9 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
+      {/* Glossy Shimmer Sweep Highlight on Hover */}
+      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+
       {isLoading ? (
         <Loader2 className="w-4 h-4 animate-spin shrink-0 text-current" />
       ) : (

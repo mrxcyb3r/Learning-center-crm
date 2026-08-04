@@ -8,6 +8,7 @@ import { TestimonialsCarousel } from '../components/common/TestimonialsCarousel'
 import { StudentResult, Teacher, LandingPageContent } from '../types';
 import { ResultCertificateModal } from '../components/ResultCertificateModal';
 import { TeacherCertificateModal } from '../components/TeacherCertificateModal';
+import { Navbar } from '../components/Navbar';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { subscribeLandingPageContent, DEFAULT_LANDING_PAGE_CONTENT } from '../services/landingCms';
@@ -383,116 +384,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
       <div className="relative z-10">
         {/* 1. HEADER NAVIGATION COMPONENT */}
-        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/90 border-b border-gray-800 px-4 py-3 sm:px-8 transition-all shadow-2xl">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            {/* Logo + Renerssans Badge */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => scrollToSection('hero')}
-                className="flex items-center gap-2.5 text-white font-black text-xl tracking-tight cursor-pointer hover:opacity-90 transition"
-              >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black text-lg shadow-lg shadow-amber-500/20">
-                  CF
-                </div>
-                <span>Center<span className="text-amber-400">Flow</span></span>
-              </button>
-              <span className="hidden xl:inline-block px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono font-extrabold text-amber-400 tracking-wider">
-                RENESANS LC PLATFORM
-              </span>
-            </div>
-
-            {/* Nav Links */}
-            <nav className="hidden lg:flex items-center gap-1.5 bg-gray-900/80 border border-gray-800 p-1.5 rounded-2xl">
-              {SECTIONS.filter(s => s.id !== 'hero').map((sec) => {
-                const isActive = activeSection === sec.id;
-                const label = getLangText(sec.labelUz, sec.labelEn, sec.labelRu);
-
-                return (
-                  <button
-                    key={sec.id}
-                    onClick={() => scrollToSection(sec.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      isActive
-                        ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
-                        : 'text-slate-300 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Quick Actions */}
-            <div className="flex items-center gap-3">
-              {/* Language Switcher */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gray-900 hover:bg-gray-800 border border-gray-800 transition cursor-pointer"
-                  title="Switch Language"
-                >
-                  <Globe className="w-4 h-4 text-amber-400" />
-                  <span>{language === 'UZ' ? 'UZ 🇺🇿' : language === 'RU' ? 'RU 🇷🇺' : 'EN 🇬🇧'}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isLangDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl py-1.5 z-50">
-                    <button
-                      onClick={() => {
-                        setLanguage('UZ');
-                        setIsLangDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
-                        language === 'UZ'
-                          ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/5'
-                      }`}
-                    >
-                      <span>🇺🇿</span> O'zbek (UZ)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLanguage('EN');
-                        setIsLangDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
-                        language === 'EN'
-                          ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/5'
-                      }`}
-                    >
-                      <span>🇬🇧</span> English (EN)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLanguage('RU');
-                        setIsLangDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
-                        language === 'RU'
-                          ? 'bg-amber-500/20 text-amber-400 font-black'
-                          : 'text-slate-300 hover:bg-white/5'
-                      }`}
-                    >
-                      <span>🇷🇺</span> Русский (RU)
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Portal Access Button */}
-              <button
-                onClick={onOpenAuth}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-                <span>{t("Sign In / Portal Access", "Sign In / Portal Access", "Вход в Портал")}</span>
-              </button>
-            </div>
-          </div>
-        </header>
+        <Navbar onOpenAuth={onOpenAuth} />
 
         {/* 2. HERO SECTION */}
         <section id="hero" className="relative min-h-[90vh] flex items-center justify-center pt-28 sm:pt-36 pb-16 px-4 sm:px-6 lg:px-8 border-b border-gray-800">

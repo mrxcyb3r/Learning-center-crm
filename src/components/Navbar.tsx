@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { DevRoleDropdown } from './DevRoleDropdown';
 import {
-  Sun,
-  Moon,
   Globe,
+  Sparkles,
+  ChevronDown,
   Menu,
   X,
   User,
   LogOut,
-  Shield,
-  GraduationCap,
-  Sparkles,
-  PhoneCall
+  ShieldCheck
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -22,234 +18,196 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
-  const { language, setLanguage, t } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const { currentUser, userProfile, activeRole, logout } = useAuth();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const navLinks = [
-    { href: '#features', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
-    { href: '#pricing', label: language === 'UZ' ? 'Narxlar' : language === 'RU' ? 'Цены' : 'Pricing' },
-    { href: 'https://chronicle.ai.studio/', label: language === 'UZ' ? 'Blog' : language === 'RU' ? 'Блог' : 'Blog', isExternal: true },
-    { href: '#contact', label: language === 'UZ' ? 'Aloqa' : language === 'RU' ? 'Контакты' : 'Contact' }
+    { href: '#why-us', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
+    { href: '#multi-subject', label: language === 'UZ' ? 'Fanlar Xabi' : language === 'RU' ? 'Хаб Предметов' : 'Multi-Subject Hub' },
+    { href: '#role-demos', label: language === 'UZ' ? 'Rol Demosi' : language === 'RU' ? 'Демо Ролей' : 'Role Demos' },
+    { href: '#telegram-sec', label: language === 'UZ' ? 'Telegram & Xavfsizlik' : language === 'RU' ? 'Телеграм & Защита' : 'Security & Telegram' },
+    { href: '#faq', label: language === 'UZ' ? 'Savollar' : language === 'RU' ? 'Вопросы' : 'FAQs' }
   ];
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isExternal?: boolean) => {
-    if (isExternal) return;
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const targetId = href.replace('#', '');
     const element = document.getElementById(targetId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+      if (targetId === 'hero') {
+        window.history.replaceState(null, '', window.location.pathname);
+      } else {
+        window.history.replaceState(null, '', `#${targetId}`);
+      }
     }
     setIsMobileMenuOpen(false);
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Brand Logo */}
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-6 h-6" />
+    <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-gray-800/60 transition-all">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
+        
+        {/* Left: Brand Logo & Unified Badge */}
+        <a
+          href="#hero"
+          onClick={(e) => handleNavClick(e, '#hero')}
+          className="flex items-center gap-3 group cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform shrink-0">
+            CF
+          </div>
+          <div className="flex flex-col">
+            <div className="font-extrabold text-lg text-white tracking-tight flex items-center gap-1.5 leading-tight">
+              <span>Center<span className="text-amber-400">Flow</span></span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
-                  RENESSANS
-                </span>
-                <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  LC
-                </span>
-              </div>
-              <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                Toshkent / Markaziy Filial
-              </p>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 leading-none mt-0.5">
+              RENESANS LC PLATFORM
             </div>
-          </a>
+          </div>
+        </a>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                target={link.isExternal ? "_blank" : undefined}
-                rel={link.isExternal ? "noopener noreferrer" : undefined}
-                onClick={(e) => handleNavClick(e, link.href, link.isExternal)}
-                className="text-sm font-medium text-slate-700 hover:text-amber-500 dark:text-slate-300 dark:hover:text-amber-400 transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* Controls & Actions */}
-          <div className="hidden lg:flex items-center gap-3">
-            {/* Language Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 transition cursor-pointer"
-              >
-                <Globe className="w-4 h-4 text-amber-500" />
-                <span>{language === 'UZ' ? 'UZ 🇺🇿' : language === 'RU' ? 'RU 🇷🇺' : 'EN 🇬🇧'}</span>
-              </button>
-
-              {isLangDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50">
-                  <button
-                    onClick={() => {
-                      setLanguage('UZ');
-                      setIsLangDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold cursor-pointer ${
-                      language === 'UZ'
-                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>🇺🇿</span> Uzbek (UZ)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLanguage('EN');
-                      setIsLangDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold cursor-pointer ${
-                      language === 'EN'
-                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>🇬🇧</span> English (EN)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLanguage('RU');
-                      setIsLangDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold cursor-pointer ${
-                      language === 'RU'
-                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>🇷🇺</span> Russian (RU)
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Dev Role Dropdown Switcher */}
-            <DevRoleDropdown />
-
-            {/* Dark/Light Mode Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800 transition cursor-pointer"
-              aria-label="Toggle Theme"
+        {/* Center: Streamlined Center Nav Pill */}
+        <nav className="hidden lg:flex items-center gap-6 px-6 py-2 rounded-full bg-gray-900/60 border border-gray-800/80 text-sm font-medium text-gray-300">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={(e) => handleNavClick(e, link.href)}
+              className="hover:text-amber-400 text-gray-300 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
             >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-600" />
-              )}
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        {/* Right: Actions */}
+        <div className="hidden sm:flex items-center gap-3">
+          {/* Language Selector Pill */}
+          <div className="relative">
+            <button
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-gray-300 hover:text-white text-xs font-semibold border border-gray-700/50 transition-all cursor-pointer"
+              title="Switch Language"
+            >
+              <Globe className="w-3.5 h-3.5 text-amber-400" />
+              <span>{language === 'UZ' ? 'UZ 🇺🇿' : language === 'RU' ? 'RU 🇷🇺' : 'EN 🇬🇧'}</span>
+              <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Auth / Profile Button */}
-            {currentUser ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center">
-                    {userProfile?.displayName ? userProfile.displayName[0].toUpperCase() : 'U'}
-                  </div>
-                  <div className="text-left leading-tight">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[100px]">
-                      {userProfile?.displayName || 'User'}
-                    </p>
-                    <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase">
-                      {activeRole}
-                    </p>
-                  </div>
-                </div>
+            {isLangDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-36 bg-slate-900 border border-gray-800 rounded-2xl shadow-2xl py-1.5 z-50">
                 <button
-                  onClick={logout}
-                  className="p-2 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                  title={t.nav.logout}
+                  onClick={() => {
+                    setLanguage('UZ');
+                    setIsLangDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold transition cursor-pointer ${
+                    language === 'UZ' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-300 hover:bg-white/5'
+                  }`}
                 >
-                  <LogOut className="w-4 h-4" />
+                  <span>🇺🇿</span> O'zbek (UZ)
+                </button>
+                <button
+                  onClick={() => {
+                    setLanguage('EN');
+                    setIsLangDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold transition cursor-pointer ${
+                    language === 'EN' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-300 hover:bg-white/5'
+                  }`}
+                >
+                  <span>🇬🇧</span> English (EN)
+                </button>
+                <button
+                  onClick={() => {
+                    setLanguage('RU');
+                    setIsLangDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold transition cursor-pointer ${
+                    language === 'RU' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-300 hover:bg-white/5'
+                  }`}
+                >
+                  <span>🇷🇺</span> Русский (RU)
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={onOpenAuth}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 hover:shadow-amber-500/30 transition cursor-pointer"
-              >
-                <User className="w-4 h-4" />
-                <span>{t.nav.login}</span>
-              </button>
             )}
-
-            {/* Quick Contact Header CTA */}
-            <a
-              href="#contact"
-              onClick={(e) => handleNavClick(e, '#contact')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs border border-slate-700/50 transition cursor-pointer"
-            >
-              <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t.nav.contact}</span>
-            </a>
           </div>
 
-          {/* Mobile Menu Hamburger */}
-          <div className="flex lg:hidden items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-            </button>
+          {/* Dev Role Dropdown */}
+          <DevRoleDropdown />
 
+          {/* Single Main CTA or User Badge */}
+          {currentUser ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-900 border border-gray-800 text-xs font-semibold">
+                <div className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                  {userProfile?.displayName ? userProfile.displayName[0].toUpperCase() : 'U'}
+                </div>
+                <span className="text-white truncate max-w-[100px]">{userProfile?.displayName || 'User'}</span>
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] uppercase font-bold border border-amber-500/20">
+                  {activeRole}
+                </span>
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2.5 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800"
+              onClick={onOpenAuth}
+              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <Sparkles className="w-4 h-4 fill-slate-950" />
+              <span>Sign In / Portal Access</span>
             </button>
-          </div>
+          )}
         </div>
+
+        {/* Mobile Hamburger Button */}
+        <div className="flex lg:hidden items-center gap-2">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2.5 rounded-xl text-slate-200 bg-gray-900 border border-gray-800 cursor-pointer"
+            aria-label="Toggle Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 pt-4 pb-6 space-y-4">
+        <div className="lg:hidden bg-slate-950 border-b border-gray-800/80 px-6 pt-4 pb-6 space-y-4 animate-fadeIn">
           <nav className="flex flex-col space-y-3">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                target={link.isExternal ? "_blank" : undefined}
-                rel={link.isExternal ? "noopener noreferrer" : undefined}
-                onClick={(e) => handleNavClick(e, link.href, link.isExternal)}
-                className="text-base font-semibold text-slate-800 dark:text-slate-200 hover:text-amber-500 py-1"
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="text-sm font-semibold text-gray-300 hover:text-amber-400 py-1 transition-colors"
               >
                 {link.label}
               </a>
             ))}
           </nav>
 
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="pt-4 border-t border-gray-800/80 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Language / Til:</span>
-              <div className="flex gap-2">
+              <span className="text-xs font-semibold text-slate-400">Language / Til:</span>
+              <div className="flex gap-1.5">
                 <button
                   onClick={() => setLanguage('UZ')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                    language === 'UZ' ? 'bg-amber-500 text-slate-950' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    language === 'UZ' ? 'bg-amber-500 text-slate-950' : 'bg-gray-900 text-slate-300 border border-gray-800'
                   }`}
                 >
                   UZ 🇺🇿
@@ -257,7 +215,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                 <button
                   onClick={() => setLanguage('EN')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                    language === 'EN' ? 'bg-amber-500 text-slate-950' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    language === 'EN' ? 'bg-amber-500 text-slate-950' : 'bg-gray-900 text-slate-300 border border-gray-800'
                   }`}
                 >
                   EN 🇬🇧
@@ -265,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                 <button
                   onClick={() => setLanguage('RU')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                    language === 'RU' ? 'bg-amber-500 text-slate-950' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                    language === 'RU' ? 'bg-amber-500 text-slate-950' : 'bg-gray-900 text-slate-300 border border-gray-800'
                   }`}
                 >
                   RU 🇷🇺
@@ -273,35 +231,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
               </div>
             </div>
 
-            {currentUser ? (
-              <div className="flex items-center justify-between pt-2">
-                <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {userProfile?.displayName || currentUser.email}
-                  </p>
-                  <p className="text-xs text-amber-500 font-semibold">{activeRole}</p>
-                </div>
+            <div className="pt-2">
+              <DevRoleDropdown className="w-full mb-3" />
+              {!currentUser && (
                 <button
                   onClick={() => {
-                    logout();
+                    onOpenAuth();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="px-3 py-1.5 text-xs font-bold text-red-500 bg-red-500/10 rounded-lg"
+                  className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-3 rounded-xl shadow-lg shadow-amber-500/20"
                 >
-                  {t.nav.logout}
+                  <Sparkles className="w-4 h-4 fill-slate-950" />
+                  <span>Sign In / Portal Access</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  onOpenAuth();
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm shadow-md"
-              >
-                {t.nav.login}
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

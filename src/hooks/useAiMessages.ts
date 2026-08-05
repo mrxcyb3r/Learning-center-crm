@@ -125,14 +125,15 @@ export function useAiMessages(language: UserLanguage = 'en', userRole: string = 
           text: m.text,
         }));
 
-        const result = await generateInsaneAIResponse(
-          text,
-          historyForApi,
-          language,
-          options?.attachment,
-          options?.enableGrounding ?? false,
-          userRole
-        );
+        const result = await generateInsaneAIResponse({
+          prompt: text,
+          history: historyForApi,
+          userLanguage: language as any,
+          fileAttachment: options?.attachment || null,
+          enableWebSearch: options?.enableGrounding ?? false,
+          role: userRole as any,
+          model: options?.activeMode || 'gemini-2.5-flash',
+        });
 
         const botMsg: ChatMessage = {
           role: 'model',

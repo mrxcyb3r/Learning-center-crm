@@ -26,60 +26,60 @@ export const AppBackground: React.FC = () => {
           backgroundPosition: ['0% 0%', '100% 100%', '0% 100%', '100% 0%', '0% 0%'],
         }}
         transition={{
-          duration: 18,
+          duration: 16,
           repeat: Infinity,
           ease: 'linear',
         }}
-        className="absolute inset-0 bg-gradient-to-br from-amber-600/20 via-indigo-900/30 via-cyan-900/30 to-amber-500/20 dark:from-amber-500/25 dark:via-indigo-950/60 dark:via-cyan-950/50 dark:to-amber-600/25 bg-[length:200%_200%]"
+        className="absolute inset-0 bg-gradient-to-br from-amber-600/40 via-indigo-900/60 via-cyan-900/50 to-slate-950 dark:from-amber-600/45 dark:via-indigo-900/70 dark:via-cyan-900/60 dark:to-slate-950 bg-[length:250%_250%]"
       />
 
       {/* Atmospheric High-Contrast Base Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-100/70 via-slate-50/85 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-slate-950 backdrop-blur-[2px] transition-colors duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/65 to-slate-950/90 dark:from-slate-950/50 dark:via-slate-950/80 dark:to-slate-950 backdrop-blur-[2px] transition-colors duration-500" />
 
-      {/* Drifting Background Mesh Orb - Top Right (Indigo/Purple 600) */}
+      {/* Drifting Background Mesh Orb - Top Right (Indigo 600) */}
       <motion.div
         animate={{
-          x: [0, 45, -30, 0],
-          y: [0, -35, 25, 0],
-          scale: [1, 1.25, 0.9, 1],
+          x: [0, 50, -35, 0],
+          y: [0, -40, 30, 0],
+          scale: [1, 1.3, 0.9, 1],
         }}
         transition={{
-          duration: 12,
+          duration: 14,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute -top-32 -right-32 w-[36rem] h-[36rem] bg-indigo-600/35 dark:bg-indigo-600/40 rounded-full blur-[110px] pointer-events-none"
+        className="absolute -top-32 -right-32 w-[38rem] h-[38rem] bg-indigo-600/45 dark:bg-indigo-600/50 rounded-full blur-[100px] pointer-events-none"
       />
 
       {/* Drifting Background Mesh Orb - Bottom Left (Amber 600) */}
       <motion.div
         animate={{
-          x: [0, -40, 30, 0],
-          y: [0, 35, -25, 0],
-          scale: [1, 1.2, 0.95, 1],
+          x: [0, -45, 35, 0],
+          y: [0, 40, -30, 0],
+          scale: [1, 1.25, 0.95, 1],
         }}
         transition={{
-          duration: 15,
+          duration: 16,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute -bottom-32 -left-32 w-[38rem] h-[38rem] bg-amber-600/30 dark:bg-amber-600/35 rounded-full blur-[120px] pointer-events-none"
+        className="absolute -bottom-32 -left-32 w-[40rem] h-[40rem] bg-amber-600/40 dark:bg-amber-600/45 rounded-full blur-[110px] pointer-events-none"
       />
 
       {/* Drifting Background Mesh Orb - Center Core (Cyan 600) */}
       <motion.div
         animate={{
-          x: [-20, 20, -20],
-          y: [20, -20, 20],
-          scale: [0.95, 1.15, 0.95],
-          opacity: [0.35, 0.65, 0.35],
+          x: [-25, 25, -25],
+          y: [25, -25, 25],
+          scale: [0.9, 1.2, 0.9],
+          opacity: [0.4, 0.7, 0.4],
         }}
         transition={{
-          duration: 10,
+          duration: 11,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] bg-cyan-600/25 dark:bg-cyan-500/25 rounded-full blur-[125px] pointer-events-none"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-cyan-600/35 dark:bg-cyan-500/35 rounded-full blur-[120px] pointer-events-none"
       />
     </div>
   );

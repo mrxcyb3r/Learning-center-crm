@@ -1,8 +1,7 @@
-import React, { useState, useRef, ChangeEvent, KeyboardEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, KeyboardEvent, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileAttachment } from '../services/gemini';
 import { AnimatedButton } from './AnimatedButton';
-import { debounce } from '../utils/security';
 import {
   Send,
   Paperclip,
@@ -14,7 +13,9 @@ import {
   Bot,
   Loader2,
   Mic,
+  MicOff,
   Lightbulb,
+  Check,
 } from 'lucide-react';
 
 interface AiInputProps {
@@ -37,8 +38,10 @@ export const AiInput: React.FC<AiInputProps> = ({
   const [inputText, setInputText] = useState<string>('');
   const [attachment, setAttachment] = useState<FileAttachment | null>(null);
   const [attachmentName, setAttachmentName] = useState<string>('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [speechTranscript, setSpeechTranscript] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Suggested quick prompts
   const PROMPT_SUGGESTIONS = [
@@ -47,6 +50,75 @@ export const AiInput: React.FC<AiInputProps> = ({
     '📊 Class Performance Summary',
     '🎙️ IELTS Speaking Band 8 Tips',
   ];
+
+  // Initialize Web Speech API
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setSpeechTranscript(currentTranscript);
+      };
+
+      recognition.onerror = (err: any) => {
+        console.warn('Speech recognition error:', err);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleSpeechRecognition = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Try Google Chrome.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      if (speechTranscript) {
+        setInputText((prev) => (prev ? `${prev} ${speechTranscript}` : speechTranscript));
+        setSpeechTranscript('');
+      }
+    } else {
+      setSpeechTranscript('');
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const applySpeechTranscript = () => {
+    if (speechTranscript) {
+      setInputText((prev) => (prev ? `${prev} ${speechTranscript}` : speechTranscript));
+      setSpeechTranscript('');
+    }
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  const clearSpeechTranscript = () => {
+    setSpeechTranscript('');
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
 
   // Handle file selection and convert to Base64
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -82,15 +154,20 @@ export const AiInput: React.FC<AiInputProps> = ({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if ((!inputText.trim() && !attachment) || isLoading) return;
+    const finalQuery = (inputText + (speechTranscript ? ` ${speechTranscript}` : '')).trim();
+    if ((!finalQuery && !attachment) || isLoading) return;
 
-    const textToSend = inputText;
+    const textToSend = finalQuery;
     const attachmentToSend = attachment;
 
     setInputText('');
+    setSpeechTranscript('');
     setAttachment(null);
     setAttachmentName('');
-    setSuggestions([]);
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     await onSendMessage(textToSend, {
       attachment: attachmentToSend || undefined,
@@ -124,6 +201,43 @@ export const AiInput: React.FC<AiInputProps> = ({
           </button>
         ))}
       </div>
+
+      {/* INSTANT AUDIO TRANSCRIPT PREVIEW BAR */}
+      <AnimatePresence>
+        {(isListening || speechTranscript) && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            className="p-3 rounded-2xl bg-gradient-to-r from-cyan-950/80 to-slate-950/80 border border-cyan-500/40 backdrop-blur-md flex items-center justify-between gap-3 text-xs"
+          >
+            <div className="flex items-center gap-2 text-cyan-300 flex-1 truncate">
+              <span className="relative flex h-3 w-3 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+              </span>
+              <span className="font-extrabold text-[11px] uppercase tracking-wide text-cyan-400 shrink-0">Live Voice Transcript:</span>
+              <span className="italic text-slate-200 truncate">{speechTranscript || 'Listening to your speech...'}</span>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={applySpeechTranscript}
+                className="px-2 py-1 rounded-lg bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 border border-cyan-400/40 text-[11px] font-bold flex items-center gap-1 transition"
+              >
+                <Check className="w-3 h-3" /> Append
+              </button>
+              <button
+                type="button"
+                onClick={clearSpeechTranscript}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* INPUT CONTAINER BOX WITH ATMOSPHERIC SHIMMER BORDER */}
       <div className="relative rounded-2xl bg-slate-950/90 border border-amber-500/30 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20 shadow-2xl backdrop-blur-md p-3 transition-all">
@@ -161,6 +275,21 @@ export const AiInput: React.FC<AiInputProps> = ({
         {/* INPUT ACTIONS & CONTROLS FOOTER */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-900">
           <div className="flex items-center gap-2">
+            {/* Microphone Speech Recognition Button with Pulse */}
+            <button
+              type="button"
+              onClick={toggleSpeechRecognition}
+              className={`p-2 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold ${
+                isListening
+                  ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse shadow-lg shadow-red-500/20'
+                  : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border-slate-800'
+              }`}
+              title={isListening ? 'Stop recording voice' : 'Start live speech-to-text'}
+            >
+              {isListening ? <MicOff className="w-4 h-4 text-red-400 animate-spin" /> : <Mic className="w-4 h-4" />}
+              <span className="hidden sm:inline">{isListening ? 'Recording...' : 'Voice'}</span>
+            </button>
+
             {/* File Attachment Trigger */}
             <input
               type="file"
@@ -191,7 +320,7 @@ export const AiInput: React.FC<AiInputProps> = ({
                 }`}
               >
                 <Globe className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Live News Grounding</span>
+                <span className="hidden sm:inline">Live Grounding</span>
               </button>
             )}
 
@@ -206,7 +335,7 @@ export const AiInput: React.FC<AiInputProps> = ({
             variant="amber"
             size="sm"
             isLoading={isLoading}
-            disabled={(!inputText.trim() && !attachment) || isLoading}
+            disabled={(!inputText.trim() && !speechTranscript && !attachment) || isLoading}
             onClick={handleSubmit}
             rightIcon={<Send className="w-3.5 h-3.5" />}
           >
@@ -217,3 +346,4 @@ export const AiInput: React.FC<AiInputProps> = ({
     </div>
   );
 };
+

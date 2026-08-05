@@ -16,6 +16,9 @@ import {
   Mic,
   ChevronDown,
   Bot,
+  Download,
+  Tag,
+  BookOpen,
 } from 'lucide-react';
 
 interface AiSidebarProps {
@@ -30,6 +33,7 @@ interface AiSidebarProps {
   onToggleAnchor: (anchor: string) => void;
   selectedModel?: string;
   onSelectModel?: (model: string) => void;
+  onExportSession?: (format: 'markdown' | 'json') => void;
 }
 
 export const AiSidebar: React.FC<AiSidebarProps> = ({
@@ -44,8 +48,10 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
   onToggleAnchor,
   selectedModel = 'gemini-2.5-flash',
   onSelectModel,
+  onExportSession,
 }) => {
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [activeTag, setActiveTag] = useState<string>('all');
 
   const AVAILABLE_MODELS = [
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', badge: 'Ultra Fast' },
@@ -60,6 +66,13 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
     { id: 'speaking_coach', label: 'SPEAKING COACH', icon: <Mic className="w-3.5 h-3.5 text-emerald-400" /> },
   ];
 
+  const QUICK_SESSION_TAGS = [
+    { id: 'all', label: 'All Sessions' },
+    { id: 'IELTS Essay', label: '✍️ IELTS Essay' },
+    { id: 'Python Homework', label: '🐍 Python Code' },
+    { id: 'General Mentoring', label: '🎓 Mentoring' },
+  ];
+
   const AVAILABLE_CONTEXT_ANCHORS = [
     'IELTS Band 8.5 Descriptor Spec',
     'CEFR C1 Vocabulary Corpus',
@@ -71,7 +84,7 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
 
   return (
     <div className="w-full lg:w-72 bg-slate-950/80 border border-slate-800/80 rounded-3xl p-4 flex flex-col justify-between gap-6 backdrop-blur-xl shadow-2xl">
-      <div className="space-y-6">
+      <div className="space-y-5 overflow-y-auto max-h-[calc(100vh-140px)] pr-0.5 scrollbar-thin">
         {/* GROUP 1: COPILOT ACTIONS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs font-black uppercase text-amber-400 tracking-wider">
@@ -169,6 +182,30 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
           </div>
         </div>
 
+        {/* QUICK SESSION BADGES / TAGS */}
+        <div className="space-y-2">
+          <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+            <Tag className="w-3 h-3 text-indigo-400" />
+            <span>Session Tags</span>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_SESSION_TAGS.map((tag) => (
+              <button
+                key={tag.id}
+                onClick={() => setActiveTag(tag.id)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer border ${
+                  activeTag === tag.id
+                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-400 border-slate-800/70 hover:text-slate-200'
+                }`}
+              >
+                {tag.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* GROUP 3: REORDERABLE CONVERSATION HISTORY */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400 tracking-wider">
@@ -178,7 +215,7 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
             </span>
           </div>
 
-          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+          <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
             <AnimatePresence mode="popLayout">
               {threads.map((thread) => {
                 const isActive = thread.id === activeThreadId;
@@ -260,6 +297,29 @@ export const AiSidebar: React.FC<AiSidebarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* FOOTER: EXPORT & BACKUP BUTTON */}
+      <div className="pt-3 border-t border-slate-900">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onExportSession?.('markdown')}
+            className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+            title="Export session history to Markdown (.md)"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-400" />
+            <span>.MD</span>
+          </button>
+          <button
+            onClick={() => onExportSession?.('json')}
+            className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+            title="Export session history to JSON"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>.JSON</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
+

@@ -490,13 +490,16 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     groupName: 'Tarix Milliy Sertifikat - 1-guruh',
     enrollmentDate: '2025-09-01',
     tuitionFee: 380000,
+    monthlyFee: 380000,
     paymentStatus: 'Paid',
+    debtAmount: 0,
     nextDueDate: '2026-04-01',
     notes: '187.9 ball bilan O\'zDJTU davlat grantiga qabul qilingan',
     isActive: true,
     status: 'Active',
     totalPaid: 2660000,
     balance: 0,
+    attendanceRate: 97,
   },
   {
     id: 'st-02',
@@ -511,13 +514,16 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     groupName: 'Matematika DTM - 1-guruh',
     enrollmentDate: '2025-09-15',
     tuitionFee: 380000,
+    monthlyFee: 380000,
     paymentStatus: 'Paid',
+    debtAmount: 0,
     nextDueDate: '2026-04-15',
     notes: 'TATU grantiga da\'vogar, intizomli',
     isActive: true,
     status: 'Active',
     totalPaid: 2280000,
     balance: 0,
+    attendanceRate: 95,
   },
   {
     id: 'st-03',
@@ -532,13 +538,16 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     groupName: 'CEFR B2 FastTrack',
     enrollmentDate: '2025-10-01',
     tuitionFee: 350000,
+    monthlyFee: 350000,
     paymentStatus: 'Overdue',
+    debtAmount: 350000,
     nextDueDate: '2026-03-01',
     notes: 'Ota-onasi bilan bog\'lanildi, haftaning oxirigacha to\'lanadi',
     isActive: true,
     status: 'Active',
     totalPaid: 1400000,
     balance: -350000,
+    attendanceRate: 88,
   },
   {
     id: 'st-04',
@@ -553,13 +562,16 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     groupName: 'Tarix DTM - 2-guruh (Tushki)',
     enrollmentDate: '2025-10-10',
     tuitionFee: 380000,
+    monthlyFee: 380000,
     paymentStatus: 'Due',
+    debtAmount: 0,
     nextDueDate: '2026-03-25',
     notes: 'To\'lov muddati yaqinlashmoqda',
     isActive: true,
     status: 'Active',
     totalPaid: 1520000,
     balance: 0,
+    attendanceRate: 92,
   },
   {
     id: 'st-05',
@@ -574,13 +586,16 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     groupName: 'Mental Arifmetika - Junior',
     enrollmentDate: '2025-11-01',
     tuitionFee: 280000,
+    monthlyFee: 280000,
     paymentStatus: 'Paid',
+    debtAmount: 0,
     nextDueDate: '2026-04-01',
     notes: 'Junior guruhida a\'lo ko\'rsatkich',
     isActive: true,
     status: 'Active',
     totalPaid: 1120000,
     balance: 0,
+    attendanceRate: 98,
   },
 ];
 
@@ -988,8 +1003,57 @@ class CrmService {
       }
       return t;
     });
+
+    // Normalize legacy student records so every numeric field has a safe value.
+    // This prevents crashes like "Cannot read properties of undefined (reading 'toLocaleString')"
+    // when old data is loaded from localStorage without monthlyFee/debtAmount fields.
+    const beforeStudents = this.students.length;
+    this.students = this.students.map((s) => {
+      const fee = Number(s.monthlyFee ?? s.tuitionFee ?? 0);
+      const debt = Number(s.debtAmount ?? 0);
+      const hasChanged =
+        s.monthlyFee === undefined || s.debtAmount === undefined ||
+        s.paymentStatus === undefined || s.status === undefined;
+      return {
+        ...s,
+        fullName: s.fullName || s.name || "Noma'lum",
+        name: s.name || s.fullName || "Noma'lum",
+        monthlyFee: fee,
+        tuitionFee: Number(s.tuitionFee ?? fee),
+        debtAmount: debt,
+        paymentStatus: s.paymentStatus || 'Due',
+        status: s.status || (s.isActive === false ? 'Archived' : 'Active'),
+        balance: s.balance ?? (s.paymentStatus === 'Paid' ? 0 : s.debtAmount !== undefined ? -debt : 0),
+        totalPaid: Number(s.totalPaid ?? 0),
+        attendanceRate: Number(s.attendanceRate ?? 0),
+        groupName: s.groupName || `${s.course || 'Kurs'} - 1-guruh`,
+      } as StudentRecord;
+    });
+    if (this.students.length !== beforeStudents && modified) {
+      modified = true;
+    }
+
+    // Normalize courses to always have numeric monthlyFee
+    this.courses = this.courses.map((c) => ({
+      ...c,
+      monthlyFee: Number(c.monthlyFee ?? 0),
+      formattedFee: c.formattedFee || `${(Number(c.monthlyFee) || 0).toLocaleString()} UZS / oy`,
+      isActive: c.isActive ?? true,
+      isPublic: c.isPublic ?? false,
+    }));
+
+    // Normalize expenses to always have numeric amounts
+    this.expenses = this.expenses.map((e) => ({
+      ...e,
+      amount: Number(e.amount ?? 0),
+      category: e.category || 'Other',
+    }));
+
     if (modified) {
       saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+      saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+      saveToStorage(STORAGE_KEYS.COURSES, this.courses);
+      saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
     }
   }
 
@@ -1198,17 +1262,35 @@ class CrmService {
 
   // --- STUDENTS MANAGEMENT ---
   public getStudents(): StudentRecord[] {
-    return [...this.students];
+    return this.students.map((s) => ({
+      ...s,
+      fullName: s.fullName || s.name || "Noma'lum",
+      name: s.name || s.fullName || "Noma'lum",
+      monthlyFee: Number(s.monthlyFee ?? s.tuitionFee ?? 0),
+      tuitionFee: Number(s.tuitionFee ?? s.monthlyFee ?? 0),
+      debtAmount: Number(s.debtAmount ?? (s.paymentStatus === 'Overdue' || s.paymentStatus === 'Due' ? s.monthlyFee ?? s.tuitionFee ?? 0 : 0)),
+      paymentStatus: s.paymentStatus || 'Due',
+      status: s.status || (s.isActive === false ? 'Archived' : 'Active'),
+      groupName: s.groupName || `${s.course || 'Kurs'} - 1-guruh`,
+    }));
   }
 
   public addStudent(student: Omit<StudentRecord, 'id'>): StudentRecord {
+    const fee = Number(student.monthlyFee ?? student.tuitionFee ?? 0);
     const newStudent: StudentRecord = {
       ...student,
       id: `st-${Date.now()}`,
+      fullName: student.fullName || student.name || "Noma'lum",
+      name: student.name || student.fullName || "Noma'lum",
+      monthlyFee: fee,
+      tuitionFee: Number(student.tuitionFee ?? fee),
+      debtAmount: Number(student.debtAmount ?? 0),
+      paymentStatus: student.paymentStatus || 'Due',
       isActive: student.isActive ?? true,
       status: student.status || 'Active',
       balance: student.balance ?? 0,
       totalPaid: student.totalPaid ?? 0,
+      attendanceRate: Number(student.attendanceRate ?? 0),
     };
     this.students.unshift(newStudent);
     saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
@@ -1219,7 +1301,16 @@ class CrmService {
   public updateStudent(id: string, updates: Partial<StudentRecord>): StudentRecord | null {
     const idx = this.students.findIndex((s) => s.id === id);
     if (idx === -1) return null;
-    this.students[idx] = { ...this.students[idx], ...updates };
+    const merged = {
+      ...this.students[idx],
+      ...updates,
+      fullName: (updates.fullName || this.students[idx].fullName || this.students[idx].name || "Noma'lum"),
+    };
+    if (updates.monthlyFee !== undefined) {
+      merged.monthlyFee = Number(updates.monthlyFee);
+      merged.tuitionFee = Number(updates.tuitionFee ?? updates.monthlyFee);
+    }
+    this.students[idx] = merged;
     saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
     this.logAction("O'quvchi ma'lumotlari tahrirlandi", "O'quvchilar", `${this.students[idx].fullName}`);
     return this.students[idx];

@@ -88,12 +88,16 @@ export const ExpensesView: React.FC = () => {
     }
   };
 
-  const filtered = categoryFilter === 'All'
+  const isSalaryExpense = (e: ExpenseRecord) => e.category === 'Salaries' || e.category === 'Teacher Salary' || e.category === 'Payroll';
+
+const filtered = categoryFilter === 'All'
     ? expenses
+    : categoryFilter === 'Salaries'
+    ? expenses.filter((e) => isSalaryExpense(e))
     : expenses.filter((e) => e.category === categoryFilter);
 
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
-  const salarySum = expenses.filter((e) => e.category === 'Salaries').reduce((acc, e) => acc + e.amount, 0);
+  const salarySum = expenses.filter((e) => isSalaryExpense(e)).reduce((acc, e) => acc + e.amount, 0);
   const rentSum = expenses.filter((e) => e.category === 'Rent').reduce((acc, e) => acc + e.amount, 0);
   const marketingSum = expenses.filter((e) => e.category === 'Marketing').reduce((acc, e) => acc + e.amount, 0);
 
@@ -226,7 +230,7 @@ export const ExpensesView: React.FC = () => {
                   <td className="py-3.5 px-4">
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        e.category === 'Salaries'
+                        isSalaryExpense(e)
                           ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                           : e.category === 'Rent'
                           ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
@@ -235,7 +239,7 @@ export const ExpensesView: React.FC = () => {
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                       }`}
                     >
-                      {e.category === 'Salaries'
+                      {isSalaryExpense(e)
                         ? 'Maosh'
                         : e.category === 'Rent'
                         ? 'Ijara'

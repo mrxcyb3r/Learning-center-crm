@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
+import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName } from '../../utils/format';
 
 export const StudentsView: React.FC = () => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -177,7 +178,7 @@ export const StudentsView: React.FC = () => {
 
   const handleOpenQuickPay = (st: StudentRecord) => {
     setQuickPayStudent(st);
-    setPayAmount(String(st.debtAmount > 0 ? st.debtAmount : st.monthlyFee));
+    setPayAmount(String(toSafeNumber(st.debtAmount) > 0 ? st.debtAmount : st.monthlyFee || st.tuitionFee || 380000));
     setPayMethod('Click');
   };
 
@@ -219,9 +220,9 @@ export const StudentsView: React.FC = () => {
     return matchesSearch && matchesCourse && matchesPayment && matchesStatus;
   });
 
-  const totalMonthlyTuitionPotential = students.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
-  const totalDebtors = students.filter((s) => s.paymentStatus === 'Overdue' || (s.debtAmount && s.debtAmount > 0));
-  const totalDebtSum = totalDebtors.reduce((sum, s) => sum + (s.debtAmount || s.monthlyFee || 0), 0);
+  const totalMonthlyTuitionPotential = students.reduce((sum, s) => sum + toSafeNumber(s.monthlyFee || s.tuitionFee), 0);
+  const totalDebtors = students.filter((s) => s.paymentStatus === 'Overdue' || (toSafeNumber(s.debtAmount) > 0));
+  const totalDebtSum = totalDebtors.reduce((sum, s) => sum + toSafeNumber(s.debtAmount || s.monthlyFee || s.tuitionFee), 0);
 
   return (
     <div className="space-y-6">
@@ -268,7 +269,7 @@ export const StudentsView: React.FC = () => {
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-slate-400 block">Kutilayotgan Oylik Tushum</span>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {totalMonthlyTuitionPotential.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(totalMonthlyTuitionPotential)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Barcha guruhlar rejasidan</span>
         </div>
@@ -278,7 +279,7 @@ export const StudentsView: React.FC = () => {
             <AlertTriangle className="w-3.5 h-3.5" /> Qarz / Qarzdorlik (Overdue)
           </span>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
-            {totalDebtSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(totalDebtSum)}
           </div>
           <span className="text-[11px] text-rose-500 font-bold mt-1 block">
             {totalDebtors.length} ta o'quvchi to'lov qilmagan
@@ -357,7 +358,7 @@ export const StudentsView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.map((st) => {
-                const isOverdue = st.paymentStatus === 'Overdue' || (st.debtAmount && st.debtAmount > 0);
+                const isOverdue = st.paymentStatus === 'Overdue' || (toSafeNumber(st.debtAmount) > 0);
 
                 return (
                   <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
@@ -424,11 +425,11 @@ export const StudentsView: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-xs font-mono font-bold mt-1 text-slate-900 dark:text-white">
-                        {st.monthlyFee.toLocaleString()} UZS
+                        {formatCurrency(st.monthlyFee || st.tuitionFee)}
                       </div>
-                      {isOverdue && st.debtAmount > 0 && (
+                      {isOverdue && toSafeNumber(st.debtAmount) > 0 && (
                         <div className="text-[10px] font-bold text-rose-500 font-mono">
-                          Qarz: {st.debtAmount.toLocaleString()} UZS
+                          Qarz: {formatCurrency(st.debtAmount)}
                         </div>
                       )}
                     </td>

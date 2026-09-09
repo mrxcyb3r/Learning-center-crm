@@ -9,6 +9,7 @@ export type LeadStatus =
   | 'Yangi'
   | "Bog'lanildi"
   | 'Sinov darsi belgilandi'
+  | 'Sinov darsi yakunlandi'
   | "O'quvchiga aylandi"
   | "Yo'qotildi";
 

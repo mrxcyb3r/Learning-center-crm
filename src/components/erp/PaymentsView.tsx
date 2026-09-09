@@ -53,7 +53,7 @@ export const PaymentsView: React.FC = () => {
       setFormStudentId(firstStudent.id);
       setFormStudentName(firstStudent.fullName || firstStudent.name);
       setFormCourse(firstStudent.course);
-      setFormAmount(String(firstStudent.monthlyFee || 380000));
+      setFormAmount(String(Number(firstStudent.monthlyFee) || Number(firstStudent.tuitionFee) || 380000));
     } else {
       setFormStudentId('');
       setFormStudentName('');
@@ -71,7 +71,8 @@ export const PaymentsView: React.FC = () => {
     if (st) {
       setFormStudentName(st.fullName || st.name);
       setFormCourse(st.course);
-      setFormAmount(String(st.debtAmount > 0 ? st.debtAmount : st.monthlyFee));
+      const debt = Number(st.debtAmount) || 0;
+      setFormAmount(String(debt > 0 ? debt : (Number(st.monthlyFee) || Number(st.tuitionFee) || 380000)));
     }
   };
 

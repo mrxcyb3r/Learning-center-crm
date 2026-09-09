@@ -18,9 +18,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
-import { Lead, LeadStatus } from '../../types/crm';
+import { CourseData, Lead, LeadStatus } from '../../types/crm';
 
-const ALL_STATUSES: LeadStatus[] = ['New', 'Contacted', 'Trial Scheduled', 'Enrolled', 'Lost'];
+const ALL_STATUSES: LeadStatus[] = ['Yangi', "Bog'lanildi", 'Sinov darsi belgilandi', 'Sinov darsi yakunlandi', "O'quvchiga aylandi", "Yo'qotildi"];
 
 const STATUS_BADGE_CLASSES: Record<string, string> = {
   New: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
@@ -31,12 +31,14 @@ const STATUS_BADGE_CLASSES: Record<string, string> = {
   Yangi: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
   "Bog'lanildi": 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
   'Sinov darsi belgilandi': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
+  'Sinov darsi yakunlandi': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
   "O'quvchiga aylandi": 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
   "Yo'qotildi": 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700',
 };
 
 export const LeadsCrmView: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [courses, setCourses] = useState<CourseData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedCourse, setSelectedCourse] = useState<string>('All');
@@ -51,11 +53,12 @@ export const LeadsCrmView: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('+998 ');
-  const [newCourse, setNewCourse] = useState('IELTS Intensive');
+  const [newCourse, setNewCourse] = useState('');
   const [newNotes, setNewNotes] = useState('');
 
   const refreshLeads = () => {
     setLeads(crmService.getLeads());
+    setCourses(crmService.getCourses());
   };
 
   useEffect(() => {
@@ -202,10 +205,9 @@ export const LeadsCrmView: React.FC = () => {
             className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
             <option value="All">All Courses</option>
-            <option value="IELTS Intensive">IELTS Intensive</option>
-            <option value="General English">General English</option>
-            <option value="CEFR FastTrack">CEFR FastTrack</option>
-            <option value="Python Programming">Python Programming</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.title}>{c.title}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -494,10 +496,10 @@ export const LeadsCrmView: React.FC = () => {
                   onChange={(e) => setNewCourse(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
                 >
-                  <option value="IELTS Intensive">IELTS Intensive</option>
-                  <option value="General English">General English</option>
-                  <option value="CEFR FastTrack">CEFR FastTrack</option>
-                  <option value="Python Programming">Python Programming</option>
+                  <option value="">(Kursni tanlang)</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.title}>{c.title}</option>
+                  ))}
                 </select>
               </div>
 

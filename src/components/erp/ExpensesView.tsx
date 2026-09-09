@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { ExpenseCategory, ExpenseRecord, TeacherRecord } from '../../types/crm';
+import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 
 export const ExpensesView: React.FC = () => {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
@@ -136,7 +137,7 @@ const filtered = categoryFilter === 'All'
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-slate-400 block">Jami Chiqim</span>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
-            {totalExpenses.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(totalExpenses)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">
             {expenses.length} ta operatsiya
@@ -148,7 +149,7 @@ const filtered = categoryFilter === 'All'
             <Users className="w-3.5 h-3.5" /> Ustozlar Maoshi (Payroll)
           </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {salarySum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(salarySum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">To'langan maoshlar</span>
         </div>
@@ -158,7 +159,7 @@ const filtered = categoryFilter === 'All'
             <Building className="w-3.5 h-3.5" /> Bino Ijarasi (Rent)
           </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {rentSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(rentSum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Filiallar ijarasi</span>
         </div>
@@ -168,7 +169,7 @@ const filtered = categoryFilter === 'All'
             <Megaphone className="w-3.5 h-3.5" /> Reklama & Target
           </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {marketingSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(marketingSum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Instagram, Telegram, Banner</span>
         </div>
@@ -263,7 +264,7 @@ const filtered = categoryFilter === 'All'
                   </td>
 
                   <td className="py-3.5 px-4 font-mono font-black text-rose-600 dark:text-rose-400">
-                    -{e.amount.toLocaleString()} UZS
+                    -{formatCurrencyShort(e.amount)} UZS
                   </td>
 
                   <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
@@ -333,7 +334,7 @@ const filtered = categoryFilter === 'All'
                     <option value="">(Ro'yxatdan tanlang)</option>
                     {teachers.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name} (Oylik: {(t.monthlySalary || t.salary || 0).toLocaleString()} UZS)
+                        {t.name} (Oylik: {formatCurrency(t.monthlySalary || t.salary)})
                       </option>
                     ))}
                   </select>

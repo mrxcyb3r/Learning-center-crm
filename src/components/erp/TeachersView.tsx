@@ -20,6 +20,7 @@ import {
 import { crmService } from '../../services/crmService';
 import { TeacherGender, TeacherRecord, TeacherStatus } from '../../types/crm';
 import { TeacherAvatar } from '../common/TeacherAvatar';
+import { formatCurrency } from '../../utils/format';
 
 export const TeachersView: React.FC = () => {
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
@@ -219,7 +220,7 @@ export const TeachersView: React.FC = () => {
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-slate-400 block">Oylik Pedagogik Fond (Maoshlar)</span>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
-            {totalMonthlyPayroll.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(totalMonthlyPayroll)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Haqiqiy shartnoma bo'yicha</span>
         </div>
@@ -346,7 +347,7 @@ export const TeachersView: React.FC = () => {
               <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300 font-medium">Oylik Maoshi:</span>
                 <span className="font-black text-emerald-700 dark:text-emerald-400 font-mono text-sm">
-                  {(t.monthlySalary || t.salary || 0).toLocaleString()} UZS
+                  {formatCurrency(t.monthlySalary || t.salary)}
                 </span>
               </div>
 

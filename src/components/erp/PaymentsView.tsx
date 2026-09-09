@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, IncomePaymentRecord, StudentRecord } from '../../types/crm';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 
 const UZ_MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
@@ -101,7 +101,7 @@ export const PaymentsView: React.FC = () => {
       month: formMonth,
     });
 
-    showNotification(`To'lov (${Number(formAmount).toLocaleString()} UZS) muvaffaqiyatli qabul qilindi!`);
+    showNotification(`To'lov (${formatCurrency(Number(formAmount))}) muvaffaqiyatli qabul qilindi!`);
     refresh();
     setIsAddModalOpen(false);
   };
@@ -302,7 +302,7 @@ export const PaymentsView: React.FC = () => {
                     </span>
                   </td>
                   <td className={`py-3.5 px-4 font-mono font-black ${isVoided ? 'text-slate-400 line-through' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                    {p.amount ? `+${p.amount.toLocaleString()} UZS` : ''}
+                    {p.amount ? `+${formatCurrencyShort(p.amount)} UZS` : ''}
                   </td>
                   <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
                     {p.date}
@@ -527,7 +527,7 @@ export const PaymentsView: React.FC = () => {
               <div className="pt-3 border-t border-dashed border-slate-300 dark:border-slate-600 flex justify-between items-center text-sm">
                 <span className="font-bold font-sans">JAMI TO'LANDI:</span>
                 <span className="font-black text-emerald-600 dark:text-emerald-400">
-                  {viewReceipt.amount.toLocaleString()} UZS
+                  {formatCurrency(viewReceipt.amount)}
                 </span>
               </div>
             </div>

@@ -613,7 +613,7 @@ export const INITIAL_LEADS: Lead[] = [
     notes: 'Tarix bo\'yicha Milliy sertifikatga qiziqmoqda, yakshanba kungi sinov darsiga chaqirildi.',
     status: 'Sinov darsi belgilandi',
     source: 'Bosh sahifa (Hero forma)',
-    trialDateTime: '2026-03-15 10:00',
+    trialDateTime: new Date(Date.now() + 7 * 3600 * 1000).toISOString(),
   },
   {
     id: 'lead-02',
@@ -631,7 +631,8 @@ export const INITIAL_LEADS: Lead[] = [
     name: 'Olimjon Qosimov',
     phone: '+998 97 789 12 34',
     course: 'Matematika & Fizika',
-    createdAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
+    lastContactedAt: new Date(Date.now() - 2.5 * 24 * 3600 * 1000).toISOString(),
     assignedTo: 'Jasur Alimov',
     notes: 'Telefon orqali maslahat berildi. Ota-onasi bilan filialga kelishini aytdi.',
     status: "Bog'lanildi",
@@ -1282,17 +1283,21 @@ class CrmService {
     course: string;
     notes?: string;
     source?: string;
+    assignedTo?: string;
+    trialDateTime?: string;
   }): Promise<Lead> {
+    const hasTrial = Boolean(data.trialDateTime);
     const newLead: Lead = {
       id: `lead-${Date.now()}`,
       name: data.name.trim(),
       phone: data.phone.trim(),
       course: data.course || 'Tarix, Huquq, Geografiya',
       createdAt: new Date().toISOString(),
-      assignedTo: 'Qabulxona',
+      assignedTo: data.assignedTo || 'Qabulxona',
       notes: data.notes || 'Bepul sinov darsiga yozildi.',
-      status: 'Yangi',
+      status: hasTrial ? 'Sinov darsi belgilandi' : 'Yangi',
       source: data.source || 'Sayt orqali ariza',
+      ...(data.trialDateTime ? { trialDateTime: data.trialDateTime } : {}),
     };
 
     this.leads.unshift(newLead);

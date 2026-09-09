@@ -1,37 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users,
   PhoneCall,
-  Calendar,
-  DollarSign,
-  TrendingUp,
   ArrowUpRight,
-  ArrowDownRight,
-  Clock,
   Send,
   Phone,
-  CheckCircle2,
   AlertCircle,
-  CreditCard,
-  Building,
-  HandCoins,
-  UserPlus,
-  PlusCircle,
-  BookOpen,
-  GraduationCap,
 } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { crmService } from '../../services/crmService';
 import { Lead, GroupScheduleItem, StudentRecord } from '../../types/crm';
-import { formatCurrency, formatCurrencyShort, formatCompactCurrency, toSafeNumber, getStudentName } from '../../utils/format';
+import { formatCurrencyShort, formatCompactCurrency, toSafeNumber, getStudentName } from '../../utils/format';
 import { normalizeLeadStatus } from '../../utils/leads';
 
 interface DashboardViewProps {
@@ -64,29 +41,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   }).length;
   const recentLeads = leads.length;
 
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
   const monthlyRevenue = payments
-    .filter((p) => p.status !== 'Voided')
+    .filter((p) => p.status !== 'Voided' && p.date.startsWith(currentMonthKey))
     .reduce((sum, p) => sum + toSafeNumber(p.amount), 0);
 
   const monthlyExpenses = expenses
-    .filter((e) => e.status !== 'Voided')
+    .filter((e) => e.status !== 'Voided' && e.date.startsWith(currentMonthKey))
     .reduce((sum, e) => sum + toSafeNumber(e.amount), 0);
 
   const monthlySalaryExpense = expenses
-    .filter((e) => e.status !== 'Voided' && (e.category === 'Teacher Salary' || e.category === 'Salaries' || e.category === 'Payroll'))
+    .filter((e) => e.status !== 'Voided' && e.date.startsWith(currentMonthKey) && (e.category === 'Teacher Salary' || e.category === 'Salaries' || e.category === 'Payroll'))
     .reduce((sum, e) => sum + toSafeNumber(e.amount), 0);
 
-  const monthlyOperatingExpense = monthlyExpenses - monthlySalaryExpense;
   const netProfit = monthlyRevenue - monthlyExpenses;
 
-  const outstandingDebt = studentsList
-    .filter((s) => toSafeNumber(s.debtAmount) > 0 || s.paymentStatus === 'Overdue')
-    .reduce((sum, s) => sum + toSafeNumber(s.debtAmount), 0);
-
-  // Today's trials
+  // Today's trials (scheduled for today per trialDateTime)
   const todayTrials = leads.filter((l) => {
-    const status = normalizeLeadStatus(l.status);
-    return status === 'Trial Scheduled' || status === 'Trial Completed';
+    if (!l.trialDateTime) return false;
+    return new Date(l.trialDateTime).toDateString() === new Date().toDateString();
   }).length;
 
   // Pipeline funnel
@@ -129,74 +105,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
     overdue: studentsList.filter((s) => s.paymentStatus === 'Overdue').length,
   };
 
-  // Recent activity (unified timeline from real data)
-  const recentActivity: { id: string; type: string; label: string; date: string; icon: 'student' | 'payment' | 'lead' | 'expense' }[] = [];
-
-  studentsList.slice(0, 3).forEach((s) => {
-    recentActivity.push({
-      id: `act-st-${s.id}`,
-      type: 'student',
-      label: `Yangi o'quvchi: ${getStudentName(s)}`,
-      date: s.enrollmentDate,
-      icon: 'student',
-    });
-  });
-  payments.slice(0, 3).forEach((p) => {
-    recentActivity.push({
-      id: `act-pay-${p.id}`,
-      type: 'payment',
-      label: `To'lov: ${p.studentName} - ${formatCurrencyShort(p.amount)} UZS`,
-      date: p.date,
-      icon: 'payment',
-    });
-  });
-  leads.slice(0, 3).forEach((l) => {
-    recentActivity.push({
-      id: `act-lead-${l.id}`,
-      type: 'lead',
-      label: `Yangi murojaat: ${l.name}`,
-      date: l.createdAt,
-      icon: 'lead',
-    });
-  });
-
-  recentActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const recentActivityTop = recentActivity.slice(0, 6);
-
-  // Finance chart data from actual monthly payments
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const monthLabels = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
-
-  const financeChartData = Array.from({ length: 6 }, (_, i) => {
-    const monthIndex = (currentMonth - 5 + i + 12) % 12;
-    const yearOffset = monthIndex > currentMonth ? currentYear - 1 : currentYear;
-    const mm = String(monthIndex + 1).padStart(2, '0');
-    const monthPayments = payments.filter((p) => {
-      if (p.status === 'Voided') return false;
-      return p.date.startsWith(`${yearOffset}-${mm}`) || p.date.includes(`-${mm}-`);
-    });
-    const monthExpenses = expenses.filter((e) => {
-      if (e.status === 'Voided') return false;
-      return e.date.startsWith(`${yearOffset}-${mm}`) || e.date.includes(`-${mm}-`);
-    });
-    const revenue = monthPayments.reduce((sum, p) => sum + toSafeNumber(p.amount), 0);
-    const exp = monthExpenses.reduce((sum, e) => sum + toSafeNumber(e.amount), 0);
-    return {
-      month: monthLabels[monthIndex],
-      revenue,
-      expenses: exp,
-      profit: revenue - exp,
-    };
-  });
-
-  // Course distribution (real)
-  const courseDistribution = courses.map((c) => {
-    const count = studentsList.filter((s) => s.course === c.title).length;
-    return { name: c.shortTitle || c.title, fullName: c.title, students: count, color: '#f59e0b' };
-  }).filter((c) => c.students > 0);
-  const courseTotal = courseDistribution.reduce((sum, c) => sum + c.students, 0);
-
   const handleStatusChange = (leadId: string, newStatus: string) => {
     crmService.updateLeadStatus(leadId, newStatus as Lead['status']);
     setLeads(crmService.getLeads());
@@ -229,7 +137,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
       </div>
 
       {/* Top KPI Cards - ALL REAL DATA */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block">
             Faol O'quvchilar
@@ -268,7 +176,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
 
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-            Jami Tushum
+            Oylik Tushum
           </span>
           <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCompactCurrency(monthlyRevenue)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">UZS</span>
@@ -279,20 +187,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-[10px] sm:text-xs font-semibold text-rose-500 block">
-            Qarzdorlik
-          </span>
-          <div className="text-base sm:text-xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
-            {formatCompactCurrency(outstandingDebt)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">UZS</span>
-          </div>
-          <div className="text-[10px] font-bold text-rose-500 mt-1">
-            {paymentStats.overdue} ta qarzdor
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-            Jami Xarajatlar
+            Oylik Xarajatlar
           </span>
           <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCompactCurrency(monthlyExpenses)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">UZS</span>
@@ -593,188 +489,63 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
               )}
             </div>
           </div>
-
-          {/* Recent Activity */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">
-              So'nggi Faoliyat
-            </h3>
-            <div className="space-y-3">
-              {recentActivityTop.map((act) => (
-                <div key={act.id} className="flex items-start gap-3">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    act.icon === 'student' ? 'bg-emerald-500/10 text-emerald-500'
-                    : act.icon === 'payment' ? 'bg-amber-500/10 text-amber-500'
-                    : act.icon === 'lead' ? 'bg-blue-500/10 text-blue-500'
-                    : 'bg-slate-500/10 text-slate-500'
-                  }`}>
-                    {act.icon === 'student' ? <UserPlus className="w-3.5 h-3.5" />
-                      : act.icon === 'payment' ? <CreditCard className="w-3.5 h-3.5" />
-                      : <PhoneCall className="w-3.5 h-3.5" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{act.label}</div>
-                    <div className="text-[10px] text-slate-400">
-                      {new Date(act.date).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {recentActivity.length === 0 && (
-                <div className="py-6 text-center text-xs text-slate-400">
-                  Hozircha faoliyat qaydlari yo'q.
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Financial Charts: Real Revenue vs Expenses */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Oylik Moliyaviy Holat
-              </h3>
-              <p className="text-xs text-slate-500">
-                Haqiqiy to'lovlar va xarajatlar asosida hisoblangan
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-amber-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Tushum
-              </span>
-              <span className="flex items-center gap-1.5 text-rose-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Xarajatlar
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Foyda
-              </span>
-            </div>
-          </div>
-
-          {financeChartData.some((d) => d.revenue > 0 || d.expenses > 0) ? (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={financeChartData}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorProf" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`}
-                  />
-                  <Tooltip
-                    formatter={(val: number | string) => [`${Number(val).toLocaleString()} UZS`, '']}
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
-                  <Area type="monotone" dataKey="expenses" stroke="#f43f5e" strokeWidth={2} fillOpacity={0.15} fill="url(#colorRev)" />
-                  <Area type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorProf)" />
-                </AreaChart>
-              </ResponsiveContainer>
+      {/* Ops quick facts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+            Kurslar Bo'yicha O'quvchilar
+          </h3>
+          {courses.filter((c) => studentsList.filter((s) => s.course === c.title).length > 0).length > 0 ? (
+            <div className="space-y-2.5">
+              {courses.map((c) => {
+                const count = studentsList.filter((s) => s.course === c.title).length;
+                if (count === 0) return null;
+                return (
+                  <div key={c.id} className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">{c.shortTitle || c.title}</span>
+                    <span className="font-bold text-slate-900 dark:text-white ml-2 shrink-0">{count} ta</span>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-slate-400">
-              Moliyaviy ma'lumotlar yetarli emas. To'lovlar va xarajatlarni kiritishni boshlang.
+            <div className="py-3 text-center text-xs text-slate-400">
+              Hozircha kurslarga o'quvchilar biriktirilmagan.
             </div>
           )}
         </div>
-      </div>
 
-      {/* Course Distribution */}
-      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-          Kurslar Bo'yicha O'quvchilar
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Haqiqiy guruh a'zoligi asosida
-        </p>
-
-        {courseTotal > 0 ? (
-          <div className="space-y-3">
-            {courseDistribution.map((c) => (
-              <div key={c.fullName} className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-700 dark:text-slate-300">{c.fullName}</span>
-                  <span className="text-slate-900 dark:text-white font-bold">{c.students} ta</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${courseTotal > 0 ? (c.students / courseTotal) * 100 : 0}%`, backgroundColor: c.color }}
-                  />
-                </div>
-              </div>
-            ))}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+            Tezkor Amallar
+          </h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => onNavigateTab('leads')}
+              className="w-full p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 hover:border-blue-500/50 transition cursor-pointer text-left flex items-center justify-between gap-2"
+            >
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Murojaatlar CRM</span>
+              <ArrowUpRight className="w-4 h-4 text-blue-500 shrink-0" />
+            </button>
+            <button
+              onClick={() => onNavigateTab('students')}
+              className="w-full p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-500/50 transition cursor-pointer text-left flex items-center justify-between gap-2"
+            >
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">O'quvchilar</span>
+              <ArrowUpRight className="w-4 h-4 text-emerald-500 shrink-0" />
+            </button>
+            <button
+              onClick={() => onNavigateTab('payments')}
+              className="w-full p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 hover:border-amber-500/50 transition cursor-pointer text-left flex items-center justify-between gap-2"
+            >
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">To'lovlar</span>
+              <ArrowUpRight className="w-4 h-4 text-amber-500 shrink-0" />
+            </button>
           </div>
-        ) : (
-          <div className="py-6 text-center text-xs text-slate-400">
-            Hozircha kurslarga o'quvchilar biriktirilmagan.
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-          Tezkor Amallar
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <button
-            onClick={() => onNavigateTab('leads')}
-            className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 hover:border-blue-500/50 transition cursor-pointer text-left"
-          >
-            <PhoneCall className="w-5 h-5 text-blue-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Yangi Murojaat</div>
-          </button>
-          <button
-            onClick={() => onNavigateTab('students')}
-            className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-500/50 transition cursor-pointer text-left"
-          >
-            <UserPlus className="w-5 h-5 text-emerald-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Yangi O'quvchi</div>
-          </button>
-          <button
-            onClick={() => onNavigateTab('payments')}
-            className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 hover:border-amber-500/50 transition cursor-pointer text-left"
-          >
-            <CreditCard className="w-5 h-5 text-amber-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Yangi To'lov</div>
-          </button>
-          <button
-            onClick={() => onNavigateTab('schedule')}
-            className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/40 hover:border-purple-500/50 transition cursor-pointer text-left"
-          >
-            <Calendar className="w-5 h-5 text-purple-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Yangi Guruh</div>
-          </button>
-          <button
-            onClick={() => onNavigateTab('teachers')}
-            className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/40 hover:border-sky-500/50 transition cursor-pointer text-left"
-          >
-            <GraduationCap className="w-5 h-5 text-sky-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Ustoz Qo'shish</div>
-          </button>
-          <button
-            onClick={() => onNavigateTab('courses')}
-            className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 hover:border-rose-500/50 transition cursor-pointer text-left"
-          >
-            <BookOpen className="w-5 h-5 text-rose-500 mb-2" />
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Yangi Kurs</div>
-          </button>
         </div>
       </div>
     </div>

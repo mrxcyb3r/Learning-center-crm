@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, GroupScheduleItem, StudentRecord, TeacherRecord } from '../../types/crm';
+import { formatCurrency } from '../../utils/format';
 
 export const CoursesView: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
@@ -115,7 +116,7 @@ export const CoursesView: React.FC = () => {
       .filter(Boolean);
 
     const feeNumber = Number(formMonthlyFee) || 0;
-    const formattedFee = `${feeNumber.toLocaleString()} UZS / oy`;
+    const formattedFee = `${formatCurrency(feeNumber)} / oy`;
 
     const payload = {
       title: formTitle.trim(),
@@ -293,7 +294,7 @@ export const CoursesView: React.FC = () => {
               <div>
                 <span className="text-[10px] text-slate-400 block font-medium">Oylik To'lov</span>
                 <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                  {c.formattedFee || `${c.monthlyFee.toLocaleString()} UZS / oy`}
+                  {c.formattedFee || `${formatCurrency(c.monthlyFee)} / oy`}
                 </span>
               </div>
 

@@ -6,25 +6,36 @@ import {
   Plus,
   Phone,
   Send,
-  Edit2,
+  Eye,
   Trash2,
   Calendar,
-  User,
   CheckCircle2,
   X,
   UserPlus,
   Clock,
-  MapPin,
+  FileText,
   AlertTriangle,
   ChevronRight,
+  FilterX,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, GroupScheduleItem, Lead, LeadStatus, PaymentStatus, TeacherRecord } from '../../types/crm';
-import { formatDateTime } from '../../utils/format';
+import { formatDate, formatDateTime } from '../../utils/format';
 
 const ALL_STATUSES: LeadStatus[] = ['Yangi', "Bog'lanildi", 'Sinov darsi belgilandi', 'Sinov darsi yakunlandi', "O'quvchiga aylandi", "Yo'qotildi"];
 
-const LEAD_SOURCES = ['Website', 'Telegram', 'Instagram', 'Referral', 'Walk-in', 'Phone', 'Other'];
+const FOLLOWUP_FILTER = '__followup__';
+
+const SOURCE_OPTIONS = [
+  'Sayt orqali ariza',
+  'Bosh sahifa (Hero forma)',
+  'Telegram bot orqali',
+  'Instagram',
+  'Tavsiya asosida',
+  'Markazga tashrif',
+  'Telefon orqali',
+  'Boshqa',
+];
 
 const STATUS_BADGE_CLASSES: Record<string, string> = {
   New: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
@@ -101,8 +112,11 @@ export const LeadsCrmView: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('+998 ');
   const [newCourse, setNewCourse] = useState('');
-  const [newSource, setNewSource] = useState('Website');
+  const [newSource, setNewSource] = useState('Sayt orqali ariza');
+  const [newAssigned, setNewAssigned] = useState('');
+  const [newTrialDate, setNewTrialDate] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [newError, setNewError] = useState('');
 
   const refreshLeads = () => {
     setLeads(crmService.getLeads());
@@ -164,8 +178,9 @@ export const LeadsCrmView: React.FC = () => {
       return;
     }
 
-    crmService.updateLead(detailLead.id, {
-      status: editStatus,
+    const isConverting = editStatus === "O'quvchiga aylandi" && detailLead.status !== "O'quvchiga aylandi";
+
+    const updates: Partial<Lead> = {
       notes: editNotes,
       assignedTo: editAssignedTo,
       trialDateTime: editTrialDate || undefined,
@@ -175,11 +190,21 @@ export const LeadsCrmView: React.FC = () => {
       lostReason: editLostReason || undefined,
       nextAction: editNextAction || undefined,
       lastContactedAt: editLastContacted || undefined,
-    });
+    };
+    if (!isConverting) updates.status = editStatus;
 
-    if (editStatus === "O'quvchiga aylandi" && detailLead.status !== "O'quvchiga aylandi") {
+    crmService.updateLead(detailLead.id, updates);
+
+    if (isConverting) {
       setDetailLead(null);
-      handleOpenConvert({ ...detailLead, status: "O'quvchiga aylandi" });
+      handleOpenConvert({
+        ...detailLead,
+        status: "O'quvchiga aylandi",
+        notes: editNotes,
+        assignedTo: editAssignedTo,
+        trialDateTime: editTrialDate || undefined,
+        nextAction: editNextAction || undefined,
+      });
       showNotice('success', "Arizani o'quvchiga aylantirish uchun quyidagi ma'lumotlarni to'ldiring.");
       return;
     }
@@ -262,7 +287,21 @@ export const LeadsCrmView: React.FC = () => {
 
   const handleCreateLead = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    setNewError('');
+
+    if (!newName.trim()) {
+      setNewError("Ism / F.I.Sh. kiritish shart.");
+      return;
+    }
+    const phoneDigits = newPhone.replace(/\D/g, '');
+    if (phoneDigits.length !== 9 && phoneDigits.length !== 12) {
+      setNewError("Telefon raqamini +998 (XX) XXX-XX-XX formatida kiriting.");
+      return;
+    }
+    if (!newCourse) {
+      setNewError("Ariza uchun kursni tanlang.");
+      return;
+    }
 
     crmService.createLead({
       name: newName.trim(),
@@ -270,14 +309,27 @@ export const LeadsCrmView: React.FC = () => {
       course: newCourse,
       notes: newNotes.trim(),
       source: newSource,
+      assignedTo: newAssigned.trim() || 'Qabulxona',
+      ...(newTrialDate ? { trialDateTime: newTrialDate } : {}),
     });
 
     setIsAddModalOpen(false);
     setNewName('');
     setNewPhone('+998 ');
     setNewNotes('');
+    setNewAssigned('');
+    setNewTrialDate('');
     refreshLeads();
     showNotice('success', 'Yangi ariza qo\'shildi.');
+  };
+
+  const handleMarkContacted = (lead: Lead) => {
+    const updates: Partial<Lead> = { lastContactedAt: new Date().toISOString() };
+    if (lead.status === 'Yangi') updates.status = "Bog'lanildi";
+    crmService.updateLead(lead.id, updates);
+    refreshLeads();
+    showNotice('success', `"${lead.name}" uchun murojaat vaqti yangilandi.`);
+    setDetailLead(null);
   };
 
   const handleExportCSV = () => {
@@ -291,6 +343,19 @@ export const LeadsCrmView: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Follow-up levels (derived from real lead timestamps only)
+  const followUpLevel = (lead: Lead): 'none' | 'today' | 'overdue' => {
+    if (lead.status === "O'quvchiga aylandi" || lead.status === "Yo'qotildi") return 'none';
+    const base = lead.lastContactedAt ? new Date(lead.lastContactedAt).getTime() : new Date(lead.createdAt).getTime();
+    if (isNaN(base)) return 'none';
+    const ageDays = (Date.now() - base) / (24 * 3600 * 1000);
+    if (ageDays >= 2) return 'overdue';
+    if (ageDays >= 1) return 'today';
+    return 'none';
+  };
+
+  const needsFollowUp = (lead: Lead) => followUpLevel(lead) !== 'none';
 
   // Filtered & Sorted Leads
   const filterCutoff = (() => {
@@ -306,9 +371,15 @@ export const LeadsCrmView: React.FC = () => {
         lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         lead.phone.includes(searchQuery);
 
-      const matchesStatus = selectedStatus === 'All' || lead.status === selectedStatus;
+      const matchesStatus =
+        selectedStatus === 'All' ||
+        (selectedStatus === FOLLOWUP_FILTER
+          ? needsFollowUp(lead)
+          : selectedStatus === 'trial'
+          ? lead.status === 'Sinov darsi belgilandi' || lead.status === 'Sinov darsi yakunlandi'
+          : lead.status === selectedStatus);
       const matchesCourse = selectedCourse === 'All' || lead.course === selectedCourse;
-      const matchesSource = selectedSource === 'All' || (lead.source || 'Website') === selectedSource;
+      const matchesSource = selectedSource === 'All' || (lead.source || 'Sayt orqali ariza') === selectedSource;
       const matchesAssigned = selectedAssigned === 'All' || (lead.assignedTo || '') === selectedAssigned;
       const matchesPeriod = filterCutoff === 0 || new Date(lead.createdAt).getTime() >= filterCutoff;
 
@@ -319,16 +390,31 @@ export const LeadsCrmView: React.FC = () => {
       return sortOrder === 'desc' ? -diff : diff;
     });
 
-  const assignedOptions = Array.from(new Set(leads.map((l) => l.assignedTo).filter(Boolean))).sort();
+  const assignedOptions = Array.from(new Set(leads.map((l) => l.assignedTo).filter((x): x is string => Boolean(x)))).sort();
 
-  // Follow-up status: lead needs action when still open and not contacted recently
-  const isFollowUpOverdue = (lead: Lead) => {
-    if (lead.status === "O'quvchiga aylandi" || lead.status === "Yo'qotildi") return false;
-    const base = lead.lastContactedAt ? new Date(lead.lastContactedAt).getTime() : new Date(lead.createdAt).getTime();
-    return Date.now() - base > 2 * 24 * 3600 * 1000;
-  };
+  // Source filter options derived from real records (keeps historical sources filterable)
+  const sourceOptions = Array.from(new Set(leads.map((l) => l.source).filter((x): x is string => Boolean(x))));
+
+  const hasActiveFilters =
+    searchQuery !== '' ||
+    selectedStatus !== 'All' ||
+    selectedCourse !== 'All' ||
+    selectedSource !== 'All' ||
+    selectedAssigned !== 'All' ||
+    selectedPeriod !== 'All';
 
   const statusCount = (st: LeadStatus) => leads.filter((l) => l.status === st).length;
+  const trialCount = leads.filter((l) => l.status === 'Sinov darsi belgilandi' || l.status === 'Sinov darsi yakunlandi').length;
+  const followUpCount = leads.filter((l) => needsFollowUp(l)).length;
+
+  const KPI_CARDS: { key: string; label: string; count: number; active: boolean; tone: string }[] = [
+    { key: 'Yangi', label: 'Yangi', count: statusCount('Yangi'), active: selectedStatus === 'Yangi', tone: 'blue' },
+    { key: FOLLOWUP_FILTER, label: 'Follow-up kerak', count: followUpCount, active: selectedStatus === FOLLOWUP_FILTER, tone: 'amber' },
+    { key: 'trial', label: 'Sinov darsi', count: trialCount, active: selectedStatus === 'trial', tone: 'purple' },
+    { key: "O'quvchiga aylandi", label: 'Yozilgan', count: statusCount("O'quvchiga aylandi"), active: selectedStatus === "O'quvchiga aylandi", tone: 'emerald' },
+    { key: "Yo'qotildi", label: "Yo'qotilgan", count: statusCount("Yo'qotildi"), active: selectedStatus === "Yo'qotildi", tone: 'slate' },
+  ];
+
   const trialScheduledLeads = leads.filter((l) => l.status === 'Sinov darsi belgilandi');
 
   return (
@@ -337,10 +423,10 @@ export const LeadsCrmView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Arizalar Boshqaruvi (Leads CRM)
+            Leads CRM
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Yangi murojaatlar, qo'ng'iroqlar, sinov darslari va o'quvchiga aylantirish — yagona joyda.
+            Arizalarni qabul qiling, kuzating va o'quvchiga aylantiring.
           </p>
         </div>
 
@@ -377,22 +463,38 @@ export const LeadsCrmView: React.FC = () => {
         </div>
       )}
 
-      {/* Pipeline Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {ALL_STATUSES.map((st) => (
+      {/* KPI Row (all real CRM data) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {KPI_CARDS.map((kpi) => (
           <button
-            key={st}
-            onClick={() => setSelectedStatus(selectedStatus === st ? 'All' : st)}
-            className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-              selectedStatus === st
+            key={kpi.key}
+            onClick={() => setSelectedStatus(selectedStatus === kpi.key ? 'All' : kpi.key)}
+            className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
+              kpi.active
                 ? 'bg-amber-500/10 border-amber-500/40 ring-1 ring-amber-500/30'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-500/40'
             }`}
           >
-            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${STATUS_BADGE_CLASSES[st]}`}>
-              {st}
+            <span
+              className={`text-[11px] sm:text-xs font-bold block ${
+                kpi.tone === 'amber'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : kpi.tone === 'purple'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : kpi.tone === 'emerald'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : kpi.tone === 'blue'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : kpi.tone === 'slate'
+                  ? 'text-slate-500 dark:text-slate-400'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {kpi.label}
             </span>
-            <div className="text-xl font-black text-slate-900 dark:text-white mt-2">{statusCount(st)}</div>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+              {kpi.count}
+            </div>
           </button>
         ))}
       </div>
@@ -426,9 +528,10 @@ export const LeadsCrmView: React.FC = () => {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
           >
-            <option value="All">Barcha holatlar ({leads.length})</option>
+            <option value="All">Barcha holatlar</option>
+            <option value={FOLLOWUP_FILTER}>Follow-up kerak ({followUpCount})</option>
             {ALL_STATUSES.map((st) => (
               <option key={st} value={st}>
                 {st} ({statusCount(st)})
@@ -439,7 +542,7 @@ export const LeadsCrmView: React.FC = () => {
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
           >
             <option value="All">Barcha kurslar</option>
             {courses.map((c) => (
@@ -450,10 +553,10 @@ export const LeadsCrmView: React.FC = () => {
           <select
             value={selectedSource}
             onChange={(e) => setSelectedSource(e.target.value)}
-            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
           >
             <option value="All">Manba: barchasi</option>
-            {LEAD_SOURCES.map((s) => (
+            {sourceOptions.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
@@ -487,6 +590,24 @@ export const LeadsCrmView: React.FC = () => {
           >
             {sortOrder === 'desc' ? 'Yangi birinchi' : 'Eski birinchi'}
           </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedStatus('All');
+                setSelectedCourse('All');
+                setSelectedSource('All');
+                setSelectedAssigned('All');
+                setSelectedPeriod('All');
+                setSortOrder('desc');
+              }}
+              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <FilterX className="w-3.5 h-3.5" />
+              <span>Filtrlarni tozalash</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -497,18 +618,19 @@ export const LeadsCrmView: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Ariza</th>
-                <th className="py-3.5 px-4">Telefon</th>
                 <th className="py-3.5 px-4">Kurs</th>
+                <th className="py-3.5 px-4">Manba</th>
                 <th className="py-3.5 px-4">Holat</th>
-                <th className="py-3.5 px-4">Sinov Darsi</th>
                 <th className="py-3.5 px-4">Mas'ul</th>
+                <th className="py-3.5 px-4">Qo'shilgan</th>
+                <th className="py-3.5 px-4">Follow-up</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                     Qidiruv bo'yicha ariza topilmadi.
                   </td>
                 </tr>
@@ -524,26 +646,61 @@ export const LeadsCrmView: React.FC = () => {
                         <span className="font-bold text-slate-900 dark:text-white">
                           {lead.name}
                         </span>
-                        {isFollowUpOverdue(lead) && (
+                        {followUpLevel(lead) === 'overdue' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-[9px] font-black uppercase">
+                            <Clock className="w-2.5 h-2.5" />
+                            Kechikkan
+                          </span>
+                        )}
+                        {followUpLevel(lead) === 'today' && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase">
                             <Clock className="w-2.5 h-2.5" />
-                            Follow-up
+                            Bugun
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {formatDateTime(lead.createdAt)} • {lead.source || 'Website'}
+                      <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mt-0.5">
+                        <a
+                          href={`tel:${lead.phone}`}
+                          className="hover:text-emerald-500 flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Phone className="w-3 h-3" />
+                          {lead.phone}
+                        </a>
+                        <a
+                          href={`https://t.me/+${lead.phone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-sky-500"
+                          title="Telegramda ochish"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Send className="w-3 h-3" />
+                        </a>
                       </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono font-medium text-slate-700 dark:text-slate-300">
-                      {lead.phone}
+                      {lead.trialDateTime && (
+                        <div className="flex items-center gap-1 text-[10px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(lead.trialDateTime).toLocaleString('uz-UZ', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                          {lead.trialRoom ? ` • ${lead.trialRoom}` : ''}
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span className="font-semibold text-amber-600 dark:text-amber-400">
                         {lead.course || '—'}
                       </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-slate-300">
+                      {lead.source || '—'}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -556,51 +713,44 @@ export const LeadsCrmView: React.FC = () => {
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-[11px] text-slate-500 dark:text-slate-400">
-                      {lead.trialDateTime ? (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(lead.trialDateTime).toLocaleString('uz-UZ', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                          {lead.trialRoom ? ` • ${lead.trialRoom}` : ''}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
+                    <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-slate-300">
+                      {lead.assignedTo || '—'}
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                      {lead.assignedTo || '—'}
+                    <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400">
+                      {formatDate(lead.createdAt)}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      {followUpLevel(lead) === 'overdue' ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkContacted(lead);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition cursor-pointer flex items-center gap-1"
+                        >
+                          <Phone className="w-3 h-3" />
+                          Bog'lanish
+                        </button>
+                      ) : followUpLevel(lead) === 'today' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase">
+                          <Clock className="w-2.5 h-2.5" />
+                          Bugun
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        <a
-                          href={`tel:${lead.phone}`}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition"
-                          title="Qo'ng'iroq qilish"
-                        >
-                          <Phone className="w-4 h-4" />
-                        </a>
-                        <a
-                          href={`https://t.me/+${lead.phone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition"
-                          title="Telegramda ochish"
-                        >
-                          <Send className="w-4 h-4" />
-                        </a>
                         <button
                           onClick={() => handleOpenDetail(lead)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition cursor-pointer"
-                          title="Ma'lumotlarni tahrirlash"
+                          title="Ko'rish / Tahrirlash"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() =>
@@ -657,13 +807,13 @@ export const LeadsCrmView: React.FC = () => {
             </p>
 
             {/* Quick Contact buttons */}
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <a
                 href={`tel:${detailLead.phone}`}
                 className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
               >
                 <Phone className="w-4 h-4" />
-                <span>Qo'ng'iroq ({detailLead.phone})</span>
+                <span>Qo'ng'iroq</span>
               </a>
               <a
                 href={`https://t.me/+${detailLead.phone.replace(/\D/g, '')}`}
@@ -672,8 +822,20 @@ export const LeadsCrmView: React.FC = () => {
                 className="py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
               >
                 <Send className="w-4 h-4" />
-                <span>Telegramda ochish</span>
+                <span>Telegram</span>
               </a>
+              <button
+                onClick={() => handleMarkContacted(detailLead)}
+                disabled={detailLead.status === "Yo'qotildi"}
+                className={`py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition ${
+                  detailLead.status === "Yo'qotildi"
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm cursor-pointer'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Bog'lanildi deb belgilash</span>
+              </button>
             </div>
 
             {detailError && (
@@ -902,7 +1064,7 @@ export const LeadsCrmView: React.FC = () => {
               {/* NOTES */}
               <section>
                 <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" /> 5. Konsultatsiya & Izohlar
+                  <FileText className="w-3.5 h-3.5" /> 5. Konsultatsiya & Izohlar
                 </h4>
                 <textarea
                   rows={3}
@@ -1143,9 +1305,16 @@ export const LeadsCrmView: React.FC = () => {
             </p>
 
             <form onSubmit={handleCreateLead} className="space-y-4">
+              {newError && (
+                <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  {newError}
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  To'liq ism
+                  Ism / F.I.Sh. *
                 </label>
                 <input
                   type="text"
@@ -1159,7 +1328,7 @@ export const LeadsCrmView: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Telefon raqami
+                  Telefon raqami *
                 </label>
                 <input
                   type="tel"
@@ -1167,19 +1336,20 @@ export const LeadsCrmView: React.FC = () => {
                   placeholder="+998 90 123 45 67"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">+998 (XX) XXX-XX-XX formatida kiritilishi shart.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Kurs
+                    Kurs *
                   </label>
                   <select
                     value={newCourse}
                     onChange={(e) => setNewCourse(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                   >
                     <option value="">(Tanlang)</option>
                     {courses.map((c) => (
@@ -1194,12 +1364,39 @@ export const LeadsCrmView: React.FC = () => {
                   <select
                     value={newSource}
                     onChange={(e) => setNewSource(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                   >
-                    {LEAD_SOURCES.map((s) => (
+                    {SOURCE_OPTIONS.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Mas'ul xodim
+                  </label>
+                  <input
+                    type="text"
+                    value={newAssigned}
+                    onChange={(e) => setNewAssigned(e.target.value)}
+                    placeholder="Masalan: Qabulxona"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Sinov darsi vaqti (ixtiyoriy)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={newTrialDate}
+                    onChange={(e) => setNewTrialDate(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Kiritilsa, ariza "Sinov darsi belgilandi" holatida saqlanadi.</p>
                 </div>
               </div>
 
@@ -1212,7 +1409,7 @@ export const LeadsCrmView: React.FC = () => {
                   placeholder="Maqsad, qaysi kurs qiziqtiradi, murojaat sababi..."
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
-import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName } from '../../utils/format';
+import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName, formatPercent } from '../../utils/format';
 
 const UZ_MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
@@ -370,15 +370,16 @@ export const StudentsView: React.FC = () => {
                 <th className="py-3.5 px-4">O'quvchi & Kontakt</th>
                 <th className="py-3.5 px-4">Kurs va Guruhi</th>
                 <th className="py-3.5 px-4">Mas'ul Ustoz</th>
-                <th className="py-3.5 px-4">Ota-Onasi</th>
                 <th className="py-3.5 px-4">To'lov & Qarzdorlik</th>
+                <th className="py-3.5 px-4">Davomat</th>
+                <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
                     Hozircha ma'lumot yo'q. Yangi o'quvchi qo'shish yoki filtrni o'zgartiring.
                   </td>
                 </tr>
@@ -398,42 +399,32 @@ export const StudentsView: React.FC = () => {
                           className="hover:text-amber-500 flex items-center gap-1"
                         >
                           <Phone className="w-3 h-3" />
-                          {st.phone}
+                          {st.phone || '—'}
                         </a>
                       </div>
+                      {st.parentName && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          <span className="font-semibold">{st.parentName}</span>
+                          {st.parentPhone && (
+                            <a href={`tel:${st.parentPhone}`} className="font-mono hover:text-amber-500 ml-1.5">
+                              {st.parentPhone}
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
                       <span className="font-semibold text-slate-900 dark:text-white block">
-                        {st.course}
+                        {st.course || '—'}
                       </span>
                       <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                        {st.groupName}
+                        {st.groupName || '—'}
                       </span>
                     </td>
 
                     <td className="py-3.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300">
                       {st.mentor || 'Belgilanmagan'}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {st.parentName ? (
-                        <div>
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {st.parentName}
-                          </div>
-                          {st.parentPhone && (
-                            <a
-                              href={`tel:${st.parentPhone}`}
-                              className="text-[11px] font-mono text-slate-400 hover:text-amber-500"
-                            >
-                              {st.parentPhone}
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-xs">-</span>
-                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -451,13 +442,63 @@ export const StudentsView: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-xs font-mono font-bold mt-1 text-slate-900 dark:text-white">
-                        {formatCurrency(st.monthlyFee || st.tuitionFee)}
+                        {st.monthlyFee == null && st.tuitionFee == null
+                          ? '—'
+                          : formatCurrency(st.monthlyFee || st.tuitionFee)}
                       </div>
                       {isOverdue && toSafeNumber(st.debtAmount) > 0 && (
                         <div className="text-[10px] font-bold text-rose-500 font-mono">
                           Qarz: {formatCurrency(st.debtAmount)}
                         </div>
                       )}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      {st.attendanceRate == null ? (
+                        <span className="text-slate-400 text-xs">—</span>
+                      ) : (
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black ${
+                            toSafeNumber(st.attendanceRate) >= 75
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          }`}
+                        >
+                          {formatPercent(st.attendanceRate)}
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          st.status === 'Active'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                            : st.status === 'Trial'
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                            : st.status === 'Paused'
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                            : st.status === 'Graduated'
+                            ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20'
+                            : st.status === 'Dropped'
+                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {st.status === 'Active'
+                          ? 'Faol'
+                          : st.status === 'Trial'
+                          ? 'Sinov'
+                          : st.status === 'Paused'
+                          ? 'Tanaffus'
+                          : st.status === 'Graduated'
+                          ? 'Bitirgan'
+                          : st.status === 'Dropped'
+                          ? 'Tark etgan'
+                          : st.status === 'Archived'
+                          ? 'Arxiv'
+                          : st.status || '—'}
+                      </span>
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
@@ -586,7 +627,7 @@ export const StudentsView: React.FC = () => {
                   >
                     {courses.map((c) => (
                       <option key={c.id} value={c.title}>
-                        {c.title} ({c.formattedFee || `${c.monthlyFee.toLocaleString()} UZS`})
+                        {c.title} ({c.formattedFee || formatCurrency(c.monthlyFee)})
                       </option>
                     ))}
                   </select>

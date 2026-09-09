@@ -158,18 +158,18 @@ export const WebsiteCmsView: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {[
+        {([
           { id: 'hero', label: 'Bosh Sahifa & Shior', icon: Sparkles },
           { id: 'stats', label: 'Haqiqiy Statistikalar', icon: Award },
           { id: 'results', label: 'Talabalar Natijalari', icon: Users },
           { id: 'faqs', label: "Ko'p Beriladigan Savollar", icon: HelpCircle },
           { id: 'contact', label: 'Filiallar & Telefonlar', icon: Phone },
-        ].map((tab) => {
+        ] as const).map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveSubTab(tab.id as any)}
+              onClick={() => setActiveSubTab(tab.id)}
               className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
                 activeSubTab === tab.id
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'

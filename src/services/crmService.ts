@@ -4,6 +4,7 @@ import {
   AuditLogEntry,
   CenterSettings,
   CmsContent,
+  CmsData,
   CourseData,
   ExpenseRecord,
   GroupScheduleItem,
@@ -702,7 +703,7 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     id: 'exp-01',
     category: 'Teacher Salary',
     title: 'O\'qituvchi oyligi - Diyorbek Furqatovich',
-    amount: 12000000,
+    amount: 4500000,
     date: '2026-03-01',
     recipient: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -715,7 +716,7 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     id: 'exp-02',
     category: 'Teacher Salary',
     title: 'O\'qituvchi oyligi - Jasur Alimov',
-    amount: 10500000,
+    amount: 3500000,
     date: '2026-03-01',
     recipient: 'Jasur Alimov',
     teacherId: 't-jasur',
@@ -1086,8 +1087,8 @@ class CrmService {
 
       return {
         ...teacher,
-        activeGroups: activeGroupsCount || teacher.activeGroups || 0,
-        studentsCount: studentsCount || teacher.studentsCount || 0,
+        activeGroups: activeGroupsCount || 0,
+        studentsCount: studentsCount || 0,
       };
     });
   }
@@ -1181,7 +1182,7 @@ class CrmService {
       ).length;
       return {
         ...grp,
-        studentsCount: realCount || grp.studentsCount || 0,
+        studentsCount: realCount || 0,
       };
     });
   }
@@ -1609,12 +1610,17 @@ class CrmService {
     return 0;
   }
 
-  public getCmsData(): any {
+  public getCmsData(): CmsData {
     const stored = localStorage.getItem('crm_cms_data');
     if (stored) {
       try {
-        return JSON.parse(stored);
-      } catch {}
+        const parsed = JSON.parse(stored) as CmsData;
+        if (parsed && parsed.hero && parsed.contact && Array.isArray(parsed.faqs) && Array.isArray(parsed.results)) {
+          return parsed;
+        }
+      } catch {
+        console.error('crm_cms_data localStorage tarkibi noto\'g\'ri — default CMS ishlatilmoqda.');
+      }
     }
     return {
       hero: {
@@ -1624,10 +1630,10 @@ class CrmService {
         badge: "Renessans O'quv Markazi • Yangiobod",
       },
       stats: {
-        universityAdmissions: '76.2%',
-        studentAdmittedRatio: '16 / 21',
-        highestDtmScore: '187.9',
-        stateGrantsCount: '2 ta',
+        universityAdmissions: '',
+        studentAdmittedRatio: '',
+        highestDtmScore: '',
+        stateGrantsCount: '',
       },
       contact: {
         phone: '+998 (90) 862-22-26',
@@ -1659,11 +1665,11 @@ class CrmService {
           answer: "Har yakshanba kuni markazimizda DTM va Milliy sertifikat formatidagi qat'iy nazorat ostida diagnostik testlar o'tkaziladi va natijalar ota-onalarga yetkaziladi.",
         },
       ],
-      results: this.results,
+      results: [],
     };
   }
 
-  public updateCmsData(data: any): any {
+  public updateCmsData(data: CmsData): CmsData {
     localStorage.setItem('crm_cms_data', JSON.stringify(data));
     this.logAction("CMS Yangilandi", "Website CMS", "Bosh sahifa matnlari va sozlamalari yangilandi.");
     return data;

@@ -4,7 +4,6 @@ import { HeroSection } from '../components/public/HeroSection';
 import { CoursesSection } from '../components/public/CoursesSection';
 import { TeachersSection } from '../components/public/TeachersSection';
 import { ResultsSection } from '../components/public/ResultsSection';
-import { ReviewsSection } from '../components/public/ReviewsSection';
 import { FaqSection } from '../components/public/FaqSection';
 import { ContactSection } from '../components/public/ContactSection';
 import { PublicFooter } from '../components/public/PublicFooter';
@@ -42,7 +41,6 @@ export const RenessansLandingPage: React.FC = () => {
         <CoursesSection onSelectCourseForTrial={handleOpenTrial} />
         <TeachersSection />
         <ResultsSection />
-        <ReviewsSection />
         <FaqSection />
         <ContactSection onOpenTrialModal={() => handleOpenTrial('Tarix, Huquq, Geografiya')} />
       </main>

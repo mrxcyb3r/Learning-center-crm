@@ -152,17 +152,17 @@ export const SettingsView: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {[
+        {([
           { id: 'center', label: "Markaz Ma'lumotlari", icon: Building },
           { id: 'staff', label: 'Xodimlar va Rollar', icon: Shield },
           { id: 'audit', label: 'Tizim Jurnali (Audit Log)', icon: History },
           { id: 'backup', label: 'Zaxira Nusxa (Backup)', icon: Download },
-        ].map((tab) => {
+        ] as const).map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'

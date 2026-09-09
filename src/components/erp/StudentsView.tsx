@@ -376,6 +376,13 @@ export const StudentsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                    Hozircha ma'lumot yo'q. Yangi o'quvchi qo'shish yoki filtrni o'zgartiring.
+                  </td>
+                </tr>
+              )}
               {filtered.map((st) => {
                 const isOverdue = st.paymentStatus === 'Overdue' || (toSafeNumber(st.debtAmount) > 0);
 

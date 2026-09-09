@@ -20,6 +20,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const loadedCms = crmService.getCmsData();
@@ -33,15 +34,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   }, []);
 
   const stats = [
-    { label: "OTMga kirish ko'rsatkichi", value: cms.stats?.universityAdmissions || '76.2%', icon: GraduationCap, note: '2025–2026 mavsumi' },
-    { label: "Talaba bo'lgan bitiruvchilar", value: cms.stats?.studentAdmittedRatio || '16 / 21', icon: Users, note: 'Nufuzli davlat oliygohlariga' },
-    { label: 'Eng yuqori DTM ball', value: cms.stats?.highestDtmScore || '187.9', icon: Award, note: 'Hasanboyeva Sevinch (O\'zDJTU)' },
-    { label: 'Davlat granti sohiblari', value: cms.stats?.stateGrantsCount || '2 ta', icon: ShieldCheck, note: '100% davlat granti asosida' },
-  ];
+    { label: "OTMga kirish ko'rsatkichi", value: cms.stats?.universityAdmissions || '', icon: GraduationCap, note: 'Joriy mavsum' },
+    { label: "Talaba bo'lgan bitiruvchilar", value: cms.stats?.studentAdmittedRatio || '', icon: Users, note: 'Nufuzli davlat oliygohlariga' },
+    { label: 'Eng yuqori DTM ball', value: cms.stats?.highestDtmScore || '', icon: Award, note: 'Bitiruvchilar ichida' },
+    { label: 'Davlat granti sohiblari', value: cms.stats?.stateGrantsCount || '', icon: ShieldCheck, note: '100% davlat granti asosida' },
+  ].filter((s) => s.value !== '');
 
   const handleQuickLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!leadName.trim() || leadPhone.replace(/\D/g, '').length < 9) return;
+    if (!leadName.trim() || leadPhone.replace(/\D/g, '').length < 9) {
+      setSubmitError('Telefon raqamini to\'g\'ri kiriting (+998 90 123 45 67).');
+      return;
+    }
+    setSubmitError('');
 
     try {
       setIsSubmitting(true);
@@ -56,6 +61,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       setLeadName('');
       setLeadPhone('+998 ');
     } catch (err) {
+      setSubmitError('Ariza yuborilmadi. Internet aloqasini tekshirib qayta urinib ko\'ring.');
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -255,6 +261,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <Send className="w-4 h-4" />
                     <span>{isSubmitting ? 'Yuborilmoqda...' : 'Bepul sinov darsiga yozilish'}</span>
                   </button>
+
+                  {submitError && (
+                    <p className="text-[11px] text-center text-rose-500 font-bold bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3">
+                      {submitError}
+                    </p>
+                  )}
 
                   <p className="text-[11px] text-center text-slate-400 mt-2">
                     🔒 Ma'lumotlaringiz xavfsiz saqlanadi va Telegramga yuboriladi.

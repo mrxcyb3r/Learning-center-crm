@@ -36,10 +36,10 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propRes
             Haqiqiy Ko'rsatkichlar
           </span>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white mt-4 tracking-tight">
-            Bitiruvchilarimiz Natijalari (2025–2026)
+            Bitiruvchilarimiz Natijalari
           </h2>
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-3">
-            76.2% o'quvchilarimiz davlat granti va to'lov-shartnoma asosida nufuzli OTMlarga qabul qilindi.
+            O'quvchilarimizning haqiqiy qabul natijalari. Ma'lumotlar CMS panelidan to'ldiriladi.
           </p>
         </div>
 
@@ -63,8 +63,13 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propRes
         {/* Results Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           <AnimatePresence>
+            {filteredResults.length === 0 && (
+              <div className="col-span-full py-16 text-center text-sm text-slate-400">
+                Hozircha ma'lumot yo'q. Natijalar CMS paneli («Veb-sayt Kontenti») orqali qo'shiladi.
+              </div>
+            )}
             {filteredResults.map((res, idx) => {
-              const isGrant = res.admissionType === 'Grant' || res.score.includes('187.9') || res.badge?.includes('Grant');
+              const isGrant = res.admissionType === 'Grant' || res.badge?.includes('Grant');
               return (
                 <motion.div
                   key={res.id || idx}

@@ -134,7 +134,7 @@ const filtered = categoryFilter === 'All'
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400 block">Jami Chiqim (Bu Oy)</span>
+          <span className="text-xs font-semibold text-slate-400 block">Jami Chiqim</span>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
             {totalExpenses.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
           </div>
@@ -216,6 +216,13 @@ const filtered = categoryFilter === 'All'
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                    Bu kategoriya bo'yicha chiqimlar qayd etilmagan.
+                  </td>
+                </tr>
+              )}
               {filtered.map((e) => (
                 <tr key={e.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3.5 px-4">

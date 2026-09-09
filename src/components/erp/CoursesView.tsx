@@ -174,6 +174,11 @@ export const CoursesView: React.FC = () => {
 
       {/* Courses Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {courses.length === 0 && (
+          <div className="col-span-full py-14 text-center text-sm text-slate-400 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700">
+            Hozircha kurslar yo'q. «Yangi Kurs Qo'shish» orqali kurs yarating.
+          </div>
+        )}
         {courses.map((c) => (
           <div
             key={c.id}

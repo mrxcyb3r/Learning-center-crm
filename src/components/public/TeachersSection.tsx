@@ -66,9 +66,11 @@ export const TeachersSection: React.FC<TeachersSectionProps> = ({ teachers: prop
                       <Briefcase className="w-3.5 h-3.5 text-amber-400" />
                       {teacher.experience}
                     </span>
+                    {teacher.studentsCount > 0 && (
                     <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-bold">
-                      {teacher.studentsCount}+ O'quvchi
+                      {teacher.studentsCount} O'quvchi
                     </span>
+                  )}
                   </div>
                 </div>
 

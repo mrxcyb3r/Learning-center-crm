@@ -10,6 +10,7 @@ import {
   IncomePaymentRecord,
   Lead,
   LeadStatus,
+  PaymentStatus,
   StudentRecord,
   StudentResult,
   TeacherRecord,
@@ -693,18 +694,6 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     notes: 'Naqd qabul qilindi, chek berildi',
     month: '2026-03',
   },
-  {
-    id: 'pay-04',
-    studentName: 'Bobur Mirzayev',
-    course: 'Tarix, Huquq, Geografiya',
-    amount: 380000,
-    date: '2026-03-07',
-    method: 'Card',
-    receiptNumber: 'REC-24894',
-    status: 'Completed',
-    recordedBy: 'Administrator',
-    month: '2026-03',
-  },
 ];
 
 // Seed Expenses
@@ -1376,30 +1365,113 @@ class CrmService {
     this.leads[idx] = { ...this.leads[idx], status };
     saveToStorage(STORAGE_KEYS.LEADS, this.leads);
 
-    // If marked enrolled, add to active students automatically
+    // If marked enrolled, ensure a linked student record exists
     if (status === 'Enrolled' || status === "O'quvchiga aylandi") {
-      const existing = this.students.find(
-        (s) => s.fullName.toLowerCase() === this.leads[idx].name.toLowerCase()
-      );
-      if (!existing) {
-        this.addStudent({
-          fullName: this.leads[idx].name,
-          phone: this.leads[idx].phone,
-          course: this.leads[idx].course,
-          groupName: `${this.leads[idx].course} - 1-guruh`,
-          enrollmentDate: new Date().toISOString().split('T')[0],
-          tuitionFee: 380000,
-          paymentStatus: 'Due',
-          nextDueDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
-          isActive: true,
-          status: 'Active',
-          notes: 'Arizalardan o\'quvchiga aylantirildi',
-        });
-      }
+      this.convertLeadToStudent(leadId, {});
     }
 
     this.logAction("Ariza holati o'zgardi", "Arizalar (Leads)", `${this.leads[idx].name} -> ${status}`);
     return this.leads[idx];
+  }
+
+  public convertLeadToStudent(
+    leadId: string,
+    opts: {
+      course?: string;
+      groupId?: string;
+      groupName?: string;
+      teacher?: string;
+      teacherId?: string;
+      monthlyFee?: number;
+      discount?: number;
+      paymentStatus?: PaymentStatus;
+      startDate?: string;
+      parentName?: string;
+      parentPhone?: string;
+    } = {}
+  ): { student?: StudentRecord; leadId: string; created: boolean; message: string } {
+    const idx = this.leads.findIndex((l) => l.id === leadId);
+    if (idx === -1) return { leadId, created: false, message: "Ariza topilmadi." };
+    const lead = this.leads[idx];
+
+    const existing = this.students.find(
+      (s) =>
+        (s.phone && lead.phone && s.phone.replace(/\D/g, '') === lead.phone.replace(/\D/g, '')) ||
+        (s.fullName || '').toLowerCase() === lead.name.toLowerCase()
+    );
+
+    if (existing) {
+      this.leads[idx] = {
+        ...this.leads[idx],
+        status: "O'quvchiga aylandi",
+        enrollmentDate: this.leads[idx].enrollmentDate || new Date().toISOString().split('T')[0],
+      };
+      saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+      return { student: existing, leadId, created: false, message: "Bu ariza oldin o'quvchiga aylantirilgan." };
+    }
+
+    const courseTitle = opts.course || lead.course || '';
+    const courseDef = this.courses.find((c) => c.title === courseTitle);
+    const courseFee = Number(courseDef?.monthlyFee) || 0;
+    const monthlyFee = Number(opts.monthlyFee) || courseFee || Number(lead.trialResult === 'Converted' ? courseFee : 0);
+    const discount = Math.min(Math.max(Number(opts.discount) || 0, 0), monthlyFee);
+
+    const teacherId = opts.teacherId;
+    const teacherName =
+      opts.teacher ||
+      this.teachers.find((t) => t.id === teacherId)?.name ||
+      (courseDef?.teacherName ? courseDef.teacherName : undefined) ||
+      lead.assignedTo ||
+      '';
+
+    const groupId = opts.groupId;
+    const groupCount = this.schedule.filter((g) => g.course === courseTitle).length;
+    const defaultGroupName = courseDef ? `${courseDef.title} - ${groupCount + 1}-guruh` : `${courseTitle} - 1-guruh`;
+
+    const newStudent = this.addStudent({
+      fullName: lead.name,
+      name: lead.name,
+      phone: lead.phone,
+      parentName: opts.parentName,
+      parentPhone: opts.parentPhone,
+      mentor: teacherName,
+      teacher: teacherName,
+      teacherId,
+      course: courseTitle,
+      courseId: courseDef?.id,
+      groupId,
+      groupName: opts.groupName || (groupId ? (this.schedule.find((g) => g.id === groupId)?.groupName || defaultGroupName) : defaultGroupName),
+      enrollmentDate: opts.startDate || new Date().toISOString().split('T')[0],
+      tuitionFee: monthlyFee,
+      monthlyFee,
+      paymentStatus: opts.paymentStatus || 'Due',
+      debtAmount: monthlyFee > 0 ? monthlyFee : 0,
+      isActive: true,
+      status: 'Active',
+      nextDueDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      totalPaid: 0,
+      balance: 0,
+      attendanceRate: 0,
+      notes: 'CRM arizasidan o\'quvchiga aylantirildi',
+    });
+
+    this.leads[idx] = {
+      ...this.leads[idx],
+      status: "O'quvchiga aylandi",
+      enrollmentDate: newStudent.enrollmentDate,
+    };
+    saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+
+    if (newStudent.groupId) {
+      const grp = this.schedule.find((g) => g.id === newStudent.groupId);
+      if (grp) {
+        grp.studentsCount = (grp.studentsCount || 0) + 1;
+        saveToStorage(STORAGE_KEYS.SCHEDULE, this.schedule);
+      }
+    }
+
+    this.logAction("Ariza o'quvchiga aylantirildi", "Arizalar / O'quvchilar", `${newStudent.fullName} -> ${courseTitle}`);
+    return { student: newStudent, leadId, created: true, message: "O'quvchi muvaffaqiyatli yaratildi." };
   }
 
   public updateLead(leadId: string, updates: Partial<Lead>): Lead | null {
@@ -1507,18 +1579,34 @@ class CrmService {
 
   public getTuitionDebts(): { studentId: string; studentName: string; phone: string; course: string; amount: number; dueDate: string; status: 'Unpaid' | 'Partial' | 'Paid' }[] {
     return this.students.map((s) => {
-      const fee = s.monthlyFee || s.tuitionFee || 450000;
+      const courseDef = this.courses.find((c) => c.title === s.course);
+      const courseFee = Number(courseDef?.monthlyFee) || 0;
+      const fee =
+        Number(s.monthlyFee) ||
+        Number(s.tuitionFee) ||
+        courseFee ||
+        0;
       const isPaid = s.paymentStatus === 'Paid';
+      const dueInDays = 7;
+      const dueDate = s.nextDueDate || new Date(Date.now() + dueInDays * 24 * 3600 * 1000).toISOString().split('T')[0];
       return {
         studentId: s.id,
         studentName: s.fullName || s.name || "Noma'lum",
         phone: s.phone,
         course: s.course,
-        amount: isPaid ? 0 : (s.debtAmount !== undefined ? s.debtAmount : fee),
-        dueDate: s.nextDueDate || '2026-09-10',
+        amount: isPaid ? 0 : this.getStudentDebt(s, fee),
+        dueDate,
         status: isPaid ? 'Paid' : 'Unpaid',
       };
     });
+  }
+
+  private getStudentDebt(s: StudentRecord, defaultFee: number): number {
+    const debt = Number(s.debtAmount);
+    if (!Number.isFinite(debt)) return 0;
+    if (debt > 0) return debt;
+    if (Number.isFinite(defaultFee) && defaultFee > 0 && s.paymentStatus !== 'Paid') return defaultFee;
+    return 0;
   }
 
   public getCmsData(): any {
@@ -1730,9 +1818,10 @@ Holat: ${lead.status || 'Yangi'}
     this.telegramLogs.unshift(log);
     saveToStorage(STORAGE_KEYS.TELEGRAM_LOGS, this.telegramLogs);
 
-    // Call server endpoint
+    // Call server endpoint and record the REAL result
+    let delivered = false;
     try {
-      fetch('/api/telegram/lead-alert', {
+      const resp = await fetch('/api/telegram/lead-alert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1741,10 +1830,27 @@ Holat: ${lead.status || 'Yangi'}
           course: lead.course,
           date: formattedDate,
         }),
-      }).catch(() => {});
-    } catch {}
+      });
+      delivered = resp.ok;
+      if (!delivered) {
+        console.warn('Telegram lead-alert endpoint returned:', resp.status);
+      }
+    } catch (err) {
+      console.warn('Telegram lead-alert endpoint unreachable:', err);
+    }
 
-    return log;
+    const idx = this.telegramLogs.indexOf(log);
+    if (idx !== -1) {
+      this.telegramLogs[idx] = {
+        ...this.telegramLogs[idx],
+        status: delivered ? 'Sent' : 'Failed',
+        sentAt: delivered ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Yuborilmadi',
+        error: delivered ? undefined : 'Telegram server ulanishi mavjud emas',
+      };
+      saveToStorage(STORAGE_KEYS.TELEGRAM_LOGS, this.telegramLogs);
+    }
+
+    return this.telegramLogs.find((t) => t.id === log.id) || log;
   }
 
   // --- BACKUP EXPORT & IMPORT ---
@@ -1773,11 +1879,16 @@ Holat: ${lead.status || 'Yangi'}
   public importFullBackupJSON(jsonString: string): { success: boolean; message: string } {
     try {
       const parsed = JSON.parse(jsonString);
-      if (!parsed.data) {
-        return { success: false, message: "Noto'g'ri fayl formati: 'data' bo'limi topilmadi." };
+      const d = (parsed && parsed.data && typeof parsed.data === 'object') ? parsed.data : parsed;
+      if (!d || typeof d !== 'object') {
+        return { success: false, message: "Noto'g'ri fayl formati: zaxira ma'lumotlari topilmadi." };
       }
 
-      const d = parsed.data;
+      const requiredCollections = ['teachers', 'courses', 'students'];
+      if (!requiredCollections.some((key) => Array.isArray(d[key]))) {
+        return { success: false, message: "Noto'g'ri zaxira fayl: 'data' bo'limida ma'lumotlar yo'q." };
+      }
+
       if (Array.isArray(d.teachers)) {
         this.teachers = d.teachers;
         saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
@@ -1810,11 +1921,20 @@ Holat: ${lead.status || 'Yangi'}
         this.results = d.results;
         saveToStorage(STORAGE_KEYS.RESULTS, this.results);
       }
-      if (d.cms) {
-        this.cmsContent = d.cms;
-        saveToStorage(STORAGE_KEYS.CMS, this.cmsContent);
+      if (Array.isArray(d.auditLogs)) {
+        this.auditLogs = d.auditLogs;
+        saveToStorage(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
       }
-      if (d.settings) {
+      // Accept both the versioned CMS shape (cmsContent) and the live CMS shape (cms/cmsData)
+      const cmsData = d.cmsContent || d.cms || d.cmsData;
+      if (cmsData && typeof cmsData === 'object') {
+        this.cmsContent = cmsData;
+        saveToStorage(STORAGE_KEYS.CMS, this.cmsContent);
+        try {
+          localStorage.setItem('crm_cms_data', JSON.stringify(cmsData));
+        } catch {}
+      }
+      if (d.settings && typeof d.settings === 'object') {
         this.settings = d.settings;
         saveToStorage(STORAGE_KEYS.SETTINGS, this.settings);
       }

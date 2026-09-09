@@ -80,8 +80,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   const netProfit = monthlyRevenue - monthlyExpenses;
 
   const outstandingDebt = studentsList
-    .filter((s) => s.paymentStatus === 'Overdue' || (toSafeNumber(s.debtAmount) > 0))
-    .reduce((sum, s) => sum + toSafeNumber(s.debtAmount || s.monthlyFee || s.tuitionFee), 0);
+    .filter((s) => toSafeNumber(s.debtAmount) > 0 || s.paymentStatus === 'Overdue')
+    .reduce((sum, s) => sum + toSafeNumber(s.debtAmount), 0);
 
   // Today's trials
   const todayTrials = leads.filter((l) => {
@@ -246,7 +246,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
 
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-            Oylik Tushum
+            Jami Tushum
           </span>
           <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCompactCurrency(monthlyRevenue)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">UZS</span>
@@ -270,7 +270,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
 
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-            Oylik Xarajatlar
+            Jami Xarajatlar
           </span>
           <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCompactCurrency(monthlyExpenses)} <span className="text-[10px] sm:text-xs font-normal text-slate-400">UZS</span>

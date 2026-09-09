@@ -21,6 +21,16 @@ import { crmService } from '../../services/crmService';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName } from '../../utils/format';
 
+const UZ_MONTHS = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr',
+];
+
+function currentMonthLabel(): string {
+  const now = new Date();
+  return `${UZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+}
+
 export const StudentsView: React.FC = () => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
@@ -136,6 +146,11 @@ export const StudentsView: React.FC = () => {
     e.preventDefault();
     if (!formName.trim()) return;
 
+    const mentorName = formMentor.trim();
+    const matchedTeacher = crmService.getTeachers().find(
+      (t) => t.name.toLowerCase() === mentorName.toLowerCase()
+    );
+
     const payload = {
       fullName: formName.trim(),
       name: formName.trim(),
@@ -144,7 +159,9 @@ export const StudentsView: React.FC = () => {
       parentPhone: formParentPhone.trim(),
       course: formCourse,
       groupName: formGroupName,
-      mentor: formMentor,
+      mentor: mentorName,
+      teacher: mentorName,
+      teacherId: matchedTeacher?.id,
       monthlyFee: Number(formMonthlyFee) || 0,
       paymentStatus: formPaymentStatus,
       debtAmount: Number(formDebtAmount) || 0,
@@ -192,7 +209,7 @@ export const StudentsView: React.FC = () => {
       course: quickPayStudent.course,
       amount: Number(payAmount),
       method: payMethod,
-      month: 'Sentyabr 2026',
+      month: currentMonthLabel(),
     });
 
     showNotification(`${quickPayStudent.fullName || quickPayStudent.name} uchun to'lov qabul qilindi!`);
@@ -221,8 +238,8 @@ export const StudentsView: React.FC = () => {
   });
 
   const totalMonthlyTuitionPotential = students.reduce((sum, s) => sum + toSafeNumber(s.monthlyFee || s.tuitionFee), 0);
-  const totalDebtors = students.filter((s) => s.paymentStatus === 'Overdue' || (toSafeNumber(s.debtAmount) > 0));
-  const totalDebtSum = totalDebtors.reduce((sum, s) => sum + toSafeNumber(s.debtAmount || s.monthlyFee || s.tuitionFee), 0);
+  const totalDebtors = students.filter((s) => toSafeNumber(s.debtAmount) > 0 || s.paymentStatus === 'Overdue');
+  const totalDebtSum = students.reduce((sum, s) => sum + toSafeNumber(s.debtAmount), 0);
 
   return (
     <div className="space-y-6">
@@ -336,8 +353,10 @@ export const StudentsView: React.FC = () => {
             <option value="All">Barcha Statuslar</option>
             <option value="Active">Faol O'quvchilar</option>
             <option value="Trial">Sinov Darsida</option>
-            <option value="Graduated">Bitirganlar</option>
+            <option value="Paused">Tanaffusda</option>
             <option value="Dropped">Tark Etganlar</option>
+            <option value="Graduated">Bitirganlar</option>
+            <option value="Archived">Arxivlangan</option>
           </select>
         </div>
       </div>

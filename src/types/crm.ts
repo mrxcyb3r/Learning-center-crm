@@ -26,11 +26,17 @@ export interface Lead {
   archived?: boolean;
   source?: string;
   trialDateTime?: string;
+  trialRoom?: string;
+  trialTeacher?: string;
+  trialResult?: string;
   followUpDate?: string;
+  lastContactedAt?: string;
+  lostReason?: string;
+  nextAction?: string;
   enrollmentDate?: string;
 }
 
-export type StudentStatus = 'Lead' | 'Trial' | 'Active' | 'Paused' | 'Graduated' | 'Archived';
+export type StudentStatus = 'Lead' | 'Trial' | 'Active' | 'Paused' | 'Dropped' | 'Graduated' | 'Archived';
 export type PaymentStatus = 'Paid' | 'Due' | 'Overdue';
 
 export interface StudentRecord {
@@ -281,6 +287,7 @@ export interface TelegramAlertLog {
   status: 'Delivered' | 'Pending' | 'Failed' | 'Sent';
   messageText?: string;
   message?: string;
+  error?: string;
 }
 
 export interface CampusBranch {

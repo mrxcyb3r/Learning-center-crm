@@ -22,24 +22,26 @@ export const SettingsView: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup'>('center');
 
-  // Center Details
-  const [centerName, setCenterName] = useState(() => localStorage.getItem('crm_center_name') || "Renessans O'quv Markazi");
+  // Center Details (single source of truth: crmService settings)
+  const initialSettings = crmService.getSettings();
+  const [centerName, setCenterName] = useState(initialSettings.centerName || "Renessans O'quv Markazi");
+  const [legalName, setLegalName] = useState(initialSettings.legalName || '');
   const [address, setAddress] = useState(
-    () => localStorage.getItem('crm_center_address') || "Jizzax viloyati, Yangiobod tumani, 1-maktab binosi"
+    initialSettings.branches?.[0]?.address || 'Jizzax viloyati, Yangiobod tumani, 1-maktab binosi'
   );
-  const [phone, setPhone] = useState(() => localStorage.getItem('crm_center_phone') || '+998 (90) 862-22-26');
+  const [phone, setPhone] = useState(initialSettings.hotline || '+998 (90) 862-22-26');
+  const [secondaryPhone, setSecondaryPhone] = useState(initialSettings.secondaryPhone || '');
+  const [email, setEmail] = useState(initialSettings.email || '');
+  const [workingHours, setWorkingHours] = useState(initialSettings.workingHours || '08:00 - 20:00');
   const [telegramChannel, setTelegramChannel] = useState(
-    () => localStorage.getItem('crm_center_tg') || 'https://t.me/renessans_lc'
+    initialSettings.telegramSettings?.botUsername ? `https://t.me/${String(initialSettings.telegramSettings.botUsername).replace('@', '')}` : 'https://t.me/renessans_lc'
   );
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
-  // Staff members
-  const [staffList, setStaffList] = useState([
-    { id: 'st-1', name: 'Alisher Qodirov', role: 'Director / Owner', phone: '+998 (90) 862-22-26', email: 'director@renessans.uz' },
-    { id: 'st-2', name: 'Malika Karimova', role: 'Receptionist / Admin', phone: '+998 (91) 333-44-55', email: 'admin@renessans.uz' },
-  ]);
+  // Staff members (from crmService settings)
+  const staffList = initialSettings.staff || [];
 
   const refreshLogs = () => {
     setAuditLogs(crmService.getAuditLogs());
@@ -51,31 +53,41 @@ export const SettingsView: React.FC = () => {
 
   const handleSaveCenter = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('crm_center_name', centerName.trim());
-    localStorage.setItem('crm_center_address', address.trim());
-    localStorage.setItem('crm_center_phone', phone.trim());
-    localStorage.setItem('crm_center_tg', telegramChannel.trim());
-
-    crmService.logAuditAction('System Settings', 'Update', 'Markaz ma\'lumotlari yangilandi.');
-    refreshLogs();
+    const current = crmService.getSettings();
+    crmService.updateSettings({
+      centerName: centerName.trim(),
+      legalName: legalName.trim(),
+      hotline: phone.trim(),
+      secondaryPhone: secondaryPhone.trim(),
+      email: email.trim(),
+      workingHours: workingHours.trim(),
+      branches: current.branches?.length
+        ? current.branches.map((b, i) =>
+            i === 0 ? { ...b, address: address.trim(), phone: phone.trim(), workingHours: workingHours.trim() } : b
+          )
+        : [
+            {
+              id: 'br-01',
+              name: '1-Filial (Asosiy)',
+              address: address.trim(),
+              phone: phone.trim(),
+              workingHours: workingHours.trim(),
+              isActive: true,
+            },
+          ],
+      telegramSettings: {
+        ...current.telegramSettings,
+        botUsername: telegramChannel.trim().replace('https://t.me/', '@').replace('t.me/', '@').replace('@', '') !== ''
+          ? `@${telegramChannel.trim().replace('https://t.me/', '').replace('t.me/', '').replace('@', '')}`
+          : current.telegramSettings?.botUsername,
+      },
+    });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
   const handleBackupExport = () => {
-    const data = {
-      leads: crmService.getLeads(),
-      students: crmService.getStudents(),
-      teachers: crmService.getTeachers(),
-      courses: crmService.getCourses(),
-      schedule: crmService.getSchedule(),
-      payments: crmService.getPayments(),
-      expenses: crmService.getExpenses(),
-      cms: crmService.getCmsData(),
-      auditLogs: crmService.getAuditLogs(),
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([crmService.exportFullBackupJSON()], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -91,28 +103,27 @@ export const SettingsView: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!window.confirm("Zaxira faylni tiklash barcha joriy ma'lumotlarni almashtiradi. Davom etasizmi?")) {
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const json = JSON.parse(event.target?.result as string);
-        if (json.students && json.courses && json.teachers) {
-          if (json.students) localStorage.setItem('crm_students', JSON.stringify(json.students));
-          if (json.teachers) localStorage.setItem('crm_teachers', JSON.stringify(json.teachers));
-          if (json.courses) localStorage.setItem('crm_courses', JSON.stringify(json.courses));
-          if (json.schedule) localStorage.setItem('crm_schedule', JSON.stringify(json.schedule));
-          if (json.payments) localStorage.setItem('crm_payments', JSON.stringify(json.payments));
-          if (json.expenses) localStorage.setItem('crm_expenses', JSON.stringify(json.expenses));
-          if (json.leads) localStorage.setItem('crm_leads', JSON.stringify(json.leads));
-          if (json.cms) localStorage.setItem('crm_cms_data', JSON.stringify(json.cms));
-
+        const jsonString = event.target?.result as string;
+        const result = crmService.importFullBackupJSON(jsonString);
+        if (result.success) {
           crmService.logAuditAction('Backup', 'Import', 'Zaxira fayldan barcha ma\'lumotlar tiklandi.');
-          alert("Zaxira nusxasi muvaffaqiyatli tiklandi! Sahifa yangilanadi.");
+          alert(result.message + ' Sahifa yangilanadi.');
           window.location.reload();
         } else {
-          alert("Noto'g'ri zaxira fayl formati!");
+          alert(result.message);
         }
       } catch (err) {
         alert("Faylni o'qishda xatolik yuz berdi!");
+      } finally {
+        e.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -189,6 +200,19 @@ export const SettingsView: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Yuridik Nomi (MChJ)
+                </label>
+                <input
+                  type="text"
+                  value={legalName}
+                  onChange={(e) => setLegalName(e.target.value)}
+                  placeholder="MChJ 'RENESSANS EDUCATION YANGIOBOD'"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                   Asosiy Qabul Telefoni (Call Center)
                 </label>
                 <input
@@ -196,6 +220,45 @@ export const SettingsView: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Qo'shimcha Telefon
+                </label>
+                <input
+                  type="text"
+                  value={secondaryPhone}
+                  onChange={(e) => setSecondaryPhone(e.target.value)}
+                  placeholder="+998 (99) 259-32-32"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Elektron Pochta
+                </label>
+                <input
+                  type="text"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="renessans.yangiobod@gmail.com"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Ish Vaqti
+                </label>
+                <input
+                  type="text"
+                  value={workingHours}
+                  onChange={(e) => setWorkingHours(e.target.value)}
+                  placeholder="08:00 - 20:00"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -253,34 +316,42 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {staffList.map((staff) => (
-              <div key={staff.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm">
-                    {staff.name}
+            {staffList.length > 0 ? (
+              staffList.map((staff) => (
+                <div key={staff.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">
+                      {staff.name}
+                    </div>
+                    <div className="text-slate-500 mt-0.5 font-mono">
+                      {staff.phone || 'Telefon kiritilmagan'}{staff.email ? ` • ${staff.email}` : ''}
+                    </div>
                   </div>
-                  <div className="text-slate-500 mt-0.5 font-mono">
-                    {staff.phone} • {staff.email}
+
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-3 py-1 rounded-full font-bold text-[11px] ${
+                        staff.role.includes('Director')
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                          : staff.role.includes('Admin')
+                          ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      }`}
+                    >
+                      {staff.role}
+                    </span>
+
+                    <span className="text-slate-400 text-[11px]">
+                      {staff.role.includes('Director') ? "Barcha bo'limlar ochiq" : staff.role.includes('Teacher') ? 'Davomat va sinflar' : 'CRM, moliya va o\'quvchilar'}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`px-3 py-1 rounded-full font-bold text-[11px] ${
-                      staff.role.includes('Director')
-                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                        : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                    }`}
-                  >
-                    {staff.role}
-                  </span>
-
-                  <span className="text-slate-400 text-[11px]">
-                    {staff.role.includes('Director') ? "Barcha bo'limlar ochiq" : "Moliya cheklangan"}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-xs text-slate-400">
+                Hozircha xodimlar ro'yxati bo'sh. Sozlamalar orqali xodim qo'shishingiz mumkin.
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

@@ -13,6 +13,17 @@ import {
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CourseData, IncomePaymentRecord, StudentRecord } from '../../types/crm';
+import { formatCurrency } from '../../utils/format';
+
+const UZ_MONTHS = [
+  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+  'Iyul', 'Avgust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr',
+];
+
+function currentMonthLabel(): string {
+  const now = new Date();
+  return `${UZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+}
 
 export const PaymentsView: React.FC = () => {
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
@@ -20,6 +31,7 @@ export const PaymentsView: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewReceipt, setViewReceipt] = useState<IncomePaymentRecord | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -30,7 +42,7 @@ export const PaymentsView: React.FC = () => {
   const [formCourse, setFormCourse] = useState('');
   const [formAmount, setFormAmount] = useState('380000');
   const [formMethod, setFormMethod] = useState<'Click' | 'Payme' | 'Cash' | 'Card'>('Click');
-  const [formMonth, setFormMonth] = useState('Sentyabr 2026');
+  const [formMonth, setFormMonth] = useState(currentMonthLabel());
 
   const refresh = () => {
     setPayments(crmService.getPayments());
@@ -61,7 +73,7 @@ export const PaymentsView: React.FC = () => {
       setFormAmount('380000');
     }
     setFormMethod('Click');
-    setFormMonth('Sentyabr 2026');
+    setFormMonth(currentMonthLabel());
     setIsAddModalOpen(true);
   };
 
@@ -95,12 +107,17 @@ export const PaymentsView: React.FC = () => {
   };
 
   const handleVoidPayment = (id: string, name: string) => {
-    if (window.confirm(`Rostdan ham ${name} uchun to'lov kvitansiyasini bekor qilmoqchimisiz?`)) {
-      crmService.deletePayment(id);
-      refresh();
-      showNotification('To\'lov bekor qilindi.');
+    const reason = window.prompt(`"${name}" uchun to'lovni bekor qilish sababini kiriting:`, 'Xato kirish');
+    if (reason === null) return; // user cancelled
+    if (!window.confirm(`To'lov bekor qilinadimi? Barcha hisob-kitoblardan chiqariladi (bekor qilingan kvitansiya arxivda saqlanadi).`)) {
+      return;
     }
+    crmService.voidPayment(id, reason.trim() || 'Sabab ko\'rsatilmagan');
+    refresh();
+    showNotification('To\'lov bekor qilindi va moliya hisob-kitoblaridan olib tashlandi.');
   };
+
+  const activePayments = payments.filter((p) => p.status !== 'Voided');
 
   const filtered = payments.filter((p) => {
     const matchesSearch =
@@ -109,13 +126,14 @@ export const PaymentsView: React.FC = () => {
       p.id.toLowerCase().includes(search.toLowerCase());
 
     const matchesMethod = methodFilter === 'All' || p.method === methodFilter;
-    return matchesSearch && matchesMethod;
+    const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+    return matchesSearch && matchesMethod && matchesStatus;
   });
 
-  const totalCollected = payments.reduce((acc, p) => acc + p.amount, 0);
-  const clickSum = payments.filter((p) => p.method === 'Click').reduce((s, p) => s + p.amount, 0);
-  const paymeSum = payments.filter((p) => p.method === 'Payme').reduce((s, p) => s + p.amount, 0);
-  const cashSum = payments.filter((p) => p.method === 'Cash').reduce((s, p) => s + p.amount, 0);
+  const totalCollected = activePayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+  const clickSum = activePayments.filter((p) => p.method === 'Click').reduce((s, p) => s + (p.amount || 0), 0);
+  const paymeSum = activePayments.filter((p) => p.method === 'Payme').reduce((s, p) => s + (p.amount || 0), 0);
+  const cashSum = activePayments.filter((p) => p.method === 'Cash').reduce((s, p) => s + (p.amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -150,19 +168,19 @@ export const PaymentsView: React.FC = () => {
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400 block">Jami Tushum (Bu Oy)</span>
+          <span className="text-xs font-semibold text-slate-400 block">Jami Qabul Qilingan Tushum</span>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {totalCollected.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(totalCollected)}
           </div>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 block">
-            {payments.length} ta kvitansiya
+            {activePayments.length} ta faol kvitansiya
           </span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-sky-500 block">Click orqali</span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {clickSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(clickSum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Mobil ilova orqali</span>
         </div>
@@ -170,7 +188,7 @@ export const PaymentsView: React.FC = () => {
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-teal-500 block">Payme orqali</span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {paymeSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(paymeSum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Onlayn to'lov</span>
         </div>
@@ -178,7 +196,7 @@ export const PaymentsView: React.FC = () => {
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-emerald-500 block">Naqd Pul (Kassa)</span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
-            {cashSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+            {formatCurrency(cashSum)}
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">Markaz binosida</span>
         </div>
@@ -209,6 +227,16 @@ export const PaymentsView: React.FC = () => {
             <option value="Cash">Naqd pul</option>
             <option value="Card">Bank kartasi</option>
           </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="All">Barcha holatlar</option>
+            <option value="Completed">Faol (Completed)</option>
+            <option value="Voided">Bekor qilingan (Voided)</option>
+          </select>
         </div>
       </div>
 
@@ -228,10 +256,24 @@ export const PaymentsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-xs text-slate-400">
+                    Bu davrda to'lovlar qayd etilmagan.
+                  </td>
+                </tr>
+              )}
+              {filtered.map((p) => {
+                const isVoided = p.status === 'Voided';
+                return (
+                <tr key={p.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${isVoided ? 'opacity-50' : ''}`}>
                   <td className="py-3.5 px-4 font-mono font-bold text-slate-600 dark:text-slate-400">
                     #{p.id.slice(-6).toUpperCase()}
+                    {isVoided && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black border border-rose-500/20">
+                        BEKOR QILINGAN
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                     {p.studentName}
@@ -259,8 +301,8 @@ export const PaymentsView: React.FC = () => {
                       {p.method === 'Cash' ? 'Naqd' : p.method}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 font-mono font-black text-emerald-600 dark:text-emerald-400">
-                    +{p.amount.toLocaleString()} UZS
+                  <td className={`py-3.5 px-4 font-mono font-black ${isVoided ? 'text-slate-400 line-through' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {p.amount ? `+${p.amount.toLocaleString()} UZS` : ''}
                   </td>
                   <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
                     {p.date}
@@ -274,17 +316,20 @@ export const PaymentsView: React.FC = () => {
                       >
                         <Printer className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleVoidPayment(p.id, p.studentName)}
-                        className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                        title="Bekor qilish"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {!isVoided && (
+                        <button
+                          onClick={() => handleVoidPayment(p.id, p.studentName)}
+                          className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                          title="Bekor qilish (Void)"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

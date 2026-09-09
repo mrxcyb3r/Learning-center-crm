@@ -1,5 +1,6 @@
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { slugify } from '../utils/content';
 import {
   AuditLogEntry,
   CenterSettings,
@@ -209,10 +210,11 @@ export const INITIAL_TEACHERS: TeacherRecord[] = [
 export const INITIAL_COURSES: CourseData[] = [
   {
     id: 'c-tarix',
-    title: 'Tarix, Huquq, Geografiya',
-    shortTitle: 'Tarix & Huquq',
-    category: 'DTM & Milliy Sertifikat',
-    badge: 'Eng Ommabop',
+    title: 'DTM & Milliy Sertifikat',
+    shortTitle: 'DTM & Milliy Sertifikat',
+    slug: 'dtm-milliy-sertifikat',
+    category: 'Tarix, Huquq, Geografiya',
+    badge: 'Kafolatlangan Natija',
     description: "Yurisprudensiya, Xalqaro munosabatlar va Ijtimoiy-gumanitar oliygohlarga kiruvchilar uchun 100% natijaga yo'naltirilgan kompleks tayyorlov.",
     duration: '8 oy',
     lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
@@ -228,6 +230,8 @@ export const INITIAL_COURSES: CourseData[] = [
       'Milliy sertifikat topshirish strategiyasi',
       'Ota-onalarga oylik hisobot va davomat nazorati',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=900&q=75',
+    featured: true,
     isActive: true,
     isPublic: true,
     displayOrder: 1,
@@ -235,9 +239,10 @@ export const INITIAL_COURSES: CourseData[] = [
   {
     id: 'c-matematika',
     title: 'Matematika & Fizika',
-    shortTitle: 'Matematika',
+    shortTitle: 'Matematika & Fizika',
+    slug: 'matematika-fizika',
     category: 'Aniq Fanlar',
-    badge: 'Kafolatlangan Natija',
+    badge: 'Sertifikat Kafolati',
     description: "Texnika, Iqtisodiyot, Axborot texnologiyalari va xorijiy oliygohlar (Westminster, INHA, WIUT) uchun mukammal poydevor.",
     duration: '9 oy',
     lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
@@ -253,6 +258,8 @@ export const INITIAL_COURSES: CourseData[] = [
       'Mantiqiy masalalar va tezkor formulalar yechimi',
       'Barcha dars materiallari va testlar bepul beriladi',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1635372722656-389f87a941b7?auto=format&fit=crop&w=900&q=75',
+    featured: true,
     isActive: true,
     isPublic: true,
     displayOrder: 2,
@@ -260,9 +267,9 @@ export const INITIAL_COURSES: CourseData[] = [
   {
     id: 'c-cefr',
     title: 'CEFR Ingliz Tili (B2 / C1)',
-    shortTitle: 'CEFR English',
+    shortTitle: 'CEFR Ingliz Tili',
+    slug: 'cefr-ingliz-tili',
     category: 'Chet Tillari',
-    badge: 'Sertifikat Kafolati',
     description: "Listening, Reading, Writing va Speaking bo'yicha intensiv darslar. OTMga kirishda chet tilidan maksimal ball kafolati.",
     duration: '6 oy',
     lessonsPerWeek: 'Haftada 3 kun / 1.5 soatdan',
@@ -278,6 +285,7 @@ export const INITIAL_COURSES: CourseData[] = [
       'Insho yozish (Writing) shaxsiy tekshiruvi',
       'C1 sertifikatiga ega ustozlar darsi',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=900&q=75',
     isActive: true,
     isPublic: true,
     displayOrder: 3,
@@ -286,8 +294,8 @@ export const INITIAL_COURSES: CourseData[] = [
     id: 'c-kids',
     title: 'English Kids (3–10 yosh)',
     shortTitle: 'English Kids',
+    slug: 'english-kids',
     category: 'Bolalar Dasturi',
-    badge: 'O\'yin orqali ta\'lim',
     description: "Kichik yoshdagi bolalarga ingliz tilini qiziqarli o'yinlar, multfilmlar, qo'shiqlar va so'zlashuv mashg'ulotlari orqali o'rgatish.",
     duration: 'Davomiy',
     lessonsPerWeek: 'Haftada 3 kun / 1 soatdan',
@@ -303,6 +311,7 @@ export const INITIAL_COURSES: CourseData[] = [
       'Vizual kartochkalar va ijodiy mashg\'ulotlar',
       'Kichik guruhlar (maksimal 10 bola)',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=75',
     isActive: true,
     isPublic: true,
     displayOrder: 4,
@@ -311,8 +320,8 @@ export const INITIAL_COURSES: CourseData[] = [
     id: 'c-mental',
     title: 'Mental Arifmetika',
     shortTitle: 'Mental Arifmetika',
+    slug: 'mental-arifmetika',
     category: 'Mantiqiy Rivojlanish',
-    badge: 'Xotira & Diqqat',
     description: "Bolalarda xotira, tasavvur va miyaning ikki yarim sharlarini rivojlantiruvchi tezkor hisoblash kursi.",
     duration: '6 oy',
     lessonsPerWeek: 'Haftada 2 kun / 1.5 soatdan',
@@ -328,6 +337,7 @@ export const INITIAL_COURSES: CourseData[] = [
       'Diqqat va e\'tiborni jamlash mashqlari',
       'Xalqaro standartdagi sertifikat beriladi',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=75',
     isActive: true,
     isPublic: true,
     displayOrder: 5,
@@ -335,9 +345,9 @@ export const INITIAL_COURSES: CourseData[] = [
   {
     id: 'c-onatili',
     title: 'Ona Tili va Adabiyot',
-    shortTitle: 'Ona Tili',
+    shortTitle: 'Ona Tili va Adabiyot',
+    slug: 'ona-tili-va-adabiyot',
     category: 'DTM Majburiy & Asosiy',
-    badge: 'DTM Majburiy Blok',
     description: "Barcha yo'nalishlar uchun majburiy blok va filologiya yo'nalishlari uchun chuqurlashtirilgan ona tili va adabiyot kursi.",
     duration: '7 oy',
     lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
@@ -353,6 +363,7 @@ export const INITIAL_COURSES: CourseData[] = [
       'Muntazam testlar va DTM tahlillari',
       'Majburiy fanlar blokidan maksimal ball kafolati',
     ],
+    imageUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=900&q=75',
     isActive: true,
     isPublic: true,
     displayOrder: 6,
@@ -364,7 +375,7 @@ export const INITIAL_SCHEDULE: GroupScheduleItem[] = [
   {
     id: 'grp-01',
     groupName: 'Tarix Milliy Sertifikat - 1-guruh',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     courseId: 'c-tarix',
     teacher: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -383,7 +394,7 @@ export const INITIAL_SCHEDULE: GroupScheduleItem[] = [
   {
     id: 'grp-02',
     groupName: 'Tarix DTM - 2-guruh (Tushki)',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     courseId: 'c-tarix',
     teacher: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -459,7 +470,7 @@ export const INITIAL_SCHEDULE: GroupScheduleItem[] = [
   {
     id: 'grp-06',
     groupName: 'Tarix Bepul Sinov Darsi (Ochiq dars)',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     courseId: 'c-tarix',
     teacher: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -484,7 +495,7 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     fullName: 'Hasanboyeva Sevinch',
     name: 'Hasanboyeva Sevinch',
     phone: '+998 90 123 45 67',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     courseId: 'c-tarix',
     teacher: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -556,7 +567,7 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     fullName: 'Javohir Ergashev',
     name: 'Javohir Ergashev',
     phone: '+998 97 456 78 90',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     courseId: 'c-tarix',
     teacher: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
@@ -607,7 +618,7 @@ export const INITIAL_LEADS: Lead[] = [
     id: 'lead-01',
     name: 'Ali Valiyev',
     phone: '+998 90 123 45 67',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
     assignedTo: 'Diyorbek Furqatovich',
     notes: 'Tarix bo\'yicha Milliy sertifikatga qiziqmoqda, yakshanba kungi sinov darsiga chaqirildi.',
@@ -670,7 +681,7 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     id: 'pay-01',
     studentId: 'st-01',
     studentName: 'Hasanboyeva Sevinch',
-    course: 'Tarix, Huquq, Geografiya',
+    course: 'DTM & Milliy Sertifikat',
     amount: 380000,
     date: fmtIdxDate(2),
     method: 'Click',
@@ -810,7 +821,7 @@ export const INITIAL_CMS: CmsContent = {
   footerText: "Yangioboddagi zamonaviy o'quv markazi. Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha kafolatlangan ta'lim va natijalar.",
   copyrightText: "© 2026 Renessans O'quv Markazi. Barcha huquqlar himoyalangan.",
   seoTitle: "Renessans O'quv Markazi | Yangiobod - Bilimdan Natijaga",
-  seoDescription: "Yangioboddagi eng nufuzli o'quv markazi. Tarix, Huquq, Geografiya, Matematika, CEFR Ingliz tili va DTM tayyorlov kurslari.",
+  seoDescription: "Yangioboddagi eng nufuzli o'quv markazi. DTM & Milliy Sertifikat, Matematika, CEFR Ingliz tili va DTM tayyorlov kurslari.",
 
   isDraft: false,
   lastPublishedAt: "Bugun, 09:00",
@@ -980,9 +991,10 @@ class CrmService {
       modified = true;
     }
 
-    // Normalize courses to always have numeric monthlyFee
+    // Normalize courses to always have numeric monthlyFee + stable slug
     this.courses = this.courses.map((c) => ({
       ...c,
+      slug: c.slug || slugify(c.title),
       monthlyFee: Number(c.monthlyFee ?? 0),
       formattedFee: c.formattedFee || `${(Number(c.monthlyFee) || 0).toLocaleString()} UZS / oy`,
       isActive: c.isActive ?? true,
@@ -1094,10 +1106,15 @@ class CrmService {
     return [...this.courses];
   }
 
+  public getCourseBySlug(slug: string): CourseData | undefined {
+    return this.courses.find((c) => (c.slug || slugify(c.title)) === slug);
+  }
+
   public addCourse(course: Omit<CourseData, 'id'>): CourseData {
     const newCourse: CourseData = {
       ...course,
       id: `c-${Date.now()}`,
+      slug: course.slug || slugify(course.title),
       isActive: course.isActive ?? true,
       isPublic: course.isPublic ?? true,
       displayOrder: course.displayOrder || this.courses.length + 1,
@@ -1291,7 +1308,7 @@ class CrmService {
       id: `lead-${Date.now()}`,
       name: data.name.trim(),
       phone: data.phone.trim(),
-      course: data.course || 'Tarix, Huquq, Geografiya',
+      course: data.course || 'DTM & Milliy Sertifikat',
       createdAt: new Date().toISOString(),
       assignedTo: data.assignedTo || 'Qabulxona',
       notes: data.notes || 'Bepul sinov darsiga yozildi.',

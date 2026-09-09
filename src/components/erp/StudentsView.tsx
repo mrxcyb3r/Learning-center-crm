@@ -86,7 +86,7 @@ export const StudentsView: React.FC = () => {
     setFormPhone('+998 ');
     setFormParentName('');
     setFormParentPhone('+998 ');
-    const defaultCourse = courses[0]?.title || 'Tarix, Huquq, Geografiya';
+    const defaultCourse = courses[0]?.title || 'DTM & Milliy Sertifikat';
     setFormCourse(defaultCourse);
     const relatedGroup = schedule.find((s) => s.course === defaultCourse) || schedule[0];
     setFormGroupName(relatedGroup ? relatedGroup.groupName : 'Tarix-1');

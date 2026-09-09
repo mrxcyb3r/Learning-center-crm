@@ -31,6 +31,9 @@ export const TeachersView: React.FC = () => {
 
   // Form State for Add / Edit
   const [formName, setFormName] = useState('');
+  const [formFirstName, setFormFirstName] = useState('');
+  const [formMiddleName, setFormMiddleName] = useState('');
+  const [formLastName, setFormLastName] = useState('');
   const [formGender, setFormGender] = useState<TeacherGender>('male');
   const [formSubject, setFormSubject] = useState('');
   const [formSpecialization, setFormSpecialization] = useState('');
@@ -61,6 +64,9 @@ export const TeachersView: React.FC = () => {
   const handleOpenAdd = () => {
     setEditingTeacher(null);
     setFormName('');
+    setFormFirstName('');
+    setFormMiddleName('');
+    setFormLastName('');
     setFormGender('male');
     setFormSubject('');
     setFormSpecialization('');
@@ -80,6 +86,9 @@ export const TeachersView: React.FC = () => {
   const handleOpenEdit = (t: TeacherRecord) => {
     setEditingTeacher(t);
     setFormName(t.name);
+    setFormFirstName(t.firstName || '');
+    setFormMiddleName(t.middleName || '');
+    setFormLastName(t.lastName || '');
     setFormGender(t.gender || 'male');
     setFormSubject(t.subject || '');
     setFormSpecialization(t.specialization || '');
@@ -116,7 +125,9 @@ export const TeachersView: React.FC = () => {
 
   const handleSaveTeacher = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim()) return;
+
+    const structuredName = [formFirstName, formMiddleName, formLastName].filter(Boolean).join(' ').trim();
+    if (!formName.trim() && !structuredName) return;
 
     const achievementsList = formAchievements
       .split('\n')
@@ -124,7 +135,10 @@ export const TeachersView: React.FC = () => {
       .filter(Boolean);
 
     const payload = {
-      name: formName.trim(),
+      name: structuredName || formName.trim(),
+      firstName: formFirstName.trim(),
+      middleName: formMiddleName.trim(),
+      lastName: formLastName.trim(),
       gender: formGender,
       subject: formSubject.trim() || formSpecialization.trim(),
       specialization: formSpecialization.trim() || formSubject.trim(),
@@ -172,6 +186,8 @@ export const TeachersView: React.FC = () => {
   });
 
   const totalMonthlyPayroll = teachers.reduce((sum, t) => sum + (t.monthlySalary || 0), 0);
+
+  const structuredNamePreview = [formFirstName, formMiddleName, formLastName].filter(Boolean).join(' ').trim();
 
   return (
     <div className="space-y-6">
@@ -428,6 +444,51 @@ export const TeachersView: React.FC = () => {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Row: Structured name parts (optional) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Ism (ixtiyoriy)
+                  </label>
+                  <input
+                    type="text"
+                    value={formFirstName}
+                    onChange={(e) => setFormFirstName(e.target.value)}
+                    placeholder="Diyorbek"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Otasining ismi (ixtiyoriy)
+                  </label>
+                  <input
+                    type="text"
+                    value={formMiddleName}
+                    onChange={(e) => setFormMiddleName(e.target.value)}
+                    placeholder="Furqat o'g'li"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Familiya (ixtiyoriy)
+                  </label>
+                  <input
+                    type="text"
+                    value={formLastName}
+                    onChange={(e) => setFormLastName(e.target.value)}
+                    placeholder="Furqatov"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                {structuredNamePreview && (
+                  <p className="sm:col-span-3 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    Saytdagi to'liq ism: {structuredNamePreview}
+                  </p>
+                )}
               </div>
 
               {/* Row: Name and Gender */}

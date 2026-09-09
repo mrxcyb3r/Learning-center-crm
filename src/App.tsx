@@ -16,6 +16,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppDataProvider } from './context/AppDataContext';
 import { AppBackground } from './components/AppBackground';
 import { RenessansLandingPage } from './pages/RenessansLandingPage';
+import { PublicCoursesPage } from './pages/PublicCoursesPage';
+import { CourseDetailPage } from './pages/CourseDetailPage';
+import { TeacherPage } from './pages/TeacherPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
 import { ParticleBackground } from './components/UI/ParticleBackground';
 import { SEOHead } from './components/SEOHead';
@@ -71,6 +74,9 @@ function MainAppRoutes() {
     <Routes>
       {/* Public Website for Renessans Learning Center */}
       <Route path="/" element={<RenessansLandingPage />} />
+      <Route path="/courses" element={<PublicCoursesPage />} />
+      <Route path="/courses/:slug" element={<CourseDetailPage />} />
+      <Route path="/teachers/:slug" element={<TeacherPage />} />
 
       {/* Center ERP & Leads CRM */}
       <Route path="/admin/*" element={<CenterErpApp />} />

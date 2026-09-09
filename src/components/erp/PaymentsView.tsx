@@ -69,7 +69,7 @@ export const PaymentsView: React.FC = () => {
     } else {
       setFormStudentId('');
       setFormStudentName('');
-      setFormCourse(courses[0]?.title || 'Tarix, Huquq, Geografiya');
+      setFormCourse(courses[0]?.title || 'DTM & Milliy Sertifikat');
       setFormAmount('380000');
     }
     setFormMethod('Click');

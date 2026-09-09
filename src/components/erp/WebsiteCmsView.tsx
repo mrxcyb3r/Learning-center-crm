@@ -16,6 +16,8 @@ import {
   MapPin,
   Send,
   Check,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
 import { CmsData, FaqItem, StudentResult } from '../../types/crm';
@@ -37,6 +39,7 @@ export const WebsiteCmsView: React.FC = () => {
   const [newResUni, setNewResUni] = useState("O'zDJTU");
   const [newResBadge, setNewResBadge] = useState('100% Davlat Granti');
   const [newResYear, setNewResYear] = useState('2025');
+  const [newResPublished, setNewResPublished] = useState(true);
   const [isAddingResult, setIsAddingResult] = useState(false);
 
   useEffect(() => {
@@ -92,6 +95,9 @@ export const WebsiteCmsView: React.FC = () => {
       university: newResUni.trim(),
       badge: newResBadge.trim(),
       year: newResYear.trim(),
+      admissionType: newResBadge.trim().toLowerCase().includes('grant') ? 'Grant' : 'Kontrakt',
+      published: newResPublished,
+      order: (cms.results?.length || 0) + 1,
     };
 
     const updated = {
@@ -101,6 +107,7 @@ export const WebsiteCmsView: React.FC = () => {
     setCms(updated);
     crmService.updateCmsData(updated);
     setNewResName('');
+    setNewResPublished(true);
     setIsAddingResult(false);
   };
 
@@ -432,6 +439,19 @@ export const WebsiteCmsView: React.FC = () => {
                       className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                     />
                   </div>
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newResPublished}
+                        onChange={(e) => setNewResPublished(e.target.checked)}
+                        className="w-4 h-4 text-amber-500 rounded focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Saytda nashr etish
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
@@ -463,6 +483,9 @@ export const WebsiteCmsView: React.FC = () => {
                   <div>
                     <span className="font-bold text-slate-900 dark:text-white text-sm block">
                       {r.studentName}
+                      {r.published === false && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 text-[9px] font-bold uppercase">Nashrda emas</span>
+                      )}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400">
                       {r.subject} • {r.university} ({r.year})
@@ -470,6 +493,33 @@ export const WebsiteCmsView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-3">
+                    {r.published === false ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: true } : x)) };
+                          setCms(updated);
+                          crmService.updateCmsData(updated);
+                        }}
+                        title="Saytda nashr etish"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 transition"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: false } : x)) };
+                          setCms(updated);
+                          crmService.updateCmsData(updated);
+                        }}
+                        title="Saytdan yashirish"
+                        className="p-1.5 rounded-lg text-emerald-500 hover:text-slate-500 transition"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <span className="font-black text-amber-600 dark:text-amber-400 font-mono text-sm">
                       {r.score}
                     </span>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Award, Briefcase, GraduationCap, CheckCircle2, Phone, Send } from 'lucide-react';
+import { Award, Briefcase, GraduationCap, CheckCircle2, Phone, Send, ArrowUpRight } from 'lucide-react';
 import { TeacherRecord } from '../../types/crm';
 import { crmService } from '../../services/crmService';
+import { slugify } from '../../utils/content';
 import { TeacherAvatar } from '../common/TeacherAvatar';
 
 interface TeachersSectionProps {
@@ -78,13 +80,22 @@ export const TeachersSection: React.FC<TeachersSectionProps> = ({ teachers: prop
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition">
-                        {teacher.name}
-                      </h3>
+                      <Link to={`/teachers/${slugify(teacher.name)}`}>
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition">
+                          {teacher.name}
+                        </h3>
+                      </Link>
                       <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mt-1">
                         {teacher.subject || teacher.specialization}
                       </p>
                     </div>
+                    <Link
+                      to={`/teachers/${slugify(teacher.name)}`}
+                      aria-label={`${teacher.name} — profil sahifasi`}
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:text-amber-500 hover:border-amber-500/40 border border-transparent transition"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                    </Link>
                   </div>
 
                   {teacher.qualification && (

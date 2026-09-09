@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 interface PublicNavbarProps {
   onOpenTrialModal: () => void;
+  activePage?: string;
 }
 
-export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal }) => {
+export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, activePage = 'landing' }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -21,12 +23,24 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal }) 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollTo = (id: string) => {
+  const goCourses = () => {
     setMobileMenuOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    navigate('/courses');
+  };
+
+  const goSection = (id: string) => {
+    setMobileMenuOpen(false);
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 350);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const goHome = () => {
+    setMobileMenuOpen(false);
+    navigate('/');
   };
 
   return (
@@ -41,7 +55,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal }) 
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <div
-            onClick={() => scrollTo('hero')}
+            onClick={goHome}
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20 group-hover:scale-105 transition">
@@ -60,25 +74,29 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal }) 
           {/* Desktop Nav Links */}
           <nav className="hidden lg:flex items-center gap-7">
             <button
-              onClick={() => scrollTo('courses')}
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
+              onClick={goCourses}
+              className={`text-sm font-semibold transition cursor-pointer ${
+                activePage === 'courses'
+                  ? 'text-amber-500 dark:text-amber-400'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400'
+              }`}
             >
               Kurslar
             </button>
             <button
-              onClick={() => scrollTo('teachers')}
+              onClick={() => goSection('teachers')}
               className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
             >
               Ustozlar
             </button>
             <button
-              onClick={() => scrollTo('results')}
+              onClick={() => goSection('results')}
               className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
             >
               Natijalar
             </button>
             <button
-              onClick={() => scrollTo('contact')}
+              onClick={() => goSection('contact')}
               className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
             >
               Manzillarimiz
@@ -148,25 +166,27 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal }) 
           <div className="lg:hidden mt-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => scrollTo('courses')}
-                className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
+                onClick={goCourses}
+                className={`text-left font-bold text-sm py-2 ${
+                  activePage === 'courses' ? 'text-amber-500' : 'text-slate-800 dark:text-slate-200'
+                }`}
               >
                 Kurslar
               </button>
               <button
-                onClick={() => scrollTo('teachers')}
+                onClick={() => goSection('teachers')}
                 className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
               >
                 Ustozlar
               </button>
               <button
-                onClick={() => scrollTo('results')}
+                onClick={() => goSection('results')}
                 className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
               >
                 Natijalar
               </button>
               <button
-                onClick={() => scrollTo('contact')}
+                onClick={() => goSection('contact')}
                 className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
               >
                 Manzillarimiz

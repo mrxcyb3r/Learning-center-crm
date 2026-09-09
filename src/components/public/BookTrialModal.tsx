@@ -10,19 +10,10 @@ interface BookTrialModalProps {
   onLeadSuccess?: () => void;
 }
 
-const COURSES_OPTIONS = [
-  'Tarix, Huquq, Geografiya',
-  'Matematika & SAT',
-  'CEFR Ingliz tili',
-  'Mental Arifmetika',
-  'Ona tili va Adabiyot',
-  'English Kids',
-];
-
 export const BookTrialModal: React.FC<BookTrialModalProps> = ({
   isOpen,
   onClose,
-  defaultCourse = 'Tarix, Huquq, Geografiya',
+  defaultCourse = 'DTM & Milliy Sertifikat',
   onLeadSuccess,
 }) => {
   const [fullName, setFullName] = useState('');
@@ -32,6 +23,18 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [courseOptions, setCourseOptions] = useState<string[]>([defaultCourse]);
+
+  React.useEffect(() => {
+    // Dynamic course options from live CMS data (no hardcoded list).
+    const courses = crmService
+      .getCourses()
+      .filter((c) => c.isActive && c.isPublic !== false)
+      .map((c) => c.title);
+    if (courses.length > 0) {
+      setCourseOptions(courses);
+    }
+  }, []);
 
   React.useEffect(() => {
     if (defaultCourse) {
@@ -198,7 +201,7 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
                       onChange={(e) => setSelectedCourse(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition appearance-none cursor-pointer"
                     >
-                      {COURSES_OPTIONS.map((c) => (
+                      {courseOptions.map((c) => (
                         <option key={c} value={c}>
                           {c}
                         </option>

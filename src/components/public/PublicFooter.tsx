@@ -54,33 +54,33 @@ export const PublicFooter: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
-                  Tarix, Huquq, Geografiya
+                <a href="/courses/dtm-milliy-sertifikat" className="hover:text-amber-400 transition">
+                  DTM & Milliy Sertifikat
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
-                  Matematika & SAT
+                <a href="/courses/matematika-fizika" className="hover:text-amber-400 transition">
+                  Matematika & Fizika
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
+                <a href="/courses/cefr-ingliz-tili" className="hover:text-amber-400 transition">
                   CEFR Ingliz tili (B2/C1)
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
+                <a href="/courses/english-kids" className="hover:text-amber-400 transition">
+                  English Kids (3–10 yosh)
+                </a>
+              </li>
+              <li>
+                <a href="/courses/mental-arifmetika" className="hover:text-amber-400 transition">
                   Mental Arifmetika
                 </a>
               </li>
               <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
-                  Ona tili va Adabiyot
-                </a>
-              </li>
-              <li>
-                <a href="#courses" className="hover:text-amber-400 transition">
-                  English Kids
+                <a href="/courses/ona-tili-va-adabiyot" className="hover:text-amber-400 transition">
+                  Ona Tili va Adabiyot
                 </a>
               </li>
             </ul>

@@ -73,6 +73,9 @@ export type TeacherStatus = 'Active' | 'On Leave' | 'Archived';
 export interface TeacherRecord {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
   gender: TeacherGender;
   subject?: string;
   specialization: string;
@@ -101,6 +104,7 @@ export interface CourseData {
   id: string;
   title: string;
   shortTitle?: string;
+  slug?: string;
   category: string;
   badge?: string;
   description: string;
@@ -114,6 +118,12 @@ export interface CourseData {
   teacherName?: string;
   teacherId?: string;
   features: string[];
+  overview?: string;
+  outcomes?: string[];
+  imageUrl?: string;
+  socialImage?: string;
+  gallery?: string[];
+  featured?: boolean;
   isActive: boolean;
   isPublic: boolean;
   displayOrder?: number;
@@ -153,6 +163,8 @@ export interface StudentResult {
   id: string;
   studentName: string;
   score: string;
+  previousScore?: string;
+  improvement?: string;
   university: string;
   subject?: string;
   fieldOfStudy?: string;
@@ -160,7 +172,12 @@ export interface StudentResult {
   admissionType?: 'Grant' | 'Kontrakt';
   year: string;
   category?: 'DTM' | 'Milliy Sertifikat' | 'CEFR' | 'OTMga qabul' | 'Olimpiada' | 'Davlat granti';
+  courseId?: string;
   photo?: string;
+  certificateImage?: string;
+  published?: boolean;
+  featured?: boolean;
+  order?: number;
   badge?: string;
 }
 

@@ -1,59 +1,47 @@
-import React, { useState } from 'react';
-import { PublicNavbar } from '../components/public/PublicNavbar';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { PublicLayout, useTrialModal } from '../components/public/PublicLayout';
 import { HeroSection } from '../components/public/HeroSection';
 import { CoursesSection } from '../components/public/CoursesSection';
 import { TeachersSection } from '../components/public/TeachersSection';
 import { ResultsSection } from '../components/public/ResultsSection';
 import { FaqSection } from '../components/public/FaqSection';
 import { ContactSection } from '../components/public/ContactSection';
-import { PublicFooter } from '../components/public/PublicFooter';
-import { BookTrialModal } from '../components/public/BookTrialModal';
+import { SEOHead } from '../components/SEOHead';
+import { getSiteUrl } from '../utils/content';
 
 export const RenessansLandingPage: React.FC = () => {
-  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
-  const [selectedCourseForTrial, setSelectedCourseForTrial] = useState('Tarix, Huquq, Geografiya');
+  const { openTrial } = useTrialModal();
+  const [searchParams] = useSearchParams();
 
-  const handleOpenTrial = (courseName?: string) => {
-    if (courseName) {
-      setSelectedCourseForTrial(courseName);
+  // Support deep links like /?trial=CEFR+Ingliz+Tili — auto-opens the booking modal.
+  useEffect(() => {
+    const trial = searchParams.get('trial');
+    if (trial && trial.trim()) {
+      openTrial(trial);
     }
-    setIsTrialModalOpen(true);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleScrollToCourses = () => {
     const el = document.getElementById('courses');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950">
-      {/* Fixed Conversion-Optimized Navbar */}
-      <PublicNavbar onOpenTrialModal={() => handleOpenTrial('Tarix, Huquq, Geografiya')} />
-
-      {/* Main Sections */}
-      <main>
-        <HeroSection
-          onOpenTrialModal={handleOpenTrial}
-          onScrollToCourses={handleScrollToCourses}
-        />
-        <CoursesSection onSelectCourseForTrial={handleOpenTrial} />
-        <TeachersSection />
-        <ResultsSection />
-        <FaqSection />
-        <ContactSection onOpenTrialModal={() => handleOpenTrial('Tarix, Huquq, Geografiya')} />
-      </main>
-
-      {/* Footer */}
-      <PublicFooter />
-
-      {/* Conversion Engine: Book Free Trial Modal */}
-      <BookTrialModal
-        isOpen={isTrialModalOpen}
-        onClose={() => setIsTrialModalOpen(false)}
-        defaultCourse={selectedCourseForTrial}
+    <PublicLayout activePage="landing">
+      <SEOHead
+        title="Renessans O'quv Markazi — DTM, Milliy Sertifikat va CEFR tayyorlovi"
+        description="Yangioboddagi nufuzli o'quv markazi. DTM & Milliy sertifikat, Aniq fanlar, CEFR ingliz tili, English Kids, mental arifmetika va ona tili kurslari. Bepul sinov darsi!"
+        canonicalUrl={getSiteUrl()}
       />
-    </div>
+
+      <HeroSection onOpenTrialModal={openTrial} onScrollToCourses={handleScrollToCourses} />
+      <CoursesSection onSelectCourseForTrial={openTrial} />
+      <TeachersSection />
+      <ResultsSection />
+      <FaqSection />
+      <ContactSection onOpenTrialModal={() => openTrial()} />
+    </PublicLayout>
   );
 };

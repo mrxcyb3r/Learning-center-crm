@@ -53,7 +53,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       await crmService.createLead({
         name: leadName.trim(),
         phone: leadPhone.trim(),
-        course: selectedCourse || 'Tarix, Huquq, Geografiya',
+        course: selectedCourse || 'DTM & Milliy Sertifikat',
         source: 'Bosh sahifa (Hero forma)',
         notes: 'Bosh sahifadan bepul sinov darsiga yozildi.',
       });
@@ -122,7 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
             >
               <button
-                onClick={() => onOpenTrialModal(selectedCourse || 'Tarix, Huquq, Geografiya')}
+                onClick={() => onOpenTrialModal(selectedCourse || 'DTM & Milliy Sertifikat')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition transform active:scale-95 flex items-center justify-center gap-3 cursor-pointer"
               >
                 <span>Bepul sinov darsiga yozilish</span>

@@ -89,7 +89,7 @@ export const TelegramView: React.FC = () => {
       id: 'test-' + Date.now(),
       name: 'Sinov Murojaatchisi (Test)',
       phone: '+998 90 862 22 26',
-      course: 'Tarix, Huquq, Geografiya',
+      course: 'DTM & Milliy Sertifikat',
       status: 'Yangi',
       createdAt: new Date().toISOString(),
     });

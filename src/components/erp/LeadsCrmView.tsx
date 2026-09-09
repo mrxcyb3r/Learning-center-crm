@@ -64,6 +64,10 @@ export const LeadsCrmView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [selectedCourse, setSelectedCourse] = useState<string>('All');
+  const [selectedSource, setSelectedSource] = useState<string>('All');
+  const [selectedAssigned, setSelectedAssigned] = useState<string>('All');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('All');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Lead detail modal
@@ -288,17 +292,41 @@ export const LeadsCrmView: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // Filtered Leads
-  const filteredLeads = leads.filter((lead) => {
-    const matchesSearch =
-      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.phone.includes(searchQuery);
+  // Filtered & Sorted Leads
+  const filterCutoff = (() => {
+    if (selectedPeriod === 'today') return Date.now() - 24 * 3600 * 1000;
+    if (selectedPeriod === '7d') return Date.now() - 7 * 24 * 3600 * 1000;
+    if (selectedPeriod === '30d') return Date.now() - 30 * 24 * 3600 * 1000;
+    return 0;
+  })();
 
-    const matchesStatus = selectedStatus === 'All' || lead.status === selectedStatus;
-    const matchesCourse = selectedCourse === 'All' || lead.course === selectedCourse;
+  const filteredLeads = leads
+    .filter((lead) => {
+      const matchesSearch =
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.phone.includes(searchQuery);
 
-    return matchesSearch && matchesStatus && matchesCourse;
-  });
+      const matchesStatus = selectedStatus === 'All' || lead.status === selectedStatus;
+      const matchesCourse = selectedCourse === 'All' || lead.course === selectedCourse;
+      const matchesSource = selectedSource === 'All' || (lead.source || 'Website') === selectedSource;
+      const matchesAssigned = selectedAssigned === 'All' || (lead.assignedTo || '') === selectedAssigned;
+      const matchesPeriod = filterCutoff === 0 || new Date(lead.createdAt).getTime() >= filterCutoff;
+
+      return matchesSearch && matchesStatus && matchesCourse && matchesSource && matchesAssigned && matchesPeriod;
+    })
+    .sort((a, b) => {
+      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return sortOrder === 'desc' ? -diff : diff;
+    });
+
+  const assignedOptions = Array.from(new Set(leads.map((l) => l.assignedTo).filter(Boolean))).sort();
+
+  // Follow-up status: lead needs action when still open and not contacted recently
+  const isFollowUpOverdue = (lead: Lead) => {
+    if (lead.status === "O'quvchiga aylandi" || lead.status === "Yo'qotildi") return false;
+    const base = lead.lastContactedAt ? new Date(lead.lastContactedAt).getTime() : new Date(lead.createdAt).getTime();
+    return Date.now() - base > 2 * 24 * 3600 * 1000;
+  };
 
   const statusCount = (st: LeadStatus) => leads.filter((l) => l.status === st).length;
   const trialScheduledLeads = leads.filter((l) => l.status === 'Sinov darsi belgilandi');
@@ -418,6 +446,47 @@ export const LeadsCrmView: React.FC = () => {
               <option key={c.id} value={c.title}>{c.title}</option>
             ))}
           </select>
+
+          <select
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="All">Manba: barchasi</option>
+            {LEAD_SOURCES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedAssigned}
+            onChange={(e) => setSelectedAssigned(e.target.value)}
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="All">Mas'ul: barchasi</option>
+            {assignedOptions.map((a) => (
+              <option key={a} value={a as string}>{a}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="All">Davr: barchasi</option>
+            <option value="today">Bugun</option>
+            <option value="7d">Oxirgi 7 kun</option>
+            <option value="30d">Oxirgi 30 kun</option>
+          </select>
+
+          <button
+            onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer hover:border-amber-400 transition"
+            title="Murojaatlar tartibi"
+          >
+            {sortOrder === 'desc' ? 'Yangi birinchi' : 'Eski birinchi'}
+          </button>
         </div>
       </div>
 
@@ -451,8 +520,16 @@ export const LeadsCrmView: React.FC = () => {
                     onClick={() => handleOpenDetail(lead)}
                   >
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white">
-                        {lead.name}
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {lead.name}
+                        </span>
+                        {isFollowUpOverdue(lead) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase">
+                            <Clock className="w-2.5 h-2.5" />
+                            Follow-up
+                          </span>
+                        )}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         {formatDateTime(lead.createdAt)} • {lead.source || 'Website'}
@@ -769,10 +846,63 @@ export const LeadsCrmView: React.FC = () => {
                 </div>
               </section>
 
+              {/* FOLLOW-UP STATUS */}
+              <section>
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> 4. Faoliyat (kelib tushish tarixi)
+                </h4>
+                <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 p-4 space-y-3">
+                  {(function renderTimeline() {
+                    const events: { label: string; when: string; tone: string }[] = [];
+                    events.push({
+                      label: 'Ariza qabul qilindi',
+                      when: formatDateTime(detailLead.createdAt),
+                      tone: 'bg-blue-500',
+                    });
+                    if (detailLead.lastContactedAt) {
+                      events.push({
+                        label: 'So\'nggi murojaat',
+                        when: formatDateTime(detailLead.lastContactedAt),
+                        tone: 'bg-emerald-500',
+                      });
+                    }
+                    if (detailLead.nextAction) {
+                      events.push({
+                        label: 'Keyingi harakat: ' + detailLead.nextAction,
+                        when: detailLead.lastContactedAt ? formatDateTime(detailLead.lastContactedAt) : 'Reja',
+                        tone: 'bg-amber-500',
+                      });
+                    }
+                    if (detailLead.trialDateTime) {
+                      events.push({
+                        label: 'Sinov darsi belgilandi',
+                        when: formatDateTime(detailLead.trialDateTime),
+                        tone: 'bg-purple-500',
+                      });
+                    }
+                    if (detailLead.status === "O'quvchiga aylandi") {
+                      events.push({ label: "O'quvchiga aylantirildi", when: 'O\'quvchilar bo\'limida', tone: 'bg-emerald-600' });
+                    }
+                    if (detailLead.status === "Yo'qotildi") {
+                      events.push({ label: 'Ariza yo\'qotildi', when: detailLead.lostReason || 'Sabab ko\'rsatilmagan', tone: 'bg-slate-500' });
+                    }
+                    return events.map((ev, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className={`w-2 h-2 rounded-full ${ev.tone} mt-1.5 shrink-0`} />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{ev.label}</div>
+                          <div className="text-[10px] text-slate-400">{ev.when}</div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </section>
+
               {/* NOTES */}
               <section>
                 <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" /> 4. Konsultatsiya & Izohlar
+                  <MapPin className="w-3.5 h-3.5" /> 5. Konsultatsiya & Izohlar
                 </h4>
                 <textarea
                   rows={3}

@@ -100,6 +100,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   const totalLeads = leads.length;
   const conversionRate = totalLeads > 0 ? Math.round((countEnrolled / totalLeads) * 100) : 0;
 
+  // Follow-up required: leads that still need contact (New / Contacted, no trial date yet)
+  const followUpLeads = leads
+    .filter((l) => {
+      const st = normalizeLeadStatus(l.status);
+      return st === 'New' || st === 'Contacted' || st === 'Trial Scheduled' || st === 'Trial Completed';
+    })
+    .slice(0, 5);
+
+  // Payment alerts: students with real debt or overdue status
+  const debtorsList = studentsList
+    .filter((s) => toSafeNumber(s.debtAmount) > 0 || s.paymentStatus === 'Overdue' || s.paymentStatus === 'Due')
+    .map((s) => {
+      const amount = toSafeNumber(s.debtAmount) > 0 ? toSafeNumber(s.debtAmount) : toSafeNumber(s.monthlyFee || s.tuitionFee);
+      return {
+        id: s.id,
+        name: getStudentName(s),
+        course: s.course,
+        amount,
+        monthsOverdue: 0,
+      };
+    });
+
   // Leader pipeline status counts
   const paymentStats = {
     paid: studentsList.filter((s) => s.paymentStatus === 'Paid').length,
@@ -356,10 +378,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  So'nggi Murojaatlar
+                  Follow-up Talab Qilinadi
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Veb-sayt, Telegram va telefondan kelgan so'nggi arizalar
+                  Hali aloqa qilinmagan yoki ishlanmagan arizalar
                 </p>
               </div>
               <button
@@ -372,7 +394,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
             </div>
 
             <div className="space-y-3">
-              {leads.slice(0, 5).map((lead) => {
+              {followUpLeads.map((lead) => {
                 const status = normalizeLeadStatus(lead.status);
                 return (
                   <div
@@ -441,13 +463,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
                         <option value="O'quvchiga aylandi">O'quvchiga aylandi</option>
                         <option value="Yo'qotildi">Yo'qotildi</option>
                       </select>
+
+                      <button
+                        onClick={() => onNavigateTab('leads')}
+                        className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-amber-500 hover:border-amber-500/40 transition cursor-pointer"
+                        title="CRM da ochish"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
               })}
-              {leads.length === 0 && (
+              {followUpLeads.length === 0 && (
                 <div className="py-8 text-center text-xs text-slate-400">
-                  Hozircha murojaatlar yo'q.
+                  Hozircha ishlanmagan murojaatlar yo'q.
                 </div>
               )}
             </div>
@@ -530,6 +560,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
                 <span className="text-xl font-black text-red-600 dark:text-red-400 mt-0.5 block">{paymentStats.overdue}</span>
                 <span className="text-[10px] text-slate-400">Eslatma kerak</span>
               </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                To'lov Eslatmalari
+              </div>
+              {debtorsList.length > 0 ? (
+                <div className="space-y-2">
+                  {debtorsList.slice(0, 4).map((d) => (
+                    <div key={d.id} className="p-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/40 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{d.name}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                          {d.course} • <span className="text-rose-600 dark:text-rose-400 font-semibold">{formatCurrencyShort(d.amount)} UZS</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onNavigateTab('payments')}
+                        className="shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition cursor-pointer"
+                      >
+                        To'lov
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-3 text-center text-xs text-slate-400">
+                  Qarzdorlik yo'q.
+                </div>
+              )}
             </div>
           </div>
 
@@ -616,7 +677,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
                     tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`}
                   />
                   <Tooltip
-                    formatter={(val: any) => [`${Number(val).toLocaleString()} UZS`, '']}
+                    formatter={(val: number | string) => [`${Number(val).toLocaleString()} UZS`, '']}
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />

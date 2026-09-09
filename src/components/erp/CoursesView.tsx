@@ -16,11 +16,13 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
-import { CourseData, TeacherRecord } from '../../types/crm';
+import { CourseData, GroupScheduleItem, StudentRecord, TeacherRecord } from '../../types/crm';
 
 export const CoursesView: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
   const [editingCourse, setEditingCourse] = useState<CourseData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
@@ -43,6 +45,18 @@ export const CoursesView: React.FC = () => {
   const refreshData = () => {
     setCourses(crmService.getCourses());
     setTeachers(crmService.getTeachers().filter((t) => t.status === 'Active'));
+    setSchedule(crmService.getSchedule());
+    setStudents(crmService.getStudents());
+  };
+
+  const courseStats = (title: string) => {
+    const activeStudents = students.filter(
+      (s) => s.course === title && (s.status === 'Active' || s.status === 'Trial' || s.status === 'Paused')
+    ).length;
+    const groups = schedule.filter((g) => g.course === title && g.status !== 'Archived');
+    const groupSeats = groups.reduce((sum, g) => sum + (g.maxCapacity || 16), 0);
+    const groupFilled = groups.reduce((sum, g) => sum + (g.studentsCount || 0), 0);
+    return { students: activeStudents, groups: groups.length, seats: groupSeats, filled: groupFilled };
   };
 
   useEffect(() => {
@@ -242,6 +256,36 @@ export const CoursesView: React.FC = () => {
                   ))}
                 </div>
               )}
+
+              {/* Live stats */}
+              {(() => {
+                const st = courseStats(c.title);
+                if (st.students === 0 && st.groups === 0) {
+                  return (
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
+                      Hozircha o'quvchilar biriktirilmagan.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="text-base font-black text-slate-900 dark:text-white">{st.students}</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">O'quvchi</div>
+                    </div>
+                    <div>
+                      <div className="text-base font-black text-slate-900 dark:text-white">{st.groups}</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Guruh</div>
+                    </div>
+                    <div>
+                      <div className="text-base font-black text-amber-600 dark:text-amber-400">
+                        {st.seats > 0 ? Math.round((st.filled / st.seats) * 100) : 0}%
+                      </div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bandlik</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Bottom: Monthly Fee & Actions */}

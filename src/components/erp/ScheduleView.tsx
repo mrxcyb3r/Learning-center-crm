@@ -107,15 +107,20 @@ export const ScheduleView: React.FC = () => {
     e.preventDefault();
     if (!formGroupName.trim()) return;
 
+    if (conflictWarning) {
+      showNotification('Xona / ustoz bandligi sababli jadval to\'qnashuvi bor. Avval to\'qnashuvni hal qiling.');
+      return;
+    }
+
     const courseObj = courses.find((c) => c.id === formCourseId);
     const teacherObj = teachers.find((t) => t.id === formTeacherId);
 
     const payload = {
       groupName: formGroupName.trim(),
-      course: courseObj ? courseObj.title : 'Tarix, Huquq, Geografiya',
-      courseId: formCourseId,
-      teacher: teacherObj ? teacherObj.name : 'Diyorbek Furqatovich',
-      teacherId: formTeacherId,
+      course: courseObj ? courseObj.title : (editingItem?.course || 'Kurs tanlanmagan'),
+      courseId: formCourseId || editingItem?.courseId || '',
+      teacher: teacherObj ? teacherObj.name : (editingItem?.teacher || 'Ustoz tayinlanmagan'),
+      teacherId: formTeacherId || editingItem?.teacherId || '',
       branch: formBranch,
       room: formRoom,
       days: formDays,

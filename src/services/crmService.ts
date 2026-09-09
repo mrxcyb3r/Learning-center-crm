@@ -651,7 +651,19 @@ export const INITIAL_LEADS: Lead[] = [
   },
 ];
 
-// Seed Payments
+// Seed Payments — dates are relative to "today" so demo KPIs/finance chart always look alive
+const fmtIdxDate = (offsetDays: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const fmtIdxMonth = (offsetMonths: number, day = 1) => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - offsetMonths);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
   {
     id: 'pay-01',
@@ -659,13 +671,13 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     studentName: 'Hasanboyeva Sevinch',
     course: 'Tarix, Huquq, Geografiya',
     amount: 380000,
-    date: '2026-03-01',
+    date: fmtIdxDate(2),
     method: 'Click',
     receiptNumber: 'REC-24891',
     status: 'Completed',
     recordedBy: 'Administrator',
-    notes: 'Mart oyi uchun to\'liq to\'lov',
-    month: '2026-03',
+    notes: 'Joriy oy uchun to\'liq to\'lov',
+    month: fmtIdxMonth(0).slice(0, 7),
   },
   {
     id: 'pay-02',
@@ -673,13 +685,13 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     studentName: 'Azizbek Toshmatov',
     course: 'Matematika & Fizika',
     amount: 380000,
-    date: '2026-03-03',
+    date: fmtIdxDate(5),
     method: 'Payme',
     receiptNumber: 'REC-24892',
     status: 'Completed',
     recordedBy: 'Administrator',
-    notes: 'Mart oyi to\'lovi',
-    month: '2026-03',
+    notes: 'Joriy oy to\'lovi',
+    month: fmtIdxMonth(0).slice(0, 7),
   },
   {
     id: 'pay-03',
@@ -687,13 +699,13 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     studentName: 'Dilnoza Sobirova',
     course: 'Mental Arifmetika',
     amount: 280000,
-    date: '2026-03-05',
+    date: fmtIdxMonth(1, 5),
     method: 'Cash',
     receiptNumber: 'REC-24893',
     status: 'Completed',
     recordedBy: 'Qabulxona',
     notes: 'Naqd qabul qilindi, chek berildi',
-    month: '2026-03',
+    month: fmtIdxMonth(1).slice(0, 7),
   },
 ];
 
@@ -704,11 +716,11 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     category: 'Teacher Salary',
     title: 'O\'qituvchi oyligi - Diyorbek Furqatovich',
     amount: 4500000,
-    date: '2026-03-01',
+    date: fmtIdxDate(3),
     recipient: 'Diyorbek Furqatovich',
     teacherId: 't-diyorbek',
-    month: '2026-02',
-    notes: 'Fevral oyi uchun to\'liq oylik maosh to\'landi',
+    month: fmtIdxMonth(1).slice(0, 7),
+    notes: 'O\'tgan oy uchun to\'liq oylik maosh to\'landi',
     paymentMethod: 'Bank Transfer',
     status: 'Paid',
   },
@@ -717,21 +729,21 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     category: 'Teacher Salary',
     title: 'O\'qituvchi oyligi - Jasur Alimov',
     amount: 3500000,
-    date: '2026-03-01',
+    date: fmtIdxDate(3),
     recipient: 'Jasur Alimov',
     teacherId: 't-jasur',
-    month: '2026-02',
+    month: fmtIdxMonth(1).slice(0, 7),
     paymentMethod: 'Bank Transfer',
     status: 'Paid',
   },
   {
     id: 'exp-03',
     category: 'Rent',
-    title: '1-Filial Bino Ijarasi (Mart oyi)',
+    title: '1-Filial Bino Ijarasi (Joriy oy)',
     amount: 5500000,
-    date: '2026-03-02',
+    date: fmtIdxDate(1),
     recipient: 'Yangiobod 1-maktab ma\'muriyati',
-    month: '2026-03',
+    month: fmtIdxMonth(0).slice(0, 7),
     paymentMethod: 'Bank Transfer',
     status: 'Paid',
   },
@@ -740,9 +752,9 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     category: 'Marketing',
     title: 'Telegram & Banner Reklamalari',
     amount: 1800000,
-    date: '2026-03-04',
+    date: fmtIdxDate(4),
     recipient: 'Reklama agentligi',
-    month: '2026-03',
+    month: fmtIdxMonth(0).slice(0, 7),
     notes: 'Yangiobod kanallarida e\'lonlar va flyerlar chop etish',
     paymentMethod: 'Click',
     status: 'Paid',
@@ -752,72 +764,16 @@ export const INITIAL_EXPENSES: ExpenseRecord[] = [
     category: 'Utilities',
     title: 'Internet va elektr energiyasi',
     amount: 650000,
-    date: '2026-03-05',
+    date: fmtIdxDate(6),
     recipient: 'Uztelecom & Hududiy elektr',
-    month: '2026-03',
+    month: fmtIdxMonth(0).slice(0, 7),
     paymentMethod: 'Payme',
     status: 'Paid',
   },
 ];
 
-// Seed Results
-export const INITIAL_RESULTS: StudentResult[] = [
-  {
-    id: 'res-01',
-    studentName: 'Hasanboyeva Sevinch',
-    score: '187.9 Ball',
-    university: 'O\'zDJTU',
-    fieldOfStudy: 'Xalqaro jurnalistika va filologiya',
-    admissionType: 'Grant',
-    year: '2025',
-    category: 'Davlat granti',
-    badge: '187.9 ball • Grant',
-  },
-  {
-    id: 'res-02',
-    studentName: 'Tursunov Shahzod',
-    score: '184.5 Ball',
-    university: 'Toshkent Davlat Yuridik Universiteti (TDYU)',
-    fieldOfStudy: 'Yurisprudensiya',
-    admissionType: 'Grant',
-    year: '2025',
-    category: 'Davlat granti',
-    badge: 'TDYU • 100% Grant',
-  },
-  {
-    id: 'res-03',
-    studentName: 'Erkinova Nigora',
-    score: 'Milliy Sertifikat A+',
-    university: 'O\'zbekiston Milliy Universiteti (O\'zMU)',
-    fieldOfStudy: 'Tarixshunoslik',
-    admissionType: 'Grant',
-    year: '2025',
-    category: 'Milliy Sertifikat',
-    badge: 'Tarix A+',
-  },
-  {
-    id: 'res-04',
-    studentName: 'Qodirov Bekzod',
-    score: 'CEFR C1',
-    university: 'Westminster International University in Tashkent',
-    fieldOfStudy: 'Business Information Systems',
-    admissionType: 'Grant',
-    year: '2025',
-    category: 'CEFR',
-    badge: 'CEFR C1',
-  },
-  {
-    id: 'res-05',
-    studentName: 'Yo\'ldoshev Sardor',
-    score: '176.4 Ball',
-    university: 'Toshkent Axborot Texnologiyalari Universiteti (TATU)',
-    fieldOfStudy: 'Dasturiy ta\'minot muhandisligi',
-    admissionType: 'Kontrakt',
-    year: '2025',
-    category: 'DTM',
-    badge: 'TATU talabasi',
-  },
-];
+// Seed Results (intentionally empty — real results only come from Reports / admin input)
+export const INITIAL_RESULTS: StudentResult[] = [];
 
 // Seed CMS
 export const INITIAL_CMS: CmsContent = {
@@ -827,7 +783,7 @@ export const INITIAL_CMS: CmsContent = {
   heroSubtitle: "Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi. Natijaga kafolatlangan ta'lim tizimi.",
   heroPrimaryCtaText: "Bepul Sinov Darsiga Yozilish",
   heroSecondaryCtaText: "Kurslarimiz Bilan Tanishish",
-  heroBadgeText: "76.2% OTMga Kirish",
+  heroBadgeText: "",
 
   brandName: "RENESSANS LC",
   slogan: "Bilimdan Natijaga",
@@ -845,10 +801,10 @@ export const INITIAL_CMS: CmsContent = {
   location2: "Yangiobod Texnikum binosi, Renessans filiali",
   googleMapsUrl: "https://maps.google.com/?q=Yangiobod",
 
-  statPassRate: "76.2%",
-  statAdmitted: "16 / 21",
-  statTopScore: "187.9",
-  statGrantCount: "2 ta",
+  statPassRate: "",
+  statAdmitted: "",
+  statTopScore: "",
+  statGrantCount: "",
 
   footerText: "Yangioboddagi zamonaviy o'quv markazi. Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha kafolatlangan ta'lim va natijalar.",
   copyrightText: "© 2026 Renessans O'quv Markazi. Barcha huquqlar himoyalangan.",
@@ -1826,23 +1782,25 @@ Holat: ${lead.status || 'Yangi'}
 
     // Call server endpoint and record the REAL result
     let delivered = false;
+    const token = (localStorage.getItem('tg_bot_token') || '').trim();
+    const chatId = (localStorage.getItem('tg_admin_chat_id') || '').trim();
+    if (!token || !chatId) {
+      delivered = false;
+      return this.finishTelegramDispatch(log, false, 'Bot token yoki chat ID sozlanmagan');
+    }
     try {
-      const resp = await fetch('/api/telegram/lead-alert', {
+      const resp = await fetch('/api/telegram/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadName: lead.name,
-          leadPhone: lead.phone,
-          course: lead.course,
-          date: formattedDate,
-        }),
+        body: JSON.stringify({ token, chatId, text: telegramMessage }),
       });
-      delivered = resp.ok;
+      const body = await resp.json().catch(() => ({}));
+      delivered = body?.ok === true;
       if (!delivered) {
-        console.warn('Telegram lead-alert endpoint returned:', resp.status);
+        console.warn('Telegram send endpoint returned:', resp.status, body?.error || '');
       }
     } catch (err) {
-      console.warn('Telegram lead-alert endpoint unreachable:', err);
+      console.warn('Telegram send endpoint unreachable:', err);
     }
 
     const idx = this.telegramLogs.indexOf(log);
@@ -1857,6 +1815,51 @@ Holat: ${lead.status || 'Yangi'}
     }
 
     return this.telegramLogs.find((t) => t.id === log.id) || log;
+  }
+
+  private finishTelegramDispatch(log: TelegramAlertLog, delivered: boolean, errorMsg: string): TelegramAlertLog {
+    this.telegramLogs[0] = {
+      ...log,
+      status: delivered ? 'Sent' : 'Failed',
+      sentAt: delivered ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Yuborilmadi',
+      error: delivered ? undefined : errorMsg,
+    };
+    saveToStorage(STORAGE_KEYS.TELEGRAM_LOGS, this.telegramLogs);
+    return { ...this.telegramLogs[0] };
+  }
+
+  public async sendTelegramMessage(text: string): Promise<TelegramAlertLog> {
+    const token = (localStorage.getItem('tg_bot_token') || '').trim();
+    const chatId = (localStorage.getItem('tg_admin_chat_id') || '').trim();
+
+    const log: TelegramAlertLog = {
+      id: `tg-${Date.now()}`,
+      message: text,
+      messageText: text,
+      status: 'Pending',
+      sentAt: 'Hozirgina',
+    };
+    this.telegramLogs.unshift(log);
+    saveToStorage(STORAGE_KEYS.TELEGRAM_LOGS, this.telegramLogs);
+
+    if (!token) return this.finishTelegramDispatch(log, false, 'Telegram bot token sozlanmagan (TelegramView sozlamalarida).');
+    if (!chatId) return this.finishTelegramDispatch(log, false, 'Direktor chat ID sozlanmagan.');
+
+    let delivered = false;
+    try {
+      const resp = await fetch('/api/telegram/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, chatId, text }),
+      });
+      const body = await resp.json().catch(() => ({}));
+      delivered = body?.ok === true;
+      if (!delivered) console.warn('Telegram send endpoint returned:', resp.status, body?.error || '');
+    } catch (err) {
+      console.warn('Telegram send endpoint unreachable:', err);
+    }
+
+    return this.finishTelegramDispatch(log, delivered, delivered ? undefined : 'Telegram server ulanishi mavjud emas');
   }
 
   // --- BACKUP EXPORT & IMPORT ---

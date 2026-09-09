@@ -21,47 +21,26 @@ export const TelegramView: React.FC = () => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [announcementText, setAnnouncementText] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
+  const [broadcastSuccess, setBroadcastSuccess] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // Bot Config in localStorage
-  const [botToken, setBotToken] = useState(() => localStorage.getItem('tg_bot_token') || '789123456:AAFlk9-example-token');
-  const [adminChatId, setAdminChatId] = useState(() => localStorage.getItem('tg_admin_chat_id') || '123456789');
-  const [botHandle, setBotHandle] = useState(() => localStorage.getItem('tg_bot_handle') || '@renessans_lc_bot');
+  // Bot Config in localStorage (no fake defaults)
+  const [botToken, setBotToken] = useState(() => {
+    const stored = localStorage.getItem('tg_bot_token') || '';
+    return stored.includes('example-token') || stored.startsWith('789123456') ? '' : stored;
+  });
+  const [adminChatId, setAdminChatId] = useState(() => {
+    const stored = localStorage.getItem('tg_admin_chat_id') || '';
+    return stored === '123456789' ? '' : stored;
+  });
+  const [botHandle, setBotHandle] = useState(() => {
+    const stored = localStorage.getItem('tg_bot_handle') || '';
+    return stored === '@renessans_lc_bot' ? '' : stored;
+  });
   const [isConfigSaved, setIsConfigSaved] = useState(false);
 
   const refresh = () => {
     setStudents(crmService.getStudents());
-    const storedLogs = localStorage.getItem('crm_telegram_logs');
-    if (storedLogs) {
-      try {
-        setHistory(JSON.parse(storedLogs));
-      } catch (e) {
-        setHistory([]);
-      }
-    } else {
-      const initialLogs: TelegramAlertLog[] = [
-        {
-          id: 'tg-1',
-          message: "⚡ Yangi ariza: Hasanboyeva Sevinch (+998 90 862 22 26) - Tarix, Huquq, Geografiya",
-          status: 'Sent',
-          sentAt: 'Bugun, 14:10',
-        },
-        {
-          id: 'tg-2',
-          message: "💳 To'lov: Alimov Sardor 450,000 UZS (Matematika & SAT) qabul qilindi.",
-          status: 'Sent',
-          sentAt: 'Bugun, 11:45',
-        },
-        {
-          id: 'tg-3',
-          message: "📢 Eslatma: Yakshanba kuni soat 09:00 da DTM Diagnostik test sinovi.",
-          status: 'Sent',
-          sentAt: 'Kecha, 18:00',
-        },
-      ];
-      setHistory(initialLogs);
-      localStorage.setItem('crm_telegram_logs', JSON.stringify(initialLogs));
-    }
+    setHistory(crmService.getTelegramLogs());
   };
 
   useEffect(() => {
@@ -80,56 +59,47 @@ export const TelegramView: React.FC = () => {
   const debts = crmService.getTuitionDebts();
   const unpaidStudents = debts.filter((d) => d.status === 'Unpaid' || d.status === 'Partial');
 
-  const handleSendBroadcast = (type: 'all' | 'debt') => {
+  const botConfigured = botToken.trim() !== '';
+  const sentCount = history.filter((h) => h.status === 'Sent').length;
+  const failedCount = history.filter((h) => h.status === 'Failed').length;
+
+  const handleSendBroadcast = async (type: 'all' | 'debt') => {
     setIsBroadcasting(true);
-    setTimeout(() => {
-      setIsBroadcasting(false);
-      let msgText = '';
-      if (type === 'debt') {
-        msgText = `💳 To'lov eslatmasi: ${unpaidStudents.length} ta o'quvchi va ota-onaga qarzdorlik bo'yicha ogohlantirish yuborildi.`;
-      } else {
-        msgText = `📢 E'lon (${students.length} o'quvchiga): ${announcementText}`;
-      }
+    try {
+      const msgText = type === 'debt'
+        ? `💳 To'lov eslatmasi: ${unpaidStudents.length} ta o'quvchi va ota-onaga qarzdorlik bo'yicha ogohlantirish yuborildi.`
+        : `📢 E'lon (${students.length} o'quvchiga): ${announcementText}`;
 
-      const newEntry: TelegramAlertLog = {
-        id: `tg-${Date.now()}`,
-        message: msgText,
-        status: 'Sent',
-        sentAt: 'Hozirgina',
-      };
-
-      const updatedHistory = [newEntry, ...history];
-      setHistory(updatedHistory);
-      localStorage.setItem('crm_telegram_logs', JSON.stringify(updatedHistory));
-
-      setBroadcastSuccess(`Xabarnoma muvaffaqiyatli jo'natildi!`);
+      const result = await crmService.sendTelegramMessage(msgText);
+      refresh();
+      setBroadcastSuccess(
+        result.status === 'Sent'
+          ? { text: `Xabarnoma muvaffaqiyatli jo'natildi!`, ok: true }
+          : { text: `Xabar jo'natilmadi: ${result.error || 'Telegram mavjud emas'}`, ok: false }
+      );
       if (type === 'all') setAnnouncementText('');
-      setTimeout(() => setBroadcastSuccess(null), 4000);
-    }, 800);
+    } finally {
+      setIsBroadcasting(false);
+      setTimeout(() => setBroadcastSuccess(null), 5000);
+    }
   };
 
-  const handleSendTestNotification = () => {
-    crmService.sendTelegramLeadNotification({
+  const handleSendTestNotification = async () => {
+    const result = await crmService.sendTelegramLeadNotification({
       id: 'test-' + Date.now(),
       name: 'Sinov Murojaatchisi (Test)',
       phone: '+998 90 862 22 26',
       course: 'Tarix, Huquq, Geografiya',
-      status: 'New',
+      status: 'Yangi',
       createdAt: new Date().toISOString(),
     });
-
-    const newEntry: TelegramAlertLog = {
-      id: `tg-${Date.now()}`,
-      message: `🔔 Test Xabari: ${botHandle} orqali test signali direktor chatiga yuborildi.`,
-      status: 'Sent',
-      sentAt: 'Hozirgina',
-    };
-
-    const updated = [newEntry, ...history];
-    setHistory(updated);
-    localStorage.setItem('crm_telegram_logs', JSON.stringify(updated));
-    setBroadcastSuccess(`Test xabari ${botHandle} orqali muvaffaqiyatli jo'natildi!`);
-    setTimeout(() => setBroadcastSuccess(null), 3000);
+    refresh();
+    setBroadcastSuccess(
+      result.status === 'Sent'
+        ? { text: `Test xabari muvaffaqiyatli jo'natildi!`, ok: true }
+        : { text: `Test xabari jo'natilmadi: ${result.error || 'Telegram mavjud emas'}`, ok: false }
+    );
+    setTimeout(() => setBroadcastSuccess(null), 5000);
   };
 
   return (
@@ -155,27 +125,33 @@ export const TelegramView: React.FC = () => {
       </div>
 
       {broadcastSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{broadcastSuccess}</span>
+        <div className={`p-4 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
+          broadcastSuccess.ok
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+            : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
+        }`}>
+          {broadcastSuccess.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          <span>{broadcastSuccess.text}</span>
         </div>
       )}
 
       {/* Bot Status Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+          <div className={`w-12 h-12 rounded-2xl ${botConfigured ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'} flex items-center justify-center shrink-0`}>
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Bot Holati
             </span>
-            <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Ulangan & Faol</span>
+            <div className={`text-base font-black mt-0.5 flex items-center gap-1.5 ${botConfigured ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+              <span className={`w-2 h-2 rounded-full ${botConfigured ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              <span>{botConfigured ? 'Sozlangan' : 'Sozlanmagan'}</span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">Webhook javob vaqti: 35ms</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {botConfigured ? 'Token saqlangan — yuborish natijasi haqiqiy tekshiriladi' : 'Bot token kiritilgach ishga tushadi'}
+            </p>
           </div>
         </div>
 
@@ -188,7 +164,7 @@ export const TelegramView: React.FC = () => {
               Biriktirilgan Bot
             </span>
             <div className="text-base font-black text-slate-900 dark:text-white mt-0.5 font-mono">
-              {botHandle}
+              {botHandle.trim() || 'Sozlanmagan'}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">Direktor & Administrator ogohlantiruvchisi</p>
           </div>
@@ -203,10 +179,11 @@ export const TelegramView: React.FC = () => {
               Yuborilgan Xabarnomalar
             </span>
             <div className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-              {history.length + 18} <span className="text-xs font-normal text-slate-400">ta xabar</span>
+              {history.length} <span className="text-xs font-normal text-slate-400">ta ulanish</span>
             </div>
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-semibold">
-              100% yetkazildi
+            <p className="text-xs text-slate-500 mt-0.5 font-semibold">
+              {sentCount} yuborildi
+              {failedCount > 0 && <span className="text-rose-500"> • {failedCount} muvaffaqiyatsiz</span>}
             </p>
           </div>
         </div>
@@ -321,21 +298,29 @@ export const TelegramView: React.FC = () => {
         </h3>
 
         <div className="space-y-2.5">
+          {history.length === 0 && (
+            <div className="py-8 text-center text-xs text-slate-400">
+              Hozircha telegram xabarlari qayd etilmagan. Xabar yuborish orqali tarix shakllanadi.
+            </div>
+          )}
           {history.map((h) => (
             <div
               key={h.id}
-              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs"
+              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center ${
+                  h.status === 'Sent' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                }`}>
                   <Send className="w-4 h-4" />
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900 dark:text-white break-words">
                     {h.message || h.messageText}
                   </p>
-                  <span className="text-[11px] text-slate-400 font-mono">
+                  <span className="text-[11px] text-slate-400 font-mono block">
                     ID: #{h.id}
+                    {h.error && <span className="text-rose-500"> • {h.error}</span>}
                   </span>
                 </div>
               </div>
@@ -344,8 +329,12 @@ export const TelegramView: React.FC = () => {
                 <span className="text-[11px] text-slate-400 font-mono">
                   {h.sentAt}
                 </span>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] uppercase">
-                  {h.status}
+                <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase ${
+                  h.status === 'Sent'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                }`}>
+                  {h.status === 'Sent' ? 'Yuborildi' : 'Muvaffaqiyatsiz'}
                 </span>
               </div>
             </div>

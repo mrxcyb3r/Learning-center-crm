@@ -346,6 +346,40 @@ app.post('/api/bot/notify-grade', (req, res) => {
   });
 });
 
+// 0.5 Telegram Message Delivery Proxy (real Bot API forward)
+app.post('/api/telegram/send', async (req, res) => {
+  const { token, chatId, text } = req.body || {};
+
+  if (!token || typeof token !== 'string' || token.length > 200) {
+    return res.status(400).json({ ok: false, error: 'Bot token talab qilinadi.' });
+  }
+  if (!chatId) {
+    return res.status(400).json({ ok: false, error: 'Chat ID talab qilinadi.' });
+  }
+  if (!text || typeof text !== 'string' || text.length > 4000) {
+    return res.status(400).json({ ok: false, error: 'Xabar matni talab qilinadi (max 4000 belgi).' });
+  }
+
+  try {
+    const params = new URLSearchParams({
+      chat_id: String(chatId),
+      text: String(text),
+      disable_web_page_preview: 'true',
+    });
+    const tg = await fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage?${params}`, {
+      method: 'POST',
+    });
+    const data = await tg.json().catch(() => ({}));
+    const ok = tg.ok && data?.ok === true;
+    res.status(tg.ok ? 200 : 502).json({
+      ok,
+      error: ok ? undefined : (data?.description || `Telegram API HTTP ${tg.status}`),
+    });
+  } catch (err: any) {
+    res.status(502).json({ ok: false, error: err?.message || 'Telegram serveriga ulanishda xatolik yuz berdi.' });
+  }
+});
+
 // 0.5 Webhook Security Verification Endpoint (Webhook mode)
 app.post('/api/bot/webhook', (req, res) => {
   const secretHeader = req.headers['x-telegram-bot-api-secret-token'];

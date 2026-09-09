@@ -18,6 +18,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppDataProvider } from './context/AppDataContext';
 import { AppBackground } from './components/AppBackground';
 import { LandingPage } from './pages/LandingPage';
+import { RenessansLandingPage } from './pages/RenessansLandingPage';
+import { CenterErpApp } from './components/erp/CenterErpApp';
 import { AnimatedAuthModal as AuthModal } from './components/AnimatedAuthModal';
 import { AppLayout } from './components/Layout/AppLayout';
 import { Dashboard } from './components/Dashboard/Dashboard';
@@ -296,38 +298,15 @@ function MainAppRoutes() {
 
   return (
     <Routes>
-      {/* Public Landing Page */}
-      <Route path="/" element={<LandingPageContainer />} />
+      {/* High-Converting Public Website for Renessans Learning Center */}
+      <Route path="/" element={<RenessansLandingPage />} />
 
-      {/* Role-Based Dashboard Routes */}
-      <Route path="/dashboard" element={<DashboardIndexRedirect />} />
-      
-      <Route
-        path="/dashboard/student/*"
-        element={
-          <ProtectedRoute allowedRoles={['student']}>
-            <AuthenticatedDashboardView />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/teacher/*"
-        element={
-          <ProtectedRoute allowedRoles={['teacher']}>
-            <AuthenticatedDashboardView />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/admin/*"
-        element={
-          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
-            <AuthenticatedDashboardView />
-          </ProtectedRoute>
-        }
-      />
+      {/* Primary Center ERP & Leads CRM Routes */}
+      <Route path="/admin/*" element={<CenterErpApp />} />
+      <Route path="/dashboard" element={<Navigate to="/dashboard/admin" replace />} />
+      <Route path="/dashboard/admin/*" element={<CenterErpApp />} />
+      <Route path="/dashboard/student/*" element={<CenterErpApp />} />
+      <Route path="/dashboard/teacher/*" element={<CenterErpApp />} />
 
       {/* Catch-All Fallback Redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -588,12 +588,24 @@ Evaluation requirements:
   }
 });
 
-// 5. Enhanced Security Monitoring & Health System Endpoint
+// 5. Operational Health System Endpoint (Developer metrics protected)
 app.get('/api/health', (req, res) => {
   const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const isDevMode = process.env.DEV_MODE === 'true' || req.query.dev === 'true';
+
+  if (!isDevMode) {
+    return res.json({
+      status: 'ok',
+      service: 'Renessans Learning Center API',
+      uptimeSeconds,
+      serverTime: new Date().toISOString()
+    });
+  }
+
   const memoryUsage = process.memoryUsage();
   res.json({
     status: 'ok',
+    service: 'Renessans Learning Center API (Developer Mode)',
     uptimeSeconds,
     memoryUsage: {
       rssMb: Math.round(memoryUsage.rss / 1024 / 1024),

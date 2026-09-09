@@ -1,6 +1,6 @@
 {
-  "name": "CenterFlow - Renessans LC",
-  "description": "CenterFlow learning center management and landing platform for Renessans Learning Center in Tashkent. Features courses, teacher rosters, IELTS & IT results, multi-language support, dark mode, and authentication.",
+  "name": "Renessans O'quv Markazi",
+  "description": "Renessans o'quv markazining rasmiy sayti va markaz boshqaruv tizimi (ERP). Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

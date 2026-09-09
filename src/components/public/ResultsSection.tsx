@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Award, CheckCircle2, GraduationCap, School, ShieldCheck, Sparkles, Filter } from 'lucide-react';
 import { StudentResult } from '../../types/crm';
-import { INITIAL_RESULTS } from '../../services/crmService';
+import { crmService } from '../../services/crmService';
 
 interface ResultsSectionProps {
   results?: StudentResult[];
 }
 
-export const ResultsSection: React.FC<ResultsSectionProps> = ({
-  results = INITIAL_RESULTS,
-}) => {
+export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propResults }) => {
+  const [results, setResults] = useState<StudentResult[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Barchasi');
+
+  useEffect(() => {
+    if (propResults && propResults.length > 0) {
+      setResults(propResults);
+    } else {
+      const cms = crmService.getCmsData();
+      setResults(cms.results || []);
+    }
+  }, [propResults]);
 
   const categories = ['Barchasi', 'Davlat granti', 'DTM', 'Milliy Sertifikat', 'CEFR'];
 
@@ -56,105 +64,70 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           <AnimatePresence>
             {filteredResults.map((res, idx) => {
-              const isGrant = res.admissionType === 'Grant' || res.score.includes('187.9');
+              const isGrant = res.admissionType === 'Grant' || res.score.includes('187.9') || res.badge?.includes('Grant');
               return (
                 <motion.div
-                  key={res.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  key={res.id || idx}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.35, delay: idx * 0.05 }}
-                  className={`rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 ${
+                  className={`relative p-7 rounded-3xl flex flex-col justify-between transition-all duration-300 ${
                     isGrant
-                      ? 'bg-white dark:bg-slate-900 border-2 border-amber-500 shadow-xl shadow-amber-500/10'
-                      : 'bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-md hover:border-slate-300 dark:hover:border-slate-700'
+                      ? 'bg-white dark:bg-slate-900 border-2 border-amber-500/80 shadow-xl shadow-amber-500/10'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   <div>
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                        isGrant
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
-                      }`}>
-                        {res.admissionType ? `${res.admissionType} Asosida` : 'OTMga Qabul'}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                        {res.subject}
                       </span>
-                      <span className="text-xs text-slate-400 font-mono">
-                        {res.year || '2025–2026'}
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          isGrant
+                            ? 'bg-amber-500 text-slate-950 shadow-sm'
+                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        }`}
+                      >
+                        {res.badge || (isGrant ? '100% Davlat Granti' : 'Talaba')}
                       </span>
                     </div>
 
-                    {/* Student Name */}
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">
+                        {res.score}
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">natija</span>
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mt-3">
                       {res.studentName}
                     </h3>
 
-                    {/* High Score Banner */}
-                    <div className="my-4 p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                          Natija / Ball
-                        </span>
-                        <span className="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
-                          {res.score}
-                        </span>
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                        <GraduationCap className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span className="font-semibold">{res.university}</span>
                       </div>
-                      <Award className="w-8 h-8 text-amber-500" />
-                    </div>
-
-                    {/* University & Direction */}
-                    <div className="space-y-2 mt-4 text-xs text-slate-600 dark:text-slate-300">
-                      <div className="flex items-start gap-2">
-                        <School className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          {res.university}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2 text-slate-500 dark:text-slate-400 pl-6">
-                        <span>Yo'nalish: <strong className="text-slate-700 dark:text-slate-300">{res.fieldOfStudy}</strong></span>
-                      </div>
+                      {res.mentor && (
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Ustoz: {res.mentor}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Footer Tag */}
-                  {res.badge && (
-                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{res.badge}</span>
-                    </div>
-                  )}
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span>Mavsum: {res.year || '2025–2026'}</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">Renessans LC</span>
+                  </div>
                 </motion.div>
               );
             })}
           </AnimatePresence>
-        </div>
-
-        {/* Universities List Banner */}
-        <div className="mt-16 p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-4">
-            Bitiruvchilarimiz Talaba Bo'lgan Yetakchi Oliy Ta'lim Muassasalari
-          </h4>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              🎓 O'zDJTU (Jahon tillari)
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              ⚖️ Akademiya & Yurisprudensiya
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              🏥 TDTU (Tibbiyot)
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              📚 GulDU (Guliston)
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              📐 JDPU (Pedagogika)
-            </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              🌐 O'zMU Jizzax filiali
-            </span>
-          </div>
         </div>
       </div>
     </section>

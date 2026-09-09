@@ -1,37 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-
-interface FaqItem {
-  q: string;
-  a: string;
-}
-
-const FAQ_LIST: FaqItem[] = [
-  {
-    q: "Sinov darsi qanday o'tkaziladi va to'lov bormi?",
-    a: "Sinov darsi mutlaqo bepul! O'quvchi markazga kelib, diagnostik test topshiradi va o'z bilimi darajasiga mos guruh darsiga qatnashib, ustozning dars o'tish uslubi bilan tanishadi.",
-  },
-  {
-    q: "Renessans o'quv markazi Yangiobodning qaysi joylarida joylashgan?",
-    a: "Bizda 2 ta filial mavjud: 1-filial — Yangiobod tumani 1-sonli umumiy o'rta ta'lim maktabi binosida; 2-filial — Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION) binosida joylashgan.",
-  },
-  {
-    q: "Milliy sertifikat va DTM guruhlariga qabul qachon boshlanadi?",
-    a: "Qabul yil davomida davom etadi. Darslar ertalabki, tushki va kechki smenalarda tashkil etilgan. Yangi guruhlar shakllanishi bilan bepul sinov darslariga chaqiriladi.",
-  },
-  {
-    q: "Haftalik diagnostik testlar qachon o'tkaziladi?",
-    a: "Har yakshanba kuni markazimizda DTM va Milliy sertifikat formatidagi qat'iy nazorat ostida diagnostik testlar o'tkaziladi va natijalar ota-onalarga shaxsan yetkaziladi.",
-  },
-  {
-    q: "To'lovlarni qanday usulda amalga oshirish mumkin?",
-    a: "To'lovlarni markaz binosida naqd pul orqali, yoki Click va Payme ilovalari orqali masofadan turib qulay to'lashingiz mumkin.",
-  },
-];
+import { crmService } from '../../services/crmService';
+import { FaqItem } from '../../types/crm';
 
 export const FaqSection: React.FC = () => {
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  useEffect(() => {
+    const cms = crmService.getCmsData();
+    if (cms.faqs && cms.faqs.length > 0) {
+      setFaqs(cms.faqs);
+    }
+  }, []);
 
   const toggle = (idx: number) => {
     setOpenIndex(openIndex === idx ? null : idx);
@@ -48,31 +30,32 @@ export const FaqSection: React.FC = () => {
             Savol-Javoblar
           </h2>
           <p className="text-base text-slate-600 dark:text-slate-400 mt-2">
-            O'quv jarayoni, qabul va kafolatlar bo'yicha eng muhim ma'lumotlar.
+            Markazimiz, dars jarayoni va qabul bo'yicha eng muhim ma'lumotlar.
           </p>
         </div>
 
         <div className="space-y-4">
-          {FAQ_LIST.map((item, idx) => {
+          {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
             return (
               <div
-                key={idx}
-                className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition"
+                key={faq.id || idx}
+                className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition"
               >
                 <button
                   onClick={() => toggle(idx)}
-                  className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-base sm:text-lg text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer"
+                  className="w-full p-6 text-left flex items-center justify-between gap-4 cursor-pointer"
                 >
-                  <span className="flex items-center gap-3">
-                    <HelpCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                    <span>{item.q}</span>
+                  <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+                    {faq.question}
                   </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-300 shrink-0 ${
-                      isOpen ? 'rotate-180 text-amber-500' : ''
+                  <div
+                    className={`w-9 h-9 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 transition-transform duration-300 shrink-0 ${
+                      isOpen ? 'rotate-180 bg-amber-500/10 text-amber-500' : ''
                     }`}
-                  />
+                  >
+                    <ChevronDown className="w-5 h-5" />
+                  </div>
                 </button>
 
                 <AnimatePresence>
@@ -82,9 +65,10 @@ export const FaqSection: React.FC = () => {
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25 }}
+                      className="overflow-hidden"
                     >
-                      <div className="px-6 pb-6 pt-1 text-slate-600 dark:text-slate-300 text-sm leading-relaxed border-t border-slate-100 dark:border-slate-800">
-                        {item.a}
+                      <div className="px-6 pb-6 pt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800/60">
+                        {faq.answer}
                       </div>
                     </motion.div>
                   )}

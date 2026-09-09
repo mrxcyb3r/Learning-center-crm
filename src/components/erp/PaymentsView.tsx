@@ -1,74 +1,213 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus, Download, CheckCircle2, Search, DollarSign } from 'lucide-react';
+import {
+  CreditCard,
+  Plus,
+  Download,
+  CheckCircle2,
+  Search,
+  DollarSign,
+  Printer,
+  Trash2,
+  X,
+  FileText,
+} from 'lucide-react';
 import { crmService } from '../../services/crmService';
-import { IncomePaymentRecord } from '../../types/crm';
+import { CourseData, IncomePaymentRecord, StudentRecord } from '../../types/crm';
 
 export const PaymentsView: React.FC = () => {
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [courses, setCourses] = useState<CourseData[]>([]);
+  const [search, setSearch] = useState('');
+  const [methodFilter, setMethodFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [viewReceipt, setViewReceipt] = useState<IncomePaymentRecord | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  // Form
-  const [studentName, setStudentName] = useState('');
-  const [course, setCourse] = useState('IELTS Intensive');
-  const [amount, setAmount] = useState('850000');
-  const [method, setMethod] = useState<'Click' | 'Payme' | 'Cash' | 'Card'>('Click');
+  // Add Form
+  const [formStudentId, setFormStudentId] = useState('');
+  const [formStudentName, setFormStudentName] = useState('');
+  const [formCourse, setFormCourse] = useState('');
+  const [formAmount, setFormAmount] = useState('380000');
+  const [formMethod, setFormMethod] = useState<'Click' | 'Payme' | 'Cash' | 'Card'>('Click');
+  const [formMonth, setFormMonth] = useState('Sentyabr 2026');
+
+  const refresh = () => {
+    setPayments(crmService.getPayments());
+    setStudents(crmService.getStudents());
+    setCourses(crmService.getCourses());
+  };
 
   useEffect(() => {
-    setPayments(crmService.getPayments());
+    refresh();
   }, []);
 
-  const totalCollected = payments.reduce((acc, p) => acc + p.amount, 0);
+  const showNotification = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const handleOpenAdd = () => {
+    const firstStudent = students[0];
+    if (firstStudent) {
+      setFormStudentId(firstStudent.id);
+      setFormStudentName(firstStudent.fullName || firstStudent.name);
+      setFormCourse(firstStudent.course);
+      setFormAmount(String(firstStudent.monthlyFee || 380000));
+    } else {
+      setFormStudentId('');
+      setFormStudentName('');
+      setFormCourse(courses[0]?.title || 'Tarix, Huquq, Geografiya');
+      setFormAmount('380000');
+    }
+    setFormMethod('Click');
+    setFormMonth('Sentyabr 2026');
+    setIsAddModalOpen(true);
+  };
+
+  const handleStudentSelect = (stId: string) => {
+    setFormStudentId(stId);
+    const st = students.find((s) => s.id === stId);
+    if (st) {
+      setFormStudentName(st.fullName || st.name);
+      setFormCourse(st.course);
+      setFormAmount(String(st.debtAmount > 0 ? st.debtAmount : st.monthlyFee));
+    }
+  };
 
   const handleCreatePayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentName.trim()) return;
+    if (!formStudentName.trim()) return;
 
     crmService.createPayment({
-      studentName: studentName.trim(),
-      course,
-      amount: Number(amount),
-      method,
-      month: 'September 2026',
+      studentId: formStudentId,
+      studentName: formStudentName.trim(),
+      course: formCourse,
+      amount: Number(formAmount),
+      method: formMethod,
+      month: formMonth,
     });
 
-    setPayments(crmService.getPayments());
+    showNotification(`To'lov (${Number(formAmount).toLocaleString()} UZS) muvaffaqiyatli qabul qilindi!`);
+    refresh();
     setIsAddModalOpen(false);
-    setStudentName('');
   };
+
+  const handleVoidPayment = (id: string, name: string) => {
+    if (window.confirm(`Rostdan ham ${name} uchun to'lov kvitansiyasini bekor qilmoqchimisiz?`)) {
+      crmService.deletePayment(id);
+      refresh();
+      showNotification('To\'lov bekor qilindi.');
+    }
+  };
+
+  const filtered = payments.filter((p) => {
+    const matchesSearch =
+      p.studentName.toLowerCase().includes(search.toLowerCase()) ||
+      p.course.toLowerCase().includes(search.toLowerCase()) ||
+      p.id.toLowerCase().includes(search.toLowerCase());
+
+    const matchesMethod = methodFilter === 'All' || p.method === methodFilter;
+    return matchesSearch && matchesMethod;
+  });
+
+  const totalCollected = payments.reduce((acc, p) => acc + p.amount, 0);
+  const clickSum = payments.filter((p) => p.method === 'Click').reduce((s, p) => s + p.amount, 0);
+  const paymeSum = payments.filter((p) => p.method === 'Payme').reduce((s, p) => s + p.amount, 0);
+  const cashSum = payments.filter((p) => p.method === 'Cash').reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Student Tuition & Payments
+            Kassa va O'quvchilar To'lovlari
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Recorded receipts via Click, Payme, Cash, and Bank Transfer.
+            Click, Payme, Naqd pul va Karta orqali qabul qilingan barcha kvitansiyalar.
           </p>
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
+          onClick={handleOpenAdd}
+          className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Record Payment</span>
+          <span>Yangi To'lov Qabul Qilish</span>
         </button>
       </div>
 
-      {/* Summary Card */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <span className="text-xs text-slate-400 font-medium">Total Recorded This Month</span>
-          <div className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-            {totalCollected.toLocaleString()} <span className="text-sm font-normal text-slate-400">UZS</span>
-          </div>
+      {/* Notice */}
+      {notice && (
+        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{notice}</span>
         </div>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
-            {payments.length} Processed Receipts
+      )}
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-xs font-semibold text-slate-400 block">Jami Tushum (Bu Oy)</span>
+          <div className="text-2xl font-black text-slate-900 dark:text-white mt-1 font-mono">
+            {totalCollected.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+          </div>
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 block">
+            {payments.length} ta kvitansiya
           </span>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-xs font-semibold text-sky-500 block">Click orqali</span>
+          <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
+            {clickSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+          </div>
+          <span className="text-[11px] text-slate-500 mt-1 block">Mobil ilova orqali</span>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-xs font-semibold text-teal-500 block">Payme orqali</span>
+          <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
+            {paymeSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+          </div>
+          <span className="text-[11px] text-slate-500 mt-1 block">Onlayn to'lov</span>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-xs font-semibold text-emerald-500 block">Naqd Pul (Kassa)</span>
+          <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
+            {cashSum.toLocaleString()} <span className="text-xs text-slate-400">UZS</span>
+          </div>
+          <span className="text-[11px] text-slate-500 mt-1 block">Markaz binosida</span>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="O'quvchi ismi, kurs yoki kvitansiya raqami bo'yicha qidirish..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <select
+            value={methodFilter}
+            onChange={(e) => setMethodFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="All">Barcha To'lov Usullari</option>
+            <option value="Click">Click</option>
+            <option value="Payme">Payme</option>
+            <option value="Cash">Naqd pul</option>
+            <option value="Card">Bank kartasi</option>
+          </select>
         </div>
       </div>
 
@@ -78,36 +217,70 @@ export const PaymentsView: React.FC = () => {
           <table className="w-full text-left text-xs sm:text-sm">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-4">Receipt #</th>
-                <th className="py-3.5 px-4">Student</th>
-                <th className="py-3.5 px-4">Course</th>
-                <th className="py-3.5 px-4">Amount (UZS)</th>
-                <th className="py-3.5 px-4">Method</th>
-                <th className="py-3.5 px-4">Date</th>
+                <th className="py-3.5 px-4">Kvitansiya #</th>
+                <th className="py-3.5 px-4">O'quvchi</th>
+                <th className="py-3.5 px-4">Kurs & Oy</th>
+                <th className="py-3.5 px-4">To'lov Usuli</th>
+                <th className="py-3.5 px-4">Summa</th>
+                <th className="py-3.5 px-4">Sana & Vaqt</th>
+                <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {payments.map((p) => (
+              {filtered.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                  <td className="py-3.5 px-4 font-mono text-xs font-bold text-slate-500">
-                    {p.receiptNumber}
+                  <td className="py-3.5 px-4 font-mono font-bold text-slate-600 dark:text-slate-400">
+                    #{p.id.slice(-6).toUpperCase()}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                     {p.studentName}
                   </td>
-                  <td className="py-3.5 px-4 text-amber-600 dark:text-amber-400 font-medium">
-                    {p.course}
-                  </td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">
-                    {p.amount.toLocaleString()} UZS
-                  </td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      {p.method}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                      {p.course}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {p.month}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-400 text-xs">
+                  <td className="py-3.5 px-4">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        p.method === 'Click'
+                          ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                          : p.method === 'Payme'
+                          ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20'
+                          : p.method === 'Cash'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                      }`}
+                    >
+                      {p.method === 'Cash' ? 'Naqd' : p.method}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-black text-emerald-600 dark:text-emerald-400">
+                    +{p.amount.toLocaleString()} UZS
+                  </td>
+                  <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
                     {p.date}
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setViewReceipt(p)}
+                        className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                        title="Kvitansiyani ko'rish / Chiqarish"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleVoidPayment(p.id, p.studentName)}
+                        className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                        title="Bekor qilish"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -120,86 +293,208 @@ export const PaymentsView: React.FC = () => {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-4">
-              Record Student Payment
-            </h3>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                To'lov Qabul Qilish
+              </h3>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleCreatePayment} className="space-y-4 text-xs sm:text-sm">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Student Name
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  O'quvchini Tanlang *
+                </label>
+                <select
+                  value={formStudentId}
+                  onChange={(e) => handleStudentSelect(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                >
+                  <option value="">(Ro'yxatdan tanlang)</option>
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.fullName || s.name} ({s.course} - {s.groupName})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  O'quvchi Ismi *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Jasur Rahimov"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  value={formStudentName}
+                  onChange={(e) => setFormStudentName(e.target.value)}
+                  placeholder="Ism Familiya"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Course
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  Kurs Nomi *
                 </label>
                 <select
-                  value={course}
-                  onChange={(e) => setCourse(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  value={formCourse}
+                  onChange={(e) => setFormCourse(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                 >
-                  <option value="IELTS Intensive">IELTS Intensive</option>
-                  <option value="General English">General English</option>
-                  <option value="CEFR FastTrack">CEFR FastTrack</option>
-                  <option value="Python Programming">Python Programming</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.title}>
+                      {c.title}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Amount (UZS)
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  To'lov Miqdori (UZS) *
                 </label>
                 <input
                   type="number"
+                  step="10000"
                   required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  value={formAmount}
+                  onChange={(e) => setFormAmount(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono font-bold text-base"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Payment Method
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  To'lov Usuli *
                 </label>
-                <select
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                >
-                  <option value="Click">Click</option>
-                  <option value="Payme">Payme</option>
-                  <option value="Cash">Cash (Naqd)</option>
-                  <option value="Card">Terminal / Card</option>
-                </select>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['Click', 'Payme', 'Cash', 'Card'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFormMethod(m)}
+                      className={`py-2 px-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        formMethod === m
+                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      {m === 'Cash' ? 'Naqd' : m}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3 pt-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  Qaysi oy uchun
+                </label>
+                <input
+                  type="text"
+                  value={formMonth}
+                  onChange={(e) => setFormMonth(e.target.value)}
+                  placeholder="Sentyabr 2026"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
-                  Cancel
+                  Bekor qilish
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
-                  Record Payment
+                  To'lovni Saqlash
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Printable Receipt Modal */}
+      {viewReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Elektron Kvitansiya
+              </span>
+              <button
+                onClick={() => setViewReceipt(null)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="my-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 font-mono text-xs text-slate-800 dark:text-slate-200">
+              <div className="text-center pb-3 border-b border-dashed border-slate-300 dark:border-slate-600">
+                <div className="text-base font-black tracking-tight font-sans text-slate-900 dark:text-white">
+                  RENESSANS O'QUV MARKAZI
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Yangiobod tumani, 1-maktab binosi
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  Tel: +998 (90) 862-22-26
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-slate-400">Kvitansiya #:</span>
+                <span className="font-bold">REC-{viewReceipt.id.slice(-6).toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Sana:</span>
+                <span>{viewReceipt.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">O'quvchi:</span>
+                <span className="font-bold">{viewReceipt.studentName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Kurs:</span>
+                <span>{viewReceipt.course}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">To'lov usuli:</span>
+                <span>{viewReceipt.method}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Oy:</span>
+                <span>{viewReceipt.month}</span>
+              </div>
+
+              <div className="pt-3 border-t border-dashed border-slate-300 dark:border-slate-600 flex justify-between items-center text-sm">
+                <span className="font-bold font-sans">JAMI TO'LANDI:</span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                  {viewReceipt.amount.toLocaleString()} UZS
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Chop etish (Print)</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

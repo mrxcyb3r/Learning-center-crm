@@ -1,38 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowRight, Award, GraduationCap, CheckCircle2, ShieldCheck, Users, Calendar, Phone, User, BookOpen, Send, Check } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { CmsData } from '../../types/crm';
 
 interface HeroSectionProps {
   onOpenTrialModal: (course?: string) => void;
   onScrollToCourses: () => void;
 }
 
-const STATS = [
-  { label: "OTMga kirish ko'rsatkichi", value: '76.2%', icon: GraduationCap, note: '2025–2026 mavsumi' },
-  { label: "Talaba bo'lgan bitiruvchilar", value: '16 / 21', icon: Users, note: 'Nufuzli davlat oliygohlariga' },
-  { label: 'Eng yuqori DTM ball', value: '187.9', icon: Award, note: 'Hasanboyeva Sevinch (O\'zDJTU)' },
-  { label: 'Davlat granti sohiblari', value: '2 ta', icon: ShieldCheck, note: '100% davlat granti asosida' },
-];
-
-const QUICK_COURSES = [
-  'Tarix, Huquq, Geografiya',
-  'Matematika & SAT',
-  'CEFR Ingliz tili',
-  'Mental Arifmetika',
-  'Ona tili va Adabiyot',
-  'English Kids',
-];
-
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenTrialModal,
   onScrollToCourses,
 }) => {
+  const [cms, setCms] = useState<CmsData>(crmService.getCmsData());
+  const [courses, setCourses] = useState<string[]>([]);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('+998 ');
-  const [selectedCourse, setSelectedCourse] = useState(QUICK_COURSES[0]);
+  const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    const loadedCms = crmService.getCmsData();
+    setCms(loadedCms);
+    const activeCourses = crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false);
+    const courseTitles = activeCourses.map((c) => c.title);
+    setCourses(courseTitles);
+    if (courseTitles.length > 0) {
+      setSelectedCourse(courseTitles[0]);
+    }
+  }, []);
+
+  const stats = [
+    { label: "OTMga kirish ko'rsatkichi", value: cms.stats?.universityAdmissions || '76.2%', icon: GraduationCap, note: '2025–2026 mavsumi' },
+    { label: "Talaba bo'lgan bitiruvchilar", value: cms.stats?.studentAdmittedRatio || '16 / 21', icon: Users, note: 'Nufuzli davlat oliygohlariga' },
+    { label: 'Eng yuqori DTM ball', value: cms.stats?.highestDtmScore || '187.9', icon: Award, note: 'Hasanboyeva Sevinch (O\'zDJTU)' },
+    { label: 'Davlat granti sohiblari', value: cms.stats?.stateGrantsCount || '2 ta', icon: ShieldCheck, note: '100% davlat granti asosida' },
+  ];
 
   const handleQuickLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +48,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       await crmService.createLead({
         name: leadName.trim(),
         phone: leadPhone.trim(),
-        course: selectedCourse,
+        course: selectedCourse || 'Tarix, Huquq, Geografiya',
         source: 'Bosh sahifa (Hero forma)',
         notes: 'Bosh sahifadan bepul sinov darsiga yozildi.',
       });
@@ -74,7 +79,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 text-xs sm:text-sm font-semibold tracking-wide uppercase mb-6"
             >
               <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-              <span>Renessans O'quv Markazi • Yangiobod</span>
+              <span>{cms.hero?.badge || "Renessans O'quv Markazi • Yangiobod"}</span>
             </motion.div>
 
             {/* Headline */}
@@ -97,8 +102,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               transition={{ duration: 0.55, delay: 0.2 }}
               className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0"
             >
-              Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi.{' '}
-              <strong className="text-slate-900 dark:text-white font-bold">Bilimdan natijaga!</strong>
+              {cms.hero?.subtitle || "Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi."}{' '}
+              <strong className="text-slate-900 dark:text-white font-bold">
+                {cms.hero?.tagline || 'Bilimdan natijaga!'}
+              </strong>
             </motion.p>
 
             {/* CTAs */}
@@ -109,7 +116,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
             >
               <button
-                onClick={() => onOpenTrialModal('Tarix, Huquq, Geografiya')}
+                onClick={() => onOpenTrialModal(selectedCourse || 'Tarix, Huquq, Geografiya')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 transition transform active:scale-95 flex items-center justify-center gap-3 cursor-pointer"
               >
                 <span>Bepul sinov darsiga yozilish</span>
@@ -118,82 +125,84 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               <button
                 onClick={onScrollToCourses}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white font-bold text-base border border-slate-200 dark:border-slate-800 transition cursor-pointer"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 font-bold text-base transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                Kurslar bilan tanishish
+                <span>Kurslarni ko'rish</span>
               </button>
             </motion.div>
 
-            {/* Micro trust indicators */}
+            {/* Trust Badges */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm text-slate-600 dark:text-slate-400"
+              className="mt-10 pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs text-slate-500 dark:text-slate-400 font-medium"
             >
-              <span className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Bepul diagnostik test
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Tajribali ustozlar
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" /> 76.2% OTMga kirish natijasi
-              </span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>100% bepul sinov darsi</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>Tajribali mutaxassis ustozlar</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>Haftalik DTM test sinovlari</span>
+              </div>
             </motion.div>
           </div>
 
-          {/* Right Column: Direct High-Converting Free Trial Form */}
+          {/* Right Column: Fast Registration Lead Card */}
           <div className="lg:col-span-5">
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.55, delay: 0.25 }}
-              className="relative p-7 sm:p-9 rounded-3xl bg-white dark:bg-slate-900/90 border-2 border-amber-500/30 shadow-2xl shadow-amber-500/10 backdrop-blur-xl"
+              className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-500/50 shadow-2xl shadow-amber-500/10 backdrop-blur-xl relative"
             >
-              <div className="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-sm">
-                1-Dars Bepul
-              </div>
-
               <div className="mb-6">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Sinov darsiga yoziling
+                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
+                  Tezkor Ro'yxatdan O'tish
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-2">
+                  Bepul Sinov Darsiga Yoziling
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Ma'lumotlaringizni qoldiring, 15 daqiqa ichida siz bilan bog'lanib, guruh vaqtini belgilaymiz.
+                  15 daqiqa ichida administratorimiz siz bilan bog'lanib qulay vaqtni belgilaydi.
                 </p>
               </div>
 
               {isSubmitted ? (
                 <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto">
-                    <Check className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30">
+                    <Check className="w-6 h-6 stroke-[3]" />
                   </div>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">
                     Arizangiz qabul qilindi!
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-slate-300">
-                    Administratorimiz tez orada sizga qo'ng'iroq qiladi. Rahmat!
+                    Tez orada sizga qo'ng'iroq qilamiz. Renessans O'quv Markazini tanlaganingiz uchun rahmat!
                   </p>
                   <button
                     onClick={() => setIsSubmitted(false)}
-                    className="text-xs text-amber-600 dark:text-amber-400 font-bold underline cursor-pointer pt-2 block mx-auto"
+                    className="text-xs text-amber-600 dark:text-amber-400 font-bold underline cursor-pointer"
                   >
-                    Boshqa ariza qoldirish
+                    Yana ariza yuborish
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleQuickLead} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Ism va familiyangiz
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                      F.I.SH (Ismingiz) *
                     </label>
                     <div className="relative">
                       <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         required
-                        placeholder="Masalan: Sardorbek Qodirov"
+                        placeholder="Masalan: Sardor Alimov"
                         value={leadName}
                         onChange={(e) => setLeadName(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
@@ -202,15 +211,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Telefon raqamingiz
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                      Telefon raqamingiz *
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="tel"
                         required
-                        placeholder="+998 90 123 45 67"
+                        placeholder="+998 (90) 123-45-67"
                         value={leadPhone}
                         onChange={(e) => setLeadPhone(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
@@ -219,8 +228,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Qaysi yo'nalish qiziqtiryapti?
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                      Qaysi yo'nalish qiziqtiradi?
                     </label>
                     <div className="relative">
                       <BookOpen className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -229,7 +238,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         onChange={(e) => setSelectedCourse(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition appearance-none cursor-pointer"
                       >
-                        {QUICK_COURSES.map((c) => (
+                        {courses.map((c) => (
                           <option key={c} value={c}>
                             {c}
                           </option>
@@ -263,7 +272,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           transition={{ duration: 0.6, delay: 0.45 }}
           className="mt-16 sm:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
         >
-          {STATS.map((stat, idx) => {
+          {stats.map((stat, idx) => {
             const Icon = stat.icon;
             return (
               <div

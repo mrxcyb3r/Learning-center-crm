@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, Calendar, Clock, Check, ArrowRight, Sparkles, User, Award, CheckCircle2 } from 'lucide-react';
 import { CourseData } from '../../types/crm';
-import { INITIAL_COURSES } from '../../services/crmService';
+import { crmService } from '../../services/crmService';
 
 interface CoursesSectionProps {
   onSelectCourseForTrial: (courseTitle: string) => void;
@@ -11,8 +11,19 @@ interface CoursesSectionProps {
 
 export const CoursesSection: React.FC<CoursesSectionProps> = ({
   onSelectCourseForTrial,
-  courses = INITIAL_COURSES,
+  courses: propCourses,
 }) => {
+  const [courses, setCourses] = useState<CourseData[]>([]);
+
+  useEffect(() => {
+    if (propCourses && propCourses.length > 0) {
+      setCourses(propCourses);
+    } else {
+      const activeCourses = crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false);
+      setCourses(activeCourses);
+    }
+  }, [propCourses]);
+
   return (
     <section id="courses" className="py-20 md:py-28 bg-slate-100/60 dark:bg-slate-900/40 border-y border-slate-200/80 dark:border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +43,7 @@ export const CoursesSection: React.FC<CoursesSectionProps> = ({
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {courses.map((course, idx) => {
-            const isFeatured = course.id === 'c-tarix' || course.id === 'c-matematika';
+            const isFeatured = idx === 0 || course.badge?.includes('Ommabop') || course.badge?.includes('Tavsiya');
             return (
               <motion.div
                 key={course.id}
@@ -62,71 +73,69 @@ export const CoursesSection: React.FC<CoursesSectionProps> = ({
                 )}
 
                 <div>
-                  {/* Category and Teacher */}
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                      {course.category}
-                    </span>
-                    {course.teacherName && (
-                      <span className="inline-flex items-center gap-1 font-medium text-slate-500 dark:text-slate-400">
-                        <User className="w-3.5 h-3.5 text-amber-500" />
-                        {course.teacherName}
-                      </span>
-                    )}
-                  </div>
+                  {/* Category */}
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block mt-1">
+                    {course.category}
+                  </span>
 
-                  {/* Title */}
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                     {course.title}
                   </h3>
 
-                  {/* Description */}
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2.5 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-3 line-clamp-3">
                     {course.description}
                   </p>
 
-                  {/* Meta Specs */}
-                  <div className="my-5 py-3 border-y border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Calendar className="w-4 h-4 text-amber-500" />
-                      {course.duration}
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
+                  {/* Course Meta */}
+                  <div className="mt-5 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                    <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
-                      {course.lessonsPerWeek}
-                    </span>
+                      <span>Davomiyligi: <strong>{course.duration}</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-amber-500" />
+                      <span>Darslar: <strong>{course.lessonsPerWeek}</strong></span>
+                    </div>
+                    {course.teacherName && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-amber-500" />
+                        <span>Bosh ustoz: <strong>{course.teacherName}</strong></span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Bullet features */}
-                  <ul className="space-y-2.5 my-5">
-                    {course.features.map((feat, fIdx) => (
-                      <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Highlights */}
+                  {course.features && course.features.length > 0 && (
+                    <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                      {course.features.map((feat, fIdx) => (
+                        <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Price and CTA */}
-                <div className="pt-5 border-t border-slate-100 dark:border-slate-800 mt-2">
+                {/* Bottom Pricing & CTA */}
+                <div className="mt-8 pt-5 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline justify-between mb-4">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Oylik to'lov:</span>
-                    <span className="text-xl font-black text-slate-900 dark:text-white">
-                      {course.formattedFee}
+                    <span className="text-xs text-slate-400 font-medium">Oylik to'lov</span>
+                    <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
+                      {course.formattedFee || `${course.monthlyFee.toLocaleString()} UZS / oy`}
                     </span>
                   </div>
 
                   <button
                     onClick={() => onSelectCourseForTrial(course.title)}
-                    className={`w-full py-3.5 rounded-xl font-extrabold text-xs tracking-wide transition flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                    className={`w-full py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer ${
                       isFeatured
-                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25'
                         : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white'
                     }`}
                   >
-                    <span>Sinov darsiga yozilish</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Sinov Darsiga Yozilish</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </motion.div>

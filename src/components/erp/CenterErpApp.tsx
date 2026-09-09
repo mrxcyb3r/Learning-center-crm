@@ -37,6 +37,7 @@ import { ReportsView } from './ReportsView';
 import { WebsiteCmsView } from './WebsiteCmsView';
 import { TelegramView } from './TelegramView';
 import { SettingsView } from './SettingsView';
+import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { crmService } from '../../services/crmService';
 
 type ErpTab =
@@ -279,7 +280,9 @@ export const CenterErpApp: React.FC = () => {
 
         {/* View Body */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
-          {renderActiveView()}
+          <AdminErrorBoundary key={activeTab} sectionName={SIDEBAR_ITEMS.find((s) => s.id === activeTab)?.label}>
+            {renderActiveView()}
+          </AdminErrorBoundary>
         </main>
       </div>
     </div>

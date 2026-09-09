@@ -1,680 +1,956 @@
-import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
+  AuditLogEntry,
+  CenterSettings,
+  CmsContent,
+  CourseData,
+  ExpenseRecord,
+  GroupScheduleItem,
+  IncomePaymentRecord,
   Lead,
   LeadStatus,
   StudentRecord,
-  TeacherRecord,
-  CourseData,
   StudentResult,
-  CmsContent,
-  GroupScheduleItem,
-  IncomePaymentRecord,
-  ExpenseRecord,
+  TeacherRecord,
   TelegramAlertLog,
 } from '../types/crm';
 
-// LocalStorage Keys for instant resilience
-const STORAGE_KEYS = {
-  LEADS: 'renessans_leads_v1',
-  STUDENTS: 'renessans_students_v1',
-  PAYMENTS: 'renessans_payments_v1',
-  EXPENSES: 'renessans_expenses_v1',
-  TELEGRAM_LOGS: 'renessans_telegram_logs_v1',
-  SETTINGS: 'renessans_settings_v1',
+// Local storage keys
+export const STORAGE_KEYS = {
+  LEADS: 'renessans_leads_v3',
+  STUDENTS: 'renessans_students_v3',
+  TEACHERS: 'renessans_teachers_v3',
+  COURSES: 'renessans_courses_v3',
+  SCHEDULE: 'renessans_schedule_v3',
+  PAYMENTS: 'renessans_payments_v3',
+  EXPENSES: 'renessans_expenses_v3',
+  RESULTS: 'renessans_results_v3',
+  CMS: 'renessans_cms_v3',
+  CMS_DRAFT: 'renessans_cms_draft_v3',
+  SETTINGS: 'renessans_settings_v3',
+  AUDIT_LOGS: 'renessans_audit_logs_v3',
+  TELEGRAM_LOGS: 'renessans_telegram_logs_v3',
 };
 
-// Initial realistic data reflecting Renessans Learning Center in Yangiobod
-export const INITIAL_LEADS: Lead[] = [
-  {
-    id: 'lead-201',
-    name: 'Sardorbek Qodirov',
-    phone: '+998 90 234 56 78',
-    course: 'Tarix, Huquq, Geografiya',
-    createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    assignedTo: 'Davlatbek (Rahbar)',
-    notes: 'Huquq va Akademiya imtihonlariga tayyorlanmoqchi. Ota-onasi bilan gaplashildi.',
-    status: 'Yangi',
-    source: 'Sayt bosh sahifasi',
-  },
-  {
-    id: 'lead-202',
-    name: 'Ziyodaxon Karimova',
-    phone: '+998 93 456 78 90',
-    course: 'CEFR Ingliz tili',
-    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
-    assignedTo: 'Qabulxona',
-    notes: 'CEFR B2 daraja kerak. Ertaga soat 14:00 da darajani aniqlash testiga chaqirildi.',
-    status: "Bog'lanildi",
-    source: 'Telegram @D_Furqatovich',
-  },
-  {
-    id: 'lead-203',
-    name: 'Bekzod Rahmonov',
-    phone: '+998 97 123 45 67',
-    course: 'Matematika & SAT',
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    assignedTo: 'Munisa (Ustoz)',
-    notes: 'Shanba kuni soat 10:00 da bepul sinov darsiga yozildi.',
-    status: 'Sinov darsi belgilandi',
-    source: 'Tavsiya orqali',
-  },
-  {
-    id: 'lead-204',
-    name: 'Shahrizoda Mamatova',
-    phone: '+998 91 333 44 55',
-    course: 'Mental Arifmetika',
-    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    assignedTo: 'Inomjon (Ustoz)',
-    notes: 'Sinov darsida qatnashdi. Birinchi oy to\'lovini amalga oshirdi va guruhga qo\'shildi.',
-    status: "O'quvchiga aylandi",
-    source: 'Yangiobod 1-maktab flayeri',
-  },
-  {
-    id: 'lead-205',
-    name: 'Bobur Mirzayev',
-    phone: '+998 94 888 77 66',
-    course: 'Tarix, Huquq, Geografiya',
-    createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-    assignedTo: 'Qabulxona',
-    notes: 'DTM testlariga tayyorgarlik uchun murojaat qildi. 11-sinf o\'quvchisi.',
-    status: 'Yangi',
-    source: 'Sayt orqali ariza',
-  },
-  {
-    id: 'lead-206',
-    name: 'Nilufar Umarova',
-    phone: '+998 90 999 11 22',
-    course: 'Ona tili va Adabiyot',
-    createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-    assignedTo: 'Zulfizar (Ustoz)',
-    notes: 'Milliy sertifikat olish niyatida. Haftada 3 kun dars vaqti ma\'qul keldi.',
-    status: "Bog'lanildi",
-    source: 'Sayt bosh sahifasi',
-  },
-  {
-    id: 'lead-207',
-    name: 'Jasurbek Aliyev',
-    phone: '+998 99 444 33 22',
-    course: 'English Kids',
-    createdAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
-    assignedTo: 'Qabulxona',
-    notes: '3-sinf o\'quvchisi. Onasi bilan bog\'lanildi, dushanba kuni sinov darsi.',
-    status: 'Sinov darsi belgilandi',
-    source: 'Instagram sahifa',
-  },
-  {
-    id: 'lead-208',
-    name: 'Gulsanam Toirova',
-    phone: '+998 93 111 88 99',
-    course: 'Tarix, Huquq, Geografiya',
-    createdAt: new Date(Date.now() - 10 * 3600 * 1000).toISOString(),
-    assignedTo: 'Davlatbek (Rahbar)',
-    notes: 'Yurisprudensiya yo\'nalishi. Davlatbek ustoz bilan shaxsan maslahatlashdi.',
-    status: "O'quvchiga aylandi",
-    source: 'Yangiobod texnikumi filiali',
-  },
-];
-
-export const INITIAL_STUDENTS: StudentRecord[] = [
-  {
-    id: 'st-101',
-    fullName: 'Jahongir Olimov',
-    phone: '+998 90 111 22 33',
-    course: 'Tarix, Huquq, Geografiya',
-    teacher: 'Davlatbek Abdurasulov',
-    groupName: 'Tarix & Huquq - DTM Guruh 1',
-    enrollmentDate: '2026-08-01',
-    tuitionFee: 350000,
-    paymentStatus: 'Paid',
-    nextDueDate: '2026-10-01',
-    isActive: true,
-  },
-  {
-    id: 'st-102',
-    fullName: 'Rayhona Qodirova',
-    phone: '+998 93 222 33 44',
-    course: 'Matematika & SAT',
-    teacher: 'Munisa Mamadazimova',
-    groupName: 'Matematika Milliy Sertifikat A',
-    enrollmentDate: '2026-08-15',
-    tuitionFee: 300000,
-    paymentStatus: 'Due',
-    nextDueDate: '2026-09-15',
-    isActive: true,
-  },
-  {
-    id: 'st-103',
-    fullName: 'Kamronbek Yusupov',
-    phone: '+998 97 333 44 55',
-    course: 'CEFR Ingliz tili',
-    teacher: 'Jamshid Alibekov',
-    groupName: 'CEFR B2 Intensive',
-    enrollmentDate: '2026-07-10',
-    tuitionFee: 300000,
-    paymentStatus: 'Paid',
-    nextDueDate: '2026-10-10',
-    isActive: true,
-  },
-  {
-    id: 'st-104',
-    fullName: 'Gulruh Ismoilova',
-    phone: '+998 91 444 55 66',
-    course: 'Ona tili va Adabiyot',
-    teacher: 'Zulfizar Do\'smatova',
-    groupName: 'Ona tili Milliy Sertifikat',
-    enrollmentDate: '2026-08-05',
-    tuitionFee: 280000,
-    paymentStatus: 'Overdue',
-    nextDueDate: '2026-09-05',
-    isActive: true,
-  },
-  {
-    id: 'st-105',
-    fullName: 'Azizbek Ergashev',
-    phone: '+998 99 555 66 77',
-    course: 'Mental Arifmetika',
-    teacher: 'Inomjon Barakayev',
-    groupName: 'Mental Arifmetika Boshlang\'ich',
-    enrollmentDate: '2026-09-01',
-    tuitionFee: 250000,
-    paymentStatus: 'Paid',
-    nextDueDate: '2026-10-01',
-    isActive: true,
-  },
-];
-
+// Seed teachers WITHOUT any random Unsplash photos
 export const INITIAL_TEACHERS: TeacherRecord[] = [
   {
-    id: 'tc-davlatbek',
-    name: 'Davlatbek Abdurasulov',
-    subject: 'Tarix • Huquq • Geografiya',
-    specialization: 'Milliy sertifikat, Yurisprudensiya, Akademiya, DTM testlariga tayyorgarlik',
-    experience: '6+ yil tajriba',
-    activeGroups: 6,
-    studentsCount: 148,
+    id: 't-diyorbek',
+    name: 'Diyorbek Furqatovich',
+    gender: 'male',
+    subject: 'Tarix & Huquq',
+    specialization: 'DTM va Milliy Sertifikat Tarix / Huquq',
+    qualification: "Oliy toifali mutaxassis, Davlat granti sohibi ustozi",
+    experience: '6 yil',
+    activeGroups: 3,
+    studentsCount: 38,
     salaryStatus: 'Paid',
-    monthlySalary: 14500000,
+    monthlySalary: 12000000,
+    salary: 12000000,
     phone: '+998 (88) 648-49-49',
+    photo: '', // Empty: Uses professional vector avatar unless custom photo is uploaded
+    achievements: [
+      "187.9 eng yuqori DTM balli sohibi ustozi (2025)",
+      "2 nafar 100% davlat granti talabasi ustozi",
+      "Yangiobod tumanida Tarix fanidan yetakchi pedagog",
+    ],
     telegram: '@D_Furqatovich',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
-    achievements: [
-      "100+ o'quvchilari DTM va Milliy sertifikatdan yuqori ball olgan",
-      "Yurisprudensiya va Akademiya yo'nalishida nufuzli talabalar yetishtirgan",
-      "Haftalik diagnostik sinovlar muallifi",
-    ],
-    description: "Tarix, huquq va geografiya fanlaridan chuqurlashtirilgan dastur asosida dars beruvchi yetakchi mutaxassis.",
+    description: "Tarix va huquqshunoslik yo'nalishida 6 yillik muvaffaqiyatli tajribaga ega. DTM va Milliy sertifikatga tayyorlash bo'yicha maxsus mualliflik dasturi asoschisi.",
+    status: 'Active',
+    displayOrder: 1,
+    isPublic: true,
+    assignedCourses: ['c-tarix', 'c-huquq'],
+    notes: "Markaz asoschisi va bosh metodisti",
+    createdAt: '2025-01-01T00:00:00.000Z',
   },
   {
-    id: 'tc-munisa',
-    name: 'Munisa Mamadazimova',
+    id: 't-jasur',
+    name: 'Jasur Alimov',
+    gender: 'male',
     subject: 'Matematika & SAT',
-    specialization: 'Milliy sertifikat, SAT, Imtihonlarga tayyorgarlik',
-    experience: '5+ yil tajriba',
-    activeGroups: 4,
-    studentsCount: 83,
+    specialization: 'Oliy Matematika, Milliy Sertifikat va SAT Math',
+    qualification: "Magistr, Matematika olimpiadalari hakamlar hay'ati a'zosi",
+    experience: '5 yil',
+    activeGroups: 2,
+    studentsCount: 28,
     salaryStatus: 'Paid',
-    monthlySalary: 11000000,
+    monthlySalary: 10500000,
+    salary: 10500000,
     phone: '+998 (99) 259-32-32',
-    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+    photo: '',
     achievements: [
-      "Matematikadan Milliy sertifikat egalari ustozidir",
-      "SAT xalqaro imtihoni bo'yicha maxsus uslubiyot",
-      "Murakkab masalalarni sodda tushuntirish mahorati",
+      'SAT Math 790 ballik o\'quvchilar ustozi',
+      'Milliy Sertifikat A+ va A natijalar (18 ta)',
+      'Olimpiada viloyat bosqichi g\'oliblari tayyorlovchisi',
     ],
-    description: "Aniq fanlar bo'yicha zamonaviy o'qitish metodikasi va nostandart masalalar yechimi ustasi.",
+    telegram: '@jasur_math',
+    description: 'Matematikani mantiqiy fikrlash, formulalarni vizual tushunish va murakkab geometriya masalalarini oson yechish uslublari orqali o\'rgatadi.',
+    status: 'Active',
+    displayOrder: 2,
+    isPublic: true,
+    assignedCourses: ['c-matematika'],
+    createdAt: '2025-01-10T00:00:00.000Z',
   },
   {
-    id: 'tc-inomjon',
-    name: 'Inomjon Barakayev',
-    subject: 'Mental Arifmetika',
-    specialization: 'Tez hisoblash, Kuchli xotira, Diqqat, Tafakkurni rivojlantirish',
-    experience: '4+ yil tajriba',
-    activeGroups: 4,
-    studentsCount: 45,
-    salaryStatus: 'Paid',
-    monthlySalary: 9000000,
-    phone: '+998 (88) 648-49-49',
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400',
-    achievements: [
-      "Yuzlab yosh o'quvchilarda mental hisoblash tezligini 4 karra oshirgan",
-      "Respublika miqyosidagi mental arifmetika olimpiadasi g'oliblari ustozi",
-    ],
-    description: "Bolalarda xotira, tasavvur va tez hisoblash iqtidorini shakllantiruvchi mutaxassis.",
-  },
-  {
-    id: 'tc-zulfizar',
-    name: "Zulfizar Do'smatova",
-    subject: 'Ona tili va Adabiyot',
-    specialization: 'Milliy sertifikat, DTM, Maktab imtihonlariga tayyorgarlik',
-    experience: '5+ yil tajriba',
+    id: 't-malika',
+    name: 'Malika Karimova',
+    gender: 'female',
+    subject: 'Ingliz tili (CEFR & Kids)',
+    specialization: 'CEFR B2/C1 va General English',
+    qualification: 'CEFR C1 Sertifikati, TESOL xalqaro sertifikati',
+    experience: '4 yil',
     activeGroups: 3,
-    studentsCount: 40,
-    salaryStatus: 'Paid',
-    monthlySalary: 8500000,
-    phone: '+998 (99) 259-32-32',
-    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-    achievements: [
-      "Ona tili Milliy sertifikatidan A+ va A daraja olgan o'quvchilar yetishtirgan",
-      "DTM savollari bazasi bo'yicha mukammal tayyorgarlik dasturi",
-    ],
-    description: "Ona tili grammatikasi va adabiy tahlilni puxta egallashga yo'naltirilgan o'qituvchi.",
-  },
-  {
-    id: 'tc-jamshid',
-    name: 'Jamshid Alibekov',
-    subject: 'CEFR Ingliz tili & Kids',
-    specialization: 'CEFR, Grammar, Speaking, Reading, Listening',
-    experience: '4+ yil tajriba',
-    activeGroups: 3,
-    studentsCount: 52,
+    studentsCount: 32,
     salaryStatus: 'Paid',
     monthlySalary: 9500000,
-    phone: '+998 (88) 648-49-49',
-    photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400',
+    salary: 9500000,
+    phone: '+998 (90) 345-67-89',
+    photo: '',
     achievements: [
-      "CEFR B2 va C1 sertifikati sohiblarini tayyorlagan",
-      "Bolalar uchun qiziqarli 'English Kids' interaktiv darslari muallifi",
+      '30+ o\'quvchi CEFR B2 va C1 sertifikatini olgan',
+      'Interaktiv multimedia va speaking clublar koordinatori',
+      'Maktab o\'quvchilarini noldan B2 ga olib chiqish bo\'yicha mutaxassis',
     ],
-    description: "Zamonaviy til o'rgatish standartlari asosida so'zlashuv va eshitish ko'nikmalarini rivojlantiruvchi ustoz.",
+    telegram: '@malika_english',
+    description: 'Ingliz tilida so\'zlashuv to\'sig\'ini tez yengish, mukammal grammatika va listening ko\'nikmalarini rivojlantirish bo\'yicha zamonaviy dasturlar asosida dars beradi.',
+    status: 'Active',
+    displayOrder: 3,
+    isPublic: true,
+    assignedCourses: ['c-cefr', 'c-kids'],
+    createdAt: '2025-02-01T00:00:00.000Z',
+  },
+  {
+    id: 't-farxod',
+    name: 'Farxod Qodirov',
+    gender: 'male',
+    subject: 'Geografiya',
+    specialization: 'DTM Geografiya va Topografiya',
+    qualification: 'Oliy toifali geograf-pedagog',
+    experience: '5 yil',
+    activeGroups: 2,
+    studentsCount: 22,
+    salaryStatus: 'Pending',
+    monthlySalary: 9000000,
+    salary: 9000000,
+    phone: '+998 (93) 456-78-90',
+    photo: '',
+    achievements: [
+      'DTM Geografiya blokidan 100% to\'g\'ri javob bergan 12 ta o\'quvchi',
+      'Xaritalar bilan ishlash bo\'yicha mualliflik qo\'llanmasi',
+    ],
+    telegram: '@farxod_geo',
+    description: 'Iqtisodiy va tabiiy geografiya, jahon mamlakatlari va xaritalar bilan ishlash bo\'yicha chuqur bilim beradi.',
+    status: 'Active',
+    displayOrder: 4,
+    isPublic: true,
+    assignedCourses: ['c-tarix'],
+    createdAt: '2025-02-15T00:00:00.000Z',
+  },
+  {
+    id: 't-dilnoza',
+    name: 'Dilnoza Rahimova',
+    gender: 'female',
+    subject: 'Mental Arifmetika & Kids',
+    specialization: 'Boshlang\'ich rivojlantirish va mantiqiy tafakkur',
+    qualification: 'Mental Arifmetika xalqaro assotsiatsiyasi sertifikati',
+    experience: '3 yil',
+    activeGroups: 2,
+    studentsCount: 24,
+    salaryStatus: 'Paid',
+    monthlySalary: 8000000,
+    salary: 8000000,
+    phone: '+998 (97) 123-45-67',
+    photo: '',
+    achievements: [
+      'Respublika Mental Arifmetika turniri sovrindorlari ustozi',
+      'Abakus tezkor hisoblash texnikasi mutaxassisi',
+    ],
+    telegram: '@dilnoza_mental',
+    description: 'Bolalarning xotirasi, diqqati va tezkor hisoblash qobiliyatini o\'yin metodlari orqali rivojlantiradi.',
+    status: 'Active',
+    displayOrder: 5,
+    isPublic: true,
+    assignedCourses: ['c-mental'],
+    createdAt: '2025-03-01T00:00:00.000Z',
+  },
+  {
+    id: 't-sarvar',
+    name: 'Sarvar Norboyev',
+    gender: 'male',
+    subject: 'Ona tili va Adabiyot',
+    specialization: 'DTM va Milliy Sertifikat Ona tili',
+    qualification: 'Oliy toifali filolog, DTM eksperti',
+    experience: '7 yil',
+    activeGroups: 2,
+    studentsCount: 26,
+    salaryStatus: 'Paid',
+    monthlySalary: 10000000,
+    salary: 10000000,
+    phone: '+998 (91) 987-65-43',
+    photo: '',
+    achievements: [
+      'Ona tili Milliy sertifikatidan A+ va A olgan 22 nafar o\'quvchi',
+      'Imlo va matn tahlili bo\'yicha maxsus ekspress kurs muallifi',
+    ],
+    telegram: '@sarvar_onatili',
+    description: 'Ona tili grammatikasi, fonetika va adabiy tahlilni eng oson va tushunarli metodlar bilan o\'rgatadi.',
+    status: 'Active',
+    displayOrder: 6,
+    isPublic: true,
+    assignedCourses: ['c-onatili'],
+    createdAt: '2025-03-10T00:00:00.000Z',
   },
 ];
 
+// Seed Courses
 export const INITIAL_COURSES: CourseData[] = [
   {
     id: 'c-tarix',
-    title: 'Tarix • Huquq • Geografiya',
-    category: 'Milliy Sertifikat & DTM',
-    teacherName: 'Davlatbek Abdurasulov',
-    description: 'Yurisprudensiya, Akademiya va DTM imtihonlariga chuqurlashtirilgan tayyorgarlik. Milliy sertifikat kafolati bilan.',
-    duration: '6-9 Oy',
-    lessonsPerWeek: 'Haftada 3 kun (2 soatdan)',
-    monthlyFee: 350000,
-    formattedFee: "350,000 so'm",
-    badge: 'Eng ommabop',
+    title: 'Tarix, Huquq, Geografiya',
+    shortTitle: 'Tarix & Huquq',
+    category: 'DTM & Milliy Sertifikat',
+    badge: 'Eng Ommabop',
+    description: "Yurisprudensiya, Xalqaro munosabatlar va Ijtimoiy-gumanitar oliygohlarga kiruvchilar uchun 100% natijaga yo'naltirilgan kompleks tayyorlov.",
+    duration: '8 oy',
+    lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
+    lessonDuration: '120 daqiqa',
+    monthlyFee: 380000,
+    formattedFee: '380,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
     features: [
-      'Milliy sertifikatga maxsus tayyorgarlik dasturi',
-      'Yurisprudensiya va Akademiya kirish imtihonlari',
-      'Haftalik diagnostik sinov testlari',
-      'Xaritalar va tarixiy xronologiya bilan ishlash',
+      'Mualliflik konspektlari va xronologik jadvallar',
+      'Haftalik test sinovlari (DTM standarti bo\'yicha)',
+      'Milliy sertifikat topshirish strategiyasi',
+      'Ota-onalarga oylik hisobot va davomat nazorati',
     ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 1,
   },
   {
     id: 'c-matematika',
-    title: 'Matematika & SAT',
-    category: 'Aniq fanlar',
-    teacherName: 'Munisa Mamadazimova',
-    description: 'Maktab dasturi, DTM, Milliy sertifikat va xalqaro SAT imtihonlariga fundamental tayyorgarlik.',
-    duration: '6-9 Oy',
-    lessonsPerWeek: 'Haftada 3 kun (1.5 soatdan)',
-    monthlyFee: 300000,
-    formattedFee: "300,000 so'm",
-    badge: 'Aniq fanlar',
+    title: 'Matematika & Fizika',
+    shortTitle: 'Matematika',
+    category: 'Aniq Fanlar',
+    badge: 'Kafolatlangan Natija',
+    description: "Texnika, Iqtisodiyot, Axborot texnologiyalari va xorijiy oliygohlar (Westminster, INHA, WIUT) uchun mukammal poydevor.",
+    duration: '9 oy',
+    lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
+    lessonDuration: '120 daqiqa',
+    monthlyFee: 380000,
+    formattedFee: '380,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Jasur Alimov',
+    teacherId: 't-jasur',
     features: [
-      'Milliy sertifikat darajasidagi murakkab masalalar',
-      'Xalqaro SAT imtihoniga yo\'naltirilgan topshiriqlar',
-      'Mantiqiy va nostandart masalalar tahlili',
-      'Oylik test sinovlari va natijalar tahlili',
+      'Elementar matematikadan oliy darajagacha',
+      'DTM va Milliy sertifikat qoliplari bilan ishlash',
+      'Mantiqiy masalalar va tezkor formulalar yechimi',
+      'Barcha dars materiallari va testlar bepul beriladi',
     ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 2,
   },
   {
     id: 'c-cefr',
-    title: 'CEFR Ingliz tili',
-    category: 'Xorijiy tillar',
-    teacherName: 'Jamshid Alibekov',
-    description: 'CEFR B2 va C1 milliy sertifikatini qo\'lga kiritish va OTMga 100% maksimal ballni naqd qilish kursi.',
-    duration: '3-6 Oy',
-    lessonsPerWeek: 'Haftada 3 kun + Speaking club',
-    monthlyFee: 300000,
-    formattedFee: "300,000 so'm",
-    badge: 'Til sertifikati',
+    title: 'CEFR Ingliz Tili (B2 / C1)',
+    shortTitle: 'CEFR English',
+    category: 'Chet Tillari',
+    badge: 'Sertifikat Kafolati',
+    description: "Listening, Reading, Writing va Speaking bo'yicha intensiv darslar. OTMga kirishda chet tilidan maksimal ball kafolati.",
+    duration: '6 oy',
+    lessonsPerWeek: 'Haftada 3 kun / 1.5 soatdan',
+    lessonDuration: '90 daqiqa',
+    monthlyFee: 350000,
+    formattedFee: '350,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Malika Karimova',
+    teacherId: 't-malika',
     features: [
-      'DTM CEFR formatidagi haqiqiy akustik testlar',
-      'Grammatika va o\'qish tezligini oshirish',
-      'Jonli suhbat va erkin fikr bildirish klubi',
-      'B2 darajaga erishish uchun individual nazorat',
+      'Har hafta rasmiy CEFR mock imtihonlari',
+      'Speaking clublar va audio listening tahlili',
+      'Insho yozish (Writing) shaxsiy tekshiruvi',
+      'C1 sertifikatiga ega ustozlar darsi',
     ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 3,
+  },
+  {
+    id: 'c-kids',
+    title: 'English Kids (3–10 yosh)',
+    shortTitle: 'English Kids',
+    category: 'Bolalar Dasturi',
+    badge: 'O\'yin orqali ta\'lim',
+    description: "Kichik yoshdagi bolalarga ingliz tilini qiziqarli o'yinlar, multfilmlar, qo'shiqlar va so'zlashuv mashg'ulotlari orqali o'rgatish.",
+    duration: 'Davomiy',
+    lessonsPerWeek: 'Haftada 3 kun / 1 soatdan',
+    lessonDuration: '60 daqiqa',
+    monthlyFee: 290000,
+    formattedFee: '290,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Dilnoza Rahimova',
+    teacherId: 't-dilnoza',
+    features: [
+      'Interaktiv o\'yinli metodika',
+      'To\'g\'ri talaffuz va boy so\'z boyligi',
+      'Vizual kartochkalar va ijodiy mashg\'ulotlar',
+      'Kichik guruhlar (maksimal 10 bola)',
+    ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 4,
   },
   {
     id: 'c-mental',
     title: 'Mental Arifmetika',
-    category: 'Bolalar rivojlanishi',
-    teacherName: 'Inomjon Barakayev',
-    description: 'Bolalarning miya faoliyatini, xotirasini, diqqatini va tez hisoblash salohiyatini bir necha barobar oshiruvchi kurs.',
-    duration: '4-6 Oy',
-    lessonsPerWeek: 'Haftada 3 kun (1 soatdan)',
-    monthlyFee: 250000,
-    formattedFee: "250,000 so'm",
-    badge: 'Iqtidor',
+    shortTitle: 'Mental Arifmetika',
+    category: 'Mantiqiy Rivojlanish',
+    badge: 'Xotira & Diqqat',
+    description: "Bolalarda xotira, tasavvur va miyaning ikki yarim sharlarini rivojlantiruvchi tezkor hisoblash kursi.",
+    duration: '6 oy',
+    lessonsPerWeek: 'Haftada 2 kun / 1.5 soatdan',
+    lessonDuration: '90 daqiqa',
+    monthlyFee: 280000,
+    formattedFee: '280,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Dilnoza Rahimova',
+    teacherId: 't-dilnoza',
     features: [
-      'Abakus yordamida daqiqasiga 100+ amallarni hisoblash',
-      'Xotira, tasavvur va diqqatni jamlash mashqlari',
-      'Maktabdagi darslarni oson o\'zlashtirishga yordam',
-      'Respublika olimpiadalarida ishtirok etish imkoniyati',
+      'Abakus bilan tezkor amallar bajarish',
+      'Ongda soniyalarda hisoblash texnikasi',
+      'Diqqat va e\'tiborni jamlash mashqlari',
+      'Xalqaro standartdagi sertifikat beriladi',
     ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 5,
   },
   {
     id: 'c-onatili',
-    title: 'Ona tili va Adabiyot',
-    category: 'Milliy Sertifikat & DTM',
-    teacherName: "Zulfizar Do'smatova",
-    description: 'Ona tili grammatikasi va adabiy asarlar tahlili bo\'yicha Milliy sertifikat va DTM ga puxta tayyorgarlik.',
-    duration: '6-9 Oy',
-    lessonsPerWeek: 'Haftada 3 kun',
-    monthlyFee: 280000,
-    formattedFee: "280,000 so'm",
-    badge: 'Majburiy fan',
+    title: 'Ona Tili va Adabiyot',
+    shortTitle: 'Ona Tili',
+    category: 'DTM Majburiy & Asosiy',
+    badge: 'DTM Majburiy Blok',
+    description: "Barcha yo'nalishlar uchun majburiy blok va filologiya yo'nalishlari uchun chuqurlashtirilgan ona tili va adabiyot kursi.",
+    duration: '7 oy',
+    lessonsPerWeek: 'Haftada 3 kun / 2 soatdan',
+    lessonDuration: '120 daqiqa',
+    monthlyFee: 320000,
+    formattedFee: '320,000 UZS / oy',
+    currency: 'UZS',
+    teacherName: 'Sarvar Norboyev',
+    teacherId: 't-sarvar',
     features: [
-      'Morfologiya, sintaksis va fonetika chuqur tahlili',
-      'Matn bilan ishlash va savodxonlikni oshirish',
-      'Adabiyotdan xronologik va mavzuiy testlar',
-      'Insho va fikrni ravon bayon etish mahorati',
+      'Morfologiya, sintaksis va orfografiya sirlari',
+      'Badiiy asarlar tahlili va adabiy faktlar',
+      'Muntazam testlar va DTM tahlillari',
+      'Majburiy fanlar blokidan maksimal ball kafolati',
     ],
-  },
-  {
-    id: 'c-kids',
-    title: 'English Kids',
-    category: 'Bolalar uchun',
-    teacherName: 'Jamshid Alibekov',
-    description: 'Bolalar uchun qiziqarli, o\'yinlar va interaktiv qo\'llanmalar orqali samarali ingliz tili mashg\'ulotlari.',
-    duration: 'Davomli',
-    lessonsPerWeek: 'Haftada 3 kun',
-    monthlyFee: 250000,
-    formattedFee: "250,000 so'm",
-    badge: 'Kichik yoshlilar',
-    features: [
-      'Qiziqarli ertaklar va multfilmlar asosida o\'rganish',
-      'To\'g\'ri talaffuz va boy so\'z zaxirasi',
-      'Boshlang\'ich sinf o\'quvchilari uchun moslashtirilgan',
-      'Bolada xorijiy tilga qiziqish uyg\'otish',
-    ],
+    isActive: true,
+    isPublic: true,
+    displayOrder: 6,
   },
 ];
 
-export const INITIAL_RESULTS: StudentResult[] = [
-  {
-    id: 'res-1',
-    studentName: 'Hasanboyeva Sevinch Akmal qizi',
-    score: '187.9 BALL',
-    university: "O'zbekiston davlat jahon tillari universiteti (O'zDJTU)",
-    fieldOfStudy: 'Ingliz tili yo\'nalishi',
-    admissionType: 'Grant',
-    year: '2025–2026',
-    category: 'DTM',
-    badge: 'Eng yuqori ball • Davlat granti',
-  },
-  {
-    id: 'res-2',
-    studentName: 'Davronov Bahrombek Dilshodbek o\'g\'li',
-    score: '100% Natija',
-    university: 'Yurisprudensiya / Akademiya',
-    fieldOfStudy: 'Huquqshunoslik yo\'nalishi',
-    admissionType: 'Grant',
-    year: '2025–2026',
-    category: 'Davlat granti',
-    badge: 'Davlat granti sohibi',
-  },
-  {
-    id: 'res-3',
-    studentName: 'Sultonnazarova Zahro Zohibnazar qizi',
-    score: '165.5 BALL',
-    university: 'Toshkent davlat tibbiyot universiteti (TDTU)',
-    fieldOfStudy: 'Farmatsevtika',
-    admissionType: 'Kontrakt',
-    year: '2025–2026',
-    category: 'OTMga qabul',
-    badge: 'Tibbiyot yo\'nalishi',
-  },
-  {
-    id: 'res-4',
-    studentName: 'Qodirov Shaxbozbek',
-    score: '158.4 BALL',
-    university: 'Guliston davlat universiteti (GulDU)',
-    fieldOfStudy: 'Tarix fani o\'qituvchisi',
-    admissionType: 'Grant',
-    year: '2025–2026',
-    category: 'OTMga qabul',
-    badge: 'Davlat granti',
-  },
-  {
-    id: 'res-5',
-    studentName: 'Yo\'ldosheva Mohinur',
-    score: '162.1 BALL',
-    university: 'Jizzax davlat pedagogika universiteti (JDPU)',
-    fieldOfStudy: 'Matematika va informatika',
-    admissionType: 'Kontrakt',
-    year: '2025–2026',
-    category: 'Milliy Sertifikat',
-    badge: 'Matematika',
-  },
-  {
-    id: 'res-6',
-    studentName: 'Normatov Javohir',
-    score: 'CEFR B2 Sertifikat',
-    university: "O'zbekiston Milliy universiteti Jizzax filiali",
-    fieldOfStudy: 'Iqtisodiyot va moliya',
-    admissionType: 'Grant',
-    year: '2025–2026',
-    category: 'CEFR',
-    badge: 'Maksimal ball',
-  },
-];
-
+// Seed Schedule / Groups
 export const INITIAL_SCHEDULE: GroupScheduleItem[] = [
   {
-    id: 'sch-1',
+    id: 'grp-01',
+    groupName: 'Tarix Milliy Sertifikat - 1-guruh',
+    course: 'Tarix, Huquq, Geografiya',
+    courseId: 'c-tarix',
+    teacher: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    branch: '1-Filial (Asosiy)',
+    room: '101-Auditoriya',
+    days: 'Dush / Chor / Juma',
     time: '08:30 - 10:30',
-    course: 'Tarix • Huquq • Geografiya',
-    groupName: 'Tarix DTM - Ertalabki A guruh',
-    teacher: 'Davlatbek Abdurasulov',
-    room: '1-xona (Bosh filial)',
-    days: 'Dush / Chor / Juma',
-    type: 'Regular',
-    studentsCount: 22,
-    maxCapacity: 25,
-  },
-  {
-    id: 'sch-2',
-    time: '10:30 - 12:00',
-    course: 'Matematika & SAT',
-    groupName: 'Matematika Milliy Sertifikat',
-    teacher: 'Munisa Mamadazimova',
-    room: '2-xona',
-    days: 'Dush / Chor / Juma',
-    type: 'Regular',
-    studentsCount: 18,
-    maxCapacity: 20,
-  },
-  {
-    id: 'sch-3',
-    time: '14:00 - 15:30',
-    course: 'CEFR Ingliz tili',
-    groupName: 'CEFR Intensive B2',
-    teacher: 'Jamshid Alibekov',
-    room: '3-xona',
-    days: 'Sesh / Pay / Shan',
-    type: 'Regular',
-    studentsCount: 16,
-    maxCapacity: 18,
-  },
-  {
-    id: 'sch-4',
-    time: '15:30 - 17:00',
-    course: 'Mental Arifmetika',
-    groupName: 'Mental Arifmetika Yoshlar guruhi',
-    teacher: 'Inomjon Barakayev',
-    room: 'Texnikum filiali',
-    days: 'Sesh / Pay / Shan',
-    type: 'Regular',
-    studentsCount: 14,
+    startTime: '08:30',
+    endTime: '10:30',
     maxCapacity: 16,
+    studentsCount: 14,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 1,
   },
   {
-    id: 'sch-5',
+    id: 'grp-02',
+    groupName: 'Tarix DTM - 2-guruh (Tushki)',
+    course: 'Tarix, Huquq, Geografiya',
+    courseId: 'c-tarix',
+    teacher: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    branch: '1-Filial (Asosiy)',
+    room: '101-Auditoriya',
+    days: 'Sesh / Pay / Shan',
+    time: '14:00 - 16:00',
+    startTime: '14:00',
+    endTime: '16:00',
+    maxCapacity: 16,
+    studentsCount: 13,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 2,
+  },
+  {
+    id: 'grp-03',
+    groupName: 'Matematika DTM - 1-guruh',
+    course: 'Matematika & Fizika',
+    courseId: 'c-matematika',
+    teacher: 'Jasur Alimov',
+    teacherId: 't-jasur',
+    branch: '1-Filial (Asosiy)',
+    room: '102-Xona',
+    days: 'Dush / Chor / Juma',
+    time: '14:00 - 16:00',
+    startTime: '14:00',
+    endTime: '16:00',
+    maxCapacity: 16,
+    studentsCount: 15,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 3,
+  },
+  {
+    id: 'grp-04',
+    groupName: 'CEFR B2 FastTrack',
+    course: 'CEFR Ingliz Tili (B2 / C1)',
+    courseId: 'c-cefr',
+    teacher: 'Malika Karimova',
+    teacherId: 't-malika',
+    branch: '1-Filial (Asosiy)',
+    room: '201-Laboratoriya',
+    days: 'Dush / Chor / Juma',
     time: '16:00 - 17:30',
-    course: 'Tarix • Huquq • Geografiya',
-    groupName: 'Bepul Sinov Darsi (Yangi o\'quvchilar)',
-    teacher: 'Davlatbek Abdurasulov',
-    room: 'Asosiy zal',
-    days: 'Shanba',
-    type: 'Trial Lesson',
+    startTime: '16:00',
+    endTime: '17:30',
+    maxCapacity: 14,
     studentsCount: 12,
-    maxCapacity: 25,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 4,
+  },
+  {
+    id: 'grp-05',
+    groupName: 'Mental Arifmetika - Junior',
+    course: 'Mental Arifmetika',
+    courseId: 'c-mental',
+    teacher: 'Dilnoza Rahimova',
+    teacherId: 't-dilnoza',
+    branch: '2-Filial (Texnikum)',
+    room: '301-Xona',
+    days: 'Sesh / Pay / Shan',
+    time: '10:00 - 11:30',
+    startTime: '10:00',
+    endTime: '11:30',
+    maxCapacity: 12,
+    studentsCount: 11,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 5,
+  },
+  {
+    id: 'grp-06',
+    groupName: 'Tarix Bepul Sinov Darsi (Ochiq dars)',
+    course: 'Tarix, Huquq, Geografiya',
+    courseId: 'c-tarix',
+    teacher: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    branch: '1-Filial (Asosiy)',
+    room: '202-Katta Zal',
+    days: 'Yakshanba',
+    time: '10:00 - 12:00',
+    startTime: '10:00',
+    endTime: '12:00',
+    maxCapacity: 30,
+    studentsCount: 18,
+    type: 'Trial Lesson',
+    status: 'Active',
+    displayOrder: 6,
   },
 ];
 
-export const INITIAL_CMS: CmsContent = {
-  heroTitle: 'Farzandingizning kelajagini bugundan boshlang!',
-  heroSubtitle: "Milliy sertifikat, DTM, CEFR, SAT va maktab fanlari bo'yicha tajribali ustozlar bilan sifatli tayyorgarlik.",
-  slogan: 'Bilimdan natijaga!',
-  phonePrimary: '+998 (88) 648-49-49',
-  phoneSecondary: '+998 (99) 259-32-32',
-  telegramUsername: '@D_Furqatovich',
-  location1: "Yangiobod tumani 1-sonli umumiy o'rta ta'lim maktabi binosi (RENESSANS o'quv markazi)",
-  location2: "Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION o'quv markazi)",
-  statPassRate: '76.2%',
-  statAdmitted: '16 / 21',
-  statTopScore: '187.9',
-  statGrantCount: '2',
-};
+// Seed Students
+export const INITIAL_STUDENTS: StudentRecord[] = [
+  {
+    id: 'st-01',
+    fullName: 'Hasanboyeva Sevinch',
+    name: 'Hasanboyeva Sevinch',
+    phone: '+998 90 123 45 67',
+    course: 'Tarix, Huquq, Geografiya',
+    courseId: 'c-tarix',
+    teacher: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    groupId: 'grp-01',
+    groupName: 'Tarix Milliy Sertifikat - 1-guruh',
+    enrollmentDate: '2025-09-01',
+    tuitionFee: 380000,
+    paymentStatus: 'Paid',
+    nextDueDate: '2026-04-01',
+    notes: '187.9 ball bilan O\'zDJTU davlat grantiga qabul qilingan',
+    isActive: true,
+    status: 'Active',
+    totalPaid: 2660000,
+    balance: 0,
+  },
+  {
+    id: 'st-02',
+    fullName: 'Azizbek Toshmatov',
+    name: 'Azizbek Toshmatov',
+    phone: '+998 91 234 56 78',
+    course: 'Matematika & Fizika',
+    courseId: 'c-matematika',
+    teacher: 'Jasur Alimov',
+    teacherId: 't-jasur',
+    groupId: 'grp-03',
+    groupName: 'Matematika DTM - 1-guruh',
+    enrollmentDate: '2025-09-15',
+    tuitionFee: 380000,
+    paymentStatus: 'Paid',
+    nextDueDate: '2026-04-15',
+    notes: 'TATU grantiga da\'vogar, intizomli',
+    isActive: true,
+    status: 'Active',
+    totalPaid: 2280000,
+    balance: 0,
+  },
+  {
+    id: 'st-03',
+    fullName: 'Madina Karimova',
+    name: 'Madina Karimova',
+    phone: '+998 93 345 67 89',
+    course: 'CEFR Ingliz Tili (B2 / C1)',
+    courseId: 'c-cefr',
+    teacher: 'Malika Karimova',
+    teacherId: 't-malika',
+    groupId: 'grp-04',
+    groupName: 'CEFR B2 FastTrack',
+    enrollmentDate: '2025-10-01',
+    tuitionFee: 350000,
+    paymentStatus: 'Overdue',
+    nextDueDate: '2026-03-01',
+    notes: 'Ota-onasi bilan bog\'lanildi, haftaning oxirigacha to\'lanadi',
+    isActive: true,
+    status: 'Active',
+    totalPaid: 1400000,
+    balance: -350000,
+  },
+  {
+    id: 'st-04',
+    fullName: 'Javohir Ergashev',
+    name: 'Javohir Ergashev',
+    phone: '+998 97 456 78 90',
+    course: 'Tarix, Huquq, Geografiya',
+    courseId: 'c-tarix',
+    teacher: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    groupId: 'grp-02',
+    groupName: 'Tarix DTM - 2-guruh (Tushki)',
+    enrollmentDate: '2025-10-10',
+    tuitionFee: 380000,
+    paymentStatus: 'Due',
+    nextDueDate: '2026-03-25',
+    notes: 'To\'lov muddati yaqinlashmoqda',
+    isActive: true,
+    status: 'Active',
+    totalPaid: 1520000,
+    balance: 0,
+  },
+  {
+    id: 'st-05',
+    fullName: 'Dilnoza Sobirova',
+    name: 'Dilnoza Sobirova',
+    phone: '+998 94 567 89 01',
+    course: 'Mental Arifmetika',
+    courseId: 'c-mental',
+    teacher: 'Dilnoza Rahimova',
+    teacherId: 't-dilnoza',
+    groupId: 'grp-05',
+    groupName: 'Mental Arifmetika - Junior',
+    enrollmentDate: '2025-11-01',
+    tuitionFee: 280000,
+    paymentStatus: 'Paid',
+    nextDueDate: '2026-04-01',
+    notes: 'Junior guruhida a\'lo ko\'rsatkich',
+    isActive: true,
+    status: 'Active',
+    totalPaid: 1120000,
+    balance: 0,
+  },
+];
 
+// Seed Leads
+export const INITIAL_LEADS: Lead[] = [
+  {
+    id: 'lead-01',
+    name: 'Ali Valiyev',
+    phone: '+998 90 123 45 67',
+    course: 'Tarix, Huquq, Geografiya',
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    assignedTo: 'Diyorbek Furqatovich',
+    notes: 'Tarix bo\'yicha Milliy sertifikatga qiziqmoqda, yakshanba kungi sinov darsiga chaqirildi.',
+    status: 'Sinov darsi belgilandi',
+    source: 'Bosh sahifa (Hero forma)',
+    trialDateTime: '2026-03-15 10:00',
+  },
+  {
+    id: 'lead-02',
+    name: 'Ziyoda Rahimova',
+    phone: '+998 93 543 21 00',
+    course: 'CEFR Ingliz Tili (B2 / C1)',
+    createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+    assignedTo: 'Qabulxona',
+    notes: 'Yangi ariza keldi. Qo\'ng\'iroq qilib darajasini aniqlash kerak.',
+    status: 'Yangi',
+    source: 'Telegram bot orqali',
+  },
+  {
+    id: 'lead-03',
+    name: 'Olimjon Qosimov',
+    phone: '+998 97 789 12 34',
+    course: 'Matematika & Fizika',
+    createdAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+    assignedTo: 'Jasur Alimov',
+    notes: 'Telefon orqali maslahat berildi. Ota-onasi bilan filialga kelishini aytdi.',
+    status: "Bog'lanildi",
+    source: 'Sayt orqali ariza',
+  },
+  {
+    id: 'lead-04',
+    name: 'Gulnoza Saidova',
+    phone: '+998 99 876 54 32',
+    course: 'English Kids (3–10 yosh)',
+    createdAt: new Date(Date.now() - 28 * 3600 * 1000).toISOString(),
+    assignedTo: 'Qabulxona',
+    notes: 'Sinov darsida qatnashdi va to\'lov qilib o\'quvchiga aylandi.',
+    status: "O'quvchiga aylandi",
+    source: 'Tavsiya asosida',
+    enrollmentDate: '2026-03-08',
+  },
+];
+
+// Seed Payments
 export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
   {
     id: 'pay-01',
-    studentName: 'Jahongir Olimov',
-    amount: 450000,
-    course: 'IELTS Intensive',
-    date: '2026-09-08',
+    studentId: 'st-01',
+    studentName: 'Hasanboyeva Sevinch',
+    course: 'Tarix, Huquq, Geografiya',
+    amount: 380000,
+    date: '2026-03-01',
     method: 'Click',
-    receiptNumber: 'REC-98214',
+    receiptNumber: 'REC-24891',
     status: 'Completed',
+    recordedBy: 'Administrator',
+    notes: 'Mart oyi uchun to\'liq to\'lov',
+    month: '2026-03',
   },
   {
     id: 'pay-02',
-    studentName: 'Kamronbek Yusupov',
-    amount: 500000,
-    course: 'Python Programming',
-    date: '2026-09-08',
+    studentId: 'st-02',
+    studentName: 'Azizbek Toshmatov',
+    course: 'Matematika & Fizika',
+    amount: 380000,
+    date: '2026-03-03',
     method: 'Payme',
-    receiptNumber: 'REC-98215',
+    receiptNumber: 'REC-24892',
     status: 'Completed',
+    recordedBy: 'Administrator',
+    notes: 'Mart oyi to\'lovi',
+    month: '2026-03',
   },
   {
     id: 'pay-03',
-    studentName: 'Shahzodbek Toirov',
-    amount: 450000,
-    course: 'IELTS Intensive',
-    date: '2026-09-07',
+    studentId: 'st-05',
+    studentName: 'Dilnoza Sobirova',
+    course: 'Mental Arifmetika',
+    amount: 280000,
+    date: '2026-03-05',
     method: 'Cash',
-    receiptNumber: 'REC-98216',
+    receiptNumber: 'REC-24893',
     status: 'Completed',
+    recordedBy: 'Qabulxona',
+    notes: 'Naqd qabul qilindi, chek berildi',
+    month: '2026-03',
   },
   {
     id: 'pay-04',
-    studentName: 'Gulruh Ismoilova',
-    amount: 400000,
-    course: 'CEFR FastTrack',
-    date: '2026-09-06',
+    studentName: 'Bobur Mirzayev',
+    course: 'Tarix, Huquq, Geografiya',
+    amount: 380000,
+    date: '2026-03-07',
     method: 'Card',
-    receiptNumber: 'REC-98217',
+    receiptNumber: 'REC-24894',
     status: 'Completed',
-  },
-  {
-    id: 'pay-05',
-    studentName: 'Ali Valiyev',
-    amount: 450000,
-    course: 'IELTS Intensive',
-    date: '2026-09-05',
-    method: 'Click',
-    receiptNumber: 'REC-98218',
-    status: 'Completed',
+    recordedBy: 'Administrator',
+    month: '2026-03',
   },
 ];
 
+// Seed Expenses
 export const INITIAL_EXPENSES: ExpenseRecord[] = [
   {
     id: 'exp-01',
     category: 'Teacher Salary',
-    title: 'Jasur Rahimov - August Teaching Hours & Mock Evaluation',
-    amount: 14000000,
-    date: '2026-09-05',
-    recipient: 'Jasur Rahimov',
-    notes: 'Paid via bank transfer',
+    title: 'O\'qituvchi oyligi - Diyorbek Furqatovich',
+    amount: 12000000,
+    date: '2026-03-01',
+    recipient: 'Diyorbek Furqatovich',
+    teacherId: 't-diyorbek',
+    month: '2026-02',
+    notes: 'Fevral oyi uchun to\'liq oylik maosh to\'landi',
+    paymentMethod: 'Bank Transfer',
+    status: 'Paid',
   },
   {
     id: 'exp-02',
-    category: 'Rent',
-    title: 'Center Premises Lease - Main & Annex Floor',
-    amount: 18500000,
-    date: '2026-09-01',
-    recipient: 'Business Center Management',
-    notes: 'September monthly rent',
+    category: 'Teacher Salary',
+    title: 'O\'qituvchi oyligi - Jasur Alimov',
+    amount: 10500000,
+    date: '2026-03-01',
+    recipient: 'Jasur Alimov',
+    teacherId: 't-jasur',
+    month: '2026-02',
+    paymentMethod: 'Bank Transfer',
+    status: 'Paid',
   },
   {
     id: 'exp-03',
-    category: 'Marketing',
-    title: 'Targeted Instagram & Telegram Promotion',
-    amount: 6800000,
-    date: '2026-09-03',
-    recipient: 'Digital Media Agency',
-    notes: 'IELTS September intake campaign',
+    category: 'Rent',
+    title: '1-Filial Bino Ijarasi (Mart oyi)',
+    amount: 5500000,
+    date: '2026-03-02',
+    recipient: 'Yangiobod 1-maktab ma\'muriyati',
+    month: '2026-03',
+    paymentMethod: 'Bank Transfer',
+    status: 'Paid',
   },
   {
     id: 'exp-04',
-    category: 'Utilities',
-    title: 'High-speed Fiber Optic Internet & Electricity',
-    amount: 2400000,
-    date: '2026-09-02',
-    recipient: 'Telecom & City Grid',
-    notes: 'Lab connection & cooling',
+    category: 'Marketing',
+    title: 'Telegram & Banner Reklamalari',
+    amount: 1800000,
+    date: '2026-03-04',
+    recipient: 'Reklama agentligi',
+    month: '2026-03',
+    notes: 'Yangiobod kanallarida e\'lonlar va flyerlar chop etish',
+    paymentMethod: 'Click',
+    status: 'Paid',
   },
   {
     id: 'exp-05',
-    category: 'Teacher Salary',
-    title: 'Malika Azimova - Senior CEFR Instructor Monthly Salary',
-    amount: 11500000,
-    date: '2026-09-05',
-    recipient: 'Malika Azimova',
-    notes: 'Paid via bank transfer',
+    category: 'Utilities',
+    title: 'Internet va elektr energiyasi',
+    amount: 650000,
+    date: '2026-03-05',
+    recipient: 'Uztelecom & Hududiy elektr',
+    month: '2026-03',
+    paymentMethod: 'Payme',
+    status: 'Paid',
   },
 ];
 
-export const INITIAL_TELEGRAM_LOGS: TelegramAlertLog[] = [
+// Seed Results
+export const INITIAL_RESULTS: StudentResult[] = [
   {
-    id: 'tg-01',
-    leadName: 'Ali Valiyev',
-    leadPhone: '+998 90 123 45 67',
-    course: 'IELTS Intensive',
-    sentAt: 'Today, 10:32 AM',
-    status: 'Delivered',
-    messageText: '🔥 New Lead: Ali Valiyev | Course: IELTS Intensive | Phone: +998 90 123 45 67',
+    id: 'res-01',
+    studentName: 'Hasanboyeva Sevinch',
+    score: '187.9 Ball',
+    university: 'O\'zDJTU',
+    fieldOfStudy: 'Xalqaro jurnalistika va filologiya',
+    admissionType: 'Grant',
+    year: '2025',
+    category: 'Davlat granti',
+    badge: '187.9 ball • Grant',
   },
   {
-    id: 'tg-02',
-    leadName: 'Madina Karimova',
-    leadPhone: '+998 93 543 21 00',
-    course: 'CEFR FastTrack',
-    sentAt: 'Today, 10:45 AM',
-    status: 'Delivered',
-    messageText: '🔥 New Lead: Madina Karimova | Course: CEFR FastTrack | Phone: +998 93 543 21 00',
+    id: 'res-02',
+    studentName: 'Tursunov Shahzod',
+    score: '184.5 Ball',
+    university: 'Toshkent Davlat Yuridik Universiteti (TDYU)',
+    fieldOfStudy: 'Yurisprudensiya',
+    admissionType: 'Grant',
+    year: '2025',
+    category: 'Davlat granti',
+    badge: 'TDYU • 100% Grant',
   },
   {
-    id: 'tg-03',
-    leadName: 'Azizbek Toshmatov',
-    leadPhone: '+998 97 789 12 34',
-    course: 'Python Programming',
-    sentAt: 'Yesterday, 14:15 PM',
-    status: 'Delivered',
-    messageText: '🔥 New Lead: Azizbek Toshmatov | Course: Python Programming | Phone: +998 97 789 12 34',
+    id: 'res-03',
+    studentName: 'Erkinova Nigora',
+    score: 'Milliy Sertifikat A+',
+    university: 'O\'zbekiston Milliy Universiteti (O\'zMU)',
+    fieldOfStudy: 'Tarixshunoslik',
+    admissionType: 'Grant',
+    year: '2025',
+    category: 'Milliy Sertifikat',
+    badge: 'Tarix A+',
+  },
+  {
+    id: 'res-04',
+    studentName: 'Qodirov Bekzod',
+    score: 'CEFR C1',
+    university: 'Westminster International University in Tashkent',
+    fieldOfStudy: 'Business Information Systems',
+    admissionType: 'Grant',
+    year: '2025',
+    category: 'CEFR',
+    badge: 'CEFR C1',
+  },
+  {
+    id: 'res-05',
+    studentName: 'Yo\'ldoshev Sardor',
+    score: '176.4 Ball',
+    university: 'Toshkent Axborot Texnologiyalari Universiteti (TATU)',
+    fieldOfStudy: 'Dasturiy ta\'minot muhandisligi',
+    admissionType: 'Kontrakt',
+    year: '2025',
+    category: 'DTM',
+    badge: 'TATU talabasi',
   },
 ];
 
-// Helper to safely load data from LocalStorage
+// Seed CMS
+export const INITIAL_CMS: CmsContent = {
+  heroEyebrow: "Renessans O'quv Markazi • Yangiobod",
+  heroTitle: "Farzandingizning kelajagini",
+  heroHighlight: "bugundan boshlang!",
+  heroSubtitle: "Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi. Natijaga kafolatlangan ta'lim tizimi.",
+  heroPrimaryCtaText: "Bepul Sinov Darsiga Yozilish",
+  heroSecondaryCtaText: "Kurslarimiz Bilan Tanishish",
+  heroBadgeText: "76.2% OTMga Kirish",
+
+  brandName: "RENESSANS LC",
+  slogan: "Bilimdan Natijaga",
+
+  phonePrimary: "+998 (88) 648-49-49",
+  phoneSecondary: "+998 (99) 259-32-32",
+  telegramUsername: "@D_Furqatovich",
+  instagramUsername: "renessans_yangiobod",
+  email: "renessans.yangiobod@gmail.com",
+  workingHours: "Har kuni: 08:00 - 20:00 (Dam olish kunisiz)",
+
+  location1Title: "1-Filial (Asosiy Filial)",
+  location1: "Yangiobod tumani, 1-maktab binosi, 2-qavat",
+  location2Title: "2-Filial (Texnikum Filiali)",
+  location2: "Yangiobod Texnikum binosi, Renessans filiali",
+  googleMapsUrl: "https://maps.google.com/?q=Yangiobod",
+
+  statPassRate: "76.2%",
+  statAdmitted: "16 / 21",
+  statTopScore: "187.9",
+  statGrantCount: "2 ta",
+
+  footerText: "Yangioboddagi zamonaviy o'quv markazi. Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha kafolatlangan ta'lim va natijalar.",
+  copyrightText: "© 2026 Renessans O'quv Markazi. Barcha huquqlar himoyalangan.",
+  seoTitle: "Renessans O'quv Markazi | Yangiobod - Bilimdan Natijaga",
+  seoDescription: "Yangioboddagi eng nufuzli o'quv markazi. Tarix, Huquq, Geografiya, Matematika, CEFR Ingliz tili va DTM tayyorlov kurslari.",
+
+  isDraft: false,
+  lastPublishedAt: "Bugun, 09:00",
+  lastEditedBy: "Direktor (Diyorbek Furqatovich)",
+};
+
+// Seed Center Settings
+export const INITIAL_SETTINGS: CenterSettings = {
+  centerName: "Renessans O'quv Markazi",
+  legalName: "MChJ 'RENESSANS EDUCATION YANGIOBOD'",
+  hotline: "+998 (88) 648-49-49",
+  secondaryPhone: "+998 (99) 259-32-32",
+  email: "renessans.yangiobod@gmail.com",
+  currency: "UZS",
+  timezone: "Asia/Tashkent (UTC+5)",
+  workingHours: "08:00 - 20:00",
+  branches: [
+    {
+      id: 'br-01',
+      name: "1-Filial (Asosiy)",
+      address: "Yangiobod tumani, 1-maktab binosi, 2-qavat",
+      phone: "+998 (88) 648-49-49",
+      workingHours: "08:00 - 20:00",
+      isActive: true,
+    },
+    {
+      id: 'br-02',
+      name: "2-Filial (Texnikum)",
+      address: "Yangiobod Texnikum binosi, Renessans filiali",
+      phone: "+998 (99) 259-32-32",
+      workingHours: "08:00 - 18:00",
+      isActive: true,
+    },
+  ],
+  rooms: [
+    { id: 'rm-101', name: '101-Auditoriya', branchId: 'br-01', branchName: '1-Filial (Asosiy)', capacity: 18, isActive: true },
+    { id: 'rm-102', name: '102-Xona', branchId: 'br-01', branchName: '1-Filial (Asosiy)', capacity: 16, isActive: true },
+    { id: 'rm-201', name: '201-Laboratoriya', branchId: 'br-01', branchName: '1-Filial (Asosiy)', capacity: 15, isActive: true },
+    { id: 'rm-202', name: '202-Katta Zal', branchId: 'br-01', branchName: '1-Filial (Asosiy)', capacity: 35, isActive: true },
+    { id: 'rm-301', name: '301-Xona', branchId: 'br-02', branchName: '2-Filial (Texnikum)', capacity: 14, isActive: true },
+  ],
+  staff: [
+    { id: 'stf-01', name: 'Diyorbek Furqatovich', role: 'Director', phone: '+998 (88) 648-49-49', email: 'diyorbek@renessans.uz', isActive: true, permissions: ['all'] },
+    { id: 'stf-02', name: 'Dilshoda Karimova', role: 'Administrator', phone: '+998 (90) 111-22-33', email: 'admin@renessans.uz', isActive: true, permissions: ['leads', 'students', 'payments', 'schedule'] },
+    { id: 'stf-03', name: 'Jasur Alimov', role: 'Teacher', phone: '+998 (99) 259-32-32', isActive: true, permissions: ['schedule', 'students_view'] },
+  ],
+  paymentMethods: ['Cash', 'Card', 'Click', 'Payme', 'Bank Transfer'],
+  expenseCategories: [
+    'Teacher Salary',
+    'Rent',
+    'Utilities',
+    'Marketing',
+    'Equipment',
+    'Supplies',
+    'Maintenance',
+    'Other',
+  ],
+  telegramSettings: {
+    botUsername: '@Renessans_LeadBot',
+    botConnected: true,
+    managementGroup: '-100234857291',
+    notifyLeads: true,
+    notifyPayments: true,
+    notifyTrials: true,
+    notifyOverdue: true,
+  },
+};
+
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
+  {
+    id: 'aud-01',
+    user: 'Diyorbek Furqatovich (Direktor)',
+    action: 'CMS Yangilandi',
+    entity: 'Website CMS',
+    details: "Asosiy sahifa e'lonlari va yangi natijalar nashr qilindi",
+    timestamp: '2026-03-08 09:30:00',
+  },
+  {
+    id: 'aud-02',
+    user: 'Dilshoda Karimova (Admin)',
+    action: 'To\'lov qabul qilindi',
+    entity: 'To\'lovlar',
+    details: "Hasanboyeva Sevinch: 380,000 UZS (Click orqali, Chek: REC-24891)",
+    timestamp: '2026-03-08 11:15:00',
+  },
+  {
+    id: 'aud-03',
+    user: 'Dilshoda Karimova (Admin)',
+    action: 'Yangi sinov darsi belgilandi',
+    entity: 'Arizalar (Leads)',
+    details: "Ali Valiyev: Tarix fanidan yakshanba kungi ochiq darsga yozildi",
+    timestamp: '2026-03-08 14:20:00',
+  },
+];
+
+// Helper functions for storage
 function getFromStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return parsed ?? fallback;
   } catch {
     return fallback;
   }
@@ -684,43 +960,278 @@ function saveToStorage<T>(key: string, data: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {
-    console.warn('LocalStorage save error:', err);
+    console.warn('LocalStorage save warning:', err);
   }
 }
 
 class CrmService {
   private leads: Lead[] = getFromStorage(STORAGE_KEYS.LEADS, INITIAL_LEADS);
   private students: StudentRecord[] = getFromStorage(STORAGE_KEYS.STUDENTS, INITIAL_STUDENTS);
+  private teachers: TeacherRecord[] = getFromStorage(STORAGE_KEYS.TEACHERS, INITIAL_TEACHERS);
+  private courses: CourseData[] = getFromStorage(STORAGE_KEYS.COURSES, INITIAL_COURSES);
+  private schedule: GroupScheduleItem[] = getFromStorage(STORAGE_KEYS.SCHEDULE, INITIAL_SCHEDULE);
   private payments: IncomePaymentRecord[] = getFromStorage(STORAGE_KEYS.PAYMENTS, INITIAL_PAYMENTS);
   private expenses: ExpenseRecord[] = getFromStorage(STORAGE_KEYS.EXPENSES, INITIAL_EXPENSES);
-  private telegramLogs: TelegramAlertLog[] = getFromStorage(STORAGE_KEYS.TELEGRAM_LOGS, INITIAL_TELEGRAM_LOGS);
+  private results: StudentResult[] = getFromStorage(STORAGE_KEYS.RESULTS, INITIAL_RESULTS);
+  private cmsContent: CmsContent = getFromStorage(STORAGE_KEYS.CMS, INITIAL_CMS);
+  private settings: CenterSettings = getFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+  private auditLogs: AuditLogEntry[] = getFromStorage(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
+  private telegramLogs: TelegramAlertLog[] = getFromStorage(STORAGE_KEYS.TELEGRAM_LOGS, []);
 
-  // --- RESULTS & CMS ---
-  private results: StudentResult[] = getFromStorage('renessans_results_v1', INITIAL_RESULTS);
-  private cmsContent: CmsContent = getFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_CMS);
-
-  public getResults(): StudentResult[] {
-    return [...this.results];
+  constructor() {
+    // Clean any old Unsplash links from legacy data
+    let modified = false;
+    this.teachers = this.teachers.map((t) => {
+      if (t.photo && t.photo.includes('unsplash.com')) {
+        modified = true;
+        return { ...t, photo: '' };
+      }
+      return t;
+    });
+    if (modified) {
+      saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+    }
   }
 
-  public addResult(result: Omit<StudentResult, 'id'>): StudentResult {
-    const newRes: StudentResult = {
-      ...result,
-      id: `res-${Date.now()}`,
+  // --- AUDIT LOGS ---
+  public getAuditLogs(): AuditLogEntry[] {
+    return [...this.auditLogs];
+  }
+
+  public logAction(action: string, entity: string, details: string, user = 'Direktor'): void {
+    const entry: AuditLogEntry = {
+      id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      user,
+      action,
+      entity,
+      details,
+      timestamp: new Date().toLocaleString('uz-UZ', { hour12: false }),
     };
-    this.results.unshift(newRes);
-    saveToStorage('renessans_results_v1', this.results);
-    return newRes;
+    this.auditLogs.unshift(entry);
+    if (this.auditLogs.length > 200) this.auditLogs.pop();
+    saveToStorage(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
   }
 
-  public getCmsContent(): CmsContent {
-    return { ...this.cmsContent };
+  // --- TEACHERS MANAGEMENT ---
+  public getTeachers(): TeacherRecord[] {
+    // Dynamically calculate activeGroups and studentsCount based on real schedule and students
+    return this.teachers.map((teacher) => {
+      const activeGroupsCount = this.schedule.filter(
+        (grp) => grp.teacherId === teacher.id || grp.teacher?.toLowerCase() === teacher.name.toLowerCase()
+      ).length;
+
+      const studentsCount = this.students.filter(
+        (st) =>
+          st.teacherId === teacher.id ||
+          st.teacher?.toLowerCase() === teacher.name.toLowerCase() ||
+          this.schedule.some(
+            (g) =>
+              (g.teacherId === teacher.id || g.teacher?.toLowerCase() === teacher.name.toLowerCase()) &&
+              (g.id === st.groupId || g.groupName?.toLowerCase() === st.groupName?.toLowerCase())
+          )
+      ).length;
+
+      return {
+        ...teacher,
+        activeGroups: activeGroupsCount || teacher.activeGroups || 0,
+        studentsCount: studentsCount || teacher.studentsCount || 0,
+      };
+    });
   }
 
-  public updateCmsContent(updates: Partial<CmsContent>): CmsContent {
-    this.cmsContent = { ...this.cmsContent, ...updates };
-    saveToStorage(STORAGE_KEYS.SETTINGS, this.cmsContent);
-    return { ...this.cmsContent };
+  public addTeacher(teacher: Omit<TeacherRecord, 'id'>): TeacherRecord {
+    const newTeacher: TeacherRecord = {
+      ...teacher,
+      id: `t-${Date.now()}`,
+      activeGroups: 0,
+      studentsCount: 0,
+      createdAt: new Date().toISOString(),
+      status: teacher.status || 'Active',
+      isPublic: teacher.isPublic ?? true,
+      displayOrder: teacher.displayOrder || this.teachers.length + 1,
+    };
+    this.teachers.push(newTeacher);
+    saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+    this.logAction("O'qituvchi qo'shildi", "O'qituvchilar", `${newTeacher.name} (${newTeacher.subject || newTeacher.specialization})`);
+    return newTeacher;
+  }
+
+  public updateTeacher(id: string, updates: Partial<TeacherRecord>): TeacherRecord | null {
+    const idx = this.teachers.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+    this.teachers[idx] = {
+      ...this.teachers[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+    this.logAction("O'qituvchi tahrirlandi", "O'qituvchilar", `${this.teachers[idx].name} ma'lumotlari yangilandi`);
+    return this.teachers[idx];
+  }
+
+  public deleteTeacher(id: string): boolean {
+    const target = this.teachers.find((t) => t.id === id);
+    if (!target) return false;
+    this.teachers = this.teachers.filter((t) => t.id !== id);
+    saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+    this.logAction("O'qituvchi o'chirildi", "O'qituvchilar", `${target.name} o'chirildi`);
+    return true;
+  }
+
+  // --- COURSES MANAGEMENT ---
+  public getCourses(): CourseData[] {
+    return [...this.courses];
+  }
+
+  public addCourse(course: Omit<CourseData, 'id'>): CourseData {
+    const newCourse: CourseData = {
+      ...course,
+      id: `c-${Date.now()}`,
+      isActive: course.isActive ?? true,
+      isPublic: course.isPublic ?? true,
+      displayOrder: course.displayOrder || this.courses.length + 1,
+      formattedFee: course.formattedFee || `${(course.monthlyFee || 0).toLocaleString()} UZS / oy`,
+    };
+    this.courses.push(newCourse);
+    saveToStorage(STORAGE_KEYS.COURSES, this.courses);
+    this.logAction("Yangi kurs yaratildi", "Kurslar", `${newCourse.title} - ${newCourse.formattedFee}`);
+    return newCourse;
+  }
+
+  public updateCourse(id: string, updates: Partial<CourseData>): CourseData | null {
+    const idx = this.courses.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+    if (updates.monthlyFee !== undefined && !updates.formattedFee) {
+      updates.formattedFee = `${updates.monthlyFee.toLocaleString()} UZS / oy`;
+    }
+    this.courses[idx] = { ...this.courses[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.COURSES, this.courses);
+    this.logAction("Kurs tahrirlandi", "Kurslar", `${this.courses[idx].title} yangilandi`);
+    return this.courses[idx];
+  }
+
+  public deleteCourse(id: string): boolean {
+    const target = this.courses.find((c) => c.id === id);
+    if (!target) return false;
+    this.courses = this.courses.filter((c) => c.id !== id);
+    saveToStorage(STORAGE_KEYS.COURSES, this.courses);
+    this.logAction("Kurs o'chirildi", "Kurslar", `${target.title} o'chirildi`);
+    return true;
+  }
+
+  // --- GROUPS / SCHEDULE MANAGEMENT ---
+  public getSchedule(): GroupScheduleItem[] {
+    // Dynamically calculate students count for each group
+    return this.schedule.map((grp) => {
+      const realCount = this.students.filter(
+        (st) => st.groupId === grp.id || st.groupName?.toLowerCase() === grp.groupName?.toLowerCase()
+      ).length;
+      return {
+        ...grp,
+        studentsCount: realCount || grp.studentsCount || 0,
+      };
+    });
+  }
+
+  public addGroup(group: Omit<GroupScheduleItem, 'id'>): GroupScheduleItem {
+    const newGroup: GroupScheduleItem = {
+      ...group,
+      id: `grp-${Date.now()}`,
+      studentsCount: 0,
+      status: group.status || 'Active',
+      displayOrder: this.schedule.length + 1,
+    };
+    this.schedule.push(newGroup);
+    saveToStorage(STORAGE_KEYS.SCHEDULE, this.schedule);
+    this.logAction("Yangi guruh ochildi", "Dars Jadvali", `${newGroup.groupName} (${newGroup.days} • ${newGroup.time})`);
+    return newGroup;
+  }
+
+  public updateGroup(id: string, updates: Partial<GroupScheduleItem>): GroupScheduleItem | null {
+    const idx = this.schedule.findIndex((g) => g.id === id);
+    if (idx === -1) return null;
+    this.schedule[idx] = { ...this.schedule[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.SCHEDULE, this.schedule);
+    this.logAction("Guruh tahrirlandi", "Dars Jadvali", `${this.schedule[idx].groupName} yangilandi`);
+    return this.schedule[idx];
+  }
+
+  public deleteGroup(id: string): boolean {
+    const target = this.schedule.find((g) => g.id === id);
+    if (!target) return false;
+    this.schedule = this.schedule.filter((g) => g.id !== id);
+    saveToStorage(STORAGE_KEYS.SCHEDULE, this.schedule);
+    this.logAction("Guruh o'chirildi", "Dars Jadvali", `${target.groupName} o'chirildi`);
+    return true;
+  }
+
+  // Check schedule conflicts
+  public checkScheduleConflict(
+    groupId: string | undefined,
+    days: string,
+    time: string,
+    room: string,
+    teacher: string
+  ): { hasConflict: boolean; reason?: string } {
+    const normalizedDays = days.toLowerCase().trim();
+    const normalizedTime = time.toLowerCase().trim();
+    const otherGroups = this.schedule.filter((g) => g.id !== groupId && g.status !== 'Archived');
+
+    for (const g of otherGroups) {
+      if (g.days.toLowerCase().trim() === normalizedDays && g.time.toLowerCase().trim() === normalizedTime) {
+        if (g.room.toLowerCase().trim() === room.toLowerCase().trim()) {
+          return {
+            hasConflict: true,
+            reason: `Xona band: "${g.room}" xonasi ayni shu vaqtda "${g.groupName}" guruhi tomonidan band qilingan!`,
+          };
+        }
+        if (g.teacher.toLowerCase().trim() === teacher.toLowerCase().trim()) {
+          return {
+            hasConflict: true,
+            reason: `Ustoz band: ${g.teacher} ayni shu vaqtda "${g.groupName}" guruhida dars o'tadi!`,
+          };
+        }
+      }
+    }
+    return { hasConflict: false };
+  }
+
+  // --- STUDENTS MANAGEMENT ---
+  public getStudents(): StudentRecord[] {
+    return [...this.students];
+  }
+
+  public addStudent(student: Omit<StudentRecord, 'id'>): StudentRecord {
+    const newStudent: StudentRecord = {
+      ...student,
+      id: `st-${Date.now()}`,
+      isActive: student.isActive ?? true,
+      status: student.status || 'Active',
+      balance: student.balance ?? 0,
+      totalPaid: student.totalPaid ?? 0,
+    };
+    this.students.unshift(newStudent);
+    saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+    this.logAction("Yangi o'quvchi qo'shildi", "O'quvchilar", `${newStudent.fullName} - Guruh: ${newStudent.groupName}`);
+    return newStudent;
+  }
+
+  public updateStudent(id: string, updates: Partial<StudentRecord>): StudentRecord | null {
+    const idx = this.students.findIndex((s) => s.id === id);
+    if (idx === -1) return null;
+    this.students[idx] = { ...this.students[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+    this.logAction("O'quvchi ma'lumotlari tahrirlandi", "O'quvchilar", `${this.students[idx].fullName}`);
+    return this.students[idx];
+  }
+
+  public deleteStudent(id: string): boolean {
+    const target = this.students.find((s) => s.id === id);
+    if (!target) return false;
+    this.students = this.students.filter((s) => s.id !== id);
+    saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+    this.logAction("O'quvchi o'chirildi", "O'quvchilar", `${target.fullName}`);
+    return true;
   }
 
   // --- LEADS MANAGEMENT ---
@@ -728,7 +1239,13 @@ class CrmService {
     return [...this.leads];
   }
 
-  public async createLead(data: { name: string; phone: string; course: string; notes?: string; source?: string }): Promise<Lead> {
+  public async createLead(data: {
+    name: string;
+    phone: string;
+    course: string;
+    notes?: string;
+    source?: string;
+  }): Promise<Lead> {
     const newLead: Lead = {
       id: `lead-${Date.now()}`,
       name: data.name.trim(),
@@ -744,21 +1261,20 @@ class CrmService {
     this.leads.unshift(newLead);
     saveToStorage(STORAGE_KEYS.LEADS, this.leads);
 
-    // Save to Firestore asynchronously if available
+    // Sync to Firestore
     try {
       if (db) {
         addDoc(collection(db, 'leads'), {
           ...newLead,
           createdTimestamp: serverTimestamp(),
-        }).catch((err) => console.log('Firestore lead sync note (using local cache):', err.message));
+        }).catch((err) => console.log('Firestore lead sync note:', err.message));
       }
     } catch (err) {
-      console.log('Firebase lead dispatch note:', err);
+      console.log('Firebase lead sync note:', err);
     }
 
-    // Trigger Instant Telegram Notification
+    this.logAction("Yangi ariza keldi", "Arizalar (Leads)", `${newLead.name} (${newLead.course})`);
     await this.dispatchTelegramAlert(newLead);
-
     return newLead;
   }
 
@@ -769,47 +1285,326 @@ class CrmService {
     this.leads[idx] = { ...this.leads[idx], status };
     saveToStorage(STORAGE_KEYS.LEADS, this.leads);
 
-    // If marked enrolled, add to active students
+    // If marked enrolled, add to active students automatically
     if (status === 'Enrolled' || status === "O'quvchiga aylandi") {
-      const existing = this.students.find((s) => s.fullName.toLowerCase() === this.leads[idx].name.toLowerCase());
+      const existing = this.students.find(
+        (s) => s.fullName.toLowerCase() === this.leads[idx].name.toLowerCase()
+      );
       if (!existing) {
         this.addStudent({
           fullName: this.leads[idx].name,
           phone: this.leads[idx].phone,
           course: this.leads[idx].course,
-          groupName: `${this.leads[idx].course} - Asosiy guruh`,
+          groupName: `${this.leads[idx].course} - 1-guruh`,
           enrollmentDate: new Date().toISOString().split('T')[0],
-          tuitionFee: 350000,
+          tuitionFee: 380000,
           paymentStatus: 'Due',
           nextDueDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
           isActive: true,
+          status: 'Active',
+          notes: 'Arizalardan o\'quvchiga aylantirildi',
         });
       }
     }
 
+    this.logAction("Ariza holati o'zgardi", "Arizalar (Leads)", `${this.leads[idx].name} -> ${status}`);
     return this.leads[idx];
   }
 
   public updateLead(leadId: string, updates: Partial<Lead>): Lead | null {
     const idx = this.leads.findIndex((l) => l.id === leadId);
     if (idx === -1) return null;
-
     this.leads[idx] = { ...this.leads[idx], ...updates };
     saveToStorage(STORAGE_KEYS.LEADS, this.leads);
     return this.leads[idx];
   }
 
   public deleteLead(leadId: string): boolean {
-    const initialLen = this.leads.length;
+    const target = this.leads.find((l) => l.id === leadId);
+    if (!target) return false;
     this.leads = this.leads.filter((l) => l.id !== leadId);
-    if (this.leads.length !== initialLen) {
-      saveToStorage(STORAGE_KEYS.LEADS, this.leads);
-      return true;
-    }
-    return false;
+    saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+    this.logAction("Ariza o'chirildi", "Arizalar (Leads)", `${target.name}`);
+    return true;
   }
 
-  // --- TELEGRAM INSTANT NOTIFICATION ---
+  // --- PAYMENTS MANAGEMENT ---
+  public getPayments(): IncomePaymentRecord[] {
+    return [...this.payments];
+  }
+
+  public addPayment(payment: Omit<IncomePaymentRecord, 'id' | 'receiptNumber'> & { receiptNumber?: string }): IncomePaymentRecord {
+    const receiptNum = payment.receiptNumber || `REC-${Math.floor(10000 + Math.random() * 90000)}`;
+    const newPayment: IncomePaymentRecord = {
+      ...payment,
+      id: `pay-${Date.now()}`,
+      receiptNumber: receiptNum,
+      date: payment.date || new Date().toISOString().split('T')[0],
+      status: payment.status || 'Completed',
+    };
+
+    this.payments.unshift(newPayment);
+    saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+
+    // Update student balance/status if matching student found
+    if (payment.studentId || payment.studentName) {
+      const studentIdx = this.students.findIndex(
+        (s) => (payment.studentId && s.id === payment.studentId) || s.fullName.toLowerCase() === payment.studentName.toLowerCase()
+      );
+      if (studentIdx !== -1) {
+        this.students[studentIdx].paymentStatus = 'Paid';
+        this.students[studentIdx].totalPaid = (this.students[studentIdx].totalPaid || 0) + payment.amount;
+        this.students[studentIdx].balance = 0;
+        this.students[studentIdx].nextDueDate = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
+        saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+      }
+    }
+
+    this.logAction("To'lov qabul qilindi", "To'lovlar", `${newPayment.studentName}: ${newPayment.amount.toLocaleString()} UZS (${newPayment.method}, Chek: ${receiptNum})`);
+    return newPayment;
+  }
+
+  public updatePayment(id: string, updates: Partial<IncomePaymentRecord>): IncomePaymentRecord | null {
+    const idx = this.payments.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+    this.payments[idx] = { ...this.payments[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+    this.logAction("To'lov tahrirlandi", "To'lovlar", `Chek: ${this.payments[idx].receiptNumber}`);
+    return this.payments[idx];
+  }
+
+  public voidPayment(id: string, reason?: string): boolean {
+    const idx = this.payments.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    this.payments[idx].status = 'Voided';
+    if (reason) this.payments[idx].notes = `Bekor qilindi: ${reason}`;
+    saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+    this.logAction("To'lov bekor qilindi", "To'lovlar", `Chek: ${this.payments[idx].receiptNumber} (${reason || 'Sababsiz'})`);
+    return true;
+  }
+
+  public createPayment(payment: any): IncomePaymentRecord {
+    return this.addPayment({
+      ...payment,
+      date: payment.date || new Date().toISOString().split('T')[0],
+      status: payment.status || 'Completed',
+    });
+  }
+
+  public sendTelegramLeadNotification(lead: any): Promise<TelegramAlertLog> {
+    return this.dispatchTelegramAlert(lead);
+  }
+
+  public deletePayment(id: string): boolean {
+    const target = this.payments.find((p) => p.id === id);
+    if (!target) return false;
+    this.payments = this.payments.filter((p) => p.id !== id);
+    saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+    this.logAction("To'lov o'chirildi", "To'lovlar", `Chek: ${target.receiptNumber}`);
+    return true;
+  }
+
+  public getTotalRevenue(): number {
+    return this.payments
+      .filter((p) => p.status !== 'Voided')
+      .reduce((acc, p) => acc + (p.amount || 0), 0);
+  }
+
+  public logAuditAction(entity: string, action: string, details: string, user = 'Direktor'): void {
+    this.logAction(action, entity, details, user);
+  }
+
+  public getTuitionDebts(): { studentId: string; studentName: string; phone: string; course: string; amount: number; dueDate: string; status: 'Unpaid' | 'Partial' | 'Paid' }[] {
+    return this.students.map((s) => {
+      const fee = s.monthlyFee || s.tuitionFee || 450000;
+      const isPaid = s.paymentStatus === 'Paid';
+      return {
+        studentId: s.id,
+        studentName: s.fullName || s.name || "Noma'lum",
+        phone: s.phone,
+        course: s.course,
+        amount: isPaid ? 0 : (s.debtAmount !== undefined ? s.debtAmount : fee),
+        dueDate: s.nextDueDate || '2026-09-10',
+        status: isPaid ? 'Paid' : 'Unpaid',
+      };
+    });
+  }
+
+  public getCmsData(): any {
+    const stored = localStorage.getItem('crm_cms_data');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {}
+    }
+    return {
+      hero: {
+        centerName: "Renessans O'quv Markazi",
+        tagline: 'Bilimdan Natijaga',
+        subtitle: "Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha Yangioboddagi zamonaviy o'quv markazi.",
+        badge: "Renessans O'quv Markazi • Yangiobod",
+      },
+      stats: {
+        universityAdmissions: '76.2%',
+        studentAdmittedRatio: '16 / 21',
+        highestDtmScore: '187.9',
+        stateGrantsCount: '2 ta',
+      },
+      contact: {
+        phone: '+998 (90) 862-22-26',
+        telegram: '@renessans_lc',
+        branches: [
+          'Jizzax viloyati, Yangiobod tumani, 1-maktab binosi',
+          'Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION) binosi',
+        ],
+      },
+      faqs: [
+        {
+          id: 'faq-1',
+          question: "Sinov darsi qanday o'tkaziladi va to'lov bormi?",
+          answer: "Sinov darsi mutlaqo bepul! O'quvchi markazga kelib, diagnostik test topshiradi va o'z bilimi darajasiga mos guruh darsiga qatnashib, ustoz bilan tanishadi.",
+        },
+        {
+          id: 'faq-2',
+          question: "Renessans o'quv markazi Yangiobodning qaysi joylarida joylashgan?",
+          answer: "Bizda 2 ta filial mavjud: 1-filial — Yangiobod tumani 1-maktab binosida; 2-filial — Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION) binosida joylashgan.",
+        },
+        {
+          id: 'faq-3',
+          question: "Milliy sertifikat va DTM guruhlariga qabul qachon boshlanadi?",
+          answer: "Qabul yil davomida davom etadi. Darslar ertalabki, tushki va kechki smenalarda tashkil etilgan. Yangi guruhlar shakllanishi bilan bepul sinov darslariga chaqiriladi.",
+        },
+        {
+          id: 'faq-4',
+          question: "Haftalik diagnostik testlar qachon o'tkaziladi?",
+          answer: "Har yakshanba kuni markazimizda DTM va Milliy sertifikat formatidagi qat'iy nazorat ostida diagnostik testlar o'tkaziladi va natijalar ota-onalarga yetkaziladi.",
+        },
+      ],
+      results: this.results,
+    };
+  }
+
+  public updateCmsData(data: any): any {
+    localStorage.setItem('crm_cms_data', JSON.stringify(data));
+    this.logAction("CMS Yangilandi", "Website CMS", "Bosh sahifa matnlari va sozlamalari yangilandi.");
+    return data;
+  }
+
+  public createExpense(expense: Parameters<CrmService['addExpense']>[0]): ExpenseRecord {
+    return this.addExpense(expense);
+  }
+
+  // --- EXPENSES MANAGEMENT ---
+  public getExpenses(): ExpenseRecord[] {
+    return [...this.expenses];
+  }
+
+  public addExpense(expense: Omit<ExpenseRecord, 'id' | 'date'> & { date?: string }): ExpenseRecord {
+    const newExpense: ExpenseRecord = {
+      ...expense,
+      id: `exp-${Date.now()}`,
+      date: expense.date || new Date().toISOString().split('T')[0],
+      status: expense.status || 'Paid',
+    };
+    this.expenses.unshift(newExpense);
+    saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
+    this.logAction("Xarajat kiritildi", "Xarajatlar", `${newExpense.category}: ${newExpense.amount.toLocaleString()} UZS (${newExpense.title})`);
+    return newExpense;
+  }
+
+  public updateExpense(id: string, updates: Partial<ExpenseRecord>): ExpenseRecord | null {
+    const idx = this.expenses.findIndex((e) => e.id === id);
+    if (idx === -1) return null;
+    this.expenses[idx] = { ...this.expenses[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
+    this.logAction("Xarajat tahrirlandi", "Xarajatlar", `${this.expenses[idx].title}`);
+    return this.expenses[idx];
+  }
+
+  public deleteExpense(id: string): boolean {
+    const target = this.expenses.find((e) => e.id === id);
+    if (!target) return false;
+    this.expenses = this.expenses.filter((e) => e.id !== id);
+    saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
+    this.logAction("Xarajat o'chirildi", "Xarajatlar", `${target.title}`);
+    return true;
+  }
+
+  // --- RESULTS MANAGEMENT ---
+  public getResults(): StudentResult[] {
+    return [...this.results];
+  }
+
+  public addResult(result: Omit<StudentResult, 'id'>): StudentResult {
+    const newRes: StudentResult = {
+      ...result,
+      id: `res-${Date.now()}`,
+    };
+    this.results.unshift(newRes);
+    saveToStorage(STORAGE_KEYS.RESULTS, this.results);
+    this.logAction("Yangi natija qo'shildi", "Natijalar", `${newRes.studentName} - ${newRes.score} (${newRes.university})`);
+    return newRes;
+  }
+
+  public updateResult(id: string, updates: Partial<StudentResult>): StudentResult | null {
+    const idx = this.results.findIndex((r) => r.id === id);
+    if (idx === -1) return null;
+    this.results[idx] = { ...this.results[idx], ...updates };
+    saveToStorage(STORAGE_KEYS.RESULTS, this.results);
+    this.logAction("Natija tahrirlandi", "Natijalar", `${this.results[idx].studentName}`);
+    return this.results[idx];
+  }
+
+  public deleteResult(id: string): boolean {
+    const target = this.results.find((r) => r.id === id);
+    if (!target) return false;
+    this.results = this.results.filter((r) => r.id !== id);
+    saveToStorage(STORAGE_KEYS.RESULTS, this.results);
+    this.logAction("Natija o'chirildi", "Natijalar", `${target.studentName}`);
+    return true;
+  }
+
+  // --- WEBSITE CMS ---
+  public getCmsContent(): CmsContent {
+    return { ...this.cmsContent };
+  }
+
+  public updateCmsContent(updates: Partial<CmsContent>): CmsContent {
+    this.cmsContent = {
+      ...this.cmsContent,
+      ...updates,
+      lastPublishedAt: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+    };
+    saveToStorage(STORAGE_KEYS.CMS, this.cmsContent);
+
+    // Sync to Firestore
+    try {
+      if (db) {
+        setDoc(doc(db, 'settings', 'landing_cms'), this.cmsContent, { merge: true }).catch(() => {});
+      }
+    } catch {}
+
+    this.logAction("Website CMS yangilandi", "CMS", "Bosh sahifa matnlari va sozlamalari nashr qilindi");
+    return { ...this.cmsContent };
+  }
+
+  // --- CENTER SETTINGS ---
+  public getSettings(): CenterSettings {
+    return { ...this.settings };
+  }
+
+  public updateSettings(updates: Partial<CenterSettings>): CenterSettings {
+    this.settings = { ...this.settings, ...updates };
+    saveToStorage(STORAGE_KEYS.SETTINGS, this.settings);
+    this.logAction("Markaz sozlamalari yangilandi", "Sozlamalar", "Filiallar, xonalar yoki xodimlar ma'lumotlari yangilandi");
+    return { ...this.settings };
+  }
+
+  // --- TELEGRAM ALERTS ---
+  public getTelegramLogs(): TelegramAlertLog[] {
+    return [...this.telegramLogs];
+  }
+
   public async dispatchTelegramAlert(lead: Lead): Promise<TelegramAlertLog> {
     const formattedDate = new Date(lead.createdAt).toLocaleString('uz-UZ', {
       year: 'numeric',
@@ -828,7 +1623,7 @@ class CrmService {
 🕐 Vaqt: ${formattedDate}
 Holat: ${lead.status || 'Yangi'}
 📍 Manba: ${lead.source || 'Sayt'}
-`.trim();
+    `.trim();
 
     const log: TelegramAlertLog = {
       id: `tg-${Date.now()}`,
@@ -844,7 +1639,7 @@ Holat: ${lead.status || 'Yangi'}
     this.telegramLogs.unshift(log);
     saveToStorage(STORAGE_KEYS.TELEGRAM_LOGS, this.telegramLogs);
 
-    // Also attempt server-side Telegram Bot API if configured
+    // Call server endpoint
     try {
       fetch('/api/telegram/lead-alert', {
         method: 'POST',
@@ -856,136 +1651,93 @@ Holat: ${lead.status || 'Yangi'}
           date: formattedDate,
         }),
       }).catch(() => {});
-    } catch {
-      // Non-blocking
-    }
+    } catch {}
 
     return log;
   }
 
-  public getTelegramLogs(): TelegramAlertLog[] {
-    return [...this.telegramLogs];
-  }
-
-  // --- STUDENTS MANAGEMENT ---
-  public getStudents(): StudentRecord[] {
-    return [...this.students];
-  }
-
-  public addStudent(student: Omit<StudentRecord, 'id'>): StudentRecord {
-    const newStudent: StudentRecord = {
-      ...student,
-      id: `st-${Date.now()}`,
+  // --- BACKUP EXPORT & IMPORT ---
+  public exportFullBackupJSON(): string {
+    const backupData = {
+      version: '3.0',
+      exportedAt: new Date().toISOString(),
+      center: this.settings.centerName,
+      data: {
+        teachers: this.teachers,
+        courses: this.courses,
+        schedule: this.schedule,
+        students: this.students,
+        leads: this.leads,
+        payments: this.payments,
+        expenses: this.expenses,
+        results: this.results,
+        cms: this.cmsContent,
+        settings: this.settings,
+        auditLogs: this.auditLogs,
+      },
     };
-    this.students.unshift(newStudent);
-    saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
-    return newStudent;
+    return JSON.stringify(backupData, null, 2);
   }
 
-  // --- TEACHERS ---
-  public getTeachers(): TeacherRecord[] {
-    return INITIAL_TEACHERS;
+  public importFullBackupJSON(jsonString: string): { success: boolean; message: string } {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (!parsed.data) {
+        return { success: false, message: "Noto'g'ri fayl formati: 'data' bo'limi topilmadi." };
+      }
+
+      const d = parsed.data;
+      if (Array.isArray(d.teachers)) {
+        this.teachers = d.teachers;
+        saveToStorage(STORAGE_KEYS.TEACHERS, this.teachers);
+      }
+      if (Array.isArray(d.courses)) {
+        this.courses = d.courses;
+        saveToStorage(STORAGE_KEYS.COURSES, this.courses);
+      }
+      if (Array.isArray(d.schedule)) {
+        this.schedule = d.schedule;
+        saveToStorage(STORAGE_KEYS.SCHEDULE, this.schedule);
+      }
+      if (Array.isArray(d.students)) {
+        this.students = d.students;
+        saveToStorage(STORAGE_KEYS.STUDENTS, this.students);
+      }
+      if (Array.isArray(d.leads)) {
+        this.leads = d.leads;
+        saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+      }
+      if (Array.isArray(d.payments)) {
+        this.payments = d.payments;
+        saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
+      }
+      if (Array.isArray(d.expenses)) {
+        this.expenses = d.expenses;
+        saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
+      }
+      if (Array.isArray(d.results)) {
+        this.results = d.results;
+        saveToStorage(STORAGE_KEYS.RESULTS, this.results);
+      }
+      if (d.cms) {
+        this.cmsContent = d.cms;
+        saveToStorage(STORAGE_KEYS.CMS, this.cmsContent);
+      }
+      if (d.settings) {
+        this.settings = d.settings;
+        saveToStorage(STORAGE_KEYS.SETTINGS, this.settings);
+      }
+
+      this.logAction("To'liq ma'lumotlar bazasi qayta yuklandi (Backup import)", "Tizim", "Zaxira nusxadan tiklandi");
+      return { success: true, message: "Barcha ma'lumotlar bazasi muvaffaqiyatli tiklandi!" };
+    } catch (err: any) {
+      return { success: false, message: `Import xatosi: ${err?.message || 'Fayl o\'qilmadi'}` };
+    }
   }
 
-  // --- SCHEDULE ---
-  public getSchedule(): GroupScheduleItem[] {
-    return INITIAL_SCHEDULE;
-  }
-
-  // --- COURSES ---
-  public getCourses(): CourseData[] {
-    return INITIAL_COURSES;
-  }
-
-  public updateCourse(courseId: string, updates: Partial<CourseData>): CourseData | null {
-    const course = INITIAL_COURSES.find((c) => c.id === courseId);
-    if (!course) return null;
-    Object.assign(course, updates);
-    return course;
-  }
-
-  // --- FINANCE (INCOME & EXPENSES) ---
-  public getPayments(): IncomePaymentRecord[] {
-    return [...this.payments];
-  }
-
-  public addPayment(payment: Omit<IncomePaymentRecord, 'id'>): IncomePaymentRecord {
-    const newPayment: IncomePaymentRecord = {
-      ...payment,
-      id: `pay-${Date.now()}`,
-    };
-    this.payments.unshift(newPayment);
-    saveToStorage(STORAGE_KEYS.PAYMENTS, this.payments);
-    return newPayment;
-  }
-
-  public createPayment(payment: {
-    studentId?: string;
-    studentName: string;
-    amount: number;
-    course?: string;
-    method: 'Cash' | 'Card' | 'Click' | 'Payme';
-    month?: string;
-    status?: 'Completed' | 'Pending';
-  }): IncomePaymentRecord {
-    return this.addPayment({
-      studentName: payment.studentName,
-      amount: payment.amount,
-      course: payment.course || 'English Course',
-      date: new Date().toISOString().split('T')[0],
-      method: payment.method,
-      receiptNumber: `REC-${Math.floor(10000 + Math.random() * 90000)}`,
-      status: payment.status || 'Completed',
-    });
-  }
-
-  public getExpenses(): ExpenseRecord[] {
-    return [...this.expenses];
-  }
-
-  public addExpense(expense: Omit<ExpenseRecord, 'id' | 'date'> & { date?: string }): ExpenseRecord {
-    const newExpense: ExpenseRecord = {
-      ...expense,
-      date: expense.date || new Date().toISOString().split('T')[0],
-      id: `exp-${Date.now()}`,
-    };
-    this.expenses.unshift(newExpense);
-    saveToStorage(STORAGE_KEYS.EXPENSES, this.expenses);
-    return newExpense;
-  }
-
-  public createExpense(expense: {
-    category: string;
-    title: string;
-    amount: number;
-    recipient: string;
-    month?: string;
-    notes?: string;
-  }): ExpenseRecord {
-    return this.addExpense({
-      category: expense.category,
-      title: expense.title,
-      amount: expense.amount,
-      recipient: expense.recipient,
-      month: expense.month,
-      notes: expense.notes,
-    });
-  }
-
-  public async sendTelegramLeadNotification(lead: any): Promise<TelegramAlertLog> {
-    return this.dispatchTelegramAlert({
-      id: lead.id || `lead-${Date.now()}`,
-      name: lead.name,
-      phone: lead.phone,
-      course: lead.course || 'IELTS Intensive',
-      createdAt: lead.createdAt || new Date().toISOString(),
-      status: lead.status || 'New',
-    });
-  }
-
-  // --- EXPORT TOOLS ---
+  // Quick export leads CSV
   public exportLeadsCSV(): string {
-    const headers = ['ID', 'Name', 'Phone', 'Course', 'Status', 'Created At', 'Assigned To', 'Notes'];
+    const headers = ['ID', 'Ism', 'Telefon', 'Kurs', 'Holat', 'Sana', 'Mas\'ul', 'Izoh'];
     const rows = this.leads.map((l) => [
       l.id,
       `"${l.name.replace(/"/g, '""')}"`,
@@ -996,12 +1748,7 @@ Holat: ${lead.status || 'Yangi'}
       `"${(l.assignedTo || '').replace(/"/g, '""')}"`,
       `"${(l.notes || '').replace(/"/g, '""')}"`,
     ]);
-
     return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  }
-
-  public exportLeadsJSON(): string {
-    return JSON.stringify(this.leads, null, 2);
   }
 }
 

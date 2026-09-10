@@ -6,6 +6,7 @@ import { CoursesSection } from '../components/public/CoursesSection';
 import { TeachersSection } from '../components/public/TeachersSection';
 import { ResultsSection } from '../components/public/ResultsSection';
 import { FaqSection } from '../components/public/FaqSection';
+import { QuestionSection } from '../components/public/QuestionSection';
 import { ContactSection } from '../components/public/ContactSection';
 import { SEOHead } from '../components/SEOHead';
 import { getSiteUrl } from '../utils/content';
@@ -41,6 +42,7 @@ export const RenessansLandingPage: React.FC = () => {
       <TeachersSection />
       <ResultsSection />
       <FaqSection />
+      <QuestionSection />
       <ContactSection onOpenTrialModal={() => openTrial()} />
     </PublicLayout>
   );

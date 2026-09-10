@@ -10,6 +10,7 @@ import { SmartImage } from '../components/common/SmartImage';
 import { TeacherAvatar } from '../components/common/TeacherAvatar';
 import { ShareButton } from '../components/public/ShareDialog';
 import { ResultsCarousel } from '../components/public/ResultsCarousel';
+import { QuestionForm } from '../components/public/QuestionForm';
 import { SEOHead } from '../components/SEOHead';
 
 // ---------------------------------------------------------------------------
@@ -404,6 +405,13 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ isPreview = 
           </div>
         </section>
       )}
+
+      {/* ===== QUESTION FORM ===== */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <QuestionForm coursePreselected={course.id} courseName={course.title} />
+        </div>
+      </section>
 
       {/* ===== CTA ===== */}
       <section className="py-16 md:py-24">

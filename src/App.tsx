@@ -25,6 +25,7 @@ import { ParticleBackground } from './components/UI/ParticleBackground';
 import { SEOHead } from './components/SEOHead';
 import { preloadImages } from './utils/performance';
 import { APP_ASSETS } from './constants/assets';
+import { demoData } from './services/demoData';
 import {
   ShieldCheck,
   Loader2
@@ -52,6 +53,10 @@ function MainAppRoutes() {
       APP_ASSETS.studentMockup,
       APP_ASSETS.teacherMockup
     ]);
+  }, []);
+
+  useEffect(() => {
+    demoData.init();
   }, []);
 
   if (isLoading) {

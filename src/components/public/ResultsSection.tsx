@@ -19,7 +19,11 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propRes
       setResults(getPublicResults(propResults));
     } else {
       const cms = crmService.getCmsData();
-      setResults(getPublicResults(cms.results || []));
+      let r = getPublicResults(cms.results || []);
+      if (r.length === 0) {
+        r = getPublicResults(crmService.getResults());
+      }
+      setResults(r);
     }
   }, [propResults]);
 
@@ -35,13 +39,13 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propRes
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wider border border-amber-500/20">
-            Haqiqiy Ko'rsatkichlar
+            Demo Natijalar
           </span>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white mt-4 tracking-tight">
-            Bitiruvchilarimiz Natijalari
+            Namuna Bitiruvchi Natijalari
           </h2>
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-3">
-            O'quvchilarimizning haqiqiy qabul natijalari. Ma'lumotlar CMS panelidan to'ldiriladi.
+            Quyidagi natijalar demo ma'lumotdir va haqiqiy talabalar natijalari bilan aloqasi yo'q.
           </p>
         </div>
 
@@ -69,7 +73,7 @@ export const ResultsSection: React.FC<ResultsSectionProps> = ({ results: propRes
           emptyFallback={
             <div className="py-16 text-center text-sm text-slate-400">
               <Award className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-              Hozircha ma'lumot yo'q. Natijalar CMS paneli («Veb-sayt Kontenti») orqali qo'shiladi.
+              Hozircha namuna natijalar mavjud emas.
             </div>
           }
           renderCard={(res, idx) => {

@@ -375,18 +375,20 @@ export const InquiriesView: React.FC = () => {
   // Helper course titles map
   const getCourseBadgeTitle = (courseId: string) => {
     switch (courseId) {
-      case 'ielts-rocket':
-        return 'IELTS 7.5+ Rocket';
-      case 'cefr-fasttrack':
-        return 'CEFR B2 FastTrack';
-      case 'general-english':
-        return 'General English';
+      case 'dtm-national':
+        return 'DTM & Milliy Sertifikat';
+      case 'math-physics':
+        return 'Matematika & Fizika';
+      case 'cefr':
+        return 'CEFR Ingliz Tili (B2 / C1)';
       case 'kids-english':
-        return 'Kids English';
-      case 'it-foundations':
-        return 'IT & Computer Science';
+        return 'English Kids (3–10 yosh)';
+      case 'mental':
+        return 'Mental Arifmetika';
+      case 'onatili':
+        return 'Ona Tili va Adabiyot';
       default:
-        return courseId || 'General English';
+        return courseId || 'DTM & Milliy Sertifikat';
     }
   };
 
@@ -896,7 +898,7 @@ export const InquiriesView: React.FC = () => {
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                 >
                   {groups.length === 0 ? (
-                    <option value="default-group">IELTS Intensive #12</option>
+                    <option value="default-group">DTM & Milliy Sertifikat — 1-guruh</option>
                   ) : (
                     groups.map((g) => (
                       <option key={g.id} value={g.id}>

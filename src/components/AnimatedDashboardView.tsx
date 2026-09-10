@@ -173,13 +173,13 @@ export const AnimatedDashboardView: React.FC<AnimatedDashboardViewProps> = ({ on
                   className="p-6 rounded-3xl bg-gray-900 border border-gray-800 hover:border-indigo-500/40 transition-colors shadow-lg shadow-black/20 group"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-400">Enrolled Courses</span>
+                    <span className="text-xs font-bold text-slate-400">Kurslar</span>
                     <BookOpen className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
                   </div>
                   <div className="text-sm font-bold text-slate-200 mt-1 line-clamp-2">
-                    {(appData.enrolledCourses || ["IELTS Intensive 7.5+", "General English Fluency"]).join(", ")}
+                    {(appData.enrolledCourses || ["DTM & Milliy Sertifikat", "Matematika & Fizika"]).join(", ")}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-2 font-medium">Active trimester modules</div>
+                  <div className="text-[11px] text-slate-500 mt-2 font-medium">Faol blok modullari</div>
                 </motion.div>
               </>
             )}

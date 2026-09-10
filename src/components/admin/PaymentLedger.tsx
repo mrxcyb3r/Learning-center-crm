@@ -583,12 +583,13 @@ export const PaymentLedger: React.FC = () => {
               onChange={(e) => setSelectedSubject(e.target.value)}
               className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
             >
-              <option value="all">All Subjects</option>
-              <option value="ielts">IELTS Intensive</option>
-              <option value="english">General English</option>
-              <option value="math">Math & Physics</option>
-              <option value="it">IT & Coding</option>
-              <option value="sat">SAT Prep</option>
+              <option value="all">Barcha kurslar</option>
+              <option value="dtm">DTM & Milliy Sertifikat</option>
+              <option value="math">Matematika & Fizika</option>
+              <option value="cefr">CEFR Ingliz Tili (B2 / C1)</option>
+              <option value="kids">English Kids (3–10 yosh)</option>
+              <option value="mental">Mental Arifmetika</option>
+              <option value="onatili">Ona Tili va Adabiyot</option>
             </select>
           </div>
 

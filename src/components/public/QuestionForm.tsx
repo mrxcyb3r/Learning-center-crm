@@ -11,12 +11,12 @@ interface QuestionFormProps {
 }
 
 const COURSE_OPTIONS = [
-  'IELTS Intensive',
-  'General English',
-  'DTM Tayyorlov',
-  'SAT Math',
-  'CEFR B2',
-  'English Kids',
+  'DTM & Milliy Sertifikat',
+  'Matematika & Fizika',
+  'CEFR Ingliz Tili (B2 / C1)',
+  'English Kids (3–10 yosh)',
+  'Mental Arifmetika',
+  'Ona Tili va Adabiyot',
   'Boshqa',
 ];
 

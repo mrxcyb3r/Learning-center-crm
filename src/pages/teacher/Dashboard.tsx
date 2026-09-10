@@ -71,16 +71,16 @@ const MOCK_TEACHER_GROUPS: TeacherGroup[] = [
     ]
   },
   {
-    id: 'grp_sat_1',
-    name: 'SAT Math & Problem Solving',
-    subject: 'Advanced Algebra & Geometry',
-    category: 'Math & SAT',
-    schedule: 'Mon / Wed / Fri 16:30 - 18:30',
-    room: 'Room 204',
+    id: 'grp_cefr_1',
+    name: 'CEFR Ingliz Tili (B2 / C1)',
+    subject: 'Listening & Reading',
+    category: 'IELTS',
+    schedule: 'Dush / Chor / Juma 16:30 - 18:30',
+    room: '101-Auditoriya',
     students: [
-      { id: 'std_10', name: 'Kamola Saidova', telegramUsername: '@kamola_sat', telegramConnected: true, score: '780/800', feedback: 'Flawless execution on Passport to Advanced Math.', attendance: 'present', dispatched: false },
-      { id: 'std_11', name: 'Javohir Mahmudov', telegramUsername: '@javohir_m', telegramConnected: true, score: '740/800', feedback: 'Minor error in non-calculator grid-in questions.', attendance: 'present', dispatched: false },
-      { id: 'std_12', name: 'Dilnoza Rahimova', telegramUsername: '@dilnoza_r', telegramConnected: true, score: '710/800', feedback: 'Review quadratic functions and trigonometry.', attendance: 'present', dispatched: false },
+      { id: 'std_10', name: 'Kamola Saidova', telegramUsername: '@kamola_cefr', telegramConnected: true, score: 'B2 (72/100)', feedback: 'Listening and reading bo\'yicha a\'lo natija.', attendance: 'present', dispatched: false },
+      { id: 'std_11', name: 'Javohir Mahmudov', telegramUsername: '@javohir_m', telegramConnected: true, score: 'B1 (68/100)', feedback: 'Grammatikada ozgina xatolar bor.', attendance: 'present', dispatched: false },
+      { id: 'std_12', name: 'Dilnoza Rahimova', telegramUsername: '@dilnoza_r', telegramConnected: true, score: 'B1 (70/100)', feedback: 'Tinglab tushunishni mustahkamlash tavsiya etiladi.', attendance: 'present', dispatched: false },
     ]
   }
 ];

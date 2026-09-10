@@ -42,7 +42,7 @@ export const HomeworkView: React.FC = () => {
   const [description, setDescription] = useState('');
   const [subjectCategory, setSubjectCategory] = useState(SUBJECT_CATEGORIES[0]);
   const [resourceFormat, setResourceFormat] = useState(RESOURCE_FORMATS[0]);
-  const [selectedGroup, setSelectedGroup] = useState('IELTS Intensive #12');
+  const [selectedGroup, setSelectedGroup] = useState('CEFR Ingliz Tili (B2 / C1) — B2 FastTrack');
   const [dueDate, setDueDate] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
@@ -227,7 +227,7 @@ export const HomeworkView: React.FC = () => {
     setDescription(hw.description || '');
     setSubjectCategory(hw.subjectCategory || SUBJECT_CATEGORIES[0]);
     setResourceFormat(hw.resourceFormat || RESOURCE_FORMATS[0]);
-    setSelectedGroup(hw.group || hw.groupName || 'IELTS Intensive #12');
+    setSelectedGroup(hw.group || hw.groupName || 'CEFR Ingliz Tili (B2 / C1)');
     setDueDate(hw.dueDate || hw.deadline || '');
     setIsCreating(true);
   };
@@ -325,7 +325,7 @@ export const HomeworkView: React.FC = () => {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Masalan: SAT Math Quadratics Problem Set #4"
+                placeholder="Masalan: CEFR Listening: Mock Test #2"
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white"
               />
             </div>
@@ -347,9 +347,9 @@ export const HomeworkView: React.FC = () => {
                   ))
                 ) : (
                   <>
-                    <option value="IELTS Intensive #12">IELTS Intensive #12</option>
-                    <option value="SAT Math Prep #3">SAT Math Prep #3</option>
-                    <option value="Python Programming A1">Python Programming A1</option>
+                    <option value="DTM & Milliy Sertifikat — 1-guruh">DTM & Milliy Sertifikat — 1-guruh</option>
+                    <option value="Matematika & Fizika — DTM 1-guruh">Matematika & Fizika — DTM 1-guruh</option>
+                    <option value="CEFR Ingliz Tili — B2 FastTrack">CEFR Ingliz Tili — B2 FastTrack</option>
                   </>
                 )}
               </select>

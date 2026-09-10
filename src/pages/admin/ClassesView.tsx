@@ -16,10 +16,10 @@ export const ClassesView: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [name, setName] = useState('');
-  const [courseType, setCourseType] = useState('IELTS Intensive');
-  const [teacherName, setTeacherName] = useState('Mr. Javohirbek');
-  const [scheduleTime, setScheduleTime] = useState('Mon/Wed/Fri 14:00 - 16:00');
-  const [room, setRoom] = useState('Room 3 (Renessans Main)');
+  const [courseType, setCourseType] = useState('DTM & Milliy Sertifikat');
+  const [teacherName, setTeacherName] = useState('Diyorbek Furqatovich');
+  const [scheduleTime, setScheduleTime] = useState('Dush/Chor/Juma 14:00 - 16:00');
+  const [room, setRoom] = useState("101-Auditoriya (1-Filial)");
   const [isAdding, setIsAdding] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -135,13 +135,12 @@ export const ClassesView: React.FC = () => {
                 onChange={(e) => setCourseType(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
               >
-                <option value="Mathematics & Geometry">Mathematics & Geometry</option>
-                <option value="Physics & Engineering">Physics & Engineering</option>
-                <option value="IT & Programming (Python/Web)">IT & Programming (Python/Web)</option>
-                <option value="Chemistry & Biology">Chemistry & Biology</option>
-                <option value="SAT / GMAT Prep">SAT / GMAT Prep</option>
-                <option value="IELTS Intensive">IELTS Intensive</option>
-                <option value="General English / CEFR">General English / CEFR</option>
+                <option value="DTM & Milliy Sertifikat">DTM & Milliy Sertifikat</option>
+                <option value="Matematika & Fizika">Matematika & Fizika</option>
+                <option value="CEFR Ingliz Tili (B2 / C1)">CEFR Ingliz Tili (B2 / C1)</option>
+                <option value="English Kids (3–10 yosh)">English Kids (3–10 yosh)</option>
+                <option value="Mental Arifmetika">Mental Arifmetika</option>
+                <option value="Ona Tili va Adabiyot">Ona Tili va Adabiyot</option>
               </select>
             </div>
           </div>

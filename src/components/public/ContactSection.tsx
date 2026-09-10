@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Send, Clock, Navigation, ExternalLink, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Send, Clock, ExternalLink } from 'lucide-react';
 import { cmsBridge } from '../../services/cmsBridge';
-import { InquiryForm } from './InquiryForm';
 
 interface ContactSectionProps {
   onOpenTrialModal: () => void;
@@ -166,10 +165,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal
               </button>
             </div>
           </div>
-        </div>
-
-        <div className="mt-12">
-          <InquiryForm />
         </div>
       </div>
     </section>

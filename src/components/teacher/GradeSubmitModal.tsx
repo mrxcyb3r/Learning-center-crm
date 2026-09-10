@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Award, Send, CheckCircle2, Loader2, Sparkles, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { sendGradeNotification } from '../../services/telegram';
+import { notificationService } from '../../services/notificationService';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -65,6 +66,7 @@ export const GradeSubmitModal: React.FC<GradeSubmitModalProps> = ({
       setTelegramNotified(notified);
       setIsSubmitting(false);
       setIsDone(true);
+      notificationService.onResultPublished(studentName, score);
 
       if (onSuccess) {
         onSuccess();

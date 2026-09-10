@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Send, Clock, Navigation, ExternalLink, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { cmsBridge } from '../../services/cmsBridge';
 
 interface ContactSectionProps {
   onOpenTrialModal: () => void;
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal }) => {
+  const [contact, setContact] = useState(cmsBridge.getContact());
+
+  useEffect(() => {
+    setContact(cmsBridge.getContact());
+  }, []);
+
   return (
     <section id="contact" className="py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,16 +42,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal
                 </h4>
                 <div className="space-y-1 mt-1">
                   <a
-                    href="tel:+998886484949"
+                    href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}
                     className="text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition block font-mono"
                   >
-                    +998 (88) 648-49-49
-                  </a>
-                  <a
-                    href="tel:+998992593232"
-                    className="text-lg font-bold text-slate-900 dark:text-white hover:text-amber-500 transition block font-mono"
-                  >
-                    +998 (99) 259-32-32
+                    {contact.phone}
                   </a>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
@@ -63,12 +64,12 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal
                   Telegram Murojaat
                 </h4>
                 <a
-                  href="https://t.me/D_Furqatovich"
+                  href={`https://t.me/${contact.telegram.replace('@', '')}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-lg font-bold text-slate-900 dark:text-white hover:text-sky-500 transition flex items-center gap-1.5 mt-0.5"
                 >
-                  <span>@D_Furqatovich</span>
+                  <span>{contact.telegram}</span>
                   <ExternalLink className="w-4 h-4 text-slate-400" />
                 </a>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -113,7 +114,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-1" />
-                    <span>Yangiobod tumani 1-sonli umumiy o'rta ta'lim maktabi binosi</span>
+                    <span>{contact.branches[0] || "Yangiobod tumani 1-sonli umumiy o'rta ta'lim maktabi binosi"}</span>
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                     Tarix, huquq, matematika, ona tili va CEFR darslari o'tkaziladigan asosiy filial.
@@ -137,7 +138,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenTrialModal
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-1" />
-                    <span>Yangiobod tuman texnikumi binosi</span>
+                    <span>{contact.branches[1] || "Yangiobod tuman texnikumi binosi"}</span>
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                     Mental arifmetika, ingliz tili va qo'shimcha akademik to'garaklar filiali.

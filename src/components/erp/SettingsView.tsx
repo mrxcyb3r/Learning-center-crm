@@ -16,6 +16,7 @@ import {
   Key,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { notificationService } from '../../services/notificationService';
 import { AuditLogEntry } from '../../types/crm';
 
 export const SettingsView: React.FC = () => {
@@ -82,6 +83,7 @@ export const SettingsView: React.FC = () => {
           : current.telegramSettings?.botUsername,
       },
     });
+    notificationService.onSettingsUpdated(centerName.trim() || "Markaz malumotlari");
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };

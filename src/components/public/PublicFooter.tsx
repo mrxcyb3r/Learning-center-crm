@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Send, Phone, MapPin, ExternalLink, ShieldCheck } from 'lucide-react';
+import { cmsBridge } from '../../services/cmsBridge';
 
 export const PublicFooter: React.FC = () => {
   const navigate = useNavigate();
+  const [contact, setContact] = useState(cmsBridge.getContact());
+
+  useEffect(() => {
+    setContact(cmsBridge.getContact());
+  }, []);
 
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900">
@@ -29,7 +35,7 @@ export const PublicFooter: React.FC = () => {
             </p>
             <div className="pt-2 flex items-center gap-3 text-white">
               <a
-                href="https://t.me/D_Furqatovich"
+                href={`https://t.me/${contact.telegram.replace('@', '')}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-amber-500 hover:text-slate-950 flex items-center justify-center transition"
@@ -38,7 +44,7 @@ export const PublicFooter: React.FC = () => {
                 <Send className="w-4 h-4" />
               </a>
               <a
-                href="tel:+998886484949"
+                href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}
                 className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-amber-500 hover:text-slate-950 flex items-center justify-center transition"
                 title="Telefon"
               >
@@ -95,13 +101,13 @@ export const PublicFooter: React.FC = () => {
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>1-Filial:</strong> Yangiobod tumani 1-sonli umumiy o'rta ta'lim maktabi binosi
+                  <strong>1-Filial:</strong> {contact.branches[0] || "Yangiobod tumani 1-maktab binosi"}
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>2-Filial:</strong> Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION)
+                  <strong>2-Filial:</strong> {contact.branches[1] || "Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION)"}
                 </span>
               </li>
             </ul>
@@ -113,8 +119,7 @@ export const PublicFooter: React.FC = () => {
               Aloqa & Tizim
             </h4>
             <div className="space-y-2 text-xs font-mono">
-              <p className="text-white font-bold">+998 (88) 648-49-49</p>
-              <p className="text-white font-bold">+998 (99) 259-32-32</p>
+              <p className="text-white font-bold">{contact.phone}</p>
               <p className="text-slate-400 font-sans">Ish vaqti: 08:00 – 19:00</p>
             </div>
 

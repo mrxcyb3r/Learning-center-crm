@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight, ShieldCheck, GraduationCap } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { DEMO_MODE } from '../../config/demo';
+import { cmsBridge } from '../../services/cmsBridge';
 
 interface PublicNavbarProps {
   onOpenTrialModal: () => void;
@@ -15,6 +16,11 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [phone, setPhone] = useState(cmsBridge.getContact().phone);
+
+  useEffect(() => {
+    setPhone(cmsBridge.getContact().phone);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -108,11 +114,11 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
           <div className="hidden sm:flex items-center gap-3">
             {/* Direct Phone */}
             <a
-              href="tel:+998886484949"
+              href={`tel:${phone.replace(/[^+\d]/g, '')}`}
               className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-amber-500 flex items-center gap-2 border border-slate-200 dark:border-slate-800 transition"
             >
               <Phone className="w-3.5 h-3.5 text-amber-500" />
-              <span>(88) 648-49-49</span>
+              <span>{phone}</span>
             </a>
 
             {/* Dark / Light Toggle */}
@@ -206,11 +212,11 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
               <a
-                href="tel:+998886484949"
+                href={`tel:${phone.replace(/[^+\d]/g, '')}`}
                 className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs flex items-center justify-center gap-2"
               >
                 <Phone className="w-4 h-4 text-amber-500" />
-                <span>+998 (88) 648-49-49</span>
+                <span>{phone}</span>
               </a>
 
               <button

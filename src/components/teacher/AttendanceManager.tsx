@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { notificationService } from '../../services/notificationService';
 import {
   subscribeGroups,
   subscribeStudents,
@@ -226,6 +227,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
     try {
       await saveAttendanceRecord(selectedGroupId, selectedDate, attendanceState, teacherName);
       setInitialLoadedState({ ...attendanceState });
+      notificationService.onAttendanceUpdated(selectedGroupObj?.name || 'Group', teacherName);
       showToast(
         t(
           `${selectedGroupObj?.name || 'Guruh'} uchun davomat Firestore ga saqlandi! ✅`,

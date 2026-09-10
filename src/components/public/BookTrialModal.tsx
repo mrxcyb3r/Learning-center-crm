@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle2, Sparkles, Send, Phone, User, BookOpen, Clock, ShieldCheck, Check } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { notificationService } from '../../services/notificationService';
+import { demoData } from '../../services/demoData';
 
 interface BookTrialModalProps {
   isOpen: boolean;
@@ -66,6 +68,15 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
         source: 'Veb-sayt Sinov Darsi Modali',
       });
 
+      notificationService.onTrialLessonSubmitted(fullName.trim(), selectedCourse, phone.trim());
+      demoData.addLead({
+        name: fullName.trim(),
+        phone: phone.trim(),
+        course: selectedCourse,
+        status: 'New',
+        source: 'Website',
+        notes: `Sinov darsi arizasi — ${new Date().toLocaleString('uz-UZ')}`,
+      });
       setIsSuccess(true);
       if (onLeadSuccess) onLeadSuccess();
     } catch (err) {

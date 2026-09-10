@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowRight, Award, GraduationCap, CheckCircle2, ShieldCheck, Users, Calendar, Phone, User, BookOpen, Send, Check } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { notificationService } from '../../services/notificationService';
+import { demoData } from '../../services/demoData';
 import { CmsData } from '../../types/crm';
 
 interface HeroSectionProps {
@@ -55,6 +57,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         phone: leadPhone.trim(),
         course: selectedCourse || 'DTM & Milliy Sertifikat',
         source: 'Bosh sahifa (Hero forma)',
+        notes: 'Bosh sahifadan bepul sinov darsiga yozildi.',
+      });
+      notificationService.onTrialLessonSubmitted(leadName.trim(), selectedCourse || 'DTM & Milliy Sertifikat', leadPhone.trim());
+      demoData.addLead({
+        name: leadName.trim(),
+        phone: leadPhone.trim(),
+        course: selectedCourse || 'DTM & Milliy Sertifikat',
+        status: 'New',
+        source: 'Website',
         notes: 'Bosh sahifadan bepul sinov darsiga yozildi.',
       });
       setIsSubmitted(true);

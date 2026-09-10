@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Settings,
   Bell,
@@ -39,7 +40,9 @@ const BUSINESS_MODELS: { value: BusinessModel; label: string; description: strin
 export const TeacherSettingsView: React.FC = () => {
   const { theme } = useTheme();
   const { currentUser, activeRole } = useAuth();
-  const { businessModel, setBusinessModel, teacherName } = useTeacherPortal();
+  const { businessModel, setBusinessModel, teacherName, teacherUid } = useTeacherPortal();
+
+  const SETTINGS_KEY = `renessans_teacher_settings_${teacherUid}`;
 
   const [selectedModel, setSelectedModel] = useState<BusinessModel>(businessModel);
   const [saved, setSaved] = useState(false);
@@ -50,6 +53,27 @@ export const TeacherSettingsView: React.FC = () => {
 
   const [language, setLanguage] = useState<'UZ' | 'EN' | 'RU'>('EN');
   const [compactMode, setCompactMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setEmailNotifications(parsed.emailNotifications ?? true);
+        setLessonReminders(parsed.lessonReminders ?? true);
+        setPaymentAlerts(parsed.paymentAlerts ?? true);
+      }
+    } catch {}
+  }, [teacherUid]);
+
+  const saveSettings = () => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      emailNotifications,
+      lessonReminders,
+      paymentAlerts,
+    }));
+    toast.success('Sozlamalar saqlandi');
+  };
 
   const handleSaveBusinessModel = () => {
     setBusinessModel(selectedModel);
@@ -214,6 +238,14 @@ export const TeacherSettingsView: React.FC = () => {
             </div>
           </label>
         </div>
+
+        <button
+          onClick={saveSettings}
+          className="mt-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-bold text-xs flex items-center gap-2 hover:bg-blue-600 transition cursor-pointer"
+        >
+          <Save className="w-3.5 h-3.5" />
+          Saqlash
+        </button>
       </div>
 
       {/* Display Preferences */}

@@ -19,6 +19,7 @@ import {
   FilterX,
 } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { notificationService } from '../../services/notificationService';
 import { CourseData, GroupScheduleItem, Lead, LeadStatus, PaymentStatus, TeacherRecord } from '../../types/crm';
 import { formatDate, formatDateTime } from '../../utils/format';
 
@@ -194,6 +195,15 @@ export const LeadsCrmView: React.FC = () => {
     if (!isConverting) updates.status = editStatus;
 
     crmService.updateLead(detailLead.id, updates);
+
+    if (editStatus !== detailLead.status) {
+      notificationService.logActivity({
+        type: 'lead_update',
+        message: `Lead holati o'zgardi: ${detailLead.name} → ${editStatus}`,
+        icon: 'RefreshCw',
+        color: 'blue',
+      });
+    }
 
     if (isConverting) {
       setDetailLead(null);

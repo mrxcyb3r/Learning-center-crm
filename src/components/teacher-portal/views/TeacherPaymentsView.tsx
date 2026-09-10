@@ -156,7 +156,7 @@ export const TeacherPaymentsView: React.FC = () => {
         cohortGroup: group?.name || selectedStudent.groupName,
       };
 
-      await addDoc(collection(db, 'teacher_payments'), paymentData);
+      await addDoc(collection(db, 'payments'), paymentData);
 
       toast.success(`Payment recorded! Receipt: ${receiptNumber}`);
 

@@ -12,6 +12,7 @@ import {
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_PAYMENTS } from '../../data/mockData';
 import { Student, Payment } from '../../types';
+import { notificationService } from '../../services/notificationService';
 import { FinanceOverviewCard } from '../FinanceOverviewCard';
 import {
   CreditCard,
@@ -194,6 +195,7 @@ export const PaymentLedger: React.FC = () => {
         );
       }
 
+      notificationService.onPaymentRecorded(studentName, Number(amount) || 650000, recorderName);
       setIsLogModalOpen(false);
       setPaymentNotes('');
     } catch (err) {

@@ -16,6 +16,8 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../services/firebase';
 import { updateUserProfile } from '../../../services/firestore';
 import { TeacherProfile, SocialLink } from '../../../types/teacher';
 
@@ -50,6 +52,24 @@ export const TeacherProfileView: React.FC = () => {
       setPhotoURL(currentUser.photoURL || '');
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, 'users', teacherUid));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPhoneNumber(data.phoneNumber || '');
+          setBio(data.bio || '');
+          setSocialLinks(data.socialLinks || []);
+          setIsPublicProfile(data.isPublicProfile ?? true);
+        }
+      } catch (e) {
+        console.warn('Profile load error:', e);
+      }
+    };
+    if (teacherUid) fetchProfile();
+  }, [teacherUid]);
 
   const getInitials = (name: string) => {
     return name

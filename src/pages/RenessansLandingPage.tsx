@@ -1,4 +1,3 @@
-
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
@@ -718,7 +717,6 @@ const CounterNumber: React.FC<CounterNumberProps> = ({
 
 /* ============================================================================
    SECTION HEADER WITH DIFFERENTIATED SPEED & SEMANTIC BLUR CHOREOGRAPHY
-   (Eyebrow 0.8x, Title 1.0x, Subtitle 0.85x — Reading Zone Lock)
 ============================================================================ */
 
 const ScrollFocusedHeader: React.FC<{
@@ -730,11 +728,9 @@ const ScrollFocusedHeader: React.FC<{
 }> = ({ eyebrow, title, subtitle, progress, align = "center" }) => {
   const reduceMotion = useReducedMotion();
 
-  // Eyebrow (0.8x speed)
   const eyebrowOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.35, 1, 1, 0.35]);
   const eyebrowY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [16, 0, 0, -16]);
 
-  // Title (1.0x speed, semantic blur distance: 3px -> 0px -> 3px)
   const titleOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.25, 1, 1, 0.25]);
   const titleY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [26, 0, 0, -26]);
   const titleScale = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [1, 1, 1, 1] : [0.97, 1, 1, 0.97]);
@@ -744,7 +740,6 @@ const ScrollFocusedHeader: React.FC<{
     reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
   );
 
-  // Subtitle (0.85x speed, subtle blur cue: 2px -> 0px -> 2px)
   const subOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.3, 1, 1, 0.3]);
   const subY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [14, 0, 0, -14]);
   const subFilter = useTransform(
@@ -816,10 +811,6 @@ export function RenessansLandingPage({
   const [activeSection, setActiveSection] = useState("top");
 
   // Interaction State
-  const [activeCourseId, setActiveCourseId] = useState<string>(courses[0]?.id ?? "c-tarix-huquq");
-  const [activeRoadmapIndex, setActiveRoadmapIndex] = useState(0);
-  const [activeTeacherIndex, setActiveTeacherIndex] = useState(0);
-  const [activeSubjectIndex, setActiveSubjectIndex] = useState(0);
   const [activeResultIndex, setActiveResultIndex] = useState(0);
   const [hoveredResultId, setHoveredResultId] = useState<string | null>(null);
   const [selectedResultFilter, setSelectedResultFilter] = useState("BARCHASI");
@@ -850,7 +841,7 @@ export function RenessansLandingPage({
     ["none", "0 20px 50px rgba(0,0,0,0.8)"]
   );
 
-  // Dynamic Navigation Section Observer (Reflects actual scroll journey)
+  // Dynamic Navigation Section Observer
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sectionIds = [
@@ -975,7 +966,7 @@ export function RenessansLandingPage({
   return (
     <main className="min-h-screen overflow-x-clip bg-[#07090d] text-stone-100 antialiased selection:bg-amber-400 selection:text-black font-sans relative">
       {/* ====================================================================
-          1. NAVBAR — SCROLL-LINKED FLOATING COMMAND BAR
+          1. NAVBAR — FLOATING ACTIVE COMMAND BAR
       ==================================================================== */}
       <header className="fixed inset-x-0 top-0 z-[100] px-4 sm:px-8 py-3.5 transition-all duration-300">
         <motion.div
@@ -1154,43 +1145,35 @@ export function RenessansLandingPage({
       <MethodologyStickyFocus stages={METHOD_STAGES} />
 
       {/* ====================================================================
-          6. KURSLAR — FOCUSED PRODUCT EXPLORER ("COURSE SPOTLIGHT")
+          6. KURSLAR — "COURSE PASSAGE" (SCROLL-DRIVEN CATALOG PASSAGE)
       ==================================================================== */}
-      <CoursesFocusedExplorer
+      <CoursesPassageSection
         courses={courses}
-        activeCourseId={activeCourseId}
-        setActiveCourseId={setActiveCourseId}
         onOpenCourse={handleNavigateToCourse}
         onRegisterClick={() => scrollTo("konsultatsiya")}
       />
 
       {/* ====================================================================
-          7. PREZIDENT MAKTABIGA TAYYORLOV — EDITORIAL DOCUMENTARY REVEAL
+          7. PREZIDENT MAKTABIGA TAYYORLOV — "CHECKPOINT JOURNEY"
       ==================================================================== */}
-      <PresidentSchoolFocusedJourney
+      <PresidentSchoolJourneySection
         stages={PRESIDENT_STAGES}
-        activeRoadmapIndex={activeRoadmapIndex}
-        setActiveRoadmapIndex={setActiveRoadmapIndex}
         onRegisterClick={() => scrollTo("konsultatsiya")}
       />
 
       {/* ====================================================================
-          8. TIZIM USTOZLARI — HUMAN SPOTLIGHT SHOWCASE
+          8. TIZIM USTOZLARI — "TEACHER SPOTLIGHT JOURNEY"
       ==================================================================== */}
-      <TeachersEditorialShowcase
+      <TeachersSpotlightSection
         teachers={teachers}
-        activeTeacherIndex={activeTeacherIndex}
-        setActiveTeacherIndex={setActiveTeacherIndex}
         onOpenTeacher={handleNavigateToTeacher}
       />
 
       {/* ====================================================================
-          9. FANLAR — ACADEMIC DOCKET REGISTER
+          9. FANLAR — "ACADEMIC DOSSIER" (ARCHIVAL DOCUMENT REVEAL)
       ==================================================================== */}
-      <SubjectsAcademicRegister
+      <SubjectsDossierSection
         items={SUBJECT_ITEMS}
-        activeSubjectIndex={activeSubjectIndex}
-        setActiveSubjectIndex={setActiveSubjectIndex}
         onRegisterClick={() => scrollTo("konsultatsiya")}
       />
 
@@ -1276,7 +1259,7 @@ export function RenessansLandingPage({
 }
 
 /* ============================================================================
-   SECTION 02: HERO SCENE (DIFFERENTIATED TYPOGRAPHY SPEEDS & ATMOSPHERIC EXIT)
+   SECTION 02: HERO SCENE
 ============================================================================ */
 
 function HeroSceneSection({ scrollTo }: { scrollTo: (id: string) => void }) {
@@ -1288,11 +1271,9 @@ function HeroSceneSection({ scrollTo }: { scrollTo: (id: string) => void }) {
   const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
   const reduceMotion = useReducedMotion();
 
-  // Environment moves faster than focused content
   const bgGlowY = useTransform(smooth, [0, 1], reduceMotion ? [0, 0] : [0, -140]);
   const bgGlowScale = useTransform(smooth, [0, 1], reduceMotion ? [1, 1] : [1, 1.15]);
 
-  // Differentiated Speeds: Eyebrow (0.8x), Headline (1.0x), Description (0.85x), CTA (earlier exit)
   const eyebrowY = useTransform(smooth, [0, 0.6, 1], reduceMotion ? [0, 0, 0] : [0, 0, -32]);
 
   const headlineY = useTransform(smooth, [0, 0.6, 1], reduceMotion ? [0, 0, 0] : [0, 0, -48]);
@@ -1477,7 +1458,7 @@ function HeroSceneSection({ scrollTo }: { scrollTo: (id: string) => void }) {
 }
 
 /* ============================================================================
-   SECTION 03: MARQUEE (PHYSICAL SCROLL VELOCITY RESPONSE)
+   SECTION 03: MARQUEE
 ============================================================================ */
 
 function MarqueeWithVelocity() {
@@ -1511,8 +1492,7 @@ function MarqueeWithVelocity() {
 }
 
 /* ============================================================================
-   SECTION 04: FALSAFA (SEQUENTIAL FOCUS TYPOGRAPHY CHAPTERS)
-   (Active word becomes sharp, scale 1.04; inactive words blur & dim)
+   SECTION 04: FALSAFA
 ============================================================================ */
 
 function ManifestoFocusNarrative() {
@@ -1573,7 +1553,6 @@ function ManifestoFocusNarrative() {
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div className="relative mx-auto w-full max-w-[1300px] px-6 sm:px-8 lg:px-12">
           <div className="grid gap-12 lg:grid-cols-12 items-center">
-            {/* Left Column: Vertical Focus List with Blur-to-Sharp Choreography */}
             <div className="lg:col-span-4 space-y-4">
               <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
                 01 / FALSAFA & MANIFEST
@@ -1620,7 +1599,6 @@ function ManifestoFocusNarrative() {
               </div>
             </div>
 
-            {/* Right Column: Active Focused Staged Reveal */}
             <div className="lg:col-span-8">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -1708,7 +1686,6 @@ function MethodologyStickyFocus({ stages }: { stages: typeof METHOD_STAGES }) {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8 items-center relative">
-            {/* Left Column: Stacked Cards with Discrete Focus Windows */}
             <div className="lg:col-span-6 relative h-[380px] sm:h-[340px]">
               {stages.map((stage, idx) => (
                 <MethodologyFocusCard
@@ -1721,7 +1698,6 @@ function MethodologyStickyFocus({ stages }: { stages: typeof METHOD_STAGES }) {
               ))}
             </div>
 
-            {/* Right Column: Stacked Physical SVGs with Discrete Focus Windows */}
             <div className="lg:col-span-6 rounded-3xl border border-white/[0.08] bg-[#080b10] flex items-center justify-center p-6 shadow-inner relative h-[380px] sm:h-[340px] overflow-hidden">
               {stages.map((stage, idx) => (
                 <MethodologyFocusVisual
@@ -1852,7 +1828,6 @@ function MethodologyFocusVisual({
     isFirst ? [1, 1, 0.92] : isLast ? [0.92, 1, 1] : [0.92, 1, 1, 0.92]
   );
 
-  // Focus-linked micro-animations
   const radarSweep = useTransform(scrollYProgress, [ranges.enter, ranges.exit], [0, 360]);
   const conduitProgress = useTransform(scrollYProgress, [ranges.focusStart, ranges.focusEnd], [0, 1]);
   const graphProgress = useTransform(scrollYProgress, [ranges.focusStart, ranges.focusEnd], [0, 1]);
@@ -1976,635 +1951,738 @@ function MethodologyFocusVisual({
 }
 
 /* ============================================================================
-   SECTION 06: KURSLAR (FOCUSED PRODUCT EXPLORER — "COURSE SPOTLIGHT")
+   SECTION 06: KURSLAR — "COURSE PASSAGE"
 ============================================================================ */
 
-function CoursesFocusedExplorer({
+function CoursesPassageSection({
   courses,
-  activeCourseId,
-  setActiveCourseId,
   onOpenCourse,
   onRegisterClick,
 }: {
   courses: CoursePath[];
-  activeCourseId: string;
-  setActiveCourseId: (id: string) => void;
   onOpenCourse: (slug: string) => void;
   onRegisterClick: () => void;
 }) {
   const containerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"],
+    offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
 
-  const activeCourse = courses.find((c) => c.id === activeCourseId) || courses[0];
-  const activeIndex = courses.findIndex((c) => c.id === activeCourseId);
+  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
 
   return (
     <section
       id="kurslar"
       ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#080b10] py-28 sm:py-36 overflow-hidden"
+      className="relative h-[360vh] bg-[#080b10] border-b border-white/[0.08]"
     >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
-          <ScrollFocusedHeader
-            eyebrow="03 / AKADEMIK DASTURLAR"
-            title="Kurslar Katalogi"
-            subtitle="Har bir yo‘nalish uchun chuqurlashtirilgan o‘quv dasturi."
-            progress={smooth}
-            align="left"
-          />
-          <RollingNumber current={activeIndex + 1} total={courses.length} />
-        </div>
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
+            <ScrollFocusedHeader
+              eyebrow="03 / AKADEMIK DASTURLAR"
+              title="Kurslar Katalogi"
+              subtitle="Har bir yo‘nalish uchun chuqurlashtirilgan o‘quv dasturi."
+              progress={headerProgress}
+              align="left"
+            />
+            <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-amber-400">
+              <span>KATALOG BO‘YICHA HARAKATLANING</span>
+              <span className="text-stone-600">•</span>
+              <span className="text-stone-400">SCROLL DOWN</span>
+            </div>
+          </div>
 
-        {/* Course Selector Tabs with Visible Hierarchy */}
-        <div className="mt-10 flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-          {courses.map((c, i) => {
-            const isCurrent = c.id === activeCourse.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setActiveCourseId(c.id)}
-                className={[
-                  "relative shrink-0 px-5 py-3 rounded-2xl text-xs font-mono transition-all duration-300 focus:outline-none",
-                  isCurrent
-                    ? "text-black font-bold scale-105 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
-                    : "border border-white/10 bg-[#0c1017] text-stone-500 opacity-40 hover:opacity-100 hover:text-stone-200",
-                ].join(" ")}
-              >
-                {isCurrent && (
-                  <motion.div
-                    layoutId="course-active-tab"
-                    className="absolute inset-0 rounded-2xl bg-amber-400"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-2">
-                  <span>0{i + 1}</span>
-                  <span className="max-w-[130px] truncate">{c.title.split(" ")[0]}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Focused Course Stage Area */}
-        <div className="mt-8 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-14 relative overflow-hidden shadow-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCourse.id}
-              initial={{ opacity: 0, y: 30, scale: 0.98, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -30, scale: 0.98, filter: "blur(4px)" }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="grid lg:grid-cols-12 gap-10 items-center"
-            >
-              {/* Left Details: Staged Reveal */}
-              <div className="lg:col-span-8">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400/90 font-bold">
-                  {activeCourse.category} // 0{activeIndex + 1}
-                </span>
-
-                <h3 className="mt-3 font-serif text-[clamp(2.2rem,4vw,3.8rem)] leading-tight text-stone-100">
-                  {activeCourse.title}
-                </h3>
-
-                <p className="mt-6 text-base text-stone-300 leading-relaxed max-w-2xl">
-                  {activeCourse.description}
-                </p>
-
-                <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-2xl">
-                  {activeCourse.highlights.map((h, i) => (
-                    <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-200">
-                      <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                      <span>{h}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Details: Pricing Console */}
-              <div className="lg:col-span-4 rounded-2xl border border-white/[0.08] bg-[#07090d] p-8 flex flex-col justify-between space-y-6 shadow-xl">
-                <div>
-                  <span className="text-[10px] font-mono uppercase text-stone-500">
-                    Oylik Kurs To'lovi
-                  </span>
-                  <div className="mt-1 font-serif text-3xl font-bold text-amber-400">
-                    {activeCourse.price}
-                  </div>
-                  <div className="mt-1 text-xs font-mono text-stone-400 uppercase">
-                    Davomiyligi: {activeCourse.duration}
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t border-white/[0.08]">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-stone-500">Dars jadvali:</span>
-                    <span className="text-stone-200">{activeCourse.schedule}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-stone-500">Mas'ul ustoz:</span>
-                    <span className="text-amber-400 font-semibold">{activeCourse.teacherName}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={onRegisterClick}
-                    className="w-full rounded-xl bg-amber-400 py-3 text-center text-xs font-bold uppercase tracking-widest text-black hover:bg-amber-300 transition-colors shadow-lg"
-                  >
-                    Guruhga Yozilish
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onOpenCourse(activeCourse.slug)}
-                    className="w-full rounded-xl border border-white/20 py-3 text-center text-xs font-mono uppercase text-stone-300 hover:text-white transition-colors"
-                  >
-                    Batafsil O'rganish
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <div className="relative h-[440px] sm:h-[400px]">
+            {courses.map((course, idx) => (
+              <CoursePassageCard
+                key={course.id}
+                course={course}
+                index={idx}
+                total={courses.length}
+                scrollYProgress={scrollYProgress}
+                onOpenCourse={onOpenCourse}
+                onRegisterClick={onRegisterClick}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+function CoursePassageCard({
+  course,
+  index,
+  total,
+  scrollYProgress,
+  onOpenCourse,
+  onRegisterClick,
+}: {
+  course: CoursePath;
+  index: number;
+  total: number;
+  scrollYProgress: MotionValue<number>;
+  onOpenCourse: (slug: string) => void;
+  onRegisterClick: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const ranges = getFocusRanges(index, total, 0.04);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  const opacity = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
+  );
+
+  const y = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [0, 0, 0]
+      : isFirst
+      ? [0, 0, -45]
+      : isLast
+      ? [45, 0, 0]
+      : [45, 0, 0, -45]
+  );
+
+  const scale = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [1, 1, 1]
+      : isFirst
+      ? [1, 1, 0.96]
+      : isLast
+      ? [0.96, 1, 1]
+      : [0.96, 1, 1, 0.96]
+  );
+
+  const filter = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
+      : isFirst
+      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
+      : isLast
+      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
+      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+  );
+
+  return (
+    <motion.div
+      style={{ opacity, y, scale, filter }}
+      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
+    >
+      <div className="grid lg:grid-cols-12 gap-8 items-center">
+        <div className="lg:col-span-8">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-mono text-xs font-bold text-amber-400">
+              0{index + 1} //
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400/90 font-bold">
+              {course.category}
+            </span>
+          </div>
+
+          <h3 className="font-serif text-[clamp(2.2rem,3.8vw,3.6rem)] leading-tight text-stone-100">
+            {course.title}
+          </h3>
+
+          <p className="mt-4 text-sm sm:text-base text-stone-300 leading-relaxed max-w-2xl">
+            {course.description}
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-2.5 mt-6 max-w-2xl">
+            {course.highlights.map((h, i) => (
+              <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-200">
+                <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="lg:col-span-4 rounded-2xl border border-white/[0.08] bg-[#07090d] p-6 sm:p-8 flex flex-col justify-between space-y-5 shadow-xl">
+          <div>
+            <span className="text-[10px] font-mono uppercase text-stone-500">
+              Oylik Kurs To'lovi
+            </span>
+            <div className="mt-1 font-serif text-3xl font-bold text-amber-400">
+              {course.price}
+            </div>
+            <div className="mt-1 text-xs font-mono text-stone-400 uppercase">
+              Davomiyligi: {course.duration}
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-3 border-t border-white/[0.08] text-xs font-mono">
+            <div className="flex items-center justify-between">
+              <span className="text-stone-500">Dars jadvali:</span>
+              <span className="text-stone-200">{course.schedule}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-stone-500">Mas'ul ustoz:</span>
+              <span className="text-amber-400 font-semibold">{course.teacherName}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onRegisterClick}
+              className="w-full rounded-xl bg-amber-400 py-3 text-center text-xs font-bold uppercase tracking-widest text-black hover:bg-amber-300 transition-colors shadow-lg"
+            >
+              Guruhga Yozilish
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenCourse(course.slug)}
+              className="w-full rounded-xl border border-white/20 py-2.5 text-center text-xs font-mono uppercase text-stone-300 hover:text-white transition-colors"
+            >
+              Batafsil O'rganish
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-stone-500 uppercase tracking-widest">
+        <span>KURS BOSQICHI: 0{index + 1} / 0{total}</span>
+        <span className="text-amber-400 font-bold">RENESSANS METODIKASI</span>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ============================================================================
-   SECTION 07: PREZIDENT MAKTABI (EDITORIAL DOCUMENTARY REVEAL)
+   SECTION 07: PREZIDENT MAKTABIGA TAYYORLOV — "CHECKPOINT JOURNEY"
 ============================================================================ */
 
-function PresidentSchoolFocusedJourney({
+function PresidentSchoolJourneySection({
   stages,
-  activeRoadmapIndex,
-  setActiveRoadmapIndex,
   onRegisterClick,
 }: {
   stages: typeof PRESIDENT_STAGES;
-  activeRoadmapIndex: number;
-  setActiveRoadmapIndex: (i: number) => void;
   onRegisterClick: () => void;
 }) {
   const containerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"],
+    offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
 
-  const activeStage = stages[activeRoadmapIndex] || stages[0];
-  const progressPercent = (activeRoadmapIndex / (stages.length - 1)) * 100;
+  const railProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
+  const [activeStageIdx, setActiveStageIdx] = useState(0);
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    const idx = Math.min(stages.length - 1, Math.max(0, Math.floor(latest * stages.length)));
+    setActiveStageIdx(idx);
+  });
 
   return (
     <section
       id="prezident-maktabi"
       ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#090d14] py-28 sm:py-36 overflow-hidden"
+      className="relative h-[340vh] bg-[#090d14] border-b border-white/[0.08]"
     >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
-          <ScrollFocusedHeader
-            eyebrow="04 / MAXSUS TAYYORLOV YO'LI"
-            title="Prezident Maktabiga Tayyorlov"
-            subtitle="1- va 2-bosqich saralash imtihonlariga kompleks intellektual tayyorgarlik."
-            progress={smooth}
-            align="left"
-          />
-          <RollingNumber current={activeRoadmapIndex + 1} total={stages.length} />
-        </div>
-
-        {/* Progressive Physical Rail */}
-        <div className="mt-12 relative">
-          <div className="hidden md:block absolute top-1/2 left-4 right-4 h-1 bg-white/[0.08] -translate-y-1/2 z-0">
-            <motion.div
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full bg-amber-400 shadow-[0_0_15px_#f59e0b]"
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
+            <ScrollFocusedHeader
+              eyebrow="04 / MAXSUS TAYYORLOV YO'LI"
+              title="Prezident Maktabiga Tayyorlov"
+              subtitle="1- va 2-bosqich saralash imtihonlariga kompleks intellektual tayyorgarlik."
+              progress={railProgress}
+              align="left"
             />
+            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
+              MARSHRUT CHIZIG‘I // 0{activeStageIdx + 1}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 relative z-10">
-            {stages.map((st, idx) => {
-              const isActive = activeRoadmapIndex === idx;
-              const isPassed = idx < activeRoadmapIndex;
-              const Icon = st.icon;
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-4 relative pl-8 border-l border-white/[0.1] space-y-6">
+              <motion.div
+                style={{ scaleY: railProgress, originY: 0 }}
+                className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-400 shadow-[0_0_12px_#f59e0b]"
+              />
 
-              return (
-                <button
-                  key={st.step}
-                  type="button"
-                  onClick={() => setActiveRoadmapIndex(idx)}
-                  className={[
-                    "p-4 rounded-2xl border text-left transition-all duration-300 relative group focus:outline-none",
-                    isActive
-                      ? "border-amber-400 bg-amber-400/[0.12] shadow-[0_0_25px_rgba(245,158,11,0.25)] scale-105 opacity-100"
-                      : isPassed
-                      ? "border-white/10 bg-[#0c1017] opacity-60 hover:opacity-100"
-                      : "border-white/[0.06] bg-[#0c1017] opacity-25 hover:opacity-100",
-                  ].join(" ")}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span
+              {stages.map((st, idx) => {
+                const isActive = activeStageIdx === idx;
+                const isPassed = idx < activeStageIdx;
+                const Icon = st.icon;
+
+                return (
+                  <div
+                    key={st.step}
+                    className={[
+                      "relative transition-all duration-300",
+                      isActive
+                        ? "opacity-100 translate-x-2"
+                        : isPassed
+                        ? "opacity-60 translate-x-0"
+                        : "opacity-25 translate-x-0",
+                    ].join(" ")}
+                  >
+                    <div
                       className={[
-                        "font-mono text-xs font-bold",
-                        isActive ? "text-amber-400" : "text-stone-500",
+                        "absolute -left-[37px] top-1.5 h-4 w-4 rounded-full border flex items-center justify-center transition-colors",
+                        isActive
+                          ? "border-amber-400 bg-amber-400 text-black shadow-[0_0_12px_#f59e0b]"
+                          : isPassed
+                          ? "border-amber-400/60 bg-black text-amber-400"
+                          : "border-white/20 bg-black",
                       ].join(" ")}
                     >
-                      {st.step}
-                    </span>
-                    <Icon
-                      className={[
-                        "h-4 w-4 transition-transform duration-300",
-                        isActive ? "text-amber-400 scale-110" : "text-stone-600",
-                      ].join(" ")}
-                    />
+                      {isPassed && <span className="text-[9px] font-bold">✓</span>}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Icon className={["h-4 w-4", isActive ? "text-amber-400" : "text-stone-500"].join(" ")} />
+                      <span
+                        className={[
+                          "font-serif text-lg sm:text-xl font-bold transition-colors",
+                          isActive ? "text-stone-100" : "text-stone-500",
+                        ].join(" ")}
+                      >
+                        {st.title}
+                      </span>
+                    </div>
                   </div>
-                  <div className="font-serif text-sm font-semibold text-stone-200 line-clamp-2">
-                    {st.title}
-                  </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <div className="lg:col-span-8 relative h-[360px] sm:h-[320px]">
+              {stages.map((stage, idx) => (
+                <PresidentCheckpointCard
+                  key={stage.step}
+                  stage={stage}
+                  index={idx}
+                  total={stages.length}
+                  scrollYProgress={scrollYProgress}
+                  onRegisterClick={onRegisterClick}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Focused Checkpoint Detail Stage */}
-        <div className="mt-10 rounded-3xl border border-amber-400/40 bg-[#0c1017] p-8 sm:p-14 relative overflow-hidden shadow-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeStage.step}
-              initial={{ opacity: 0, x: 30, filter: "blur(4px)" }}
-              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: -30, filter: "blur(4px)" }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="grid lg:grid-cols-12 gap-8 items-center"
-            >
-              <div className="lg:col-span-8">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-amber-400">
-                  FAOL CHECKPOINT // {activeStage.step}
-                </span>
-                <h3 className="mt-3 font-serif text-[clamp(2.2rem,3.8vw,3.8rem)] text-stone-100">
-                  {activeStage.title}
-                </h3>
-                <p className="mt-6 text-base text-stone-300 leading-relaxed max-w-2xl">
-                  {activeStage.desc}
-                </p>
-
-                <div className="mt-8 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] max-w-xl">
-                  <div className="text-[10px] font-mono uppercase text-stone-500 mb-1">
-                    Asosiy Yo'naltirilgan Ko'nikma:
-                  </div>
-                  <div className="font-serif text-lg font-bold text-amber-400">
-                    {activeStage.focus}
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-4 flex flex-col justify-center items-start lg:items-end border-t lg:border-t-0 lg:border-l border-white/[0.08] pt-6 lg:pt-0 lg:pl-8">
-                <div className="font-mono text-xs text-stone-400 mb-4">
-                  Prezident Maktabi Standarti
-                </div>
-                <button
-                  type="button"
-                  onClick={onRegisterClick}
-                  className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-7 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-lg"
-                >
-                  Guruhga yozilish
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
     </section>
   );
 }
 
+function PresidentCheckpointCard({
+  stage,
+  index,
+  total,
+  scrollYProgress,
+  onRegisterClick,
+}: {
+  stage: (typeof PRESIDENT_STAGES)[number];
+  index: number;
+  total: number;
+  scrollYProgress: MotionValue<number>;
+  onRegisterClick: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const ranges = getFocusRanges(index, total, 0.04);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  const opacity = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
+  );
+
+  const y = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [0, 0, 0]
+      : isFirst
+      ? [0, 0, -40]
+      : isLast
+      ? [40, 0, 0]
+      : [40, 0, 0, -40]
+  );
+
+  const scale = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [1, 1, 1]
+      : isFirst
+      ? [1, 1, 0.96]
+      : isLast
+      ? [0.96, 1, 1]
+      : [0.96, 1, 1, 0.96]
+  );
+
+  const filter = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
+      : isFirst
+      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
+      : isLast
+      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
+      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+  );
+
+  return (
+    <motion.div
+      style={{ opacity, y, scale, filter }}
+      className="absolute inset-0 rounded-3xl border border-amber-400/40 bg-[#0c1017] p-8 sm:p-10 shadow-2xl flex flex-col justify-between"
+    >
+      <div>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-amber-400">
+          CHECKPOINT {stage.step}
+        </span>
+        <h3 className="mt-2 font-serif text-[clamp(2rem,3.4vw,3.2rem)] text-stone-100">
+          {stage.title}
+        </h3>
+        <p className="mt-3 text-sm sm:text-base text-stone-300 leading-relaxed">
+          {stage.desc}
+        </p>
+
+        <div className="mt-6 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="text-[10px] font-mono uppercase text-stone-500 mb-1">
+            Asosiy Yo'naltirilgan Ko'nikma:
+          </div>
+          <div className="font-serif text-base sm:text-lg font-bold text-amber-400">
+            {stage.focus}
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
+        <span className="text-xs font-mono text-stone-400">Prezident Maktabi Standarti</span>
+        <button
+          type="button"
+          onClick={onRegisterClick}
+          className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-lg"
+        >
+          Guruhga yozilish
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ============================================================================
-   SECTION 08: TIZIM USTOZLARI (HUMAN SPOTLIGHT SHOWCASE)
+   SECTION 08: TIZIM USTOZLARI — "TEACHER SPOTLIGHT JOURNEY"
 ============================================================================ */
 
-function TeachersEditorialShowcase({
+function TeachersSpotlightSection({
   teachers,
-  activeTeacherIndex,
-  setActiveTeacherIndex,
   onOpenTeacher,
 }: {
   teachers: TeacherRecord[];
-  activeTeacherIndex: number;
-  setActiveTeacherIndex: (i: number) => void;
   onOpenTeacher: (slug: string) => void;
 }) {
   const containerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"],
+    offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
 
-  const activeTeacher = teachers[activeTeacherIndex] || teachers[0];
+  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
+  const [activeTeacherIdx, setActiveTeacherIdx] = useState(0);
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    const idx = Math.min(teachers.length - 1, Math.max(0, Math.floor(latest * teachers.length)));
+    setActiveTeacherIdx(idx);
+  });
 
   return (
     <section
       id="ustozlar"
       ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36 overflow-hidden"
+      className="relative h-[340vh] bg-[#07090d] border-b border-white/[0.08]"
     >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
-          <ScrollFocusedHeader
-            eyebrow="05 / PEDAGOGIK JAMOASI"
-            title="Tizim Ustozlari"
-            subtitle="Yuqori malakali, o'z fani bo'yicha yillik tajribaga ega yetakchi mutaxassislar."
-            progress={smooth}
-            align="left"
-          />
-
-          <div className="flex items-center gap-3">
-            <RollingNumber current={activeTeacherIndex + 1} total={teachers.length} />
-            <button
-              type="button"
-              onClick={() =>
-                setActiveTeacherIndex(
-                  (activeTeacherIndex - 1 + teachers.length) % teachers.length
-                )
-              }
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-stone-300 hover:border-amber-400 hover:text-amber-400 transition-colors"
-              aria-label="Oldingi ustoz"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveTeacherIndex((activeTeacherIndex + 1) % teachers.length)
-              }
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-stone-300 hover:border-amber-400 hover:text-amber-400 transition-colors"
-              aria-label="Keyingi ustoz"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
+            <ScrollFocusedHeader
+              eyebrow="05 / PEDAGOGIK JAMOASI"
+              title="Tizim Ustozlari"
+              subtitle="Yuqori malakali, o'z fani bo'yicha yillik tajribaga ega yetakchi mutaxassislar."
+              progress={headerProgress}
+              align="left"
+            />
+            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
+              USTOZLAR SAFARI // 0{activeTeacherIdx + 1}
+            </div>
           </div>
-        </div>
 
-        {/* Teacher Focus Selector Bar */}
-        <div className="mt-8 flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-          {teachers.map((t, idx) => {
-            const isActive = activeTeacherIndex === idx;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTeacherIndex(idx)}
-                className={[
-                  "relative shrink-0 px-5 py-2.5 rounded-full text-xs font-mono transition-all duration-300 focus:outline-none",
-                  isActive
-                    ? "text-black font-bold scale-105"
-                    : "border border-white/10 bg-[#0c1017] text-stone-500 opacity-40 hover:opacity-100 hover:text-stone-200",
-                ].join(" ")}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="teacher-active-pill"
-                    className="absolute inset-0 rounded-full bg-amber-400"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">0{idx + 1} // {t.name.split(" ")[0]}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Focused Teacher Showcase Stage */}
-        <div className="mt-8 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-14 relative overflow-hidden shadow-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTeacher.id}
-              initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -30, filter: "blur(4px)" }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="grid lg:grid-cols-12 gap-10 items-center"
-            >
-              <div className="lg:col-span-7">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">
-                  {activeTeacher.subject}
-                </span>
-                <h3 className="mt-2 font-serif text-[clamp(2.4rem,4.2vw,4.2rem)] leading-tight text-stone-100">
-                  {activeTeacher.name}
-                </h3>
-
-                <p className="mt-6 text-base leading-relaxed text-stone-300">
-                  {activeTeacher.bio}
-                </p>
-
-                {activeTeacher.achievements && (
-                  <div className="mt-8 space-y-3">
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-                      Asosiy Natijalar & Yutuqlar:
-                    </div>
-                    {activeTeacher.achievements.map((ach, idx) => (
-                      <div key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-stone-200">
-                        <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                        <span>{ach}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-10 pt-6 border-t border-white/[0.08] flex items-center justify-between">
-                  <span className="font-mono text-xs text-stone-400">
-                    {activeTeacher.resultsCount
-                      ? `${activeTeacher.resultsCount}+ o'quvchi natijasi`
-                      : "Yetakchi mutaxassis"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onOpenTeacher(activeTeacher.slug || activeTeacher.id)}
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-400 hover:text-amber-300"
-                  >
-                    Profilni ko‘rish
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 rounded-2xl border border-white/[0.08] bg-[#07090d] p-8 text-center flex flex-col items-center justify-center relative shadow-inner overflow-hidden">
-                <div className="h-32 w-32 rounded-full border border-amber-400/30 bg-amber-400/[0.05] flex items-center justify-center font-serif text-5xl font-bold text-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
-                  {activeTeacher.name.charAt(0)}
-                </div>
-
-                <div className="mt-6 font-serif text-3xl font-bold text-stone-100">
-                  {activeTeacher.experienceYears} Yil
-                </div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
-                  Pedagogik Tajriba
-                </div>
-
-                <div className="mt-6 w-full pt-6 border-t border-white/[0.08] grid grid-cols-2 gap-4 text-center">
-                  <div className="border-r border-white/[0.08] pr-2">
-                    <div className="font-serif text-xl font-bold text-amber-400">100%</div>
-                    <div className="text-[9px] font-mono text-stone-400 uppercase">OTM Qamrovi</div>
-                  </div>
-                  <div className="pl-2">
-                    <div className="font-serif text-xl font-bold text-emerald-400">Grant</div>
-                    <div className="text-[9px] font-mono text-stone-400 uppercase">Talabalari</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <div className="relative h-[420px] sm:h-[380px]">
+            {teachers.map((teacher, idx) => (
+              <TeacherSpotlightCard
+                key={teacher.id}
+                teacher={teacher}
+                index={idx}
+                total={teachers.length}
+                scrollYProgress={scrollYProgress}
+                onOpenTeacher={onOpenTeacher}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+function TeacherSpotlightCard({
+  teacher,
+  index,
+  total,
+  scrollYProgress,
+  onOpenTeacher,
+}: {
+  teacher: TeacherRecord;
+  index: number;
+  total: number;
+  scrollYProgress: MotionValue<number>;
+  onOpenTeacher: (slug: string) => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const ranges = getFocusRanges(index, total, 0.04);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  const opacity = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
+  );
+
+  const y = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [0, 0, 0]
+      : isFirst
+      ? [0, 0, -40]
+      : isLast
+      ? [40, 0, 0]
+      : [40, 0, 0, -40]
+  );
+
+  const scale = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [1, 1, 1]
+      : isFirst
+      ? [1, 1, 0.96]
+      : isLast
+      ? [0.96, 1, 1]
+      : [0.96, 1, 1, 0.96]
+  );
+
+  const filter = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
+      : isFirst
+      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
+      : isLast
+      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
+      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+  );
+
+  return (
+    <motion.div
+      style={{ opacity, y, scale, filter }}
+      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
+    >
+      <div className="grid lg:grid-cols-12 gap-8 items-center">
+        <div className="lg:col-span-8">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">
+            {teacher.subject}
+          </span>
+          <h3 className="mt-1 font-serif text-[clamp(2.4rem,4vw,3.8rem)] leading-tight text-stone-100">
+            {teacher.name}
+          </h3>
+
+          <p className="mt-4 text-sm sm:text-base leading-relaxed text-stone-300">
+            {teacher.bio}
+          </p>
+
+          {teacher.achievements && (
+            <div className="mt-5 space-y-2">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
+                Asosiy Natijalar:
+              </div>
+              {teacher.achievements.slice(0, 3).map((ach, idx) => (
+                <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-200">
+                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>{ach}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-4 rounded-2xl border border-white/[0.08] bg-[#07090d] p-6 text-center flex flex-col items-center justify-center relative shadow-inner">
+          <div className="h-28 w-28 rounded-full border border-amber-400/30 bg-amber-400/[0.05] flex items-center justify-center font-serif text-4xl font-bold text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+            {teacher.name.charAt(0)}
+          </div>
+
+          <div className="mt-4 font-serif text-2xl font-bold text-stone-100">
+            {teacher.experienceYears} Yil
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
+            Pedagogik Tajriba
+          </div>
+
+          <div className="mt-4 w-full pt-4 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-center">
+            <div className="border-r border-white/[0.08] pr-2">
+              <div className="font-serif text-lg font-bold text-amber-400">100%</div>
+              <div className="text-[9px] font-mono text-stone-400 uppercase">OTM Qamrovi</div>
+            </div>
+            <div className="pl-2">
+              <div className="font-serif text-lg font-bold text-emerald-400">Grant</div>
+              <div className="text-[9px] font-mono text-stone-400 uppercase">Talabalari</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
+        <span className="font-mono text-xs text-stone-400">
+          {teacher.resultsCount ? `${teacher.resultsCount}+ o'quvchi natijasi` : "Yetakchi mutaxassis"}
+        </span>
+        <button
+          type="button"
+          onClick={() => onOpenTeacher(teacher.slug || teacher.id)}
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-400 hover:text-amber-300"
+        >
+          Profilni ko‘rish
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ============================================================================
-   SECTION 09: FANLAR (ACADEMIC DOCKET REGISTER)
+   SECTION 09: FANLAR — "ACADEMIC DOSSIER"
 ============================================================================ */
 
-function SubjectsAcademicRegister({
+function SubjectsDossierSection({
   items,
-  activeSubjectIndex,
-  setActiveSubjectIndex,
   onRegisterClick,
 }: {
   items: typeof SUBJECT_ITEMS;
-  activeSubjectIndex: number;
-  setActiveSubjectIndex: (i: number) => void;
   onRegisterClick: () => void;
 }) {
   const containerRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"],
+    offset: ["start start", "end end"],
   });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
 
-  const current = items[activeSubjectIndex] || items[0];
+  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
+  const [activeDossierIdx, setActiveDossierIdx] = useState(0);
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    const idx = Math.min(items.length - 1, Math.max(0, Math.floor(latest * items.length)));
+    setActiveDossierIdx(idx);
+  });
 
   return (
     <section
       id="fanlar"
       ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#080b10] py-28 sm:py-36 overflow-hidden relative"
+      className="relative h-[320vh] bg-[#080b10] border-b border-white/[0.08]"
     >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 relative z-10">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
-          <ScrollFocusedHeader
-            eyebrow="06 / AKADEMIK RO'YXAT"
-            title="Fanlar & Yo‘nalishlar"
-            subtitle="Fan → Dastur → Mas'ul Pedagog bog'liqligi."
-            progress={smooth}
-            align="left"
-          />
-          <RollingNumber current={activeSubjectIndex + 1} total={items.length} />
-        </div>
-
-        <div className="mt-12 grid lg:grid-cols-12 gap-10 items-start">
-          {/* Left Docket List */}
-          <div className="lg:col-span-5 space-y-2.5">
-            {items.map((it, idx) => {
-              const isActive = activeSubjectIndex === idx;
-
-              return (
-                <button
-                  key={it.step}
-                  type="button"
-                  onClick={() => setActiveSubjectIndex(idx)}
-                  className={[
-                    "w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-300 flex items-center justify-between focus:outline-none",
-                    isActive
-                      ? "border-amber-400 bg-amber-400/[0.08] shadow-[0_4px_25px_rgba(245,158,11,0.15)] opacity-100 scale-100"
-                      : "border-white/[0.06] bg-[#0c1017] opacity-35 hover:opacity-80 scale-98",
-                  ].join(" ")}
-                >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={[
-                        "font-mono text-xs font-bold",
-                        isActive ? "text-amber-400" : "text-stone-500",
-                      ].join(" ")}
-                    >
-                      {it.step}
-                    </span>
-                    <span className="font-serif text-base sm:text-lg text-stone-100">
-                      {it.subject}
-                    </span>
-                  </div>
-                  <ChevronRight
-                    className={[
-                      "h-4 w-4 transition-transform",
-                      isActive ? "text-amber-400 translate-x-1" : "text-stone-600",
-                    ].join(" ")}
-                  />
-                </button>
-              );
-            })}
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
+        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
+            <ScrollFocusedHeader
+              eyebrow="06 / AKADEMIK RO'YXAT"
+              title="Fanlar & Yo‘nalishlar"
+              subtitle="Fan → Dastur → Mas'ul Pedagog bog'liqligi."
+              progress={headerProgress}
+              align="left"
+            />
+            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
+              AKADEMIK DOSSIYE // 0{activeDossierIdx + 1}
+            </div>
           </div>
 
-          {/* Right Focused Dossier Card */}
-          <div className="lg:col-span-7 relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.step}
-                initial={{ opacity: 0, x: 25, filter: "blur(4px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, x: -25, filter: "blur(4px)" }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 relative shadow-2xl"
-              >
-                <div className="font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold mb-2">
-                  AKADEMIK DOSSIYE // {current.step}
-                </div>
-                <h3 className="font-serif text-[clamp(2rem,3.2vw,3.2rem)] leading-tight text-stone-100">
-                  {current.subject}
-                </h3>
-
-                <p className="mt-6 text-sm sm:text-base leading-relaxed text-stone-300">
-                  {current.description}
-                </p>
-
-                <div className="mt-8 p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-2">
-                    Qamrab Olingan Imtihonlar & Targetlar:
-                  </div>
-                  <div className="font-mono text-sm text-amber-400 font-semibold">
-                    {current.programs}
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-white/[0.08] flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-stone-500">
-                      Mas'ul Pedagog:
-                    </span>
-                    <div className="font-serif text-lg font-bold text-stone-100 mt-0.5">
-                      {current.teacher}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={onRegisterClick}
-                    className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-md"
-                  >
-                    Darsga yozilish
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+          <div className="relative h-[380px] sm:h-[340px]">
+            {items.map((item, idx) => (
+              <AcademicDossierCard
+                key={item.step}
+                item={item}
+                index={idx}
+                total={items.length}
+                scrollYProgress={scrollYProgress}
+                onRegisterClick={onRegisterClick}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -2612,8 +2690,130 @@ function SubjectsAcademicRegister({
   );
 }
 
+function AcademicDossierCard({
+  item,
+  index,
+  total,
+  scrollYProgress,
+  onRegisterClick,
+}: {
+  item: (typeof SUBJECT_ITEMS)[number];
+  index: number;
+  total: number;
+  scrollYProgress: MotionValue<number>;
+  onRegisterClick: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const ranges = getFocusRanges(index, total, 0.04);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  const opacity = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
+  );
+
+  const y = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [0, 0, 0]
+      : isFirst
+      ? [0, 0, -40]
+      : isLast
+      ? [40, 0, 0]
+      : [40, 0, 0, -40]
+  );
+
+  const scale = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? [1, 1, 1]
+      : isFirst
+      ? [1, 1, 0.96]
+      : isLast
+      ? [0.96, 1, 1]
+      : [0.96, 1, 1, 0.96]
+  );
+
+  const filter = useTransform(
+    scrollYProgress,
+    isFirst
+      ? [0, ranges.focusEnd, ranges.exit]
+      : isLast
+      ? [ranges.enter, ranges.focusStart, 1]
+      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
+    reduceMotion
+      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
+      : isFirst
+      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
+      : isLast
+      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
+      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+  );
+
+  return (
+    <motion.div
+      style={{ opacity, y, scale, filter }}
+      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
+    >
+      <div>
+        <div className="font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold mb-2">
+          DOSSIER // REF-{item.step}
+        </div>
+        <h3 className="font-serif text-[clamp(2rem,3.2vw,3.2rem)] leading-tight text-stone-100">
+          {item.subject}
+        </h3>
+
+        <p className="mt-4 text-sm sm:text-base leading-relaxed text-stone-300 max-w-3xl">
+          {item.description}
+        </p>
+
+        <div className="mt-6 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] max-w-2xl">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1">
+            Qamrab Olingan Imtihonlar & Targetlar:
+          </div>
+          <div className="font-mono text-sm text-amber-400 font-semibold">
+            {item.programs}
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
+        <div>
+          <span className="text-[10px] font-mono uppercase text-stone-500">Mas'ul Pedagog:</span>
+          <div className="font-serif text-base sm:text-lg font-bold text-stone-100">{item.teacher}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onRegisterClick}
+          className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-md"
+        >
+          Darsga yozilish
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ============================================================================
-   SECTION 10: REAL NATIJALAR (EVIDENCE ARCHIVE)
+   SECTION 10: REAL NATIJALAR
 ============================================================================ */
 
 function ResultsBenchmarkArchive({
@@ -2788,9 +2988,7 @@ function ResultsBenchmarkArchive({
 
                 <div className="mt-8 space-y-4 pt-6 border-t border-white/[0.08]">
                   <div>
-                    <span className="text-[10px] font-mono uppercase text-stone-500">
-                      O'quvchi:
-                    </span>
+                    <span className="text-[10px] font-mono uppercase text-stone-500">O'quvchi:</span>
                     <div className="font-serif text-xl font-bold text-stone-100 mt-0.5">
                       {activeStudent.name}
                     </div>
@@ -2820,7 +3018,7 @@ function ResultsBenchmarkArchive({
 }
 
 /* ============================================================================
-   SECTION 11: FAQ (INTERACTIVE ACCORDION WITH SCROLL FOCUS)
+   SECTION 11: FAQ
 ============================================================================ */
 
 function FAQSection({
@@ -2932,7 +3130,7 @@ function FAQSection({
 }
 
 /* ============================================================================
-   SECTION 12: MANZIL (GEOGRAPHIC DEPTH)
+   SECTION 12: MANZIL
 ============================================================================ */
 
 function CampusMapSection() {
@@ -3109,7 +3307,7 @@ function CampusMapSection() {
 }
 
 /* ============================================================================
-   SECTION 13: KONSULTATSIYA (CINEMATIC CONVERSION SCENE)
+   SECTION 13: KONSULTATSIYA
 ============================================================================ */
 
 function ConsultationSceneSection({
@@ -3145,14 +3343,13 @@ function ConsultationSceneSection({
   const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
   const reduceMotion = useReducedMotion();
 
-  // Scroll focus on headline: approaches with blur -> sharp focus hold -> recedes
   const titleOpacity = useTransform(smooth, [0, 0.2, 0.7, 1], [0.35, 1, 1, 0.35]);
   const titleY = useTransform(smooth, [0, 0.2, 0.7, 1], reduceMotion ? [0, 0, 0, 0] : [35, 0, 0, -25]);
   const titleScale = useTransform(smooth, [0, 0.2, 0.7, 1], reduceMotion ? [1, 1, 1, 1] : [0.96, 1, 1, 0.96]);
   const titleFilter = useTransform(
     smooth,
     [0, 0.2, 0.7, 1],
-    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(3px)", "blur(0px)", "blur(0px)"]
   );
 
   return (

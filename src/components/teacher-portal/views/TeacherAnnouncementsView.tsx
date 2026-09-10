@@ -24,12 +24,12 @@ import { AppNotification } from '../../../types';
 type FilterTab = 'all' | 'unread' | 'holiday' | 'timetable' | 'enrollment' | 'meeting';
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'holiday', label: 'Holiday' },
-  { key: 'timetable', label: 'Timetable' },
-  { key: 'enrollment', label: 'Enrollment' },
-  { key: 'meeting', label: 'Meeting' },
+  { key: 'all', label: 'Barchasi' },
+  { key: 'unread', label: 'O\'qilmagan' },
+  { key: 'holiday', label: 'Bayram' },
+  { key: 'timetable', label: 'Dars jadvali' },
+  { key: 'enrollment', label: 'Yozilish' },
+  { key: 'meeting', label: 'Yig\'ilish' },
 ];
 
 function getCategoryIcon(category: string) {

@@ -63,12 +63,12 @@ type SidebarGroup = {
 const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: 'Boshqaruv',
-    items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+    items: [{ id: 'dashboard', label: 'Boshqaruv', icon: LayoutDashboard }],
   },
   {
     title: "Qabul & O'quvchilar",
     items: [
-      { id: 'leads', label: 'Leads CRM', icon: PhoneCall, badge: 'NEW' },
+      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall, badge: 'NEW' },
       { id: 'students', label: 'O\'quvchilar', icon: Users },
     ],
   },
@@ -193,11 +193,11 @@ export const CenterErpApp: React.FC = () => {
                   RENESSANS
                 </span>
                 <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block mt-0.5">
-                  Learning Center
+                  O'quv markazi
                 </span>
                 <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1 mt-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Director • Online
+                  Direktor • Onlayn
                 </span>
               </div>
             </div>
@@ -267,7 +267,7 @@ export const CenterErpApp: React.FC = () => {
             className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer border border-slate-200 dark:border-slate-700"
           >
             <Globe className="w-3.5 h-3.5 text-amber-500" />
-            <span>View Public Website</span>
+            <span>Saytni ko'rish</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </button>
 
@@ -279,16 +279,16 @@ export const CenterErpApp: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-slate-900 dark:text-white block text-[11px] leading-tight">
-                  Director / Owner
+                  Direktor / Egasi
                 </span>
-                <span className="text-[10px] text-emerald-500 font-semibold">Online</span>
+                <span className="text-[10px] text-emerald-500 font-semibold">Onlayn</span>
               </div>
             </div>
 
             <button
               onClick={toggleTheme}
               className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 cursor-pointer"
-              title="Toggle theme"
+              title="Mavzuni almashtirish"
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
@@ -302,9 +302,9 @@ export const CenterErpApp: React.FC = () => {
         <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-              <span>Campus:</span>
+              <span>Kampus:</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
-                Active • 08:30 – 21:00
+                Faol • 08:30 – 21:00
               </span>
             </div>
           </div>
@@ -315,7 +315,7 @@ export const CenterErpApp: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <PhoneCall className="w-3.5 h-3.5" />
-              <span>{leadsCount} New Inquiries</span>
+              <span>{leadsCount} yangi murojaat</span>
             </button>
 
             <button
@@ -323,7 +323,7 @@ export const CenterErpApp: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               <Globe className="w-3.5 h-3.5 text-amber-500" />
-              <span>Landing Page</span>
+              <span>Bosh sahifa</span>
             </button>
           </div>
         </header>

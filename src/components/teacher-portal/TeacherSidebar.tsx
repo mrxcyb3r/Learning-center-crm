@@ -107,11 +107,11 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
-                title={collapsed ? item.labelEn : undefined}
+                title={collapsed ? item.labelUz : undefined}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
                 {!collapsed && (
-                  <span className="text-sm font-semibold truncate">{item.labelEn}</span>
+                  <span className="text-sm font-semibold truncate">{item.labelUz}</span>
                 )}
               </button>
             ))}

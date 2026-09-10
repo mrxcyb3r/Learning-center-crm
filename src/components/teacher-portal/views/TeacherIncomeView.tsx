@@ -70,10 +70,10 @@ export const TeacherIncomeView: React.FC = () => {
             <DollarSign className={`w-8 h-8 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
           </div>
           <h3 className={`text-lg font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Income data is managed by the learning center
+            Daromad ma'lumotlari o'quv markazi tomonidan boshqariladi
           </h3>
           <p className={`text-sm max-w-md ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-            In this business model, financial data and income tracking is handled by the learning center administration.
+            Ushbu biznes modelida moliyaviy ma'lumotlar va daromadni kuzatish o'quv markazi ma'muriyati tomonidan amalga oshiriladi.
           </p>
         </div>
       </div>
@@ -83,37 +83,37 @@ export const TeacherIncomeView: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-          Income Overview
-        </h2>
-        <p className={`text-sm mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-          Track your earnings and collection rates
-        </p>
+          <h2 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            Daromad tahlili
+          </h2>
+          <p className={`text-sm mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+            Daromadingizni va yig'ilish darajasini kuzating
+          </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={<DollarSign className="w-5 h-5" />}
           value={`${incomeThisMonth.toLocaleString()} UZS`}
-          label="Income This Month"
+          label="Oylik daromad"
           color="amber"
         />
         <StatCard
           icon={<Users className="w-5 h-5" />}
           value={studentsPaid}
-          label="Students Paid"
+          label="To'lagan o'quvchilar"
           color="emerald"
         />
         <StatCard
           icon={<AlertTriangle className="w-5 h-5" />}
           value={`${outstanding.toLocaleString()} UZS`}
-          label="Outstanding"
+          label="Qarzdorlik"
           color="rose"
         />
         <StatCard
           icon={<Layers className="w-5 h-5" />}
           value={activeGroups}
-          label="Active Groups"
+          label="Faol guruhlar"
           color="blue"
         />
       </div>
@@ -122,7 +122,7 @@ export const TeacherIncomeView: React.FC = () => {
         {/* Monthly Trend Bar Chart */}
         <div className={`lg:col-span-2 rounded-2xl p-5 border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
           <h3 className={`text-sm font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Monthly Trend
+            Oylik dinamika
           </h3>
           <div className="flex items-end gap-3 h-48">
             {monthlyData.map((m) => {
@@ -154,7 +154,7 @@ export const TeacherIncomeView: React.FC = () => {
         {/* Collection Rate Donut */}
         <div className={`rounded-2xl p-5 border flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
           <h3 className={`text-sm font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Collection Rate
+            To'lov yig'ilishi
           </h3>
           <div className="relative w-36 h-36">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
@@ -188,7 +188,7 @@ export const TeacherIncomeView: React.FC = () => {
                 {collectionRate}%
               </span>
               <span className={`text-[10px] font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                Collected
+                Yig'ilgan
               </span>
             </div>
           </div>
@@ -196,13 +196,13 @@ export const TeacherIncomeView: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                Paid ({collectionRate}%)
+                To'langan ({collectionRate}%)
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className={`w-2.5 h-2.5 rounded-full ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
               <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                Unpaid ({100 - collectionRate}%)
+                To'lanmagan ({100 - collectionRate}%)
               </span>
             </div>
           </div>
@@ -213,14 +213,14 @@ export const TeacherIncomeView: React.FC = () => {
       <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
         <div className={`px-5 py-4 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
           <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Monthly Breakdown
+            Oylik taqsimot
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
-                {['Month', 'Collected', 'Expected', 'Difference', 'Rate'].map((h) => (
+                {['Oy', 'Yig\'ilgan', 'Kutilgan', 'Farq', 'Daraja'].map((h) => (
                   <th
                     key={h}
                     className={`px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}

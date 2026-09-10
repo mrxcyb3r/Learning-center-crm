@@ -66,11 +66,11 @@ const GroupDetail: React.FC<{
   );
 
   const tabs: { key: DetailTab; label: string; icon: React.ReactNode }[] = [
-    { key: 'info', label: 'Info', icon: <FileText className="w-3.5 h-3.5" /> },
-    { key: 'students', label: `Students (${groupStudents.length})`, icon: <Users className="w-3.5 h-3.5" /> },
-    { key: 'attendance', label: 'Attendance', icon: <Calendar className="w-3.5 h-3.5" /> },
-    { key: 'schedule', label: 'Schedule', icon: <Clock className="w-3.5 h-3.5" /> },
-    { key: 'notes', label: 'Notes', icon: <StickyNote className="w-3.5 h-3.5" /> },
+    { key: 'info', label: 'Ma\'lumot', icon: <FileText className="w-3.5 h-3.5" /> },
+    { key: 'students', label: `O'quvchilar (${groupStudents.length})`, icon: <Users className="w-3.5 h-3.5" /> },
+    { key: 'attendance', label: 'Davomat', icon: <Calendar className="w-3.5 h-3.5" /> },
+    { key: 'schedule', label: 'Dars jadvali', icon: <Clock className="w-3.5 h-3.5" /> },
+    { key: 'notes', label: 'Izohlar', icon: <StickyNote className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -130,10 +130,10 @@ const GroupDetail: React.FC<{
         {activeTab === 'info' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { label: 'Course Type', value: group.courseType, icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
-              { label: 'Schedule', value: group.scheduleTime || 'Not set', icon: <Clock className="w-4 h-4 text-amber-500" /> },
-              { label: 'Room', value: group.room || 'Not assigned', icon: <MapPin className="w-4 h-4 text-rose-500" /> },
-              { label: 'Students', value: `${groupStudents.length} enrolled`, icon: <UserCheck className="w-4 h-4 text-emerald-500" /> },
+              { label: 'Kurs turi', value: group.courseType, icon: <BookOpen className="w-4 h-4 text-blue-500" /> },
+              { label: 'Dars jadvali', value: group.scheduleTime || 'Belgilanmagan', icon: <Clock className="w-4 h-4 text-amber-500" /> },
+              { label: 'Xona', value: group.room || 'Biriktirilmagan', icon: <MapPin className="w-4 h-4 text-rose-500" /> },
+              { label: 'O\'quvchilar', value: `${groupStudents.length} yozilgan`, icon: <UserCheck className="w-4 h-4 text-emerald-500" /> },
             ].map((item) => (
               <div
                 key={item.label}
@@ -157,7 +157,7 @@ const GroupDetail: React.FC<{
           <div className="space-y-2">
             {groupStudents.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                No students enrolled in this group yet.
+                Guruhda hozircha o'quvchilar yo'q.
               </div>
             ) : (
               groupStudents.map((student, idx) => (
@@ -186,7 +186,7 @@ const GroupDetail: React.FC<{
                         : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                     }`}
                   >
-                    {student.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                    {student.paymentStatus === 'paid' ? 'To\'langan' : 'Kutilmoqda'}
                   </span>
                 </div>
               ))
@@ -198,7 +198,7 @@ const GroupDetail: React.FC<{
           <div className="space-y-3">
             {groupAttendance.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                No attendance records found for this group.
+                Bu guruh uchun davomat yozuvlari topilmadi.
               </div>
             ) : (
               groupAttendance.map((record) => {
@@ -222,7 +222,7 @@ const GroupDetail: React.FC<{
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-3.5 h-3.5 text-slate-400" />
                       <span className="text-xs font-bold text-slate-500">
-                        {present}/{total} present
+                        {present}/{total} davomat
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -250,11 +250,11 @@ const GroupDetail: React.FC<{
               Schedule
             </h4>
             <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-              {group.scheduleTime || 'No schedule configured'}
+              {group.scheduleTime || 'Jadval belgilanmagan'}
             </p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <MapPin className="w-3.5 h-3.5 text-rose-500" />
-              <span className="text-xs text-slate-500 font-semibold">{group.room || 'Room TBD'}</span>
+              <span className="text-xs text-slate-500 font-semibold">{group.room || 'Xona belgilanmagan'}</span>
             </div>
           </div>
         )}
@@ -263,7 +263,7 @@ const GroupDetail: React.FC<{
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add notes about this group..."
+            placeholder="Bu guruh haqida izoh qo'shish..."
             rows={6}
             className={`w-full rounded-2xl p-4 text-xs font-semibold outline-none resize-none transition ${
               theme === 'dark'
@@ -308,16 +308,16 @@ export const MyGroupsView: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/30 mb-2">
             <Users className="w-3.5 h-3.5" />
-            <span>My Groups</span>
+            <span>Mening guruhlarim</span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Assigned Groups</h1>
+          <h1 className="text-2xl font-black tracking-tight">Biriktirilgan guruhlar</h1>
           <p className="text-xs text-slate-400 mt-1">
-            View and manage your assigned teaching groups, schedules, and rosters.
+            Sizga biriktirilgan o'qitish guruhlarini, dars jadvallarini va ro'yxatlarni ko'ring va boshqaring.
           </p>
         </div>
         <div className="px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-xs font-bold flex items-center gap-2 text-amber-400">
           <Users className="w-4 h-4" />
-          <span>{myGroups.length} Groups &middot; {myStudents.length} Students</span>
+          <span>{myGroups.length} guruh &middot; {myStudents.length} o'quvchi</span>
         </div>
       </div>
 
@@ -333,7 +333,7 @@ export const MyGroupsView: React.FC = () => {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search groups by name, course, or room..."
+          placeholder="Guruhni nomi, kursi yoki xonasi bo'yicha qidirish..."
           className={`flex-1 bg-transparent text-sm outline-none ${
             theme === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
           }`}
@@ -357,10 +357,10 @@ export const MyGroupsView: React.FC = () => {
             <Users className="w-6 h-6" />
           </div>
           <h3 className={`text-base font-extrabold mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            No groups found
+            Guruhlar topilmadi
           </h3>
           <p className="text-xs text-slate-500">
-            {searchQuery ? 'Try adjusting your search query.' : 'No assigned groups available.'}
+            {searchQuery ? 'Qidiruv so'zini o\'zgartirib ko\'ring.' : 'Biriktirilgan guruhlar mavjud emas.'}
           </p>
         </div>
       ) : (
@@ -390,7 +390,7 @@ export const MyGroupsView: React.FC = () => {
                           group.courseType
                         )}`}
                       >
-                        {group.courseType || 'General'}
+                        {group.courseType || 'Umumiy'}
                       </span>
                       <h3 className={`text-lg font-black mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         {group.name}
@@ -409,11 +409,11 @@ export const MyGroupsView: React.FC = () => {
                   <div className={`space-y-2 text-xs ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} pt-1`}>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>{group.scheduleTime || 'Schedule TBD'}</span>
+                      <span>{group.scheduleTime || 'Jadval belgilanmagan'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span>{group.room || 'Room TBD'}</span>
+                      <span>{group.room || 'Xona belgilanmagan'}</span>
                     </div>
                   </div>
                 </div>
@@ -424,7 +424,7 @@ export const MyGroupsView: React.FC = () => {
                       isSelected ? 'text-blue-500' : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
                     }`}
                   >
-                    <span>{isSelected ? 'Hide Details' : 'View Details'}</span>
+                    <span>{isSelected ? 'Ma\'lumotlarni yashirish' : 'Batafsil ko\'rish'}</span>
                     <ChevronRight
                       className={`w-4 h-4 transition-transform ${isSelected ? 'rotate-90' : ''}`}
                     />

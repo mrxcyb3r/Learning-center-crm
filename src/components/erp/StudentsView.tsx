@@ -293,7 +293,7 @@ export const StudentsView: React.FC = () => {
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-rose-500 block flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Qarz / Qarzdorlik (Overdue)
+            <AlertTriangle className="w-3.5 h-3.5" /> Qarz / Qarzdorlik
           </span>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
             {formatCurrency(totalDebtSum)}
@@ -339,9 +339,9 @@ export const StudentsView: React.FC = () => {
             className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
             <option value="All">Barcha To'lov Holatlari</option>
-            <option value="Paid">To'langan (Paid)</option>
-            <option value="Due">Muddati Kelgan (Due)</option>
-            <option value="Overdue">Qarzdor (Overdue)</option>
+            <option value="Paid">To'langan</option>
+            <option value="Due">Muddati kelgan</option>
+            <option value="Overdue">Qarzdor</option>
           </select>
 
           {/* Student Status Filter */}
@@ -692,9 +692,9 @@ export const StudentsView: React.FC = () => {
                     onChange={(e) => setFormPaymentStatus(e.target.value as PaymentStatus)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                   >
-                    <option value="Paid">To'langan (Paid)</option>
-                    <option value="Due">Muddati kelgan (Due)</option>
-                    <option value="Overdue">Qarzdor (Overdue)</option>
+                    <option value="Paid">To'langan</option>
+                    <option value="Due">Muddati kelgan</option>
+                    <option value="Overdue">Qarzdor</option>
                   </select>
                 </div>
 

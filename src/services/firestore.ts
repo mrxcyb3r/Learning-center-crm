@@ -378,8 +378,8 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
             return {
               id: docSnap.id,
               title: d.title || 'Assignment',
-              group: d.group || d.groupName || 'IELTS Intensive #12',
-              groupName: d.groupName || d.group || 'IELTS Intensive #12',
+              group: d.group || d.groupName || 'Matematika & Fizika — DTM 1-guruh',
+              groupName: d.groupName || d.group || 'Matematika & Fizika — DTM 1-guruh',
               groupId: d.groupId || 'Br2GDIO86SR5GcqfbmOD',
               dueDate: d.dueDate || d.deadline || '2026-08-15',
               deadline: d.deadline || d.dueDate || '2026-08-15',
@@ -394,7 +394,7 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
               instructions: d.instructions || d.description || '',
               subjectCategory: d.subjectCategory || 'Mathematics & Geometry',
               resourceFormat: d.resourceFormat || 'Problem Set / Quiz Sheet',
-              teacherName: d.teacherName || 'Mr. Javohirbek',
+              teacherName: d.teacherName || 'Jasur Alimov',
               teacherEmail: d.teacherEmail || '',
               createdAt: d.createdAt
             };
@@ -408,8 +408,8 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
               return {
                 id: docSnap.id,
                 title: d.title || 'Assignment',
-                group: d.group || d.groupName || 'IELTS Intensive #12',
-                groupName: d.groupName || d.group || 'IELTS Intensive #12',
+                group: d.group || d.groupName || 'Matematika & Fizika — DTM 1-guruh',
+                groupName: d.groupName || d.group || 'Matematika & Fizika — DTM 1-guruh',
                 groupId: d.groupId || 'Br2GDIO86SR5GcqfbmOD',
                 dueDate: d.dueDate || d.deadline || '2026-08-15',
                 deadline: d.deadline || d.dueDate || '2026-08-15',
@@ -424,7 +424,7 @@ export function subscribeAssignments(callback: (assignments: Assignment[]) => vo
                 instructions: d.instructions || d.description || '',
                 subjectCategory: d.subjectCategory || 'Mathematics & Geometry',
                 resourceFormat: d.resourceFormat || 'Problem Set / Quiz Sheet',
-                teacherName: d.teacherName || 'Mr. Javohirbek',
+                teacherName: d.teacherName || 'Jasur Alimov',
                 teacherEmail: d.teacherEmail || '',
                 createdAt: d.createdAt
               };
@@ -449,8 +449,8 @@ export async function addAssignment(data: any) {
   try {
     const payload = cleanData({
       groupId: data.groupId || 'Br2GDIO86SR5GcqfbmOD',
-      groupName: data.group || data.groupName || 'IELTS Intensive #12',
-      group: data.group || data.groupName || 'IELTS Intensive #12',
+      groupName: data.group || data.groupName || 'Matematika & Fizika — DTM 1-guruh',
+      group: data.group || data.groupName || 'Matematika & Fizika — DTM 1-guruh',
       title: data.title || '',
       description: data.description || '',
       instructions: data.instructions || data.description || '',
@@ -467,7 +467,7 @@ export async function addAssignment(data: any) {
       totalStudents: data.totalStudents ?? 14,
       createdAt: new Date().toISOString(),
       teacherEmail: auth.currentUser?.email || '',
-      teacherName: auth.currentUser?.displayName || "Mr. Javohirbek"
+      teacherName: auth.currentUser?.displayName || "Jasur Alimov"
     });
 
     try {
@@ -966,7 +966,7 @@ export async function gradeHomeworkSubmission(
       console.log('✅ Homework submission graded in Firestore:', submissionId, payload);
     }
 
-    const teacherName = gradeData.teacherName || auth.currentUser?.displayName || 'Mr. Javohirbek';
+    const teacherName = gradeData.teacherName || auth.currentUser?.displayName || 'Jasur Alimov';
     const assignmentTitle = gradeData.assignmentTitle || 'Homework Assignment';
     const overallScore = gradeData.score;
 
@@ -1130,7 +1130,7 @@ export async function notifyStudentsNewAssignment(
     recipientRole: 'student' as const,
     groupId: groupId || 'Br2GDIO86SR5GcqfbmOD',
     linkId: assignmentId,
-    senderName: teacherName || 'Mr. Javohirbek',
+    senderName: teacherName || 'Jasur Alimov',
     title: `New Assignment: ${title}`,
     description: `New homework posted for ${groupName || 'your group'}.${dueDate ? ` Due date: ${dueDate}.` : ' Please submit your solution on time.'}`,
     isRead: false,
@@ -1172,115 +1172,233 @@ export async function notifyStudentGradePublished(studentId: string, studentName
    ========================================================================= */
 export async function seedFirestoreIfEmpty() {
   try {
-    // 1. Seed Groups & Students if empty
+    const dateDaysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split('T')[0];
+
+    const teacherId = 'demo_teacher_001';
+    const teacherName = 'Jasur Alimov';
+
+    const groups: { id: string; name: string; studentIds: { id: string; name: string }[] }[] = [];
+
+    // 1. Seed Groups & Students for the demo teacher (Jasur Alimov — Matematika & Fizika)
     const groupSnap = await getDocs(collection(db, GROUPS_COL));
     if (groupSnap.empty) {
-      const g1Id = await addGroup({
-        name: 'IELTS Intensive #12',
-        courseType: 'IELTS 7.5+ Rocket',
-        teacherId: 'teacher-1',
-        teacherName: 'Mr. Javohirbek',
-        scheduleTime: 'Mon/Wed/Fri 14:00 - 16:00',
-        room: 'Room 3 (Renessans Main)',
-        activeStudentsCount: 14
-      });
+      const groupDefs = [
+        { name: 'Matematika & Fizika — DTM 1-guruh', scheduleTime: 'Dush/Chor/Jum 14:00–16:00', room: '102-xona', maxCapacity: 20, level: 'DTM', description: 'DTM va Milliy sertifikatga tayyorlov asosiy guruhi', count: 18 },
+        { name: 'Matematika & Fizika — DTM 2-guruh', scheduleTime: 'Sesh/Pay/Shan 16:00–18:00', room: '101-xona', maxCapacity: 20, level: 'DTM', description: 'Kechki DTM tayyorlov guruhi', count: 12 },
+        { name: 'Matematika & Fizika — Milliy Sertifikat', scheduleTime: 'Dush/Chor/Jum 17:00–19:00', room: '201-xona', maxCapacity: 18, level: 'Oliy', description: 'Milliy sertifikat (A+/A) guruhi', count: 10 },
+        { name: 'Matematika & Fizika — Hafta oxiri', scheduleTime: 'Shan 09:00–13:00', room: 'MindLab', maxCapacity: 16, level: 'Akseler', description: 'Hafta oxiri tezkor tayyorlov guruhi', count: 8 },
+      ];
 
-      const g2Id = await addGroup({
-        name: 'General English B2',
-        courseType: 'CEFR B2 FastTrack',
-        teacherId: 'teacher-2',
-        teacherName: 'Ms. Shahlo',
-        scheduleTime: 'Tue/Thu/Sat 16:30 - 18:00',
-        room: 'Room 1',
-        activeStudentsCount: 12
-      });
+      const studentNames = [
+        'Azizbek Toshmatov', 'Jasur Rahimov', 'Malika Sharipova', 'Bekzod Umarov',
+        'Feruza Alimova', 'Odiljon Yuldashev', 'Sevara Tursunova', 'Sardor Ergashev',
+        'Dilnoza Sobirova', 'Nodirjon Qosimov', 'Ziyoda Rahimova', 'Muzaffar Xolmatov',
+        'Kamola Nazarova', "Ulug'bek Sattorov", 'Madina Karimova', 'Sherzod Mirkomilov',
+        'Gulchehra Raxmonova', 'Bobur Mahmudov', 'Sabina Nurmatova', 'Javlonbek Sodiqov',
+        'Shahnoza Ismoilova', 'Doston Rahmatov', 'Nilufar Ergasheva', "Murodjon Toshpo'latov",
+        'Aziza Qodirova', 'Farrux Mirzayev', 'Dilbar Sultonova', 'Akmal Avezov',
+        'Maftuna Utaeva', 'Otabek Rashidov', 'Munisa Abdullayeva', 'Islomjon Karimov',
+        'Yulduz Bekmurodova', 'Sirojiddin Aliyev', 'Mehriniso Xudoyberdiyeva', 'Anvarjon Nazirov',
+        'Robiya Erkaboyeva', "G'ayrat Fayzullayev", 'Shahrizoda Abdurahmonova', 'Ozodbek Normurodov',
+        'Mastura Yusupova', 'Diyorbek Haydarov', 'Barno Usmonova', 'Jasurbek Maxmudov',
+        "Charos G'aniyeva", 'Bekmurod Toshboyev', 'Umida Rajabova', 'Alisher Bozorov',
+      ];
 
-      if (g1Id) {
-        const st1Id = await addStudent({
-          fullName: 'Jasur Rahimov',
-          phone: '+998 90 123 45 67',
-          groupId: g1Id,
-          groupName: 'IELTS Intensive #12',
-          tuitionFee: 650000,
-          paymentStatus: 'paid',
-          lastPaymentDate: new Date().toISOString().split('T')[0]
+      const phonePrefixes = ['90', '91', '93', '94', '97', '99'];
+      const payCycle: Student['paymentStatus'][] = ['paid', 'paid', 'paid', 'paid', 'paid', 'pending', 'overdue'];
+
+      let nameIdx = 0;
+      for (const gd of groupDefs) {
+        const gid = await addGroup({
+          name: gd.name,
+          courseType: 'Matematika & Fizika',
+          teacherId,
+          teacherName,
+          scheduleTime: gd.scheduleTime,
+          room: gd.room,
+          activeStudentsCount: gd.count,
+          maxCapacity: gd.maxCapacity,
+          level: gd.level,
+          description: gd.description,
         });
-
-        await addStudent({
-          fullName: 'Malika Sharipova',
-          phone: '+998 91 234 56 78',
-          groupId: g1Id,
-          groupName: 'IELTS Intensive #12',
-          tuitionFee: 650000,
-          paymentStatus: 'pending',
-          lastPaymentDate: '2026-06-15'
-        });
-
-        if (st1Id) {
-          await saveMockScore({
-            studentId: st1Id,
-            studentName: 'Jasur Rahimov',
-            date: new Date().toISOString().split('T')[0],
-            overall: 7.5,
-            listening: 8.0,
-            reading: 7.5,
-            writing: 7.0,
-            speaking: 7.5,
-            teacherFeedback: "A'lo natija! Listening va Speaking yuqori darajada."
-          });
+        const studentIds: { id: string; name: string }[] = [];
+        if (gid) {
+          for (let i = 0; i < gd.count && nameIdx < studentNames.length; i++, nameIdx++) {
+            const fullName = studentNames[nameIdx];
+            const n = nameIdx;
+            const prefix = phonePrefixes[n % phonePrefixes.length];
+            const phone = `+998 (${prefix}) ${String(120 + ((n * 37) % 880)).padStart(3, '0')}-${String(10 + ((n * 23) % 90))}${String(10 + ((n * 17) % 90))}`;
+            const payStatus = payCycle[n % payCycle.length];
+            const sid = await addStudent({
+              fullName,
+              phone,
+              groupId: gid,
+              groupName: gd.name,
+              tuitionFee: 380000,
+              paymentStatus: payStatus,
+              lastPaymentDate: payStatus === 'paid' ? dateDaysAgo((n * 2) % 26) : dateDaysAgo(28 + (n % 18)),
+              subjectCategory: 'Aniq Fanlar',
+              nextDueDate: payStatus !== 'paid' ? dateDaysAgo(-((n % 9) + 1)) : undefined,
+              telegramHandle: `@${fullName.replace(/\s+/g, '_').toLowerCase()}`,
+              attendanceRate: 88 + (n % 11),
+            });
+            if (sid) studentIds.push({ id: sid, name: fullName });
+          }
         }
+        groups.push({ id: gid || '', name: gd.name, studentIds });
+      }
+
+      // 2. Seed Payments (teacher-collected model) — last 4 months
+      const methods: Payment['paymentMethod'][] = ['cash', 'card', 'click', 'payme'];
+      const paymentPromises: Promise<unknown>[] = [];
+      for (const g of groups) {
+        for (let gi = 0; gi < g.studentIds.length; gi++) {
+          const { id: sid, name: sName } = g.studentIds[gi];
+          for (let m = 3; m >= 0; m--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - m);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const skip = (sid.charCodeAt(sid.length - 1) + gi + m) % 7 === 0;
+            if (skip) continue;
+            const day = 1 + ((gi * 3 + m * 5) % 27);
+            const suffix = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(day).padStart(2, '0')}${gi + 1}`;
+            paymentPromises.push(
+              addDoc(
+                collection(db, PAYMENTS_COL),
+                cleanData({
+                  studentId: sid,
+                  studentName: sName,
+                  amount: 380000,
+                  paymentMethod: methods[(gi + m) % methods.length],
+                  date: `${key}-${String(day).padStart(2, '0')}`,
+                  recordedBy: teacherName,
+                  status: 'paid',
+                  cohortGroup: g.name,
+                  subjectCategory: 'Aniq Fanlar',
+                  paymentPeriod: `${key} to'lovi`,
+                  receiptRef: `REC-${suffix}`,
+                  notes: gi % 9 === 0 ? "Kechiktirilgan to'lov qabul qilindi" : undefined,
+                })
+              )
+            );
+          }
+        }
+      }
+      await Promise.all(paymentPromises);
+
+      // 3. Seed Attendance (today + recent history)
+      const buildAttendance = (studentIds: { id: string }[], present: number, late: number, excused: number, absent: number) => {
+        const records: AttendanceRecord['records'] = {};
+        let i = 0;
+        for (const s of studentIds) {
+          if (i < present) records[s.id] = 'present';
+          else if (i < present + late) records[s.id] = { status: 'late', lateMinutes: 5 + ((i * 7) % 15) };
+          else if (i < present + late + excused) records[s.id] = 'excused';
+          else records[s.id] = 'absent';
+          i++;
+        }
+        return records;
+      };
+
+      const attendanceToday: { group: (typeof groups)[number]; present: number; late: number; excused: number; absent: number }[] = [
+        { group: groups[0], present: 15, late: 2, excused: 0, absent: 1 },
+        { group: groups[1], present: 10, late: 1, excused: 0, absent: 1 },
+        { group: groups[2], present: 8, late: 1, excused: 0, absent: 1 },
+        { group: groups[3], present: 7, late: 0, excused: 0, absent: 1 },
+      ];
+      for (const at of attendanceToday) {
+        if (at.group.id) {
+          await saveAttendanceRecord(at.group.id, dateDaysAgo(0), buildAttendance(at.group.studentIds, at.present, at.late, at.excused, at.absent), teacherName);
+        }
+      }
+
+      // History for DTM 1-guruh
+      if (groups[0].id) {
+        const hist = [
+          { day: 3, present: 16, late: 0, excused: 0, absent: 2 },
+          { day: 6, present: 15, late: 1, excused: 1, absent: 1 },
+          { day: 8, present: 14, late: 2, excused: 0, absent: 2 },
+          { day: 10, present: 16, late: 1, excused: 0, absent: 1 },
+        ];
+        for (const h of hist) {
+          await saveAttendanceRecord(groups[0].id, dateDaysAgo(h.day), buildAttendance(groups[0].studentIds, h.present, h.late, h.excused, h.absent), teacherName);
+        }
+      }
+
+      // Mock score for one student
+      const firstStudent = groups[0].studentIds[1];
+      if (firstStudent) {
+        await saveMockScore({
+          studentId: firstStudent.id,
+          studentName: firstStudent.name,
+          date: dateDaysAgo(3),
+          overall: 88,
+          listening: 90,
+          reading: 85,
+          writing: 86,
+          speaking: 92,
+          teacherFeedback: "A'lo natija! Algebra blokida xatoliklar minimallashtirilgan.",
+        });
       }
     }
 
-    // 2. Seed Assignments if empty
+    // 4. Seed Assignments if empty
     const assignSnap = await getDocs(collection(db, ASSIGNMENTS_COL));
     if (assignSnap.empty) {
       await addAssignment({
-        title: 'IELTS Writing Task 2 Essay: Technology in Education',
-        group: 'IELTS Intensive #12',
-        dueDate: '2026-08-05',
-        submittedCount: 8,
-        totalStudents: 14,
-        file: 'IELTS_Writing_Task2_Guide.pdf'
+        title: 'Matematika: Trigonometriya masalalari to\'plami (25 ta)',
+        group: 'Matematika & Fizika — DTM 1-guruh',
+        dueDate: dateDaysAgo(-2),
+        submittedCount: 15,
+        totalStudents: 18,
+        file: 'Trigonometriya_masalalari.pdf'
       });
       await addAssignment({
-        title: 'Listening Test #4 - Section 3 & 4 Audio Drills',
-        group: 'IELTS Intensive #12',
-        dueDate: '2026-08-08',
-        submittedCount: 12,
-        totalStudents: 14,
-        file: 'Listening_Section3_Audio.mp3'
+        title: 'Fizika: Kinematika test sinovi No.4',
+        group: 'Matematika & Fizika — DTM 1-guruh',
+        dueDate: dateDaysAgo(-4),
+        submittedCount: 17,
+        totalStudents: 18,
+        file: 'Kinematika_test_4.pdf'
+      });
+      await addAssignment({
+        title: 'Milliy sertifikat: Kombinatorika va ehtimollar nazariyasi',
+        group: 'Matematika & Fizika — Milliy Sertifikat',
+        dueDate: dateDaysAgo(-3),
+        submittedCount: 8,
+        totalStudents: 10,
+        file: 'Kombinatorika.pdf'
       });
     }
 
-    // 3. Seed Feed Posts if empty
+    // 5. Seed Feed Posts if empty
     const feedSnap = await getDocs(collection(db, FEED_POSTS_COL));
     if (feedSnap.empty) {
       await addFeedPost({
-        author: 'Mr. Javohirbek',
+        author: teacherName,
         avatar: 'J',
-        role: "Bosh IELTS O'qituvchi",
-        date: 'Bugun, 10:30',
-        title: "Dars Materiallari va Yangi Task 2 Topshirig'i E'lon Qilindi 🚀",
-        content: "Hurmatli IELTS Intensive #12 guruhi o'quvchilari! Bugungi darsimizda ko'rilgan Writing Task 2 shabloni va lisoniy birikmalarni quyidagi biriktirilgan PDF faylda yuklab olishingiz mumkin. Keyingi darsgacha topshiriqni yakunlang!",
-        attachment: 'IELTS_Writing_Task2_Template_2026.pdf',
-        attachmentSize: '2.4 MB',
-        likes: 12,
+        role: 'Matematika & Fizika o\'qituvchisi',
+        date: 'Bugun, 09:30',
+        title: "Trigonometriya bo'yicha yangi materiallar yuklandi",
+        content: "Hurmatli DTM 1-guruh a'zolari! Trigonometrik tenglamalar va ularni yechish usullari bo'yicha yangi to'plam biriktirilgan faylda joylashgan. Keyingi darsgacha 25 ta masalani yechib kelasiz.",
+        attachment: 'Trigonometriya_masalalari.pdf',
+        attachmentSize: '1.8 MB',
+        likes: 18,
         comments: [
-          { id: '1', author: 'Jasur Rahimov', text: "Rahmat ustoz, yuklab oldim!", date: 'Bugun, 11:00' }
+          { id: '1', author: 'Azizbek Toshmatov', text: 'Rahmat ustoz, yuklab oldim!', date: 'Bugun, 10:00' }
         ]
       });
     }
 
-    // 4. Seed Notifications if empty
+    // 6. Seed Notifications if empty
     const notifSnap = await getDocs(collection(db, NOTIFICATIONS_COL));
     if (notifSnap.empty) {
       await createNotification({
         category: 'assignment_created',
         recipientRole: 'student',
-        senderName: 'Mr. Javohirbek',
-        title: 'Yangi Vazifa: IELTS Writing Task 2 Essay',
-        description: "Mr. Javohirbek IELTS Intensive #12 guruhi uchun yangi vazifa joyladi. Muddat: 2026-08-05.",
+        senderName: teacherName,
+        title: 'Yangi vazifa: Trigonometriya masalalari',
+        description: `Jasur Alimov Matematika & Fizika — DTM 1-guruh uchun yangi vazifa joyladi.`,
         isRead: false,
         createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
       });
@@ -1288,14 +1406,23 @@ export async function seedFirestoreIfEmpty() {
         category: 'announcement',
         recipientRole: 'all',
         senderName: 'Renessans Center',
-        title: "CenterFlow O'quv Markazi Tizimiga Xush Kelibsiz! 🚀",
-        description: "Yangi bildirishnomalar markazi ishga tushdi. Dars jadvali, baholar va vazifalar o'zgarishini shu yerdan kuzatib boring.",
+        title: "RENESSANS uchun markaziy tizim tayyor!",
+        description: "Dars jadvali, davomat, to'lovlar va vazifalarni bir joyda kuzatib boring.",
         isRead: false,
         createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
       });
+      await createNotification({
+        category: 'announcement',
+        recipientRole: 'admin',
+        senderName: teacherName,
+        title: "To'lov qabul qilindi",
+        description: 'Azizbek Toshmatov 380,000 so\'m to\'lovni naqd amalga oshirdi.',
+        isRead: false,
+        createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+      });
     }
 
-    // 5. Seed Security Pins & Super Admin User Doc if empty
+    // 7. Seed Security Pins & Super Admin User Doc if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
       await saveSecurityPins({

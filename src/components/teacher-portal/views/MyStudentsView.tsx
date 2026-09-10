@@ -75,10 +75,10 @@ const StudentDetailPanel: React.FC<{
   const lastPayment = studentPayments[0];
 
   const tabs: { key: StudentDetailTab; label: string; icon: React.ReactNode }[] = [
-    { key: 'overview', label: 'Overview', icon: <UserCog className="w-3.5 h-3.5" /> },
-    { key: 'attendance', label: 'Attendance', icon: <Calendar className="w-3.5 h-3.5" /> },
-    { key: 'payments', label: 'Payments', icon: <DollarSign className="w-3.5 h-3.5" /> },
-    { key: 'notes', label: 'Notes', icon: <StickyNote className="w-3.5 h-3.5" /> },
+    { key: 'overview', label: 'Umumiy', icon: <UserCog className="w-3.5 h-3.5" /> },
+    { key: 'attendance', label: 'Davomat', icon: <Calendar className="w-3.5 h-3.5" /> },
+    { key: 'payments', label: 'To\'lovlar', icon: <DollarSign className="w-3.5 h-3.5" /> },
+    { key: 'notes', label: 'Izohlar', icon: <StickyNote className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -140,7 +140,7 @@ const StudentDetailPanel: React.FC<{
                 <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <Phone className="w-4 h-4 text-blue-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Telefon</span>
                   </div>
                   <div className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {student.phone}
@@ -149,7 +149,7 @@ const StudentDetailPanel: React.FC<{
                 <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <BookOpen className="w-4 h-4 text-purple-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Group</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Guruh</span>
                   </div>
                   <div className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {student.groupName}
@@ -158,7 +158,7 @@ const StudentDetailPanel: React.FC<{
                 <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <CreditCard className="w-4 h-4 text-amber-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Payment</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">To'lov</span>
                   </div>
                   <span
                     className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -169,13 +169,13 @@ const StudentDetailPanel: React.FC<{
                         : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                     }`}
                   >
-                    {student.paymentStatus === 'paid' ? 'Paid' : student.paymentStatus === 'overdue' ? 'Overdue' : 'Pending'}
+                    {student.paymentStatus === 'paid' ? 'To\'langan' : student.paymentStatus === 'overdue' ? 'Muddati o\'tgan' : 'Kutilmoqda'}
                   </span>
                 </div>
                 <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <TrendingUp className="w-4 h-4 text-emerald-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Attendance</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Davomat</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
@@ -196,7 +196,7 @@ const StudentDetailPanel: React.FC<{
               <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <DollarSign className="w-4 h-4 text-amber-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tuition Fee</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Oylik to'lov</span>
                 </div>
                 <div className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                   {(student.tuitionFee || 0).toLocaleString()} UZS
@@ -207,7 +207,7 @@ const StudentDetailPanel: React.FC<{
                 <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <Calendar className="w-4 h-4 text-sky-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Last Payment</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Oxirgi to'lov</span>
                   </div>
                   <div className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {student.lastPaymentDate}
@@ -221,7 +221,7 @@ const StudentDetailPanel: React.FC<{
             <div className="space-y-3">
               <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-500">Overall Attendance Rate</span>
+                  <span className="text-xs font-bold text-slate-500">Umumiy davomat</span>
                   <span className={`text-sm font-black ${attendanceRate >= 80 ? 'text-emerald-500' : attendanceRate >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
                     {attendanceRate}%
                   </span>
@@ -238,7 +238,7 @@ const StudentDetailPanel: React.FC<{
 
               {studentAttendance.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                  No attendance records found.
+                  Davomat yozuvlari topilmadi.
                 </div>
               ) : (
                 studentAttendance.map((record) => {
@@ -280,7 +280,7 @@ const StudentDetailPanel: React.FC<{
             <div className="space-y-3">
               {studentPayments.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                  No payment records found.
+                  To'lov yozuvlari topilmadi.
                 </div>
               ) : (
                 studentPayments.map((payment) => (
@@ -318,7 +318,7 @@ const StudentDetailPanel: React.FC<{
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={`Add notes about ${student.fullName}...`}
+              placeholder={`${student.fullName} haqida izoh qo'shish...`}
               rows={8}
               className={`w-full rounded-2xl p-4 text-xs font-semibold outline-none resize-none transition ${
                 theme === 'dark'
@@ -334,7 +334,7 @@ const StudentDetailPanel: React.FC<{
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
           >
-            Close
+            Yopish
           </button>
         </div>
       </div>
@@ -384,16 +384,16 @@ export const MyStudentsView: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold border border-blue-500/30 mb-2">
             <UserCog className="w-3.5 h-3.5" />
-            <span>My Students</span>
+            <span>Mening o'quvchilarim</span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Student Roster</h1>
+          <h1 className="text-2xl font-black tracking-tight">O'quvchilar ro'yxati</h1>
           <p className="text-xs text-slate-400 mt-1">
-            View, filter, and manage your assigned students across all groups.
+            Barcha guruhlar bo'yicha o'quvchilaringizni ko'ring, filtrlab va boshqaring.
           </p>
         </div>
         <div className="px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-xs font-bold flex items-center gap-2 text-amber-400">
           <Users className="w-4 h-4" />
-          <span>{filteredStudents.length} of {myStudents.length} Students</span>
+          <span>{filteredStudents.length} / {myStudents.length} o'quvchi</span>
         </div>
       </div>
 
@@ -410,7 +410,7 @@ export const MyStudentsView: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search students by name, phone, or group..."
+            placeholder="O'quvchini ismi, telefoni yoki guruh bo'yicha qidirish..."
             className={`flex-1 bg-transparent text-sm outline-none ${
               theme === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
             }`}
@@ -434,7 +434,7 @@ export const MyStudentsView: React.FC = () => {
                   : 'bg-slate-50 border-slate-200 text-slate-900'
               }`}
             >
-              <option value="all">All Groups</option>
+              <option value="all">Barcha guruhlar</option>
               {myGroups.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -452,10 +452,10 @@ export const MyStudentsView: React.FC = () => {
                 : 'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
-            <option value="all">All Payments</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
-            <option value="overdue">Overdue</option>
+            <option value="all">Barcha to'lovlar</option>
+            <option value="paid">To'langan</option>
+            <option value="pending">Kutilmoqda</option>
+            <option value="overdue">Muddati o'tgan</option>
           </select>
         </div>
       </div>
@@ -472,12 +472,12 @@ export const MyStudentsView: React.FC = () => {
             <Users className="w-6 h-6" />
           </div>
           <h3 className={`text-base font-extrabold mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            No students found
+            O'quvchilar topilmadi
           </h3>
           <p className="text-xs text-slate-500">
             {searchQuery || groupFilter !== 'all' || paymentFilter !== 'all'
-              ? 'Try adjusting your filters.'
-              : 'No students assigned to your groups yet.'}
+              ? 'Filtrlarni o\'zgartirib ko\'ring.'
+              : 'Guruhlaringizga hozircha o\'quvchilar biriktirilmagan.'}
           </p>
         </div>
       ) : (
@@ -491,11 +491,11 @@ export const MyStudentsView: React.FC = () => {
                 ? 'text-slate-500 bg-slate-800/50 border-slate-800'
                 : 'text-slate-400 bg-slate-50 border-slate-200'
             }`}>
-              <div className="col-span-3">Student</div>
-              <div className="col-span-2">Phone</div>
-              <div className="col-span-2">Group</div>
-              <div className="col-span-2">Payment</div>
-              <div className="col-span-2">Attendance</div>
+              <div className="col-span-3">O'quvchi</div>
+              <div className="col-span-2">Telefon</div>
+              <div className="col-span-2">Guruh</div>
+              <div className="col-span-2">To'lov</div>
+              <div className="col-span-2">Davomat</div>
               <div className="col-span-1"></div>
             </div>
             {filteredStudents.map((student) => {
@@ -526,7 +526,7 @@ export const MyStudentsView: React.FC = () => {
                   </div>
                   <div className="col-span-2">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${paymentBadge(student.paymentStatus)}`}>
-                      {student.paymentStatus === 'paid' ? 'Paid' : student.paymentStatus === 'overdue' ? 'Overdue' : 'Pending'}
+                      {student.paymentStatus === 'paid' ? 'To\'langan' : student.paymentStatus === 'overdue' ? 'Muddati o\'tgan' : 'Kutilmoqda'}
                     </span>
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
@@ -582,10 +582,10 @@ export const MyStudentsView: React.FC = () => {
                       {student.groupName}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${paymentBadge(student.paymentStatus)}`}>
-                      {student.paymentStatus === 'paid' ? 'Paid' : student.paymentStatus === 'overdue' ? 'Overdue' : 'Pending'}
+                      {student.paymentStatus === 'paid' ? 'To\'langan' : student.paymentStatus === 'overdue' ? 'Muddati o\'tgan' : 'Kutilmoqda'}
                     </span>
                     <span className="text-[10px] font-bold text-slate-500 ml-auto">
-                      {rate}% attendance
+                      {rate}% davomat
                     </span>
                   </div>
                 </div>

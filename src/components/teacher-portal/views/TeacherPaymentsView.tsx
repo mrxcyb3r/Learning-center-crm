@@ -24,10 +24,10 @@ import {
 } from 'lucide-react';
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-  { value: 'cash', label: 'Cash', icon: <Banknote className="w-4 h-4" /> },
-  { value: 'card', label: 'Card', icon: <CreditCard className="w-4 h-4" /> },
-  { value: 'bank_transfer', label: 'Bank Transfer', icon: <ArrowRightLeft className="w-4 h-4" /> },
-  { value: 'other', label: 'Other', icon: <MoreHorizontal className="w-4 h-4" /> },
+  { value: 'cash', label: 'Naqd', icon: <Banknote className="w-4 h-4" /> },
+  { value: 'card', label: 'Karta', icon: <CreditCard className="w-4 h-4" /> },
+  { value: 'bank_transfer', label: 'Bank o\'tkazmasi', icon: <ArrowRightLeft className="w-4 h-4" /> },
+  { value: 'other', label: 'Boshqa', icon: <MoreHorizontal className="w-4 h-4" /> },
 ];
 
 interface TeacherPaymentRecord {
@@ -133,7 +133,7 @@ export const TeacherPaymentsView: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent || !amount) {
-      toast.error('Please select a student and enter an amount');
+      toast.error('Iltimos, o\'quvchini tanlang va summani kiriting');
       return;
     }
 
@@ -158,7 +158,7 @@ export const TeacherPaymentsView: React.FC = () => {
 
       await addDoc(collection(db, 'payments'), paymentData);
 
-      toast.success(`Payment recorded! Receipt: ${receiptNumber}`);
+      toast.success(`To'lov qayd etildi! Kvitansiya: ${receiptNumber}`);
 
       setIsModalOpen(false);
       setSelectedStudentId('');
@@ -168,7 +168,7 @@ export const TeacherPaymentsView: React.FC = () => {
       setNotes('');
     } catch (error) {
       console.error('Failed to record payment:', error);
-      toast.error('Failed to record payment');
+      toast.error('To\'lovni qayd etishda xatolik');
     } finally {
       setIsSubmitting(false);
     }
@@ -177,7 +177,7 @@ export const TeacherPaymentsView: React.FC = () => {
   const openReceipt = (payment: typeof studentPayments[0]) => {
     const group = myGroups.find((g) => g.id === payment.groupId);
     setReceiptData({
-      centerName: group?.name || 'Learning Center',
+      centerName: group?.name || 'O\'quv markazi',
       teacherName,
       studentName: payment.studentName,
       course: payment.groupName,
@@ -196,10 +196,10 @@ export const TeacherPaymentsView: React.FC = () => {
             <Lock className={`w-8 h-8 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
           </div>
           <h3 className={`text-lg font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Payments are managed by the learning center
+            To'lovlar o'quv markazi tomonidan boshqariladi
           </h3>
           <p className={`text-sm max-w-md ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-            In this business model, payment collection and tracking is handled by the learning center administration. You can view payment statuses in your student list.
+            Ushbu biznes modelida to'lovlarni yig'ish va kuzatish o'quv markazi ma'muriyati tomonidan amalga oshiriladi. To'lov holatlarini o'quvchilar ro'yxatida ko'rishingiz mumkin.
           </p>
         </div>
       </div>
@@ -212,10 +212,10 @@ export const TeacherPaymentsView: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-            Payments
+            To'lovlar
           </h2>
           <p className={`text-sm mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-            Record and track student payments
+            O'quvchilarning to'lovlarini qayd eting va kuzating
           </p>
         </div>
         <button
@@ -223,7 +223,7 @@ export const TeacherPaymentsView: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition cursor-pointer shadow-lg shadow-blue-500/20"
         >
           <Plus className="w-4 h-4" />
-          Record Payment
+          To'lovni qayd etish
         </button>
       </div>
 
@@ -236,7 +236,7 @@ export const TeacherPaymentsView: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by student, group, receipt..."
+              placeholder="O'quvchi, guruh yoki kvitansiya bo'yicha qidirish..."
               className={`flex-1 bg-transparent text-sm outline-none ${theme === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
             />
           </div>
@@ -247,7 +247,7 @@ export const TeacherPaymentsView: React.FC = () => {
               onChange={(e) => setFilterMethod(e.target.value as PaymentMethod | 'all')}
               className={`px-3 py-2 rounded-xl border text-sm font-semibold cursor-pointer ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
             >
-              <option value="all">All Methods</option>
+              <option value="all">Barcha usullar</option>
               {PAYMENT_METHODS.map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
               ))}
@@ -282,7 +282,7 @@ export const TeacherPaymentsView: React.FC = () => {
           <div className="py-16 text-center">
             <DollarSign className={`w-12 h-12 mx-auto mb-3 ${theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}`} />
             <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-              No payments found
+              To'lovlar topilmadi
             </p>
           </div>
         ) : (
@@ -290,7 +290,7 @@ export const TeacherPaymentsView: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className={`border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
-                  {['Date', 'Student', 'Group', 'Amount', 'Method', 'Receipt #', 'Actions'].map((header) => (
+                  {['Sana', 'O\'quvchi', 'Guruh', 'Summa', 'Usul', 'Kvitansiya №', 'Amallar'].map((header) => (
                     <th
                       key={header}
                       className={`px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}
@@ -335,7 +335,7 @@ export const TeacherPaymentsView: React.FC = () => {
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${theme === 'dark' ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          Receipt
+                          Kvitansiya
                         </button>
                       </td>
                     </tr>
@@ -353,7 +353,7 @@ export const TeacherPaymentsView: React.FC = () => {
           <div className={`w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
             <div className={`flex items-center justify-between p-5 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
               <h3 className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                Record Payment
+                To'lovni qayd etish
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -367,7 +367,7 @@ export const TeacherPaymentsView: React.FC = () => {
               {/* Student Selector */}
               <div>
                 <label className={`text-xs font-bold uppercase tracking-widest mb-1.5 block ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Student
+                  O'quvchi
                 </label>
                 <select
                   value={selectedStudentId}
@@ -375,7 +375,7 @@ export const TeacherPaymentsView: React.FC = () => {
                   required
                   className={`w-full px-4 py-3 rounded-xl border text-sm font-semibold outline-none transition ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'}`}
                 >
-                  <option value="">Select a student...</option>
+                  <option value="">O'quvchini tanlang...</option>
                   {myStudents.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.fullName} — {s.groupName} ({s.tuitionFee?.toLocaleString()} UZS)
@@ -387,13 +387,13 @@ export const TeacherPaymentsView: React.FC = () => {
               {/* Amount */}
               <div>
                 <label className={`text-xs font-bold uppercase tracking-widest mb-1.5 block ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Amount (UZS)
+                  Summa (UZS)
                 </label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Enter amount"
+                  placeholder="Summani kiriting"
                   required
                   min="0"
                   className={`w-full px-4 py-3 rounded-xl border text-sm font-bold outline-none transition ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500 placeholder-slate-400'}`}
@@ -403,7 +403,7 @@ export const TeacherPaymentsView: React.FC = () => {
               {/* Payment Method */}
               <div>
                 <label className={`text-xs font-bold uppercase tracking-widest mb-1.5 block ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Payment Method
+                  To'lov usuli
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {PAYMENT_METHODS.map((m) => (
@@ -429,7 +429,7 @@ export const TeacherPaymentsView: React.FC = () => {
               {/* Date */}
               <div>
                 <label className={`text-xs font-bold uppercase tracking-widest mb-1.5 block ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Date
+                  Sana
                 </label>
                 <input
                   type="date"
@@ -443,13 +443,13 @@ export const TeacherPaymentsView: React.FC = () => {
               {/* Notes */}
               <div>
                 <label className={`text-xs font-bold uppercase tracking-widest mb-1.5 block ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Notes (optional)
+                  Izohlar (ixtiyoriy)
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Optional notes..."
+                  placeholder="Ixtiyoriy izoh..."
                   className={`w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none transition ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 placeholder-slate-600' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500 placeholder-slate-400'}`}
                 />
               </div>
@@ -461,14 +461,14 @@ export const TeacherPaymentsView: React.FC = () => {
                   onClick={() => setIsModalOpen(false)}
                   className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition cursor-pointer ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                 >
-                  Cancel
+                  Bekor qilish
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                 >
-                  {isSubmitting ? 'Saving...' : 'Record Payment'}
+                  {isSubmitting ? 'Saqlanmoqda...' : 'To\'lovni qayd etish'}
                 </button>
               </div>
             </form>

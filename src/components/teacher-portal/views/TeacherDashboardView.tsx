@@ -25,12 +25,12 @@ export const TeacherDashboardView: React.FC = () => {
   );
 
   const quickActions: { tab: TeacherTab; icon: React.ReactNode; label: string; color: string }[] = [
-    { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, label: 'Timetable', color: 'from-blue-500 to-indigo-500' },
-    { tab: 'students', icon: <Users className="w-5 h-5" />, label: 'Students', color: 'from-emerald-500 to-teal-500' },
-    { tab: 'attendance', icon: <CheckCircle className="w-5 h-5" />, label: 'Attendance', color: 'from-purple-500 to-violet-500' },
-    { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, label: 'Payments', color: 'from-amber-500 to-orange-500' },
-    { tab: 'announcements', icon: <MessageSquare className="w-5 h-5" />, label: 'Messages', color: 'from-rose-500 to-pink-500' },
-    { tab: 'profile', icon: <UserCog className="w-5 h-5" />, label: 'Profile', color: 'from-cyan-500 to-sky-500' },
+    { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, label: 'Dars jadvali', color: 'from-blue-500 to-indigo-500' },
+    { tab: 'students', icon: <Users className="w-5 h-5" />, label: 'O\'quvchilar', color: 'from-emerald-500 to-teal-500' },
+    { tab: 'attendance', icon: <CheckCircle className="w-5 h-5" />, label: 'Davomat', color: 'from-purple-500 to-violet-500' },
+    { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, label: 'To\'lovlar', color: 'from-amber-500 to-orange-500' },
+    { tab: 'announcements', icon: <MessageSquare className="w-5 h-5" />, label: 'E\'lonlar', color: 'from-rose-500 to-pink-500' },
+    { tab: 'profile', icon: <UserCog className="w-5 h-5" />, label: 'Profil', color: 'from-cyan-500 to-sky-500' },
   ];
 
   const formatAmount = (amount: number) => `${amount.toLocaleString()} UZS`;
@@ -42,25 +42,25 @@ export const TeacherDashboardView: React.FC = () => {
         <StatCard
           icon={<Calendar className="w-5 h-5" />}
           value={stats.todayClasses}
-          label="Today's Classes"
+          label="Bugungi darslar"
           color="blue"
         />
         <StatCard
           icon={<Users className="w-5 h-5" />}
           value={stats.activeStudentCount}
-          label="Active Students"
+          label="Faol o'quvchilar"
           color="emerald"
         />
         <StatCard
           icon={<DollarSign className="w-5 h-5" />}
           value={formatAmount(stats.monthlyIncome)}
-          label="Monthly Income"
+          label="Oylik daromad"
           color="amber"
         />
         <StatCard
           icon={<CheckCircle className="w-5 h-5" />}
           value={`${stats.attendanceRate}%`}
-          label="Attendance Rate"
+          label="Davomat darajasi"
           color="purple"
         />
       </div>
@@ -74,7 +74,7 @@ export const TeacherDashboardView: React.FC = () => {
         }`}
       >
         <h3 className={`text-sm font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-          Quick Actions
+          Tezkor amallar
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {quickActions.map((action) => (
@@ -109,20 +109,20 @@ export const TeacherDashboardView: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              Today's Classes
+              Bugungi darslar
             </h3>
             <button
               onClick={() => setActiveTab('timetable')}
               className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer"
             >
-              View All <ArrowRight className="w-3 h-3" />
+              Barchasi <ArrowRight className="w-3 h-3" />
             </button>
           </div>
           <div className="space-y-2">
             {myGroups.length === 0 ? (
               <div className={`text-center py-6 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
                 <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-xs">No classes scheduled</p>
+                <p className="text-xs">Bugun dars rejalashtirilmagan</p>
               </div>
             ) : (
               myGroups.map((group) => (
@@ -165,20 +165,20 @@ export const TeacherDashboardView: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              Recent Notifications
+              So'nggi bildirishnomalar
             </h3>
             <button
               onClick={() => setActiveTab('announcements')}
               className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer"
             >
-              View All <ArrowRight className="w-3 h-3" />
+              Barchasi <ArrowRight className="w-3 h-3" />
             </button>
           </div>
           <div className="space-y-2">
             {notifications.length === 0 ? (
               <div className={`text-center py-6 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-xs">No notifications yet</p>
+                <p className="text-xs">Hozircha bildirishnomalar yo'q</p>
               </div>
             ) : (
               notifications.map((n) => (
@@ -221,7 +221,7 @@ export const TeacherDashboardView: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                Pending Payments
+                Kutilayotgan to'lovlar
               </h3>
               <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
                 {unpaidStudents.length}
@@ -231,7 +231,7 @@ export const TeacherDashboardView: React.FC = () => {
               onClick={() => setActiveTab('payments')}
               className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer"
             >
-              View All <ArrowRight className="w-3 h-3" />
+              Barchasi <ArrowRight className="w-3 h-3" />
             </button>
           </div>
           <div className="space-y-2">

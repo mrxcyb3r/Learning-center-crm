@@ -38,7 +38,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
         {isDemoMode && (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">DEMO MODE</span>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">DEMO REJIM</span>
           </div>
         )}
       </div>
@@ -81,7 +81,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
             }`}>
               {teacherName}
             </span>
-            <span className="text-[10px] font-semibold text-blue-500">Teacher</span>
+            <span className="text-[10px] font-semibold text-blue-500">O'qituvchi</span>
           </div>
         </div>
 

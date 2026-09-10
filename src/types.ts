@@ -128,6 +128,10 @@ export interface Group {
   scheduleTime: string;
   room: string;
   activeStudentsCount: number;
+  maxCapacity?: number;
+  level?: string;
+  description?: string;
+  status?: string;
 }
 
 export interface Student {
@@ -142,6 +146,7 @@ export interface Student {
   subjectCategory?: string;
   nextDueDate?: string;
   telegramHandle?: string;
+  attendanceRate?: number;
 }
 
 export interface Payment {

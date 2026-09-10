@@ -47,7 +47,7 @@ export const TeacherSearch: React.FC<TeacherSearchProps> = ({ onNavigate }) => {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search students, groups, payments..."
+          placeholder="O'quvchi, guruh yoki to'lov bo'yicha qidirish..."
           className={`flex-1 bg-transparent text-sm outline-none ${
             theme === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
           }`}
@@ -70,7 +70,7 @@ export const TeacherSearch: React.FC<TeacherSearchProps> = ({ onNavigate }) => {
           {!hasResults && (
             <div className="p-6 text-center">
               <span className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                No results found
+                Natija topilmadi
               </span>
             </div>
           )}
@@ -80,7 +80,7 @@ export const TeacherSearch: React.FC<TeacherSearchProps> = ({ onNavigate }) => {
               <div className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest ${
                 theme === 'dark' ? 'text-slate-500 bg-slate-800/50' : 'text-slate-400 bg-slate-50'
               }`}>
-                Groups
+                Guruhlar
               </div>
               {results.groups.map((g) => (
                 <button
@@ -107,7 +107,7 @@ export const TeacherSearch: React.FC<TeacherSearchProps> = ({ onNavigate }) => {
               <div className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest ${
                 theme === 'dark' ? 'text-slate-500 bg-slate-800/50' : 'text-slate-400 bg-slate-50'
               }`}>
-                Students
+                O'quvchilar
               </div>
               {results.students.map((s) => (
                 <button
@@ -134,7 +134,7 @@ export const TeacherSearch: React.FC<TeacherSearchProps> = ({ onNavigate }) => {
               <div className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest ${
                 theme === 'dark' ? 'text-slate-500 bg-slate-800/50' : 'text-slate-400 bg-slate-50'
               }`}>
-                Payments
+                To'lovlar
               </div>
               {results.payments.map((p) => (
                 <button

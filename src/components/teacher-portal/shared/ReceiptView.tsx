@@ -18,7 +18,7 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ data, onClose }) => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Receipt - ${data.receiptNumber}</title>
+        <title>To'lov kvitansiyasi - ${data.receiptNumber}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 32px; color: #1e293b; }
@@ -40,19 +40,19 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ data, onClose }) => {
         <div class="receipt">
           <div class="header">
             <div class="center-name">${data.centerName || DEMO_CENTER_NAME}</div>
-            <div class="subtitle">Payment Receipt</div>
+            <div class="subtitle">To'lov kvitansiyasi</div>
           </div>
-          <div class="row"><span class="row-label">Receipt #</span><span class="row-value">${data.receiptNumber}</span></div>
-          <div class="row"><span class="row-label">Date</span><span class="row-value">${data.date}</span></div>
-          <div class="row"><span class="row-label">Teacher</span><span class="row-value">${data.teacherName}</span></div>
-          <div class="row"><span class="row-label">Student</span><span class="row-value">${data.studentName}</span></div>
-          <div class="row"><span class="row-label">Course</span><span class="row-value">${data.course}</span></div>
-          <div class="row"><span class="row-label">Payment Method</span><span class="row-value">${data.paymentMethod}</span></div>
+          <div class="row"><span class="row-label">Kvitansiya №</span><span class="row-value">${data.receiptNumber}</span></div>
+          <div class="row"><span class="row-label">Sana</span><span class="row-value">${data.date}</span></div>
+          <div class="row"><span class="row-label">O'qituvchi</span><span class="row-value">${data.teacherName}</span></div>
+          <div class="row"><span class="row-label">O'quvchi</span><span class="row-value">${data.studentName}</span></div>
+          <div class="row"><span class="row-label">Kurs</span><span class="row-value">${data.course}</span></div>
+          <div class="row"><span class="row-label">To'lov usuli</span><span class="row-value">${data.paymentMethod}</span></div>
           <div class="total">
-            <div class="total-label">Amount Paid</div>
+            <div class="total-label">To'langan summa</div>
             <div class="total-amount">${data.amount.toLocaleString()} UZS</div>
           </div>
-          <div class="footer">Thank you for your payment!</div>
+          <div class="footer">To'lovingiz uchun rahmat!</div>
         </div>
         <script>window.onload = function() { window.print(); }</script>
       </body>
@@ -65,7 +65,7 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ data, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h3 className="text-lg font-black text-slate-900">Receipt</h3>
+          <h3 className="text-lg font-black text-slate-900">Kvitansiya</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
@@ -84,40 +84,40 @@ export const ReceiptView: React.FC<ReceiptViewProps> = ({ data, onClose }) => {
         <div ref={receiptRef} className="p-6">
           <div className="text-center mb-6 pb-4 border-b-2 border-dashed border-slate-200">
             <div className="text-lg font-black text-amber-500">{data.centerName || DEMO_CENTER_NAME}</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[3px] mt-1">Payment Receipt</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[3px] mt-1">To'lov kvitansiyasi</div>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Receipt #</span>
+              <span className="text-xs font-semibold text-slate-400">Kvitansiya №</span>
               <span className="text-sm font-bold text-slate-900">{data.receiptNumber}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Date</span>
+              <span className="text-xs font-semibold text-slate-400">Sana</span>
               <span className="text-sm font-bold text-slate-900">{data.date}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Teacher</span>
+              <span className="text-xs font-semibold text-slate-400">O'qituvchi</span>
               <span className="text-sm font-bold text-slate-900">{data.teacherName}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Student</span>
+              <span className="text-xs font-semibold text-slate-400">O'quvchi</span>
               <span className="text-sm font-bold text-slate-900">{data.studentName}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Course</span>
+              <span className="text-xs font-semibold text-slate-400">Kurs</span>
               <span className="text-sm font-bold text-slate-900">{data.course}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-xs font-semibold text-slate-400">Method</span>
+              <span className="text-xs font-semibold text-slate-400">Usul</span>
               <span className="text-sm font-bold text-slate-900 capitalize">{data.paymentMethod}</span>
             </div>
           </div>
           <div className="mt-6 p-4 bg-emerald-50 rounded-2xl text-center">
-            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Amount Paid</div>
+            <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">To'langan summa</div>
             <div className="text-3xl font-black text-emerald-600 mt-1">{data.amount.toLocaleString()} UZS</div>
           </div>
           <div className="text-center mt-4 text-[10px] font-semibold text-slate-400">
-            Thank you for your payment!
+            To'lovingiz uchun rahmat!
           </div>
         </div>
       </div>

@@ -151,7 +151,7 @@ export const TeacherPaymentsView: React.FC = () => {
         recordedBy: teacherUid,
         recordedByName: teacherName,
         status: 'paid',
-        notes: notes || undefined,
+        notes: notes || null,
         receiptRef: receiptNumber,
         cohortGroup: group?.name || selectedStudent.groupName,
       };

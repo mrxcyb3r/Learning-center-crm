@@ -67,7 +67,9 @@ export const TeacherAttendanceView: React.FC = () => {
 
     const attendanceRate = totalRecords > 0
       ? Math.round(((totalPresent + totalLate) / totalRecords) * 100)
-      : 0;
+      : myStudents.length > 0
+        ? Math.round(myStudents.reduce((sum, s) => sum + (s.attendanceRate || 0), 0) / myStudents.length)
+        : 0;
 
     const mostAbsent = Object.entries(absentCounts)
       .sort(([, a], [, b]) => b - a)

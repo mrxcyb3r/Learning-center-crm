@@ -712,8 +712,8 @@ async function startServer() {
     });
   }
 
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, 'localhost', () => {
+    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on http://localhost:${PORT}`);
   });
 
   // Graceful Shutdown Handler

@@ -154,7 +154,11 @@ function computeStats(
       .reduce((sum, s) => sum + (s.tuitionFee || 0), 0),
     paidStudentsCount: paidCount,
     unpaidStudentsCount: unpaidCount,
-    attendanceRate: totalMarks > 0 ? Math.round((totalPresent / totalMarks) * 100) : 0,
+    attendanceRate: totalMarks > 0
+      ? Math.round((totalPresent / totalMarks) * 100)
+      : myStudents.length > 0
+        ? Math.round(myStudents.reduce((sum, s) => sum + (s.attendanceRate || 0), 0) / myStudents.length)
+        : 0,
   };
 }
 

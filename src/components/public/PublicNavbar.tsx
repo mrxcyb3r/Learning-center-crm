@@ -133,22 +133,27 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
             {/* Admin Panel Button */}
             <button
               onClick={() => navigate('/admin')}
-              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-800 transition flex items-center gap-1.5 cursor-pointer"
-              title="Admin Panel — Demo"
+              className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-[10px] font-bold border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center gap-1 cursor-pointer"
+              title="Admin Panel"
             >
-              <ShieldCheck className="w-4 h-4 text-amber-500" />
-              <span>Admin Panel</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Admin</span>
             </button>
 
             {/* Teacher Panel Button */}
             <button
               onClick={() => navigate('/teacher')}
-              className="px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs shadow-md shadow-blue-500/20 hover:shadow-blue-500/35 transition flex items-center gap-1.5 cursor-pointer"
-              title="Teacher Panel — Demo"
+              className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-[10px] font-bold border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center gap-1 cursor-pointer"
+              title="O'qituvchi paneli"
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Teacher Panel</span>
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>O'qituvchi</span>
             </button>
+
+            {/* Demo badge */}
+            <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest border border-amber-500/20 hidden lg:inline-flex">
+              Demo
+            </span>
 
             {/* CTA Button */}
             <button
@@ -219,27 +224,33 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
                 <span>{phone}</span>
               </a>
 
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/admin');
-                }}
-                className="w-full py-3 rounded-xl bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-500" />
-                <span>Admin Panel</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/admin');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 font-bold text-[10px] flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-800"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </button>
 
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/teacher');
-                }}
-                className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2"
-              >
-                <GraduationCap className="w-4 h-4" />
-                <span>Teacher Panel</span>
-              </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/teacher');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 font-bold text-[10px] flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-800"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>O'qituvchi</span>
+                </button>
+              </div>
+
+              <span className="text-center text-[9px] font-bold text-amber-500 uppercase tracking-widest pt-1 block">
+                Demo Rejimi
+              </span>
 
               <button
                 onClick={() => {

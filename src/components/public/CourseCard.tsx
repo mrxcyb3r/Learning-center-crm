@@ -94,7 +94,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, index = 0, onSel
         <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <span className="text-[10px] text-slate-400 font-medium">Oylik to'lov</span>
           <span className="text-lg font-black text-slate-900 dark:text-white font-mono">
-            {course.monthlyFee ? `${course.monthlyFee.toLocaleString()} UZS` : course.formattedFee}
+            {course.monthlyFee ? `${course.monthlyFee.toLocaleString()} so'm/oy` : course.formattedFee}
           </span>
         </div>
 

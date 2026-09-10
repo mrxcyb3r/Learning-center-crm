@@ -2095,6 +2095,16 @@ class CrmService {
           question: "Haftalik diagnostik testlar qachon o'tkaziladi?",
           answer: "Har yakshanba kuni markazimizda DTM va Milliy sertifikat formatidagi qat'iy nazorat ostida diagnostik testlar o'tkaziladi va natijalar ota-onalarga yetkaziladi.",
         },
+        {
+          id: 'faq-5',
+          question: "To'lov qanday amalga oshiriladi?",
+          answer: "To'lov oylik asosda, naqd pul yoki Click/Payme orqali amalga oshiriladi. Har bir o'quvchining to'lov holatini shaxsiy kabinet orqali kuzatish mumkin.",
+        },
+        {
+          id: 'faq-6',
+          question: "Guruhni qanday tanlash mumkin?",
+          answer: "Bepul sinov darsida diagnostik test asosida o'quvchi darajasi aniqlanadi va mos guruhga yo'naltiriladi. O'quvchi o'zi ham qiziqqan yo'nalish bo'yicha maslahat olishi mumkin.",
+        },
       ],
       results: [],
     };

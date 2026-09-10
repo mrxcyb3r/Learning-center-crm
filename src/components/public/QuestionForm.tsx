@@ -199,7 +199,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder="Masalan: IELTS kursi narxi haqida"
+            placeholder="Masalan: Kurs narxi, dars jadvali haqida"
             className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
           />
           {errors.subject && <p className="text-[11px] text-rose-500 mt-1">{errors.subject}</p>}

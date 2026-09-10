@@ -419,7 +419,7 @@ export const LeadsCrmView: React.FC = () => {
 
   const KPI_CARDS: { key: string; label: string; count: number; active: boolean; tone: string }[] = [
     { key: 'Yangi', label: 'Yangi', count: statusCount('Yangi'), active: selectedStatus === 'Yangi', tone: 'blue' },
-    { key: FOLLOWUP_FILTER, label: 'Follow-up kerak', count: followUpCount, active: selectedStatus === FOLLOWUP_FILTER, tone: 'amber' },
+    { key: FOLLOWUP_FILTER, label: 'Kuzatuv kerak', count: followUpCount, active: selectedStatus === FOLLOWUP_FILTER, tone: 'amber' },
     { key: 'trial', label: 'Sinov darsi', count: trialCount, active: selectedStatus === 'trial', tone: 'purple' },
     { key: "O'quvchiga aylandi", label: 'Yozilgan', count: statusCount("O'quvchiga aylandi"), active: selectedStatus === "O'quvchiga aylandi", tone: 'emerald' },
     { key: "Yo'qotildi", label: "Yo'qotilgan", count: statusCount("Yo'qotildi"), active: selectedStatus === "Yo'qotildi", tone: 'slate' },
@@ -541,7 +541,7 @@ export const LeadsCrmView: React.FC = () => {
             className="w-full md:w-auto px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
           >
             <option value="All">Barcha holatlar</option>
-            <option value={FOLLOWUP_FILTER}>Follow-up kerak ({followUpCount})</option>
+            <option value={FOLLOWUP_FILTER}>Kuzatuv kerak ({followUpCount})</option>
             {ALL_STATUSES.map((st) => (
               <option key={st} value={st}>
                 {st} ({statusCount(st)})
@@ -633,7 +633,7 @@ export const LeadsCrmView: React.FC = () => {
                 <th className="py-3.5 px-4">Holat</th>
                 <th className="py-3.5 px-4">Mas'ul</th>
                 <th className="py-3.5 px-4">Qo'shilgan</th>
-                <th className="py-3.5 px-4">Follow-up</th>
+                <th className="py-3.5 px-4">Kuzatuv</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
             </thead>
@@ -988,7 +988,7 @@ export const LeadsCrmView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Keyingi harakat (Next Action)
+                      Keyingi harakat
                     </label>
                     <input
                       type="text"

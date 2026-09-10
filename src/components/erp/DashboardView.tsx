@@ -274,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Follow-up Talab Qilinadi
+                   Kuzatuv Talab Qilinadi
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Hali aloqa qilinmagan yoki ishlanmagan arizalar

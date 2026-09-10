@@ -352,7 +352,7 @@ export const ScheduleView: React.FC = () => {
               <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="block font-bold">Ogohlantirish (Schedule Conflict):</strong>
+                   <strong className="block font-bold">Ogohlantirish (Jadval to'qnashuvi):</strong>
                   <span>{conflictWarning}</span>
                 </div>
               </div>

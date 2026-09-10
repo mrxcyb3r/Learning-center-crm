@@ -68,7 +68,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: "Qabul & O'quvchilar",
     items: [
-      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall, badge: 'NEW' },
+      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall, badge: 'YANGI' },
       { id: 'students', label: 'O\'quvchilar', icon: Users },
     ],
   },
@@ -208,6 +208,13 @@ export const CenterErpApp: React.FC = () => {
             >
               <X className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Demo indicator */}
+          <div className="px-3.5 mb-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+            <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+              Demo Rejimi
+            </span>
           </div>
 
           {/* Navigation Items */}

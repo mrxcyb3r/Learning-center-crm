@@ -423,7 +423,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
                   </div>
                   <div className="text-right">
                     <span className="font-mono font-bold text-slate-800 dark:text-slate-200 block">{item.time}</span>
-                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{item.type}</span>
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{item.type === 'Trial Lesson' ? 'Sinov Darsi' : 'Asosiy Guruh'}</span>
                   </div>
                 </div>
               ))}

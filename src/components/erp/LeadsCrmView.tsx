@@ -63,9 +63,9 @@ const LOST_REASONS = [
 
 const TRIAL_RESULTS = [
   { value: '', label: '— Natija belgilanmagan —' },
-  { value: 'Passed', label: 'IQ darajasi aniqlandi (Passed)' },
-  { value: 'Fail', label: 'IQ aniqlandi, past natija (Fail)' },
-  { value: 'Converted', label: "O'quvchi bo'ldi (Converted)" },
+  { value: 'Passed', label: "Daraja aniqlandi — o'tdi" },
+  { value: 'Fail', label: 'Daraja aniqlandi — past natija' },
+  { value: 'Converted', label: "O'quvchi bo'ldi" },
 ];
 
 export const LeadsCrmView: React.FC = () => {
@@ -175,7 +175,7 @@ export const LeadsCrmView: React.FC = () => {
       return;
     }
     if (editStatus === "Yo'qotildi" && editLostReason === '') {
-      setDetailError("Yo'qotilgan sababini tanlang ('Lost Reason').");
+      setDetailError("Yo'qotilgan sababini tanlang.");
       return;
     }
 

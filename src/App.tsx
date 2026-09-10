@@ -20,6 +20,7 @@ import { PublicCoursesPage } from './pages/PublicCoursesPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { TeacherPage } from './pages/TeacherPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
+import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
 import { ParticleBackground } from './components/UI/ParticleBackground';
 import { SEOHead } from './components/SEOHead';
 import { preloadImages } from './utils/performance';
@@ -84,6 +85,9 @@ function MainAppRoutes() {
       <Route path="/dashboard/admin/*" element={<CenterErpApp />} />
       <Route path="/dashboard/student/*" element={<CenterErpApp />} />
       <Route path="/dashboard/teacher/*" element={<CenterErpApp />} />
+
+      {/* Teacher Portal */}
+      <Route path="/teacher/*" element={<TeacherPortalApp />} />
 
       {/* Catch-All Fallback Redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

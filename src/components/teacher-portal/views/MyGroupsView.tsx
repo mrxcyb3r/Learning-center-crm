@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { Group, Student } from '../../../types';
+import { Group, Student, AttendanceRecord } from '../../../types';
 
 const SUBJECT_BADGE_COLORS: Record<string, string> = {
   ielts: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
@@ -48,7 +48,7 @@ type DetailTab = 'info' | 'students' | 'attendance' | 'schedule' | 'notes';
 const GroupDetail: React.FC<{
   group: Group;
   students: Student[];
-  attendance: { groupId: string; date: string; records: Record<string, string> }[];
+  attendance: AttendanceRecord[];
   onClose: () => void;
 }> = ({ group, students, attendance, onClose }) => {
   const { theme } = useTheme();
@@ -204,7 +204,7 @@ const GroupDetail: React.FC<{
               groupAttendance.map((record) => {
                 const total = Object.keys(record.records).length;
                 const present = Object.values(record.records).filter(
-                  (r) => r === 'present' || (typeof r === 'object' && (r as { status: string }).status === 'present')
+                  (r) => r === 'present' || (typeof r === 'object' && 'status' in r && r.status === 'present')
                 ).length;
                 return (
                   <div

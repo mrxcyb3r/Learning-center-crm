@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight, ShieldCheck, GraduationCap } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { DEMO_MODE } from '../../config/demo';
 
 interface PublicNavbarProps {
   onOpenTrialModal: () => void;
@@ -123,14 +124,24 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Admin ERP Link */}
+            {/* Admin Panel Button */}
             <button
               onClick={() => navigate('/admin')}
               className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-800 transition flex items-center gap-1.5 cursor-pointer"
-              title="Admin ERP tizimiga o'tish"
+              title="Admin Panel — Demo"
             >
               <ShieldCheck className="w-4 h-4 text-amber-500" />
-              <span>Admin ERP</span>
+              <span>Admin Panel</span>
+            </button>
+
+            {/* Teacher Panel Button */}
+            <button
+              onClick={() => navigate('/teacher')}
+              className="px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs shadow-md shadow-blue-500/20 hover:shadow-blue-500/35 transition flex items-center gap-1.5 cursor-pointer"
+              title="Teacher Panel — Demo"
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span>Teacher Panel</span>
             </button>
 
             {/* CTA Button */}
@@ -210,7 +221,18 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
                 className="w-full py-3 rounded-xl bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center gap-2"
               >
                 <ShieldCheck className="w-4 h-4 text-amber-500" />
-                <span>Admin ERP Tizimi</span>
+                <span>Admin Panel</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/teacher');
+                }}
+                className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2"
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span>Teacher Panel</span>
               </button>
 
               <button

@@ -18,12 +18,12 @@ import {
 } from 'lucide-react';
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { Student } from '../../../types';
+import { Student, AttendanceRecord } from '../../../types';
 
 function computeAttendanceRate(
   studentId: string,
   groupId: string,
-  attendance: { groupId: string; records: Record<string, string | { status: string }> }[]
+  attendance: AttendanceRecord[]
 ): number {
   const relevant = attendance.filter((a) => a.groupId === groupId);
   if (relevant.length === 0) return 0;
@@ -45,7 +45,7 @@ type StudentDetailTab = 'overview' | 'attendance' | 'payments' | 'notes';
 
 const StudentDetailPanel: React.FC<{
   student: Student;
-  attendance: { groupId: string; date: string; records: Record<string, string | { status: string }> }[];
+  attendance: AttendanceRecord[];
   payments: { studentId: string; amount: number; date: string; status?: string }[];
   onClose: () => void;
 }> = ({ student, attendance, payments, onClose }) => {
@@ -65,10 +65,10 @@ const StudentDetailPanel: React.FC<{
       attendance
         .filter((a) => a.groupId === student.groupId)
         .slice(0, 10)
-        .map((a) => ({
-          date: a.date,
-          status: a.records[student.id] || 'N/A',
-        })),
+                .map((a) => ({
+                  date: a.date,
+                  status: (a.records[student.id] ?? 'N/A') as string | { status: string },
+                })),
     [attendance, student.id, student.groupId]
   );
 
@@ -242,7 +242,7 @@ const StudentDetailPanel: React.FC<{
                 </div>
               ) : (
                 studentAttendance.map((record) => {
-                  const statusStr = typeof record.status === 'object' ? (record.status as { status: string }).status : record.status;
+                  const statusStr = typeof record.status === 'object' ? (record.status as { status: string }).status : String(record.status);
                   return (
                     <div
                       key={record.date}

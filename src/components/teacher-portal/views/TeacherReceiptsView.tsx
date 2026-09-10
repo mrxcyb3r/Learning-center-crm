@@ -23,7 +23,7 @@ export const TeacherReceiptsView: React.FC = () => {
     const group = myGroups.find((g) => g.id === student?.groupId);
 
     setSelectedReceipt({
-      centerName: group?.name || 'Learning Center',
+      centerName: group?.name || 'O\'quv markazi',
       teacherName,
       studentName: payment.studentName,
       course: group?.name || payment.cohortGroup || '',
@@ -38,10 +38,10 @@ export const TeacherReceiptsView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-          Receipts
+          Kvitansiyalar
         </h2>
         <p className={`text-sm mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-          View and print payment receipts
+          To'lov kvitansiyalarini ko'ring va chop eting
         </p>
       </div>
 
@@ -50,7 +50,7 @@ export const TeacherReceiptsView: React.FC = () => {
           <div className="py-16 text-center">
             <FileText className={`w-12 h-12 mx-auto mb-3 ${theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}`} />
             <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-              No receipts found
+              Kvitansiyalar topilmadi
             </p>
           </div>
         ) : (
@@ -58,7 +58,7 @@ export const TeacherReceiptsView: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className={`border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
-                  {['Receipt #', 'Student', 'Amount', 'Date', 'Action'].map((h) => (
+                  {['Kvitansiya №', 'O\'quvchi', 'Summa', 'Sana', 'Amal'].map((h) => (
                     <th
                       key={h}
                       className={`px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}
@@ -92,7 +92,7 @@ export const TeacherReceiptsView: React.FC = () => {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${theme === 'dark' ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        View
+                        Ko'rish
                       </button>
                     </td>
                   </tr>

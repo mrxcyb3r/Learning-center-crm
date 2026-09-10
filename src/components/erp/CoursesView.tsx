@@ -478,7 +478,7 @@ export const CoursesView: React.FC = () => {
                     />
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                      Tavsiya etilgan (Featured)
+                      Tavsiya etilgan
                     </span>
                   </label>
                 </div>

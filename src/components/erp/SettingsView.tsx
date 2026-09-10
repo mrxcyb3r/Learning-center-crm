@@ -157,8 +157,8 @@ export const SettingsView: React.FC = () => {
         {([
           { id: 'center', label: "Markaz Ma'lumotlari", icon: Building },
           { id: 'staff', label: 'Xodimlar va Rollar', icon: Shield },
-          { id: 'audit', label: 'Tizim Jurnali (Audit Log)', icon: History },
-          { id: 'backup', label: 'Zaxira Nusxa (Backup)', icon: Download },
+          { id: 'audit', label: 'Tizim Jurnali', icon: History },
+          { id: 'backup', label: 'Zaxira Nusxa', icon: Download },
         ] as const).map((tab) => {
           const Icon = tab.icon;
           return (
@@ -309,7 +309,7 @@ export const SettingsView: React.FC = () => {
             <div>
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Shield className="w-4 h-4 text-amber-500" />
-                <span>Xodimlar va Huquqlar (Role-Based Access Control)</span>
+                <span>Xodimlar va Huquqlar</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Direktor, Administrator va O'qituvchilar uchun kirish ruxsatnomalari.
@@ -365,7 +365,7 @@ export const SettingsView: React.FC = () => {
             <div>
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <History className="w-4 h-4 text-sky-500" />
-                <span>Tizim Harakatlari Jurnali (Audit Log)</span>
+                <span>Tizim Harakatlari Jurnali</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Barcha o'chirish, tahrirlash va yangi yozuvlar tarixi avtomatik qayd etiladi.
@@ -436,7 +436,7 @@ export const SettingsView: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h4 className="text-base font-black text-slate-900 dark:text-white">
-                To'liq Zaxira Nusxani Yuklab Olish (Export)
+                To'liq Zaxira Nusxani Yuklab Olish
               </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Barcha o'quvchilar, ustozlar, guruhlar, to'lovlar, xarajatlar va CMS matnlarini JSON formatida yuklab oling.
@@ -455,7 +455,7 @@ export const SettingsView: React.FC = () => {
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h4 className="text-base font-black text-slate-900 dark:text-white">
-                Zaxira Nusxadan Qayta Tiklash (Restore)
+                Zaxira Nusxadan Qayta Tiklash
               </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Avval eksport qilingan JSON faylni yuklang. Barcha ma'lumotlar avtomatik yangilanadi.

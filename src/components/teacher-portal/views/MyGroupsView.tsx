@@ -360,7 +360,7 @@ export const MyGroupsView: React.FC = () => {
             Guruhlar topilmadi
           </h3>
           <p className="text-xs text-slate-500">
-            {searchQuery ? 'Qidiruv so'zini o\'zgartirib ko\'ring.' : 'Biriktirilgan guruhlar mavjud emas.'}
+            {searchQuery ? "Qidiruv so'zini o'zgartirib ko'ring." : "Biriktirilgan guruhlar mavjud emas."}
           </p>
         </div>
       ) : (

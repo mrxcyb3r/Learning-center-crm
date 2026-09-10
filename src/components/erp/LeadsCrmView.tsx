@@ -433,7 +433,7 @@ export const LeadsCrmView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Leads CRM
+            Murojaatlar CRM
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Arizalarni qabul qiling, kuzating va o'quvchiga aylantiring.

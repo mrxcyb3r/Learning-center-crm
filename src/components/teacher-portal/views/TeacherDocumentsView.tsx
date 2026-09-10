@@ -26,10 +26,10 @@ import { useTheme } from '../../../context/ThemeContext';
 import { TeacherDocument } from '../../../types/teacher';
 
 const DOC_TYPES: { value: TeacherDocument['type']; label: string; icon: React.ReactNode }[] = [
-  { value: 'certificate', label: 'Certificate', icon: <Award className="w-4 h-4" /> },
-  { value: 'diploma', label: 'Diploma', icon: <Award className="w-4 h-4" /> },
-  { value: 'teaching_material', label: 'Teaching Material', icon: <BookOpen className="w-4 h-4" /> },
-  { value: 'other', label: 'Other', icon: <FileText className="w-4 h-4" /> },
+  { value: 'certificate', label: 'Sertifikat', icon: <Award className="w-4 h-4" /> },
+  { value: 'diploma', label: 'Diplom', icon: <Award className="w-4 h-4" /> },
+  { value: 'teaching_material', label: 'O\'quv material', icon: <BookOpen className="w-4 h-4" /> },
+  { value: 'other', label: 'Boshqa', icon: <FileText className="w-4 h-4" /> },
 ];
 
 function getDocTypeBadgeClass(type: string) {
@@ -98,11 +98,11 @@ export const TeacherDocumentsView: React.FC = () => {
 
   const handleUpload = async () => {
     if (!formName.trim()) {
-      toast.error('Document name is required');
+      toast.error('Hujjat nomi kiritilishi shart');
       return;
     }
     if (!formUrl.trim()) {
-      toast.error('Document URL is required');
+      toast.error('Hujjat manzili (URL) kiritilishi shart');
       return;
     }
     try {
@@ -114,23 +114,23 @@ export const TeacherDocumentsView: React.FC = () => {
         visibleToAdmin: formVisible,
         teacherId: teacherUid,
       });
-      toast.success('Document uploaded');
+      toast.success('Hujjat yuklandi');
       setFormName('');
       setFormType('certificate');
       setFormUrl('');
       setFormVisible(true);
       setShowUploadForm(false);
     } catch {
-      toast.error('Failed to upload document');
+      toast.error('Hujjatni yuklashda xatolik');
     }
   };
 
   const handleDelete = async (docId: string) => {
     try {
       await deleteDoc(doc(db, 'teacher_documents', docId));
-      toast.success('Document deleted');
+      toast.success('Hujjat o\'chirildi');
     } catch {
-      toast.error('Failed to delete document');
+      toast.error('Hujjatni o\'chirishda xatolik');
     }
   };
 
@@ -166,14 +166,14 @@ export const TeacherDocumentsView: React.FC = () => {
                 theme === 'dark' ? 'text-white' : 'text-slate-900'
               }`}
             >
-              Documents
+              Hujjatlar
             </h2>
             <p
               className={`text-xs font-semibold ${
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
+              {documents.length} ta hujjat yuklandi
             </p>
           </div>
         </div>
@@ -182,7 +182,7 @@ export const TeacherDocumentsView: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 text-white text-xs font-bold hover:bg-indigo-600 transition cursor-pointer"
         >
           {showUploadForm ? <X className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
-          {showUploadForm ? 'Cancel' : 'Upload Document'}
+          {showUploadForm ? 'Bekor qilish' : 'Hujjat yuklash'}
         </button>
       </div>
 
@@ -202,7 +202,7 @@ export const TeacherDocumentsView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Document Name
+                Hujjat nomi
               </label>
               <input
                 type="text"
@@ -223,7 +223,7 @@ export const TeacherDocumentsView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Document Type
+                Hujjat turi
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {DOC_TYPES.map((dt) => (
@@ -251,7 +251,7 @@ export const TeacherDocumentsView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Document URL
+                Hujjat manzili (URL)
               </label>
               <input
                 type="url"
@@ -285,7 +285,7 @@ export const TeacherDocumentsView: React.FC = () => {
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  {formVisible ? 'Visible to admin' : 'Hidden from admin'}
+                  {formVisible ? 'Admin uchun ko\'rinadigan' : 'Admin uchun yashirin'}
                 </span>
               </div>
 
@@ -293,7 +293,7 @@ export const TeacherDocumentsView: React.FC = () => {
                 onClick={handleUpload}
                 className="px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition cursor-pointer"
               >
-                Save Document
+                Hujjatni saqlash
               </button>
             </div>
           </div>
@@ -334,14 +334,14 @@ export const TeacherDocumentsView: React.FC = () => {
               theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
             }`}
           >
-            No documents uploaded
+            Hujjatlar yuklanmagan
           </p>
           <p
             className={`text-xs mt-1 ${
               theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
             }`}
           >
-            Upload certificates, diplomas, or teaching materials.
+            Sertifikatlarni, diplomlarni yoki o'quv materiallarini yuklang.
           </p>
         </div>
       ) : (
@@ -428,7 +428,7 @@ export const TeacherDocumentsView: React.FC = () => {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExternalLink className="w-3 h-3" />
-                  Open document
+                  Hujjatni ochish
                 </a>
               )}
             </div>

@@ -246,7 +246,7 @@ export const TeachersView: React.FC = () => {
           <div className="text-2xl font-black text-amber-500 mt-1">
             {teachers.filter((t) => t.isPublic !== false).length} ta
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Public landing pageda faol</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">Bosh sahifada faol</span>
         </div>
       </div>
 

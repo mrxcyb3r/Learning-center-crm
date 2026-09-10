@@ -234,8 +234,8 @@ export const PaymentsView: React.FC = () => {
             className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
             <option value="All">Barcha holatlar</option>
-            <option value="Completed">Faol (Completed)</option>
-            <option value="Voided">Bekor qilingan (Voided)</option>
+            <option value="Completed">Faol</option>
+            <option value="Voided">Bekor qilingan</option>
           </select>
         </div>
       </div>
@@ -320,7 +320,7 @@ export const PaymentsView: React.FC = () => {
                         <button
                           onClick={() => handleVoidPayment(p.id, p.studentName)}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                          title="Bekor qilish (Void)"
+                          title="Bekor qilish"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -538,7 +538,7 @@ export const PaymentsView: React.FC = () => {
                 className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
-                <span>Chop etish (Print)</span>
+                <span>Chop etish</span>
               </button>
             </div>
           </div>

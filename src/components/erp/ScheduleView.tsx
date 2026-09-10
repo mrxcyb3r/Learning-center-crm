@@ -168,7 +168,7 @@ export const ScheduleView: React.FC = () => {
             Guruhlar va Dars Jadvali ({schedule.length})
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Haftalik xonalar bandligi, faol guruhlar ro'yxati va bepul sinov darslari (Trial) jadvali.
+            Haftalik xonalar bandligi, faol guruhlar ro'yxati va bepul sinov darslari jadvali.
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export const ScheduleView: React.FC = () => {
             {occupancyPercent}%
           </div>
           <div>
-            <span className="text-xs text-slate-400 font-medium">O'quv Xonalari Sig'imi (Occupancy)</span>
+            <span className="text-xs text-slate-400 font-medium">O'quv Xonalari Sig'imi</span>
             <div className="text-lg font-black text-slate-900 dark:text-white">
               {totalEnrolled} / {totalCapacity} O'rin Band ({totalCapacity - totalEnrolled} bo'sh joy)
             </div>
@@ -247,7 +247,7 @@ export const ScheduleView: React.FC = () => {
                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                     }`}
                   >
-                    {item.type === 'Trial Lesson' ? 'Sinov Darsi (Trial)' : 'Asosiy Guruh'}
+                    {item.type === 'Trial Lesson' ? 'Sinov Darsi' : 'Asosiy Guruh'}
                   </span>
                   <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
                     {item.time}
@@ -497,7 +497,7 @@ export const ScheduleView: React.FC = () => {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                   >
                     <option value="Regular">Asosiy O'quv Guruhi</option>
-                    <option value="Trial Lesson">Sinov Darsi (Trial)</option>
+                    <option value="Trial Lesson">Sinov Darsi</option>
                     <option value="Exam">Imtihon / Mock Test Guruhi</option>
                   </select>
                 </div>

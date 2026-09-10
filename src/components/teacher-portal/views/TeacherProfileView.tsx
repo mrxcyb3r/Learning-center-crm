@@ -82,7 +82,7 @@ export const TeacherProfileView: React.FC = () => {
 
   const handleAddSocialLink = () => {
     if (!newUrl.trim()) {
-      toast.error('URL is required');
+      toast.error('Manzil (URL) kiritilishi shart');
       return;
     }
     setSocialLinks([...socialLinks, { platform: newPlatform, url: newUrl.trim() }]);
@@ -106,9 +106,9 @@ export const TeacherProfileView: React.FC = () => {
         socialLinks,
         updatedAt: new Date().toISOString(),
       });
-      toast.success('Profile updated successfully');
+      toast.success('Profil muvaffaqiyatli yangilandi');
     } catch {
-      toast.error('Failed to update profile');
+      toast.error('Profilni yangilashda xatolik');
     } finally {
       setIsSaving(false);
     }
@@ -133,14 +133,14 @@ export const TeacherProfileView: React.FC = () => {
               theme === 'dark' ? 'text-white' : 'text-slate-900'
             }`}
           >
-            My Profile
+            Mening profilim
           </h2>
           <p
             className={`text-xs font-semibold ${
               theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            Manage your public profile information
+            Ommaviy profilingiz ma'lumotlarini boshqaring
           </p>
         </div>
       </div>
@@ -184,7 +184,7 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Display Name
+                Ko'rinadigan ism
               </label>
               <input
                 type="text"
@@ -205,7 +205,7 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Photo URL
+                Rasm manzili (URL)
               </label>
               <input
                 type="url"
@@ -236,7 +236,7 @@ export const TeacherProfileView: React.FC = () => {
             theme === 'dark' ? 'text-white' : 'text-slate-900'
           }`}
         >
-          Account Info
+          Hisob ma'lumotlari
         </h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Email
+                Elektron pochta
               </p>
               <p
                 className={`text-sm font-semibold ${
@@ -278,14 +278,14 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Role
+                Rol
               </p>
               <p
                 className={`text-sm font-semibold ${
                   theme === 'dark' ? 'text-white' : 'text-slate-900'
                 }`}
               >
-                Teacher
+                O'qituvchi
               </p>
             </div>
           </div>
@@ -305,7 +305,7 @@ export const TeacherProfileView: React.FC = () => {
             theme === 'dark' ? 'text-white' : 'text-slate-900'
           }`}
         >
-          Additional Info
+          Qo'shimcha ma'lumot
         </h3>
         <div className="space-y-3">
           <div>
@@ -314,7 +314,7 @@ export const TeacherProfileView: React.FC = () => {
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              Phone Number
+              Telefon raqami
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -338,12 +338,12 @@ export const TeacherProfileView: React.FC = () => {
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              Bio
+              Tarjimai hol
             </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell students about your experience..."
+              placeholder="O'quvchilarga tajribangiz haqida aytib bering..."
               rows={3}
               className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold outline-none transition resize-none ${
                 theme === 'dark'
@@ -369,7 +369,7 @@ export const TeacherProfileView: React.FC = () => {
               theme === 'dark' ? 'text-white' : 'text-slate-900'
             }`}
           >
-            Social Links
+            Ijtimoiy tarmoqlar
           </h3>
           <Link2
             className={`w-4 h-4 ${
@@ -484,14 +484,14 @@ export const TeacherProfileView: React.FC = () => {
                 theme === 'dark' ? 'text-white' : 'text-slate-900'
               }`}
             >
-              Public Profile
+              Ommaviy profil
             </h3>
             <p
               className={`text-xs font-semibold ${
                 theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
               }`}
             >
-              Allow others to view your profile
+              Boshqalarga profilingizni ko'rishga ruxsat berish
             </p>
           </div>
           <button
@@ -523,7 +523,7 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'
                 }`}
               >
-                Public profile is enabled
+                Ommaviy profil yoqilgan
               </span>
             </div>
             <a
@@ -537,7 +537,7 @@ export const TeacherProfileView: React.FC = () => {
               }`}
             >
               <ExternalLink className="w-3 h-3" />
-              View public profile
+              Ommaviy profilni ko'rish
             </a>
           </div>
         )}
@@ -551,7 +551,7 @@ export const TeacherProfileView: React.FC = () => {
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="w-4 h-4" />
-          {isSaving ? 'Saving...' : 'Save Profile'}
+          {isSaving ? 'Saqlanmoqda...' : 'Profilni saqlash'}
         </button>
       </div>
     </div>

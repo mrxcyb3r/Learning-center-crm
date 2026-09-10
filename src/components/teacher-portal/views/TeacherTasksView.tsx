@@ -80,7 +80,7 @@ export const TeacherTasksView: React.FC = () => {
 
   const handleAddTask = async () => {
     if (!newTitle.trim()) {
-      toast.error('Title is required');
+      toast.error('Sarlavha kiritilishi shart');
       return;
     }
     try {
@@ -92,13 +92,13 @@ export const TeacherTasksView: React.FC = () => {
         createdAt: new Date().toISOString(),
         teacherId: teacherUid,
       });
-      toast.success('Task added');
+      toast.success('Vazifa qo\'shildi');
       setNewTitle('');
       setNewDescription('');
       setNewDueDate('');
       setShowAddForm(false);
     } catch {
-      toast.error('Failed to add task');
+      toast.error('Vazifani qo\'shishda xatolik');
     }
   };
 
@@ -108,16 +108,16 @@ export const TeacherTasksView: React.FC = () => {
         status: task.status === 'completed' ? 'pending' : 'completed',
       });
     } catch {
-      toast.error('Failed to update task');
+      toast.error('Vazifani yangilashda xatolik');
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteDoc(doc(db, 'teacher_tasks', taskId));
-      toast.success('Task deleted');
+      toast.success('Vazifa o\'chirildi');
     } catch {
-      toast.error('Failed to delete task');
+      toast.error('Vazifani o\'chirishda xatolik');
     }
   };
 
@@ -193,7 +193,7 @@ export const TeacherTasksView: React.FC = () => {
           >
             <Calendar className="w-3 h-3" />
             {formatDate(task.dueDate)}
-            {isOverdue(task.dueDate) && task.status !== 'completed' && ' (Overdue)'}
+            {isOverdue(task.dueDate) && task.status !== 'completed' && ' (Muddati o\'tgan)'}
           </span>
         )}
       </div>
@@ -231,14 +231,14 @@ export const TeacherTasksView: React.FC = () => {
                 theme === 'dark' ? 'text-white' : 'text-slate-900'
               }`}
             >
-              My Tasks
+              Mening vazifalarim
             </h2>
             <p
               className={`text-xs font-semibold ${
                 theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              {todayTasks.length} today &middot; {upcomingTasks.length} upcoming
+              {todayTasks.length} bugun &middot; {upcomingTasks.length} kelgusi
             </p>
           </div>
         </div>
@@ -247,7 +247,7 @@ export const TeacherTasksView: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white text-xs font-bold hover:bg-purple-600 transition cursor-pointer"
         >
           {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showAddForm ? 'Cancel' : 'Add Task'}
+          {showAddForm ? 'Bekor qilish' : 'Vazifa qo\'shish'}
         </button>
       </div>
 
@@ -265,7 +265,7 @@ export const TeacherTasksView: React.FC = () => {
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Task title *"
+              placeholder="Vazifa sarlavhasi *"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold outline-none transition ${
                 theme === 'dark'
                   ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-purple-500'
@@ -276,7 +276,7 @@ export const TeacherTasksView: React.FC = () => {
               type="text"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Description (optional)"
+              placeholder="Tavsif (ixtiyoriy)"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition ${
                 theme === 'dark'
                   ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-purple-500'
@@ -298,7 +298,7 @@ export const TeacherTasksView: React.FC = () => {
                 onClick={handleAddTask}
                 className="px-5 py-2.5 rounded-xl bg-purple-500 text-white text-sm font-bold hover:bg-purple-600 transition cursor-pointer"
               >
-                Save
+                Saqlash
               </button>
             </div>
           </div>
@@ -339,14 +339,14 @@ export const TeacherTasksView: React.FC = () => {
               theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
             }`}
           >
-            No tasks yet
+            Hozircha vazifalar yo'q
           </p>
           <p
             className={`text-xs mt-1 ${
               theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
             }`}
           >
-            Click "Add Task" to get started.
+            Boshlash uchun "Vazifa qo'shish" tugmasini bosing.
           </p>
         </div>
       ) : (
@@ -361,7 +361,7 @@ export const TeacherTasksView: React.FC = () => {
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Today's Tasks
+                  Bugungi vazifalar
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black">
                   {todayTasks.length}
@@ -381,7 +381,7 @@ export const TeacherTasksView: React.FC = () => {
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Upcoming Tasks
+                  Kelgusi vazifalar
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-black">
                   {upcomingTasks.length}
@@ -401,7 +401,7 @@ export const TeacherTasksView: React.FC = () => {
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Completed
+                  Yakunlangan
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black">
                   {completedTasks.length}

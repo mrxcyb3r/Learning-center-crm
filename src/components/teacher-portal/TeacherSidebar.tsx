@@ -66,18 +66,18 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
       <div className={`h-16 flex items-center ${collapsed ? 'justify-center px-2' : 'px-5'} border-b ${
         theme === 'dark' ? 'border-slate-800' : 'border-slate-200'
       }`}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/20 flex-shrink-0">
-          T
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-emerald-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-amber-500/20 flex-shrink-0">
+          R
         </div>
         {!collapsed && (
           <div className="ml-3 overflow-hidden">
             <span className={`text-sm font-black tracking-tight block leading-none ${
               theme === 'dark' ? 'text-white' : 'text-slate-900'
             }`}>
-              TEACHER
+              RENESSANS
             </span>
-            <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">
-              Portal
+            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
+              O'qituvchi
             </span>
           </div>
         )}

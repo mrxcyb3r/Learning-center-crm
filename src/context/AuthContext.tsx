@@ -16,6 +16,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
 import { UserRole, UserProfile } from '../types';
+import { DEMO_ACCOUNTS } from '../config/demo';
 
 export const SUPER_ADMIN_UID = 'CI1sJzLxSrQHvvCwFQnHqeVHxrs2';
 export const SUPER_ADMIN_UUID = SUPER_ADMIN_UID;
@@ -336,12 +337,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const isSuperAdmin = requestedRole === 'superadmin';
-      const uid = isSuperAdmin ? SUPER_ADMIN_UUID : `demo_${requestedRole}_${Date.now().toString(36)}`;
+      const demoIdentity =
+        requestedRole === 'admin' ? DEMO_ACCOUNTS.admin : requestedRole === 'teacher' ? DEMO_ACCOUNTS.teacher : null;
+      const uid = isSuperAdmin ? SUPER_ADMIN_UUID : demoIdentity?.uid ?? `demo_${requestedRole}_${Date.now().toString(36)}`;
       
       const roleProfiles: Record<UserRole, { name: string; email: string }> = {
         superadmin: { name: 'Isomiddin SuperAdmin', email: 'isomiddin@camelot.lc' },
-        admin: { name: 'Center Admin Manager', email: 'admin@camelot.lc' },
-        teacher: { name: 'Mr. Javohir (IELTS 8.5)', email: 'teacher@camelot.lc' },
+        admin: { name: DEMO_ACCOUNTS.admin.displayName, email: DEMO_ACCOUNTS.admin.email },
+        teacher: { name: DEMO_ACCOUNTS.teacher.displayName, email: DEMO_ACCOUNTS.teacher.email },
         student: { name: 'Jasur Rahimov', email: 'jasur@camelot.lc' },
         guest: { name: 'Guest User', email: 'guest@camelot.lc' }
       };

@@ -136,7 +136,7 @@ export const TeacherDocumentsView: React.FC = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
+      return new Date(dateStr).toLocaleDateString('uz-UZ', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -208,7 +208,7 @@ export const TeacherDocumentsView: React.FC = () => {
                 type="text"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="e.g. IELTS Teaching Certificate"
+                placeholder="Masalan: Sertifikat yoki hujjat nomi"
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold outline-none transition ${
                   theme === 'dark'
                     ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'

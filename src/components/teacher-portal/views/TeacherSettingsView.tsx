@@ -51,7 +51,7 @@ export const TeacherSettingsView: React.FC = () => {
   const [lessonReminders, setLessonReminders] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
 
-  const [language, setLanguage] = useState<'UZ' | 'EN' | 'RU'>('EN');
+  const [language, setLanguage] = useState<'UZ' | 'EN' | 'RU'>('UZ');
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {

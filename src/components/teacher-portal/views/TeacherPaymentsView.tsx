@@ -264,7 +264,7 @@ export const TeacherPaymentsView: React.FC = () => {
             </div>
 
             <div className={`flex items-center gap-1 px-3 py-2 rounded-xl border text-sm ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-              <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>to</span>
+              <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>gacha</span>
               <input
                 type="date"
                 value={filterDateTo}

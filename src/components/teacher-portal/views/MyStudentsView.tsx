@@ -67,7 +67,7 @@ const StudentDetailPanel: React.FC<{
         .slice(0, 10)
                 .map((a) => ({
                   date: a.date,
-                  status: (a.records[student.id] ?? 'N/A') as string | { status: string },
+                  status: (a.records[student.id] ?? 'Kelmagan') as string | { status: string },
                 })),
     [attendance, student.id, student.groupId]
   );

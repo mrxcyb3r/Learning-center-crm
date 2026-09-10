@@ -74,7 +74,7 @@ export const TeacherAttendanceView: React.FC = () => {
       .slice(0, 5)
       .map(([sid, count]) => {
         const student = myStudents.find((s) => s.id === sid);
-        return { name: student?.fullName || 'Unknown', count };
+        return { name: student?.fullName || "Noma'lum", count };
       });
 
     return { totalLessons, totalPresent, totalLate, totalAbsent, totalExcused, attendanceRate, mostAbsent };
@@ -339,7 +339,7 @@ export const TeacherAttendanceView: React.FC = () => {
                   </span>
                 </div>
                 <span className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-500 text-xs font-black border border-rose-500/20">
-                  {student.count} {t('marta absent', 'absences', 'отсутствий')}
+                  {student.count} {t('marta kelmagan', 'absences', 'отсутствий')}
                 </span>
               </div>
             ))}

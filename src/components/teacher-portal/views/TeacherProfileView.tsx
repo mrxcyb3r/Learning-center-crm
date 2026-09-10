@@ -260,7 +260,7 @@ export const TeacherProfileView: React.FC = () => {
                   theme === 'dark' ? 'text-white' : 'text-slate-900'
                 }`}
               >
-                {currentUser?.email || 'N/A'}
+                {currentUser?.email || "Ko'rsatilmagan"}
               </p>
             </div>
           </div>

@@ -22,8 +22,11 @@ const SUBJECT_BADGE_COLORS: Record<string, string> = {
   ielts: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
   cefr: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
   english: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  ingliz: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
   kids: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
   math: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  matematika: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  fizika: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
   mental: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
   physics: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
   science: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
@@ -247,7 +250,7 @@ const GroupDetail: React.FC<{
           >
             <Clock className="w-8 h-8 text-amber-500 mx-auto mb-3" />
             <h4 className={`text-sm font-bold mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              Schedule
+              Dars Jadvali
             </h4>
             <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
               {group.scheduleTime || 'Jadval belgilanmagan'}

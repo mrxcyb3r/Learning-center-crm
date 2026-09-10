@@ -1422,6 +1422,59 @@ export async function seedFirestoreIfEmpty() {
       });
     }
 
+    // 6.5 Seed additional teacher notifications (recipientRole = 'teacher')
+    if (notifSnap.empty) {
+      const tsNow = Date.now();
+      const teacherNotifs = [
+        { category: 'schedule_change', title: "Haftalik jadval o'zgarishi", description: "DTM 1-guruhining dushanba darsi 14:00 dan 15:00 ga ko'chirildi.", createdAt: new Date(tsNow - 3600000 * 1).toISOString() },
+        { category: 'announcement', title: 'Haftalik diagnostik test', description: 'Hafta oxiri diagnostik testi uchun materiallarni tayyorlang.', createdAt: new Date(tsNow - 3600000 * 8).toISOString() },
+        { category: 'student_issue', title: 'O\'quvchi qarzdorligi', description: '3 ta o\'quvchining to\'lov muddati o\'tgan. Davomat sahifasidan batafsil ko\'ring.', createdAt: new Date(tsNow - 3600000 * 18).toISOString() },
+      ];
+      for (const n of teacherNotifs) {
+        await createNotification({
+          ...n,
+          category: n.category as any,
+          recipientRole: 'teacher',
+          senderName: 'Renessans Center',
+          isRead: false,
+        });
+      }
+    }
+
+    // 6.6 Seed Teacher Tasks
+    const tasksSnap = await getDocs(collection(db, 'teacher_tasks'));
+    if (tasksSnap.empty) {
+      const tNow = Date.now();
+      const tasksData = [
+        { title: 'Davomatni yangilash', description: 'Bugungi DTM 1-guruh darsida davomatni to\'ldiring.', status: 'pending', priority: 'high', dueDate: new Date(tNow + 86400000).toISOString().split('T')[0], teacherId },
+        { title: 'Haftalik test natijalarini kiritish', description: 'Sesh/Pay/Shan guruhlari uchun haftalik test ballarini tizimga kiriting.', status: 'pending', priority: 'medium', dueDate: new Date(tNow + 2 * 86400000).toISOString().split('T')[0], teacherId },
+        { title: 'O\'quvchilar qarzdorligini tekshirish', description: 'Qarzdor o\'quvchilar ro\'yxatini tekshirib, ota-onalar bilan bog\'laning.', status: 'in_progress', priority: 'high', dueDate: new Date(tNow + 1 * 86400000).toISOString().split('T')[0], teacherId },
+        { title: 'Keyingi dars materialini tayyorlash', description: 'Milliy sertifikat guruhi uchun yakuniy tayyorlov materiallarini tayyorlang.', status: 'pending', priority: 'medium', dueDate: new Date(tNow + 3 * 86400000).toISOString().split('T')[0], teacherId },
+        { title: 'Guruh natijalarini ko\'rib chiqish', description: 'Shu oy barcha guruhlar uchun natijalar tahlilini tayyorlang.', status: 'completed', priority: 'low', dueDate: new Date(tNow - 1 * 86400000).toISOString().split('T')[0], teacherId },
+      ];
+      for (const task of tasksData) {
+        await addDoc(collection(db, 'teacher_tasks'), cleanData({
+          ...task,
+          createdAt: new Date(tNow - 3600000 * 10).toISOString(),
+        }));
+      }
+    }
+
+    // 6.7 Seed Teacher Documents
+    const docsSnap = await getDocs(collection(db, 'teacher_documents'));
+    if (docsSnap.empty) {
+      const tNow = Date.now();
+      const docsData = [
+        { title: 'Dars rejasi — DTM 1-guruh', category: 'curriculum', description: 'Haftalik DTM tayyorlov dars rejasi.', fileName: 'dtm-reja.pdf', fileSize: '245 KB', createdAt: new Date(tNow - 3600000 * 24 * 10).toISOString(), teacherId },
+        { title: 'Guruh jadvali — Q1 2026', category: 'schedule', description: 'Barcha guruhlar uchun birinchi chorak jadvali.', fileName: 'jadval-q1-2026.pdf', fileSize: '128 KB', createdAt: new Date(tNow - 3600000 * 24 * 15).toISOString(), teacherId },
+        { title: 'Davomat hisoboti — Yanvar 2026', category: 'report', description: 'Yanvar oyiga oid davomat statistikasi.', fileName: 'davomat-yanvar-2026.xlsx', fileSize: '89 KB', createdAt: new Date(tNow - 3600000 * 24 * 30).toISOString(), teacherId },
+        { title: 'Haftalik test — Algebra', category: 'test', description: 'Algebra bo\'yicha haftalik nazorat testi variantlari.', fileName: 'test-algebra-haftalik.pdf', fileSize: '176 KB', createdAt: new Date(tNow - 3600000 * 24 * 5).toISOString(), teacherId },
+      ];
+      for (const d of docsData) {
+        await addDoc(collection(db, 'teacher_documents'), cleanData(d));
+      }
+    }
+
     // 7. Seed Security Pins & Super Admin User Doc if empty
     const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
     if (!pinDoc.exists()) {
@@ -1446,6 +1499,24 @@ export async function seedFirestoreIfEmpty() {
       }
     } catch (e) {
       console.warn('Super Admin seed doc check notice:', e);
+    }
+
+    // Ensure demo teacher profile doc exists
+    try {
+      const teacherDoc = await getDoc(doc(db, 'users', teacherId));
+      if (!teacherDoc.exists()) {
+        await setDoc(doc(db, 'users', teacherId), {
+          uid: teacherId,
+          email: 'jasur@renessans.demo',
+          displayName: teacherName,
+          role: 'teacher',
+          phone: '+998 (99) 259-32-32',
+          bio: 'Matematika va fizika fanlari bo\'yicha tajribali o\'qituvchi. DTM va Milliy sertifikatga tayyorlov yo\'nalishi.',
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Demo teacher profile seed notice:', e);
     }
   } catch (err) {
     console.warn('seedFirestoreIfEmpty notice:', err);

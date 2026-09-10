@@ -124,7 +124,7 @@ export const TeacherTasksView: React.FC = () => {
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
     } catch {
       return dateStr;
     }

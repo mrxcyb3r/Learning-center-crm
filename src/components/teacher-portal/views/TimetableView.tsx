@@ -28,17 +28,17 @@ interface ParsedSchedule {
 }
 
 const DAY_MAP: Record<string, number> = {
-  mon: 1, monday: 1,
-  tue: 2, tuesday: 2,
-  wed: 3, wednesday: 3,
-  thu: 4, thursday: 4,
-  fri: 5, friday: 5,
-  sat: 6, saturday: 6,
-  sun: 0, sunday: 0,
+  mon: 1, monday: 1, dush: 1, dushanba: 1,
+  tue: 2, tuesday: 2, sesh: 2, seshanba: 2,
+  wed: 3, wednesday: 3, chor: 3, chorshanba: 3,
+  thu: 4, thursday: 4, pay: 4, payshanba: 4,
+  fri: 5, friday: 5, jum: 5, juma: 5,
+  sat: 6, saturday: 6, shan: 6, shanba: 6,
+  sun: 0, sunday: 0, yak: 0, yakshanba: 0,
 };
 
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_NAMES = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+const DAY_NAMES_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
 
 function parseSchedule(scheduleTime: string): ParsedSchedule {
   if (!scheduleTime) return { days: [], startTime: '09:00', endTime: '11:00', raw: scheduleTime };
@@ -61,12 +61,16 @@ function parseSchedule(scheduleTime: string): ParsedSchedule {
 
 function getSubjectColor(courseType: string): { bg: string; text: string; border: string; dot: string } {
   const ct = (courseType || '').toLowerCase();
-  if (ct.includes('ielts') || ct.includes('english') || ct.includes('cefr') || ct.includes('general english'))
+  if (ct.includes('ielts') || ct.includes('english') || ct.includes('cefr') || ct.includes('general english') || ct.includes('ingliz') || ct.includes('kids'))
     return { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20', dot: 'bg-blue-500' };
-  if (ct.includes('math') || ct.includes('sat'))
+  if (ct.includes('math') || ct.includes('sat') || ct.includes('matematika') || ct.includes('fizika') || ct.includes('dtm'))
     return { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20', dot: 'bg-amber-500' };
   if (ct.includes('physics'))
     return { bg: 'bg-purple-500/10', text: 'text-purple-500', border: 'border-purple-500/20', dot: 'bg-purple-500' };
+  if (ct.includes('ona tili') || ct.includes('adabiyot'))
+    return { bg: 'bg-pink-500/10', text: 'text-pink-500', border: 'border-pink-500/20', dot: 'bg-pink-500' };
+  if (ct.includes('mental') || ct.includes('arifmetika'))
+    return { bg: 'bg-cyan-500/10', text: 'text-cyan-500', border: 'border-cyan-500/20', dot: 'bg-cyan-500' };
   if (ct.includes('cyber') || ct.includes('it') || ct.includes('programming') || ct.includes('computer'))
     return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20', dot: 'bg-emerald-500' };
   return { bg: 'bg-slate-500/10', text: 'text-slate-500', border: 'border-slate-500/20', dot: 'bg-slate-500' };
@@ -218,7 +222,7 @@ export const TimetableView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                  {today.format('dddd, MMMM D, YYYY')}
+                  {DAY_NAMES_FULL[today.day()]}, {today.format('DD.MM.YYYY')}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {dailyLessons.length} {t('ta dars rejalashtirilgan', 'lessons scheduled', 'запланировано уроков')}
@@ -265,7 +269,7 @@ export const TimetableView: React.FC = () => {
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${colors.bg} ${colors.text} ${colors.border}`}>
-                              {entry.group.courseType || 'Course'}
+                              {entry.group.courseType || "Kurs"}
                             </span>
                           </div>
                           <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
@@ -479,7 +483,7 @@ export const TimetableView: React.FC = () => {
                       >
                         <div className="space-y-1">
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${colors.bg} ${colors.text} ${colors.border}`}>
-                            {entry.group.courseType || 'Course'}
+                            {entry.group.courseType || "Kurs"}
                           </span>
                           <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
                             {entry.group.name}

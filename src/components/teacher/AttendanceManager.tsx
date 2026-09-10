@@ -345,7 +345,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
               >
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.name} ({g.courseType || 'Course'})
+                    {g.name} ({g.courseType || 'Kurs'})
                   </option>
                 ))}
               </select>
@@ -509,7 +509,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                         }`}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Present</span>
+                        <span>Keldi</span>
                       </button>
 
                       {/* Late Pill */}
@@ -523,7 +523,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                         }`}
                       >
                         <Clock className="w-3.5 h-3.5" />
-                        <span>Late</span>
+                        <span>Kechikdi</span>
                       </button>
 
                       {/* Absent Pill */}
@@ -537,7 +537,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                         }`}
                       >
                         <XCircle className="w-3.5 h-3.5" />
-                        <span>Absent</span>
+                        <span>Kelmadi</span>
                       </button>
 
                       {/* Excused Pill */}
@@ -551,7 +551,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                         }`}
                       >
                         <ShieldAlert className="w-3.5 h-3.5" />
-                        <span>Excused</span>
+                        <span>Sababli kelmadi</span>
                       </button>
 
                     </div>
@@ -566,7 +566,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                       <div className="sm:col-span-4 flex items-center gap-2 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
                         <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                         <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 shrink-0">
-                          Late Mins:
+                          Kechikish (daq):
                         </span>
                         <input
                           type="number"
@@ -576,7 +576,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                           onChange={(e) => handleLateMinutesChange(st.id, Number(e.target.value))}
                           className="w-16 p-1 rounded-lg border border-amber-500/30 bg-white dark:bg-slate-900 font-extrabold text-xs text-amber-600 dark:text-amber-400 text-center focus:outline-none"
                         />
-                        <span className="text-[10px] font-bold text-amber-500">mins</span>
+                        <span className="text-[10px] font-bold text-amber-500">daq</span>
                       </div>
                     )}
 
@@ -588,7 +588,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
                           type="text"
                           value={studentState.note || ''}
                           onChange={(e) => handleNoteChange(st.id, e.target.value)}
-                          placeholder="Optional teacher note (e.g. Informed via Telegram beforehand, forgot notebook...)"
+                          placeholder="Izoh (masalan: Telegram orqali oldindan xabar bergan, daftarini unutgan...)"
                           className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
                         />
                       </div>

@@ -146,7 +146,7 @@ const filtered = categoryFilter === 'All'
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 block flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" /> Ustozlar Maoshi (Payroll)
+            <Users className="w-3.5 h-3.5" /> Ustozlar Maoshi
           </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCurrency(salarySum)}

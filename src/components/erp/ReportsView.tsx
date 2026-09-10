@@ -78,7 +78,7 @@ export const ReportsView: React.FC = () => {
           Hisobotlar va Tahliliy Ko'rsatkichlar
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Lidlar konversiyasi, ustozlar samaradorligi, o'quvchilar saqlanishi (retention) va sof foyda.
+          Lidlar konversiyasi, ustozlar samaradorligi, o'quvchilar saqlanishi va sof foyda.
         </p>
       </div>
 

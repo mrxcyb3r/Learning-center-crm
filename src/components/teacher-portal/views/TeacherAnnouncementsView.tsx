@@ -108,10 +108,10 @@ export const TeacherAnnouncementsView: React.FC = () => {
       const diffMins = Math.floor(diffMs / (1000 * 60));
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      if (diffMins < 1) return 'Just now';
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays < 7) return `${diffDays}d ago`;
+      if (diffMins < 1) return 'Hozirgina';
+      if (diffMins < 60) return `${diffMins} daqiqa oldin`;
+      if (diffHours < 24) return `${diffHours} soat oldin`;
+      if (diffDays < 7) return `${diffDays} kun oldin`;
       return date.toLocaleDateString();
     } catch {
       return dateStr;
@@ -138,7 +138,7 @@ export const TeacherAnnouncementsView: React.FC = () => {
                 theme === 'dark' ? 'text-white' : 'text-slate-900'
               }`}
             >
-              Announcements
+              E'lonlar
             </h2>
             <p
               className={`text-xs font-semibold ${
@@ -146,8 +146,8 @@ export const TeacherAnnouncementsView: React.FC = () => {
               }`}
             >
               {unreadCount > 0
-                ? `${unreadCount} unread announcement${unreadCount > 1 ? 's' : ''}`
-                : 'All caught up'}
+                ? `${unreadCount} ta o'qilmagan e'lon`
+                : 'Hammasi o\'qilgan'}
             </p>
           </div>
         </div>
@@ -221,7 +221,7 @@ export const TeacherAnnouncementsView: React.FC = () => {
               theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
             }`}
           >
-            No announcements found
+            E'lonlar topilmadi
           </p>
           <p
             className={`text-xs mt-1 ${
@@ -229,8 +229,8 @@ export const TeacherAnnouncementsView: React.FC = () => {
             }`}
           >
             {activeFilter === 'all'
-              ? 'When administrators publish announcements, they will appear here.'
-              : 'No announcements in this category.'}
+              ? 'Adminlar e\'lonlar chiqarganda, ular shu yerda paydo bo\'ladi.'
+              : 'Ushbu turkumda e\'lonlar yo\'q.'}
           </p>
         </div>
       ) : (

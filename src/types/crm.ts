@@ -72,6 +72,7 @@ export type TeacherStatus = 'Active' | 'On Leave' | 'Archived';
 
 export interface TeacherRecord {
   id: string;
+  uid?: string;
   name: string;
   firstName?: string;
   lastName?: string;

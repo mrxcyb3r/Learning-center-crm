@@ -69,6 +69,7 @@ export const INITIAL_TEACHERS: TeacherRecord[] = [
   },
   {
     id: 't-jasur',
+    uid: 'demo_teacher_001',
     name: 'Jasur Alimov',
     gender: 'male',
     subject: 'Matematika & Fizika',
@@ -524,6 +525,25 @@ export const INITIAL_SCHEDULE: GroupScheduleItem[] = [
     status: 'Active',
     displayOrder: 8,
   },
+  {
+    id: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh',
+    course: 'Matematika & Fizika',
+    courseId: 'c-matematika',
+    teacher: 'Jasur Alimov',
+    teacherId: 't-jasur',
+    branch: '1-Filial (Asosiy)',
+    room: '103-Xona',
+    days: 'Sesh / Pay / Shan',
+    time: '14:00 - 16:00',
+    startTime: '14:00',
+    endTime: '16:00',
+    maxCapacity: 16,
+    studentsCount: 12,
+    type: 'Regular',
+    status: 'Active',
+    displayOrder: 9,
+  },
 ];
 
 // Seed Students
@@ -547,7 +567,7 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     nextDueDate: '2026-10-10', notes: "Yakuniy imtihonga tayyor",
     isActive: true, status: 'Active', totalPaid: 2280000, balance: 0, attendanceRate: 92,
   },
-  // ── Matematika & Fizika (c-matematika, t-jasur) ── 1 demo student ──
+  // ── Matematika & Fizika (c-matematika, t-jasur) ── grp-03 students ──
   {
     id: 'st-03', fullName: 'Azizbek Toshmatov', name: 'Azizbek Toshmatov',
     phone: '+998 91 234 56 78', course: 'Matematika & Fizika', courseId: 'c-matematika',
@@ -556,6 +576,97 @@ export const INITIAL_STUDENTS: StudentRecord[] = [
     tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
     nextDueDate: '2026-10-15', notes: "TATU grantiga da'vogar, intizomli",
     isActive: true, status: 'Active', totalPaid: 3040000, balance: 0, attendanceRate: 95,
+  },
+  {
+    id: 'st-j01', fullName: 'Sardor Raximov', name: 'Sardor Raximov',
+    phone: '+998 90 555 12 34', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-03',
+    groupName: 'Matematika & Fizika — DTM 1-guruh', enrollmentDate: '2025-09-20',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-10-20', notes: 'Geometriya bo\'yicha kuchli',
+    isActive: true, status: 'Active', totalPaid: 2660000, balance: 0, attendanceRate: 91,
+  },
+  {
+    id: 'st-j02', fullName: 'Nilufar Xolmatova', name: 'Nilufar Xolmatova',
+    phone: '+998 93 666 23 45', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-03',
+    groupName: 'Matematika & Fizika — DTM 1-guruh', enrollmentDate: '2025-10-01',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Due', debtAmount: 380000,
+    nextDueDate: '2026-10-01', notes: 'Fizika fanidan qo\'shimcha mashg\'ulot talab qiladi',
+    isActive: true, status: 'Active', totalPaid: 2280000, balance: 380000, attendanceRate: 88,
+  },
+  {
+    id: 'st-j03', fullName: 'Javlon Ergashev', name: 'Javlon Ergashev',
+    phone: '+998 99 777 34 56', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-03',
+    groupName: 'Matematika & Fizika — DTM 1-guruh', enrollmentDate: '2025-10-15',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-10-15', notes: 'DTM uchun intensiv tayyorlanmoqda',
+    isActive: true, status: 'Active', totalPaid: 1900000, balance: 0, attendanceRate: 93,
+  },
+  {
+    id: 'st-j04', fullName: 'Gulnora Karimova', name: 'Gulnora Karimova',
+    phone: '+998 91 888 45 67', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-03',
+    groupName: 'Matematika & Fizika — DTM 1-guruh', enrollmentDate: '2025-11-01',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-11-01', notes: 'Matematika olimpiadasiga tayyorlanmoqda',
+    isActive: true, status: 'Active', totalPaid: 1520000, balance: 0, attendanceRate: 96,
+  },
+  {
+    id: 'st-j05', fullName: 'Timur Toshmatov', name: 'Timur Toshmatov',
+    phone: '+998 90 999 56 78', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-03',
+    groupName: 'Matematika & Fizika — DTM 1-guruh', enrollmentDate: '2025-11-10',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Overdue', debtAmount: 760000,
+    nextDueDate: '2026-09-10', notes: 'Ikki oy to\'lov qilmagan',
+    isActive: true, status: 'Active', totalPaid: 1140000, balance: 760000, attendanceRate: 78,
+  },
+  // ── Matematika & Fizika (c-matematika, t-jasur) ── grp-09 students ──
+  {
+    id: 'st-j06', fullName: 'Sherzod Mirzayev', name: 'Sherzod Mirzayev',
+    phone: '+998 97 111 67 89', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh', enrollmentDate: '2025-09-25',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-10-25', notes: 'DTM ga ikkinchi urinish',
+    isActive: true, status: 'Active', totalPaid: 2660000, balance: 0, attendanceRate: 90,
+  },
+  {
+    id: 'st-j07', fullName: 'Dilshod Turgunov', name: 'Dilshod Turgunov',
+    phone: '+998 93 222 78 90', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh', enrollmentDate: '2025-10-05',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-10-05', notes: 'Fizika olimpiadasiga tayyorlanmoqda',
+    isActive: true, status: 'Active', totalPaid: 2280000, balance: 0, attendanceRate: 94,
+  },
+  {
+    id: 'st-j08', fullName: 'Malika Nishonova', name: 'Malika Nishonova',
+    phone: '+998 90 333 89 01', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh', enrollmentDate: '2025-10-20',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Due', debtAmount: 380000,
+    nextDueDate: '2026-10-20', notes: 'Birinchi oy, to\'lov kutilmoqda',
+    isActive: true, status: 'Active', totalPaid: 1140000, balance: 380000, attendanceRate: 86,
+  },
+  {
+    id: 'st-j09', fullName: 'Otabek Mirzayev', name: 'Otabek Mirzayev',
+    phone: '+998 91 444 90 12', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh', enrollmentDate: '2025-11-01',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Paid', debtAmount: 0,
+    nextDueDate: '2026-11-01', notes: 'Toshkent davlat universitetiga nishonlilka',
+    isActive: true, status: 'Active', totalPaid: 1520000, balance: 0, attendanceRate: 97,
+  },
+  {
+    id: 'st-j10', fullName: 'Feruz Karimov', name: 'Feruz Karimov',
+    phone: '+998 99 555 01 23', course: 'Matematika & Fizika', courseId: 'c-matematika',
+    teacher: 'Jasur Alimov', teacherId: 't-jasur', groupId: 'grp-09',
+    groupName: 'Matematika & Fizika — DTM 2-guruh', enrollmentDate: '2025-11-05',
+    tuitionFee: 380000, monthlyFee: 380000, paymentStatus: 'Overdue', debtAmount: 760000,
+    nextDueDate: '2026-09-05', notes: 'O\'qishga qabul qilingan, lekin to\'lov jadvali buzilgan',
+    isActive: true, status: 'Active', totalPaid: 760000, balance: 760000, attendanceRate: 72,
   },
   // ── CEFR Ingliz Tili (c-cefr, t-malika) ── 1 demo student ──
   {
@@ -1157,6 +1268,63 @@ export const INITIAL_PAYMENTS: IncomePaymentRecord[] = [
     recordedBy: 'Dilnoza Rahimova', notes: "Plastik karta orqali to'lov",
     month: fmtIdxMonth(0).slice(0, 7),
   },
+  // ── Jasur Alimov (t-jasur) student payments ──
+  {
+    id: 'pay-21', studentId: 'st-j01', studentName: 'Sardor Raximov',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(2),
+    method: 'Cash', receiptNumber: 'REC-24921', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "Joriy oy to'lovi",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-22', studentId: 'st-j03', studentName: 'Javlon Ergashev',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(3),
+    method: 'Click', receiptNumber: 'REC-24922', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "Click orqali to'lov",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-23', studentId: 'st-j04', studentName: 'Gulnora Karimova',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(4),
+    method: 'Payme', receiptNumber: 'REC-24923', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "Payme orqali to'lov",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-24', studentId: 'st-j06', studentName: 'Sherzod Mirzayev',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(2),
+    method: 'Cash', receiptNumber: 'REC-24924', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "Grup-02 to'lovi",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-25', studentId: 'st-j07', studentName: 'Dilshod Turgunov',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(3),
+    method: 'Card', receiptNumber: 'REC-24925', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-26', studentId: 'st-j09', studentName: 'Otabek Mirzayev',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(5),
+    method: 'Cash', receiptNumber: 'REC-24926', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "",
+    month: fmtIdxMonth(0).slice(0, 7),
+  },
+  {
+    id: 'pay-27', studentId: 'st-j01', studentName: 'Sardor Raximov',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(2),
+    method: 'Cash', receiptNumber: 'REC-24927', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "O'tgan oy to'lovi",
+    month: fmtIdxMonth(1).slice(0, 7),
+  },
+  {
+    id: 'pay-28', studentId: 'st-j06', studentName: 'Sherzod Mirzayev',
+    course: 'Matematika & Fizika', amount: 380000, date: fmtIdxDate(3),
+    method: 'Click', receiptNumber: 'REC-24928', status: 'Completed',
+    recordedBy: 'Jasur Alimov', notes: "O'tgan oy to'lovi",
+    month: fmtIdxMonth(1).slice(0, 7),
+  },
 ];
 
 // Seed Expenses
@@ -1513,6 +1681,14 @@ class CrmService {
         studentsCount: studentsCount || 0,
       };
     });
+  }
+
+  public getTeacherByUid(uid: string): TeacherRecord | undefined {
+    return this.teachers.find((t) => t.uid === uid);
+  }
+
+  public getTeacherByName(name: string): TeacherRecord | undefined {
+    return this.teachers.find((t) => t.name.toLowerCase() === name.toLowerCase());
   }
 
   public addTeacher(teacher: Omit<TeacherRecord, 'id'>): TeacherRecord {

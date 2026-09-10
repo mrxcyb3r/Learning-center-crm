@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { User } from 'firebase/auth';
 import { useAuth } from './AuthContext';
 import { DEMO_MODE, DEMO_ACCOUNTS } from '../config/demo';
 import { getBusinessModel, setBusinessModel as saveBusinessModel } from '../config/business';
@@ -7,20 +6,11 @@ import {
   TeacherTab,
   BusinessModel,
   TeacherDashboardStats,
-  TeacherPayment,
-  TeacherAnnouncement,
-  TeacherTask,
-  TeacherDocument,
 } from '../types/teacher';
 import { Group, Student, Payment, AttendanceRecord } from '../types';
-import {
-  subscribeGroups,
-  subscribeStudents,
-  subscribePayments,
-  subscribeAttendance,
-  subscribeNotifications,
-  seedFirestoreIfEmpty,
-} from '../services/firestore';
+import { GroupScheduleItem, StudentRecord, IncomePaymentRecord } from '../types/crm';
+import { subscribeAttendance, subscribeNotifications, seedFirestoreIfEmpty } from '../services/firestore';
+import { crmService } from '../services/crmService';
 
 interface TeacherPortalContextType {
   teacherUid: string;
@@ -48,28 +38,93 @@ interface TeacherPortalContextType {
 
 const TeacherPortalContext = createContext<TeacherPortalContextType | undefined>(undefined);
 
+// ── Type mapping: crmService → Teacher portal types ──
+
+function mapScheduleToGroup(item: GroupScheduleItem): Group {
+  return {
+    id: item.id,
+    name: item.groupName,
+    courseType: item.course,
+    teacherId: item.teacherId || '',
+    teacherName: item.teacher,
+    scheduleTime: item.time,
+    room: item.room,
+    activeStudentsCount: item.studentsCount,
+    maxCapacity: item.maxCapacity,
+    status: item.status,
+  };
+}
+
+function mapStudentRecordToStudent(s: StudentRecord): Student {
+  const statusMap: Record<string, 'paid' | 'pending' | 'overdue'> = {
+    'Paid': 'paid',
+    'Due': 'pending',
+    'Overdue': 'overdue',
+  };
+  return {
+    id: s.id,
+    fullName: s.fullName || s.name || '',
+    phone: s.phone,
+    groupId: s.groupId || '',
+    groupName: s.groupName || '',
+    tuitionFee: s.monthlyFee || s.tuitionFee || 0,
+    paymentStatus: statusMap[s.paymentStatus] || 'pending',
+    lastPaymentDate: s.nextDueDate || '',
+    subjectCategory: s.course,
+    nextDueDate: s.nextDueDate,
+    attendanceRate: s.attendanceRate,
+  };
+}
+
+function mapPaymentToPortal(p: IncomePaymentRecord): Payment {
+  const statusMap: Record<string, 'paid' | 'pending' | 'refunded'> = {
+    'Completed': 'paid',
+    'Pending': 'pending',
+    'Voided': 'refunded',
+  };
+  return {
+    id: p.id,
+    studentId: p.studentId || '',
+    studentName: p.studentName,
+    amount: p.amount,
+    paymentMethod: p.method,
+    date: p.date,
+    recordedBy: p.recordedBy || '',
+    status: statusMap[p.status] || 'paid',
+    cohortGroup: p.course,
+    notes: p.notes,
+  };
+}
+
+// ── Today's day-of-week filter (Uzbek) ──
+
+const UZBEK_DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+
+function isGroupScheduledToday(daysField: string): boolean {
+  const todayIdx = new Date().getDay(); // 0=Sun, 1=Mon, ...
+  const todayAbbr = UZBEK_DAYS[todayIdx];
+  return daysField.toUpperCase().includes(todayAbbr.toUpperCase());
+}
+
+// ── Stats computation ──
+
 function computeStats(
-  groups: Group[],
-  students: Student[],
+  myGroups: Group[],
+  myStudents: Student[],
   payments: Payment[],
   attendance: AttendanceRecord[],
-  teacherUid: string
 ): TeacherDashboardStats {
-  const myGroups = groups.filter((g) => g.teacherId === teacherUid || g.teacherName);
-  const myStudentIds = new Set(
-    students.filter((s) => myGroups.some((g) => g.id === s.groupId)).map((s) => s.id)
-  );
+  const todayClasses = myGroups.filter((g) => isGroupScheduledToday(g.scheduleTime || g.name)).length;
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const myStudentIds = new Set(myStudents.map((s) => s.id));
 
   const monthPayments = payments.filter(
     (p) => p.date?.startsWith(currentMonth) && myStudentIds.has(p.studentId)
   );
 
-  const paidStudentIds = new Set(monthPayments.filter((p) => p.status === 'paid').map((p) => p.studentId));
-
-  const myStudents = students.filter((s) => myGroups.some((g) => g.id === s.groupId));
   const paidCount = myStudents.filter((s) => s.paymentStatus === 'paid').length;
   const unpaidCount = myStudents.length - paidCount;
 
@@ -88,8 +143,8 @@ function computeStats(
   });
 
   return {
-    todayClasses: myGroups.length,
-    upcomingClasses: myGroups.length,
+    todayClasses,
+    upcomingClasses: todayClasses,
     activeStudentCount: myStudents.length,
     activeGroupCount: myGroups.length,
     monthlyIncome: monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
@@ -103,15 +158,14 @@ function computeStats(
   };
 }
 
+// ── Provider ──
+
 export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, activeRole, loginAsDemoUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TeacherTab>('dashboard');
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [businessModel, setBusinessModelState] = useState<BusinessModel>(getBusinessModel());
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
   const isDemoMode = DEMO_MODE;
   const teacherUid = isDemoMode && !currentUser ? DEMO_ACCOUNTS.teacher.uid : currentUser?.uid || '';
@@ -123,31 +177,44 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [currentUser, activeRole, loginAsDemoUser]);
 
+  // Resolve teacher identity from crmService
+  const resolvedTeacher = useMemo(() => {
+    return crmService.getTeacherByUid(teacherUid) || crmService.getTeacherByName(teacherName);
+  }, [teacherUid, teacherName]);
+
+  const resolvedTeacherId = resolvedTeacher?.id || teacherUid;
+  const resolvedTeacherName = resolvedTeacher?.name || teacherName;
+
+  // Load core data from crmService (same source as Admin ERP)
+  const groups = useMemo(() => {
+    return crmService.getSchedule().map(mapScheduleToGroup);
+  }, []);
+
+  const students = useMemo(() => {
+    return crmService.getStudents().map(mapStudentRecordToStudent);
+  }, []);
+
+  const payments = useMemo(() => {
+    return crmService.getPayments().map(mapPaymentToPortal);
+  }, []);
+
+  // Subscribe to Firestore for attendance (only source of attendance records)
   useEffect(() => {
     if (!DEMO_MODE && !currentUser) return;
-
-    setIsLoading(true);
-    seedFirestoreIfEmpty().catch(() => {});
-
-    const unsub1 = subscribeGroups((data) => {
-      setGroups(data);
-      setIsLoading(false);
-    });
-    const unsub2 = subscribeStudents((data) => setStudents(data));
-    const unsub3 = subscribePayments((data) => setPayments(data));
-    const unsub4 = subscribeAttendance((data) => setAttendance(data));
-
-    return () => {
-      unsub1?.();
-      unsub2?.();
-      unsub3?.();
-      unsub4?.();
-    };
+    const unsub = subscribeAttendance((data) => setAttendance(data));
+    return () => unsub?.();
   }, [currentUser, isDemoMode]);
 
+  // Seed Firestore for teacher-specific features (tasks, documents, notifications)
+  useEffect(() => {
+    if (!DEMO_MODE && !currentUser) return;
+    seedFirestoreIfEmpty().catch(() => {});
+  }, [currentUser, isDemoMode]);
+
+  // Derive teacher-scoped data through relationships
   const myGroups = useMemo(
-    () => groups.filter((g) => g.teacherId === teacherUid || (!g.teacherId && g.teacherName === teacherName)),
-    [groups, teacherUid, teacherName]
+    () => groups.filter((g) => g.teacherId === resolvedTeacherId || g.teacherName === resolvedTeacherName),
+    [groups, resolvedTeacherId, resolvedTeacherName]
   );
 
   const myStudents = useMemo(
@@ -156,9 +223,17 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const stats = useMemo(
-    () => computeStats(groups, students, payments, attendance, teacherUid),
-    [groups, students, payments, attendance, teacherUid]
+    () => computeStats(myGroups, myStudents, payments, attendance),
+    [myGroups, myStudents, payments, attendance]
   );
+
+  const isLoadingState = useMemo(() => {
+    return groups.length === 0 && students.length === 0;
+  }, [groups, students]);
+
+  useEffect(() => {
+    setIsLoading(isLoadingState);
+  }, [isLoadingState]);
 
   const setBusinessModelHandler = useCallback((model: BusinessModel) => {
     setBusinessModelState(model);
@@ -167,16 +242,14 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refresh = useCallback(() => {
     setIsLoading(true);
-    seedFirestoreIfEmpty()
-      .then(() => setIsLoading(false))
-      .catch(() => setIsLoading(false));
+    setTimeout(() => setIsLoading(false), 300);
   }, []);
 
   return (
     <TeacherPortalContext.Provider
       value={{
         teacherUid,
-        teacherName,
+        teacherName: resolvedTeacherName,
         isDemoMode,
         businessModel,
         setBusinessModel: setBusinessModelHandler,

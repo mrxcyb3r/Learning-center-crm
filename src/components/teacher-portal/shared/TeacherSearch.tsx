@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Search, X, Users, UserCog, DollarSign, Calendar } from 'lucide-react';
-import { useTeacherPortal } from '../../context/TeacherPortalContext';
-import { useTheme } from '../../context/ThemeContext';
-import { TeacherTab } from '../../types/teacher';
+import { useTeacherPortal } from '../../../context/TeacherPortalContext';
+import { useTheme } from '../../../context/ThemeContext';
+import { TeacherTab } from '../../../types/teacher';
 
 interface TeacherSearchProps {
   onNavigate: (tab: TeacherTab) => void;

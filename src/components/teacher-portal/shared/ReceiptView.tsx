@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Printer, Download, X } from 'lucide-react';
-import { ReceiptData } from '../../types/teacher';
-import { DEMO_CENTER_NAME } from '../../config/demo';
+import { ReceiptData } from '../../../types/teacher';
+import { DEMO_CENTER_NAME } from '../../../config/demo';
 
 interface ReceiptViewProps {
   data: ReceiptData;

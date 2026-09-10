@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar, Users, DollarSign, CheckCircle, UserCog, MessageSquare, ArrowRight, AlertCircle, Bell } from 'lucide-react';
-import { useTeacherPortal } from '../../context/TeacherPortalContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTeacherPortal } from '../../../context/TeacherPortalContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { StatCard } from '../shared/StatCard';
-import { subscribeNotifications } from '../../services/firestore';
-import { AppNotification } from '../../types';
-import { TeacherTab } from '../../types/teacher';
+import { subscribeNotifications } from '../../../services/firestore';
+import { AppNotification } from '../../../types';
+import { TeacherTab } from '../../../types/teacher';
 
 export const TeacherDashboardView: React.FC = () => {
   const { stats, myGroups, myStudents, payments, setActiveTab, teacherUid } = useTeacherPortal();

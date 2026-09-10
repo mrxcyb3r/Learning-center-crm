@@ -95,7 +95,7 @@ export const TeacherAnnouncementsView: React.FC = () => {
       try {
         await markNotificationAsRead(notif.id);
       } catch {
-        toast.error('Failed to mark as read');
+        toast.error('O\'qilgan deb belgilashda xatolik');
       }
     }
   };

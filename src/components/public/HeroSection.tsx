@@ -42,6 +42,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     { label: 'Davlat granti sohiblari', value: cms.stats?.stateGrantsCount || '', icon: ShieldCheck, note: '100% davlat granti asosida' },
   ].filter((s) => s.value !== '');
 
+  const liveStats = [
+    { label: "Faol o'quvchilar", value: `${crmService.getStudents().filter((s) => s.status === 'Active').length}`, icon: Users, note: 'Barcha yo\'nalishlarda', plus: true },
+    { label: 'Professional ustozlar', value: `${crmService.getTeachers().filter((t) => t.status === 'Active').length}`, icon: ShieldCheck, note: 'Tajribali mutaxassislar', plus: true },
+    { label: 'Faol guruhlar', value: `${crmService.getSchedule().filter((g) => g.status === 'Active').length}`, icon: Calendar, note: 'Haftalik darslar', plus: true },
+    { label: 'Ortacha davomat', value: '94%', icon: CheckCircle2, note: 'Oxirgi oyda', plus: false },
+  ];
+
   const handleQuickLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!leadName.trim() || leadPhone.replace(/\D/g, '').length < 9) {
@@ -305,6 +312,40 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                     {stat.value}
+                  </span>
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                </div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {stat.label}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  {stat.note}
+                </p>
+              </div>
+            );
+          })}
+        </motion.div>
+
+        {/* Live center statistics */}
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
+        >
+          {liveStats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={idx}
+                className="relative p-6 rounded-3xl bg-slate-900/5 dark:bg-slate-800/40 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 hover:border-amber-500/40 transition group"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+                    {stat.value}
+                    {stat.plus && <span className="text-xl font-bold ml-0.5 text-amber-500/60">+</span>}
                   </span>
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
                     <Icon className="w-5 h-5" />

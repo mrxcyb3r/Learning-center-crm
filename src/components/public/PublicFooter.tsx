@@ -31,7 +31,7 @@ export const PublicFooter: React.FC = () => {
               </div>
             </div>
             <p className="text-xs leading-relaxed text-slate-400">
-              Yangioboddagi zamonaviy o'quv markazi. Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha kafolatlangan ta'lim.
+              Yangioboddagi zamonaviy o'quv markazi. Milliy sertifikat, DTM, CEFR va maktab fanlari bo'yicha 100% natijaga yo'naltirilgan ta'lim.
             </p>
             <div className="pt-2 flex items-center gap-3 text-white">
               <a

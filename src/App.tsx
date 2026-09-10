@@ -21,21 +21,20 @@ import { CourseDetailPage } from './pages/CourseDetailPage';
 import { TeacherPage } from './pages/TeacherPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
 import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
+import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { TeacherLoginPage } from './pages/teacher/TeacherLoginPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { ParticleBackground } from './components/UI/ParticleBackground';
 import { SEOHead } from './components/SEOHead';
 import { preloadImages } from './utils/performance';
 import { APP_ASSETS } from './constants/assets';
-import { demoData } from './services/demoData';
-import {
-  ShieldCheck,
-  Loader2
-} from 'lucide-react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Main Application Component with Router
 // ---------------------------------------------------------------------------
 function MainAppRoutes() {
-  const { isLoading } = useAuth();
+  const { isLoading, role } = useAuth();
 
   useEffect(() => {
     AOS.init({
@@ -53,10 +52,6 @@ function MainAppRoutes() {
       APP_ASSETS.studentMockup,
       APP_ASSETS.teacherMockup
     ]);
-  }, []);
-
-  useEffect(() => {
-    demoData.init();
   }, []);
 
   if (isLoading) {
@@ -84,15 +79,37 @@ function MainAppRoutes() {
       <Route path="/courses/:slug" element={<CourseDetailPage />} />
       <Route path="/teachers/:slug" element={<TeacherPage />} />
 
-      {/* Center ERP & Leads CRM */}
-      <Route path="/admin/*" element={<CenterErpApp />} />
-      <Route path="/dashboard" element={<Navigate to="/dashboard/admin" replace />} />
-      <Route path="/dashboard/admin/*" element={<CenterErpApp />} />
-      <Route path="/dashboard/student/*" element={<CenterErpApp />} />
-      <Route path="/dashboard/teacher/*" element={<CenterErpApp />} />
+      {/* Login Pages */}
+      <Route path="/login/admin" element={<AdminLoginPage />} />
+      <Route path="/login/teacher" element={<TeacherLoginPage />} />
 
-      {/* Teacher Portal */}
-      <Route path="/teacher/*" element={<TeacherPortalApp />} />
+      {/* Admin Portal - Protected */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute requiredRole="admin" fallbackPath="/login/admin">
+            <CenterErpApp />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/admin/*"
+        element={
+          <ProtectedRoute requiredRole="admin" fallbackPath="/login/admin">
+            <CenterErpApp />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Portal - Protected */}
+      <Route
+        path="/teacher/*"
+        element={
+          <ProtectedRoute requiredRole="teacher" fallbackPath="/login/teacher">
+            <TeacherPortalApp />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch-All Fallback Redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

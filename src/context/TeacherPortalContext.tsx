@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
-import { DEMO_MODE, DEMO_ACCOUNTS } from '../config/demo';
 import { getBusinessModel, setBusinessModel as saveBusinessModel } from '../config/business';
 import {
   TeacherTab,
@@ -8,14 +7,11 @@ import {
   TeacherDashboardStats,
 } from '../types/teacher';
 import { Group, Student, Payment, AttendanceRecord } from '../types';
-import { GroupScheduleItem, StudentRecord, IncomePaymentRecord } from '../types/crm';
-import { subscribeAttendance, subscribeNotifications, seedFirestoreIfEmpty } from '../services/firestore';
-import { crmService } from '../services/crmService';
+import { groupsService, studentsService, paymentsService, attendanceService, userService } from '../services/repository';
 
 interface TeacherPortalContextType {
   teacherUid: string;
   teacherName: string;
-  isDemoMode: boolean;
   businessModel: BusinessModel;
   setBusinessModel: (model: BusinessModel) => void;
 
@@ -32,69 +28,12 @@ interface TeacherPortalContextType {
 
   stats: TeacherDashboardStats;
   isLoading: boolean;
+  error: string | null;
 
   refresh: () => void;
 }
 
 const TeacherPortalContext = createContext<TeacherPortalContextType | undefined>(undefined);
-
-// ── Type mapping: crmService → Teacher portal types ──
-
-function mapScheduleToGroup(item: GroupScheduleItem): Group {
-  return {
-    id: item.id,
-    name: item.groupName,
-    courseType: item.course,
-    teacherId: item.teacherId || '',
-    teacherName: item.teacher,
-    scheduleTime: item.time,
-    room: item.room,
-    activeStudentsCount: item.studentsCount,
-    maxCapacity: item.maxCapacity,
-    status: item.status,
-  };
-}
-
-function mapStudentRecordToStudent(s: StudentRecord): Student {
-  const statusMap: Record<string, 'paid' | 'pending' | 'overdue'> = {
-    'Paid': 'paid',
-    'Due': 'pending',
-    'Overdue': 'overdue',
-  };
-  return {
-    id: s.id,
-    fullName: s.fullName || s.name || '',
-    phone: s.phone,
-    groupId: s.groupId || '',
-    groupName: s.groupName || '',
-    tuitionFee: s.monthlyFee || s.tuitionFee || 0,
-    paymentStatus: statusMap[s.paymentStatus] || 'pending',
-    lastPaymentDate: s.nextDueDate || '',
-    subjectCategory: s.course,
-    nextDueDate: s.nextDueDate,
-    attendanceRate: s.attendanceRate,
-  };
-}
-
-function mapPaymentToPortal(p: IncomePaymentRecord): Payment {
-  const statusMap: Record<string, 'paid' | 'pending' | 'refunded'> = {
-    'Completed': 'paid',
-    'Pending': 'pending',
-    'Voided': 'refunded',
-  };
-  return {
-    id: p.id,
-    studentId: p.studentId || '',
-    studentName: p.studentName,
-    amount: p.amount,
-    paymentMethod: p.method,
-    date: p.date,
-    recordedBy: p.recordedBy || '',
-    status: statusMap[p.status] || 'paid',
-    cohortGroup: p.course,
-    notes: p.notes,
-  };
-}
 
 // ── Today's day-of-week filter (Uzbek) ──
 
@@ -165,79 +104,103 @@ function computeStats(
 // ── Provider ──
 
 export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, activeRole, loginAsDemoUser } = useAuth();
+  const { currentUser, role } = useAuth();
   const [activeTab, setActiveTab] = useState<TeacherTab>('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [businessModel, setBusinessModelState] = useState<BusinessModel>(getBusinessModel());
+  
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
-  const isDemoMode = DEMO_MODE;
-  const teacherUid = isDemoMode && !currentUser ? DEMO_ACCOUNTS.teacher.uid : currentUser?.uid || '';
-  const teacherName = isDemoMode && !currentUser ? DEMO_ACCOUNTS.teacher.displayName : currentUser?.displayName || 'Teacher';
+  const teacherUid = currentUser?.uid || '';
+  const teacherName = currentUser?.displayName || 'Teacher';
+  const teacherEmail = currentUser?.email || '';
 
+  // Load teacher profile and verify role
   useEffect(() => {
-    if (DEMO_MODE && !currentUser && (activeRole === 'guest' || !activeRole)) {
-      loginAsDemoUser('teacher').catch(() => {});
-    }
-  }, [currentUser, activeRole, loginAsDemoUser]);
+    if (!currentUser || role !== 'teacher') return;
 
-  // Resolve teacher identity from crmService
-  const resolvedTeacher = useMemo(() => {
-    return crmService.getTeacherByUid(teacherUid) || crmService.getTeacherByName(teacherName);
-  }, [teacherUid, teacherName]);
+    let mounted = true;
 
-  const resolvedTeacherId = resolvedTeacher?.id || teacherUid;
-  const resolvedTeacherName = resolvedTeacher?.name || teacherName;
+    const loadTeacherData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Load groups for this teacher
+        const teacherGroups = await groupsService.getGroupsByTeacher(teacherUid);
+        if (!mounted) return;
+        setGroups(teacherGroups);
 
-  // Load core data from crmService (same source as Admin ERP)
-  const groups = useMemo(() => {
-    return crmService.getSchedule().map(mapScheduleToGroup);
-  }, []);
+        // Load students in these groups
+        const groupIds = teacherGroups.map(g => g.id);
+        if (groupIds.length > 0) {
+          const teacherStudents = await studentsService.getStudentsByTeacher(teacherUid);
+          if (!mounted) return;
+          setStudents(teacherStudents);
 
-  const students = useMemo(() => {
-    return crmService.getStudents().map(mapStudentRecordToStudent);
-  }, []);
+          // Load payments for these students
+          const teacherPayments = await paymentsService.getPaymentsByTeacher(teacherUid);
+          if (!mounted) return;
+          setPayments(teacherPayments);
 
-  const payments = useMemo(() => {
-    return crmService.getPayments().map(mapPaymentToPortal);
-  }, []);
+          // Load attendance for these groups
+          const teacherAttendance = await attendanceService.getAttendanceByTeacher(teacherUid);
+          if (!mounted) return;
+          setAttendance(teacherAttendance);
+        }
 
-  // Subscribe to Firestore for attendance (only source of attendance records)
-  useEffect(() => {
-    if (!DEMO_MODE && !currentUser) return;
-    const unsub = subscribeAttendance((data) => setAttendance(data));
-    return () => unsub?.();
-  }, [currentUser, isDemoMode]);
+        // Set up real-time listeners
+        const unsubGroups = groupsService.subscribeToGroupsByTeacher(teacherUid, (newGroups) => {
+          if (mounted) setGroups(newGroups);
+        });
 
-  // Seed Firestore for teacher-specific features (tasks, documents, notifications)
-  useEffect(() => {
-    if (!DEMO_MODE && !currentUser) return;
-    seedFirestoreIfEmpty().catch(() => {});
-  }, [currentUser, isDemoMode]);
+        const unsubStudents = studentsService.subscribeToStudentsByGroupIds(
+          groupIds,
+          (newStudents) => {
+            if (mounted) setStudents(newStudents);
+          }
+        );
+
+        const unsubAttendance = attendanceService.subscribeToAttendanceByGroupIds(
+          groupIds,
+          (newAttendance) => {
+            if (mounted) setAttendance(newAttendance);
+          }
+        );
+
+        return () => {
+          unsubGroups();
+          unsubStudents();
+          unsubAttendance();
+        };
+      } catch (err: any) {
+        console.error('Teacher data load error:', err);
+        if (mounted) {
+          setError('Ma\'lumotlarni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.');
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    const cleanup = loadTeacherData();
+    return () => {
+      mounted = false;
+      if (cleanup && typeof cleanup === 'function') cleanup();
+    };
+  }, [currentUser, role, teacherUid]);
 
   // Derive teacher-scoped data through relationships
-  const myGroups = useMemo(
-    () => groups.filter((g) => g.teacherId === resolvedTeacherId || g.teacherName === resolvedTeacherName),
-    [groups, resolvedTeacherId, resolvedTeacherName]
-  );
-
-  const myStudents = useMemo(
-    () => students.filter((s) => myGroups.some((g) => g.id === s.groupId)),
-    [students, myGroups]
-  );
+  const myGroups = useMemo(() => groups, [groups]);
+  const myStudents = useMemo(() => students, [students]);
 
   const stats = useMemo(
     () => computeStats(myGroups, myStudents, payments, attendance),
     [myGroups, myStudents, payments, attendance]
   );
-
-  const isLoadingState = useMemo(() => {
-    return groups.length === 0 && students.length === 0;
-  }, [groups, students]);
-
-  useEffect(() => {
-    setIsLoading(isLoadingState);
-  }, [isLoadingState]);
 
   const setBusinessModelHandler = useCallback((model: BusinessModel) => {
     setBusinessModelState(model);
@@ -246,6 +209,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refresh = useCallback(() => {
     setIsLoading(true);
+    // Trigger re-fetch by updating a dependency
     setTimeout(() => setIsLoading(false), 300);
   }, []);
 
@@ -253,8 +217,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
     <TeacherPortalContext.Provider
       value={{
         teacherUid,
-        teacherName: resolvedTeacherName,
-        isDemoMode,
+        teacherName,
         businessModel,
         setBusinessModel: setBusinessModelHandler,
         activeTab,
@@ -267,6 +230,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
         myStudents,
         stats,
         isLoading,
+        error,
         refresh,
       }}
     >

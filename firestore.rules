@@ -2,84 +2,288 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // 📩 1. Inquiries & Leads Collections (Public landing submissions & Admin pipeline)
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && getUserRole() == 'superadmin';
+    }
+
+    function isTeacher() {
+      return isSignedIn() && getUserRole() == 'teacher';
+    }
+
+    function isStudent() {
+      return isSignedIn() && getUserRole() == 'student';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdminOrSuperAdmin() {
+      return isAdmin() || isSuperAdmin();
+    }
+
+    function isAdminOrTeacher() {
+      return isAdmin() || isSuperAdmin() || isTeacher();
+    }
+
+    // =========================================================================
+    // USERS COLLECTION - Canonical role document
+    // =========================================================================
+    match /users/{userId} {
+      // Allow read for authenticated users (to check their own role)
+      allow read: if isSignedIn() && (isOwner(userId) || isAdminOrSuperAdmin());
+
+      // Allow create ONLY for:
+      // 1. SuperAdmin (server-side/Admin SDK)
+      // 2. Authenticated user creating their OWN document with role='guest' (default)
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.role == 'guest';
+
+      // Allow update for:
+      // 1. SuperAdmin - full access
+      // 2. Admin - can update teacher/student roles but NOT admin/superadmin
+      // 3. User can update their own profile fields EXCEPT role
+      allow update: if isSignedIn() && (
+        (isSuperAdmin()) ||
+        (isAdmin() && request.resource.data.role != 'admin' && request.resource.data.role != 'superadmin') ||
+        (isOwner(userId) && request.resource.data.role == resource.data.role)
+      );
+
+      // Allow delete only for SuperAdmin
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // PUBLIC LANDING DATA - Readable without auth
+    // =========================================================================
+    match /settings/landing_cms {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /settings/landing_page_content {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /results/{resultId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /faqs/{faqId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /branches/{branchId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
+    // PUBLIC FORMS - Create only (no read/update/delete for public)
+    // =========================================================================
     match /inquiries/{inquiryId} {
-      allow read, write: if true;
+      allow create: if true;
+      allow read, update, delete: if isAdminOrSuperAdmin();
     }
 
     match /leads/{leadId} {
-      allow read, write: if true;
+      allow create: if true;
+      allow read, update, delete: if isAdminOrSuperAdmin();
     }
 
-    // ⚙️ 2. Settings Collection (CMS & App Config)
-    match /settings/{settingId} {
-      allow read, write: if true;
+    match /questions/{questionId} {
+      allow create: if true;
+      allow read, update, delete: if isAdminOrSuperAdmin();
     }
 
-    // 👤 3. Users Collection & Subcollections
-    match /users/{userId} {
-      allow read, write: if true;
+    // =========================================================================
+    // CORE ERP DATA - Admin/Teacher access based on role
+    // =========================================================================
 
-      match /chats/{chatId} {
-        allow read, write: if true;
-      }
-    }
-
-    // 🎓 4. Students Collection
+    // Students
     match /students/{studentId} {
-      allow read, write: if true;
-
-      match /mock_scores/{scoreId} {
-        allow read, write: if true;
-      }
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfStudent(studentId));
+      allow write: if isAdminOrSuperAdmin();
     }
 
-    // 📲 5. Telegram Sessions
-    match /telegram_sessions/{sessionId} {
-      allow read, write: if true;
+    // Groups
+    match /groups/{groupId} {
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfGroup(groupId));
+      allow write: if isAdminOrSuperAdmin();
     }
 
-    // 💳 6. Payments
+    // Payments
     match /payments/{paymentId} {
-      allow read, write: if true;
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
     }
 
-    // 📅 7. Attendance
+    // Attendance
     match /attendance/{attendanceId} {
-      allow read, write: if true;
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
     }
 
-    // 📚 8. Homework, Assignments & Feed
+    // Homework/Assignments
     match /homework/{homeworkId} {
-      allow read, write: if true;
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
     }
 
     match /assignments/{assignmentId} {
-      allow read, write: if true;
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
     }
 
-    match /homework_submissions/{subId} {
-      allow read, write: if true;
+    match /homework_submissions/{submissionId} {
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfSubmission(submissionId));
+      allow create: if isSignedIn(); // Students can submit
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfSubmission(submissionId));
     }
 
+    // Feed Posts
     match /feed_posts/{postId} {
-      allow read, write: if true;
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfFeedPost(postId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfFeedPost(postId));
     }
 
-    // 🏫 9. Groups
-    match /groups/{groupId} {
-      allow read, write: if true;
+    // Mock Scores
+    match /mock_scores/{scoreId} {
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfMockScore(scoreId)) || (isStudent() && isOwnMockScore(scoreId));
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfMockScore(scoreId));
     }
 
-    // 🔔 10. Notifications
+    // =========================================================================
+    // TEACHER-SPECIFIC COLLECTIONS
+    // =========================================================================
+    match /teacher_tasks/{taskId} {
+      allow read, write: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherTask(taskId));
+    }
+
+    match /teacher_documents/{docId} {
+      allow read, write: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherDocument(docId));
+    }
+
+    // =========================================================================
+    // NOTIFICATIONS
+    // =========================================================================
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read: if isSignedIn() && (resource.data.recipientId == request.auth.uid || resource.data.recipientRole == getUserRole() || resource.data.recipientRole == 'all');
+      allow write: if isAdminOrSuperAdmin() || (isTeacher() && request.auth.uid == resource.data.senderId);
+    }
+
+    // =========================================================================
+    // SETTINGS
+    // =========================================================================
+    match /settings/{settingId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
+    // TELEGRAM SESSIONS
+    // =========================================================================
+    match /telegram_sessions/{sessionId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    // =========================================================================
+    // HELPER FUNCTIONS FOR TEACHER SCOPING
+    // =========================================================================
+    function isTeacherOfStudent(studentId) {
+      let studentDoc = get(/databases/$(database)/documents/students/$(studentId));
+      return studentDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isTeacherOfGroup(groupId) {
+      let groupDoc = get(/databases/$(database)/documents/groups/$(groupId));
+      return groupDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isTeacherOfPayment(paymentId) {
+      let paymentDoc = get(/databases/$(database)/documents/payments/$(paymentId));
+      let studentDoc = get(/databases/$(database)/documents/students/$(paymentDoc.data.studentId));
+      return studentDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isTeacherOfAttendance(attendanceId) {
+      let attendanceDoc = get(/databases/$(database)/documents/attendance/$(attendanceId));
+      let groupDoc = get(/databases/$(database)/documents/groups/$(attendanceDoc.data.groupId));
+      return groupDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isTeacherOfHomework(homeworkId) {
+      let homeworkDoc = get(/databases/$(database)/documents/homework/$(homeworkId));
+      return homeworkDoc.data.teacherEmail == request.auth.token.email;
+    }
+
+    function isTeacherOfAssignment(assignmentId) {
+      let assignmentDoc = get(/databases/$(database)/documents/assignments/$(assignmentId));
+      return assignmentDoc.data.teacherEmail == request.auth.token.email;
+    }
+
+    function isTeacherOfSubmission(submissionId) {
+      let submissionDoc = get(/databases/$(database)/documents/homework_submissions/$(submissionId));
+      let assignmentDoc = get(/databases/$(database)/documents/homework/$(submissionDoc.data.assignmentId));
+      return assignmentDoc.data.teacherEmail == request.auth.token.email;
+    }
+
+    function isTeacherOfFeedPost(postId) {
+      let postDoc = get(/databases/$(database)/documents/feed_posts/$(postId));
+      return postDoc.data.author == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.displayName;
+    }
+
+    function isTeacherOfMockScore(scoreId) {
+      let scoreDoc = get(/databases/$(database)/documents/mock_scores/$(scoreId));
+      let studentDoc = get(/databases/$(database)/documents/students/$(scoreDoc.data.studentId));
+      return studentDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isOwnMockScore(scoreId) {
+      let scoreDoc = get(/databases/$(database)/documents/mock_scores/$(scoreId));
+      return scoreDoc.data.studentId == request.auth.uid;
+    }
+
+    function isOwnTeacherTask(taskId) {
+      let taskDoc = get(/databases/$(database)/documents/teacher_tasks/$(taskId));
+      return taskDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isOwnTeacherDocument(docId) {
+      let doc = get(/databases/$(database)/documents/teacher_documents/$(docId));
+      return doc.data.teacherId == request.auth.uid;
     }
   }
 }
-

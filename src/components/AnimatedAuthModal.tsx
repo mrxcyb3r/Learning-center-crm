@@ -703,7 +703,8 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileTap={{ scale: 0.97 }}
                       type="button"
                       onClick={async () => {
-                        setRole('student');
+                        // Role comes from Firestore users/{uid} after real Firebase
+                        // sign-in. Never set a frontend-only role here.
                         await loginAsDemoUser('student');
                         navigate('/dashboard/student');
                         setShowTelegramConnect(true);
@@ -719,7 +720,6 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileTap={{ scale: 0.97 }}
                       type="button"
                       onClick={async () => {
-                        setRole('teacher');
                         await loginAsDemoUser('teacher');
                         navigate('/dashboard/teacher');
                         setShowTelegramConnect(true);
@@ -735,7 +735,6 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileTap={{ scale: 0.97 }}
                       type="button"
                       onClick={async () => {
-                        setRole('admin');
                         await loginAsDemoUser('admin');
                         navigate('/dashboard/admin');
                         onClose();

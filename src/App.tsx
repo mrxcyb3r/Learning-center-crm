@@ -109,6 +109,15 @@ function MainAppRoutes() {
           </ProtectedRoute>
         }
       />
+      {/* Alias used by demo/quick-login navigation targets */}
+      <Route
+        path="/dashboard/teacher/*"
+        element={
+          <ProtectedRoute requiredRole="teacher" fallbackPath="/login/teacher">
+            <TeacherPortalApp />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch-All Fallback Redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

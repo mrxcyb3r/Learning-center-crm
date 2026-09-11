@@ -17,6 +17,10 @@ const DEMO_TEACHER_EMAIL = 'jasur@renessans.demo';
 const DEMO_TEACHER_PASSWORD = 'demo123456';
 const DEMO_TEACHER_NAME = 'Jasur Alimov';
 
+const DEMO_STUDENT_EMAIL = 'student@renessans.demo';
+const DEMO_STUDENT_PASSWORD = 'demo123456';
+const DEMO_STUDENT_NAME = 'Demo Student';
+
 const DEMO_ADMIN_UID = 'demo_admin_001';
 const DEMO_TEACHER_UID = 'demo_teacher_001';
 
@@ -154,16 +158,73 @@ async function ensureDemoTeacherProfile(user: any): Promise<void> {
 }
 
 /**
+ * Ensure demo student profile exists in Firestore
+ */
+async function ensureDemoStudentProfile(user: any): Promise<void> {
+  const docRef = doc(db, 'users', user.uid);
+  const snap = await getDoc(docRef);
+
+  if (!snap.exists() || snap.data().role !== 'student') {
+    await setDoc(docRef, {
+      uid: user.uid,
+      email: DEMO_STUDENT_EMAIL,
+      displayName: DEMO_STUDENT_NAME,
+      role: 'student',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
+}
+
+/**
+ * Provision demo student account - creates real Firebase Auth user + Firestore profile
+ */
+export async function provisionDemoStudent(): Promise<DemoAccountResult> {
+  try {
+    // Try to sign in first
+    try {
+      const cred = await signInWithEmailAndPassword(auth, DEMO_STUDENT_EMAIL, DEMO_STUDENT_PASSWORD);
+      await ensureDemoStudentProfile(cred.user);
+      return { success: true, uid: cred.user.uid, email: DEMO_STUDENT_EMAIL };
+    } catch (signInErr: any) {
+      // If user doesn't exist, create it
+      if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/wrong-password') {
+        const cred = await createUserWithEmailAndPassword(auth, DEMO_STUDENT_EMAIL, DEMO_STUDENT_PASSWORD);
+        await updateProfile(cred.user, { displayName: DEMO_STUDENT_NAME });
+
+        const profile: UserProfile = {
+          uid: cred.user.uid,
+          email: DEMO_STUDENT_EMAIL,
+          displayName: DEMO_STUDENT_NAME,
+          role: 'student',
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'users', cred.user.uid), profile);
+
+        await signOut(auth);
+        return { success: true, uid: cred.user.uid, email: DEMO_STUDENT_EMAIL };
+      }
+      throw signInErr;
+    }
+  } catch (err: any) {
+    console.error('Demo student provisioning failed:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Provision all demo accounts
  */
 export async function provisionAllDemoAccounts(): Promise<void> {
   console.log('Provisioning demo accounts...');
-  
+
   const adminResult = await provisionDemoAdmin();
   console.log('Demo admin:', adminResult);
-  
+
   const teacherResult = await provisionDemoTeacher();
   console.log('Demo teacher:', teacherResult);
+
+  const studentResult = await provisionDemoStudent();
+  console.log('Demo student:', studentResult);
 }
 
 /**
@@ -187,6 +248,19 @@ export async function signInAsDemoTeacher(): Promise<DemoAccountResult> {
     const cred = await signInWithEmailAndPassword(auth, DEMO_TEACHER_EMAIL, DEMO_TEACHER_PASSWORD);
     await ensureDemoTeacherProfile(cred.user);
     return { success: true, uid: cred.user.uid, email: DEMO_TEACHER_EMAIL };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Sign in as demo student (real Firebase Auth)
+ */
+export async function signInAsDemoStudent(): Promise<DemoAccountResult> {
+  try {
+    const cred = await signInWithEmailAndPassword(auth, DEMO_STUDENT_EMAIL, DEMO_STUDENT_PASSWORD);
+    await ensureDemoStudentProfile(cred.user);
+    return { success: true, uid: cred.user.uid, email: DEMO_STUDENT_EMAIL };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

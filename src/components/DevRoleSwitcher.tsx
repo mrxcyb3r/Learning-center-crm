@@ -6,6 +6,11 @@ import { ShieldCheck, UserCheck, ChevronUp, ChevronDown, Sparkles } from 'lucide
 export const DevRoleSwitcher: React.FC = () => {
   const { role, activeRole, setMockRole, resetMockRole, currentUser, userProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  // Dev-only tool. Renders nothing in production builds so frontend-only role
+  // switching is never reachable outside development.
+  if (!import.meta.env.DEV) {
+    return null;
+  }
 
   const roles: { key: UserRole; label: string; badgeColor: string }[] = [
     { key: 'superadmin', label: 'SuperAdmin', badgeColor: 'bg-red-500 text-white' },

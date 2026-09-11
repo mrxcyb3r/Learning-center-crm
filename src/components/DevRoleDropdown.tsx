@@ -22,6 +22,10 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
   onRoleChange
 }) => {
   const { activeRole, setMockRole, loginAsDemoUser } = useAuth();
+  // Dev-only tool. Frontend-only role switching must never be reachable in
+  // production: authorization comes exclusively from Firestore users/{uid}.
+  // In production builds this component renders nothing.
+  const isDev = import.meta.env.DEV;
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -95,6 +99,10 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
       onRoleChange(targetRole);
     }
   };
+
+  if (!isDev) {
+    return null;
+  }
 
   return (
     <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>

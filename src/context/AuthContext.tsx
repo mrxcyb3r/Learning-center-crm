@@ -37,9 +37,10 @@ interface AuthContextType {
   checkEmailVerification: () => Promise<boolean>;
   loginWithGoogle: (requestedRole?: UserRole | string) => Promise<void>;
   logout: () => Promise<void>;
-  // Demo login functions for demo environment
+  // Demo login functions for demo environment (all backed by real Firebase Auth)
   loginAsDemoAdmin: () => Promise<void>;
   loginAsDemoTeacher: () => Promise<void>;
+  loginAsDemoStudent: () => Promise<void>;
   loginAsDemoUser: (role: UserRole) => Promise<void>;
   setRole: (role: UserRole) => void;
   // Backward compatibility for components using old AppDataContext
@@ -345,14 +346,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsDemoStudent = async () => {
+    setIsLoading(true);
+    try {
+      const { signInAsDemoStudent } = await import('../services/demoProvisioning');
+      const result = await signInAsDemoStudent();
+      if (result.success && result.uid) {
+        const user = auth.currentUser;
+        if (user) {
+          await handleUserRole(user);
+        }
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      console.error('Demo student login failed:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // All demo roles resolve through real Firebase Auth + Firestore
+  // users/{uid}. No frontend-only role assignment happens here.
   const loginAsDemoUser = async (role: UserRole) => {
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'superadmin') {
       await loginAsDemoAdmin();
     } else if (role === 'teacher') {
       await loginAsDemoTeacher();
+    } else if (role === 'student') {
+      await loginAsDemoStudent();
     } else {
-      // For student/demo roles, just set the role locally (for backward compat)
-      setRole(role);
+      throw new Error(
+        `No demo account exists for role "${role}". Please sign in with a real account.`
+      );
     }
   };
 
@@ -384,6 +411,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         loginAsDemoAdmin,
         loginAsDemoTeacher,
+        loginAsDemoStudent,
         loginAsDemoUser,
         setRole,
         activeRole: role,

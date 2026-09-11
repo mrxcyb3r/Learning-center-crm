@@ -1171,7 +1171,17 @@ export async function notifyStudentGradePublished(studentId: string, studentName
 /* =========================================================================
    INITIAL DB SEEDER (IF EMPTY)
    ========================================================================= */
+// Single-flight guard: the seeder is invoked from several components and
+// React StrictMode double-invokes effects. Without this, concurrent runs can
+// both observe an empty collection and seed twice. Concurrent callers share
+// one execution; completed runs are not repeated within the session.
+let seedInFlight: Promise<void> | null = null;
+let seedCompleted = false;
+
 export async function seedFirestoreIfEmpty() {
+  if (seedCompleted) return;
+  if (seedInFlight) return seedInFlight;
+  seedInFlight = (async () => {
   try {
     const dateDaysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split('T')[0];
 
@@ -1521,6 +1531,13 @@ export async function seedFirestoreIfEmpty() {
     }
   } catch (err) {
     console.warn('seedFirestoreIfEmpty notice:', err);
+  }
+  })();
+  try {
+    await seedInFlight;
+    seedCompleted = true;
+  } finally {
+    seedInFlight = null;
   }
 }
 

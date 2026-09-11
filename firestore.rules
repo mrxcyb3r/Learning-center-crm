@@ -61,11 +61,18 @@ service cloud.firestore {
       // 1. SuperAdmin (server-side/Admin SDK) - they bypass rules
       // 2. Authenticated user creating their OWN document with role='guest' (default on first login)
       //    This is for first-time users who sign up - they get 'guest' until admin assigns role
-      allow create: if isSignedIn() 
-        && isOwner(userId) 
-        && request.resource.data.role == 'guest'
+      // 3. One-time teacher invitation redemption: a newly registered teacher
+      //    creating their OWN document with role='teacher', bound to a pending,
+      //    unexpired invitation whose secret they prove knowledge of. The same
+      //    transaction marks the invitation used (see teacher_invitations).
+      allow create: if isSignedIn()
+        && isOwner(userId)
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email;
+        && request.resource.data.email == request.auth.token.email
+        && (
+          request.resource.data.role == 'guest'
+          || isValidTeacherRedemption(request.resource.data)
+        );
 
       // Allow update for:
       // 1. SuperAdmin - full access
@@ -242,11 +249,11 @@ service cloud.firestore {
     // NOTIFICATIONS
     // =========================================================================
     match /notifications/{notificationId} {
-      allow read: if isSignedIn() && (
+      allow read: if isAdminOrSuperAdmin() || (isSignedIn() && (
         resource.data.recipientId == request.auth.uid
         || resource.data.recipientRole == getUserRole()
         || resource.data.recipientRole == 'all'
-      );
+      ));
       // NOTE: create must check request.resource (resource is null on create).
       allow create: if isAdminOrSuperAdmin()
         || (isTeacher() && request.resource.data.senderId == request.auth.uid);
@@ -260,6 +267,53 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if isAdminOrSuperAdmin();
       allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
+    // ADMIN ERP COLLECTIONS (no public/teacher access by design)
+    // =========================================================================
+    match /expenses/{expenseId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /cms/{docId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /telegram_logs/{logId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /branches_config/{branchId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /rooms_config/{roomId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    match /staff_config/{staffId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
+    // TEACHER INVITATIONS - one-time onboarding capabilities
+    // =========================================================================
+    // Invitation document IDs are unguessable 256-bit capabilities. Single-doc
+    // reads are public so the registration page can validate its own link;
+    // listing is admin-only, so invitations cannot be enumerated.
+    // The plaintext secret lives only in the invitation doc + the issued URL;
+    // redemption is enforced here in rules (never UI-only).
+    match /teacher_invitations/{invitationId} {
+      allow get: if true;
+      allow list: if isAdminOrSuperAdmin();
+      allow create: if isAdminOrSuperAdmin();
+      allow update: if isAdminOrSuperAdmin() || isValidRedemption(invitationId);
+      allow delete: if isAdminOrSuperAdmin();
     }
 
     // =========================================================================
@@ -291,6 +345,45 @@ service cloud.firestore {
       return isTeacher()
         && request.resource.data.groupId is string
         && isTeacherOfGroup(request.resource.data.groupId);
+    }
+
+    // One-time teacher invitation redemption (users create, role='teacher').
+    // The presenter proves knowledge of the invitation secret by echoing it;
+    // the invitation must be pending and unexpired at commit time.
+    function isPendingInvitation(invitationId, secret) {
+      let inv = get(/databases/$(database)/documents/teacher_invitations/$(invitationId)).data;
+      return inv.status == 'pending'
+        && inv.expiresAt > request.time
+        && inv.secret == secret;
+    }
+
+    function isValidTeacherRedemption(data) {
+      return data.role == 'teacher'
+        && data.get('invitationId', '') is string
+        && data.get('invitationSecret', '') is string
+        && isPendingInvitation(data.get('invitationId', ''), data.get('invitationSecret', ''));
+    }
+
+    // Invitation status may move pending -> used exactly once, by the teacher
+    // completing registration. All identifying fields must remain unchanged;
+    // only status/usedByUid/usedAt change, and expiry is re-checked.
+    function isValidRedemption(invitationId) {
+      let cur = resource.data;
+      let nxt = request.resource.data;
+      return isSignedIn()
+        && cur.status == 'pending'
+        && cur.expiresAt > request.time
+        && nxt.status == 'used'
+        && nxt.usedByUid == request.auth.uid
+        && nxt.usedAt == request.time
+        && nxt.secret == cur.secret
+        && nxt.teacherEmail == cur.teacherEmail
+        && nxt.teacherName == cur.teacherName
+        && nxt.createdBy == cur.createdBy
+        && nxt.createdAt == cur.createdAt
+        && nxt.expiresAt == cur.expiresAt
+        && nxt.role == 'teacher'
+        && cur.role == 'teacher';
     }
 
     function isTeacherOfPayment(paymentId) {

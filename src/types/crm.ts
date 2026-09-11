@@ -299,6 +299,23 @@ export interface ExpenseRecord {
   status?: 'Paid' | 'Pending' | 'Voided';
 }
 
+export type TeacherInvitationStatus = 'pending' | 'used' | 'expired' | 'revoked';
+
+export interface TeacherInvitation {
+  id: string;
+  teacherName: string;
+  teacherEmail: string;
+  // Plaintext capability secret (unguessable). Lives only in this doc + URL.
+  secret: string;
+  role: 'teacher';
+  status: TeacherInvitationStatus;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  usedByUid?: string | null;
+}
+
 export interface TelegramAlertLog {
   id: string;
   leadId?: string;

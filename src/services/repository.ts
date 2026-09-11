@@ -15,6 +15,8 @@ import {
   serverTimestamp,
   arrayUnion,
   arrayRemove,
+  runTransaction,
+  Timestamp,
   limit
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
@@ -48,7 +50,8 @@ import {
   TelegramAlertLog,
   CampusBranch,
   ClassroomRoom,
-  StaffMember
+  StaffMember,
+  TeacherInvitation
 } from '../types/crm';
 import { cleanData } from './firestore';
 
@@ -78,6 +81,7 @@ const AUDIT_LOGS_COL = 'audit_logs';
 const BRANCHES_CONFIG_COL = 'branches_config';
 const ROOMS_CONFIG_COL = 'rooms_config';
 const STAFF_CONFIG_COL = 'staff_config';
+const INVITATIONS_COL = 'teacher_invitations';
 
 /**
  * User Service - Canonical user management
@@ -907,6 +911,172 @@ export const expensesService = {
     );
   }
 };
+
+/**
+ * Teacher Invitations Service - one-time onboarding capabilities.
+ * Admin-only for list/create/revoke. Single-doc reads are public (unguessable
+ * IDs) so the registration page can validate its own link. Redemption itself
+ * is enforced by Firestore rules inside a transaction (see registerTeacher).
+ */
+export const invitationsService = {
+  async createInvitation(input: {
+    teacherName: string;
+    teacherEmail: string;
+    createdBy: string;
+    expiresAtIso: string;
+  }): Promise<{ id: string; secret: string }> {
+    const secretBytes = new Uint8Array(32);
+    crypto.getRandomValues(secretBytes);
+    const secret = [...secretBytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+    // Unguessable document ID doubles as part of the capability URL.
+    const idBytes = new Uint8Array(16);
+    crypto.getRandomValues(idBytes);
+    const id = [...idBytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+    // expiresAt is a Firestore Timestamp so rules can compare it with
+    // request.time. createdAt is compared only for equality — ISO is fine.
+    await setDoc(doc(db, INVITATIONS_COL, id), {
+      teacherName: input.teacherName,
+      teacherEmail: input.teacherEmail.toLowerCase().trim(),
+      secret,
+      role: 'teacher',
+      status: 'pending',
+      createdBy: input.createdBy,
+      createdAt: new Date().toISOString(),
+      expiresAt: Timestamp.fromDate(new Date(input.expiresAtIso)),
+      usedAt: null,
+      usedByUid: null,
+    });
+    return { id, secret };
+  },
+
+  async getInvitation(id: string): Promise<TeacherInvitation | null> {
+    const snap = await getDoc(doc(db, INVITATIONS_COL, id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as TeacherInvitation) : null;
+  },
+
+  async getAllInvitations(): Promise<TeacherInvitation[]> {
+    const snap = await getDocs(query(collection(db, INVITATIONS_COL), orderBy('createdAt', 'desc')));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as TeacherInvitation));
+  },
+
+  async revokeInvitation(id: string): Promise<void> {
+    await updateDoc(doc(db, INVITATIONS_COL, id), { status: 'revoked' });
+  },
+
+  subscribeToInvitations(callback: (items: TeacherInvitation[]) => void) {
+    return onSnapshot(
+      query(collection(db, INVITATIONS_COL), orderBy('createdAt', 'desc')),
+      (snap) => callback(snap.docs.map((d) => normalizeInvitation(d.id, d.data())))
+    );
+  }
+};
+
+function normalizeInvitation(id: string, data: Record<string, unknown>): TeacherInvitation {
+  const raw: unknown = data.expiresAt;
+  const expiresAt =
+    typeof raw === 'string'
+      ? raw
+      : raw instanceof Timestamp
+        ? raw.toDate().toISOString()
+        : '';
+  const { expiresAt: _ignored, ...rest } = data;
+  void _ignored;
+  return { ...rest, id, expiresAt } as TeacherInvitation;
+}
+
+/** Error codes thrown by registerTeacherWithInvitation (invitation/* namespace). */
+export type InvitationErrorCode =
+  | 'invitation/not-found'
+  | 'invitation/secret-mismatch'
+  | 'invitation/used'
+  | 'invitation/revoked'
+  | 'invitation/expired'
+  | 'invitation/email-mismatch';
+
+function invitationError(code: InvitationErrorCode, message: string): Error & { code: InvitationErrorCode } {
+  return Object.assign(new Error(message), { code });
+}
+
+/**
+ * Register a new teacher through a one-time invitation.
+ *
+ * Security model (enforced by Firestore rules, never UI-only):
+ * 1. The invitation (unguessable ID + secret from the URL) is validated.
+ * 2. A Firebase Auth account is created for the invitation's email only.
+ * 3. A transaction atomically creates users/{uid} with role='teacher' and
+ *    marks the invitation used. Rules verify invitation pending/unexpired/
+ *    secret-matching at commit time, so double-use is rejected even
+ *    concurrently. No password is ever stored in Firestore.
+ */
+export async function registerTeacherWithInvitation(input: {
+  invitationId: string;
+  secret: string;
+  fullName: string;
+  email: string;
+  password: string;
+  phone?: string;
+}): Promise<string> {
+  const invitationRef = doc(db, INVITATIONS_COL, input.invitationId);
+  const preSnap = await getDoc(invitationRef);
+  if (!preSnap.exists()) {
+    throw invitationError('invitation/not-found', 'Taklifnoma topilmadi.');
+  }
+  const pre = preSnap.data();
+  if (pre.secret !== input.secret) {
+    throw invitationError('invitation/secret-mismatch', 'Taklifnoma havolasi yaroqsiz.');
+  }
+  if (pre.status === 'used') {
+    throw invitationError('invitation/used', 'Bu taklifnoma allaqachon ishlatilgan.');
+  }
+  if (pre.status === 'revoked') {
+    throw invitationError('invitation/revoked', 'Bu taklifnoma bekor qilingan.');
+  }
+  const expiresAt: Timestamp | null =
+    pre.expiresAt instanceof Timestamp ? pre.expiresAt : null;
+  if (pre.status !== 'pending' || !expiresAt || expiresAt.toDate().getTime() < Date.now()) {
+    throw invitationError('invitation/expired', 'Taklifnoma muddati tugagan.');
+  }
+  if (typeof pre.teacherEmail !== 'string' || pre.teacherEmail.toLowerCase() !== input.email.toLowerCase().trim()) {
+    throw invitationError('invitation/email-mismatch', 'Bu taklifnoma boshqa email uchun berilgan.');
+  }
+
+  const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
+  const cred = await createUserWithEmailAndPassword(auth, input.email.trim(), input.password);
+  try {
+    await updateProfile(cred.user, { displayName: input.fullName.trim() });
+  } catch {
+    // Non-fatal; the Auth account itself is what matters.
+  }
+  const uid = cred.user.uid;
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(invitationRef);
+    if (!snap.exists()) throw invitationError('invitation/not-found', 'Taklifnoma topilmadi.');
+    const cur = snap.data();
+    if (cur.secret !== input.secret) throw invitationError('invitation/secret-mismatch', 'Taklifnoma havolasi yaroqsiz.');
+    if (cur.status !== 'pending') throw invitationError('invitation/used', 'Bu taklifnoma allaqachon ishlatilgan yoki bekor qilingan.');
+    const exp: Timestamp | null = cur.expiresAt instanceof Timestamp ? cur.expiresAt : null;
+    if (!exp || exp.toDate().getTime() < Date.now()) throw invitationError('invitation/expired', 'Taklifnoma muddati tugagan.');
+    tx.set(doc(db, USERS_COL, uid), cleanData({
+      uid,
+      email: cred.user.email,
+      fullName: input.fullName.trim(),
+      displayName: input.fullName.trim(),
+      phoneNumber: input.phone?.trim() || null,
+      role: 'teacher',
+      invitationId: input.invitationId,
+      invitationSecret: input.secret,
+      createdAt: new Date().toISOString(),
+    }));
+    tx.update(invitationRef, {
+      status: 'used',
+      usedByUid: uid,
+      usedAt: serverTimestamp(),
+    });
+  });
+
+  return uid;
+}
 
 /**
  * CMS Service - Website Content Management

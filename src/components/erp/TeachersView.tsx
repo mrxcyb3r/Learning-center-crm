@@ -20,6 +20,7 @@ import {
 import { teachersService } from '../../services/repository';
 import { TeacherGender, TeacherRecord, TeacherStatus } from '../../types/crm';
 import { TeacherAvatar } from '../common/TeacherAvatar';
+import { TeacherInvitations } from './TeacherInvitations';
 import { formatCurrency } from '../../utils/format';
 
 export const TeachersView: React.FC = () => {
@@ -250,6 +251,9 @@ export const TeachersView: React.FC = () => {
           <span className="text-[11px] text-slate-500 mt-1 block">Bosh sahifada faol</span>
         </div>
       </div>
+
+      {/* One-time onboarding invitations (admin-only) */}
+      <TeacherInvitations />
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2">

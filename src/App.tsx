@@ -22,6 +22,7 @@ import { CenterErpApp } from './components/erp/CenterErpApp';
 import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { TeacherLoginPage } from './pages/teacher/TeacherLoginPage';
+import { TeacherRegisterPage } from './pages/teacher/TeacherRegisterPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { ParticleBackground } from './components/UI/ParticleBackground';
@@ -82,6 +83,8 @@ function MainAppRoutes() {
       {/* Login Pages */}
       <Route path="/login/admin" element={<AdminLoginPage />} />
       <Route path="/login/teacher" element={<TeacherLoginPage />} />
+      {/* One-time teacher onboarding (public link, rules-enforced redemption) */}
+      <Route path="/teacher/register" element={<TeacherRegisterPage />} />
 
       {/* Admin Portal - Protected */}
       <Route

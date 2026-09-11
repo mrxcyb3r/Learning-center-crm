@@ -160,6 +160,9 @@ export const CoursesView: React.FC = () => {
       featured: formFeatured,
       isActive: formIsActive,
       isPublic: formIsPublic,
+      // displayOrder is required: ordered Firestore queries exclude documents
+      // that lack the ordered field entirely.
+      displayOrder: editingCourse?.displayOrder ?? courses.length + 1,
     };
 
     if (editingCourse) {

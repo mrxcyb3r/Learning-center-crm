@@ -17,7 +17,7 @@ import { db } from './firebase';
  * - StrictMode-safe via module-level single-flight guard.
  */
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 5;
 
 // Verified live Firebase Auth UIDs for the project demo accounts.
 export const DEMO_ADMIN_UID = '8QEu4s0IW4QtYYDhxTigjCkRe4e2';
@@ -120,17 +120,17 @@ const DEMO_LEADS = [
   { id: 'demo-lead-012', name: 'Sirojiddin Aliyev', phone: '+998 (90) 222-00-12', course: 'Ona Tili', status: 'Sinov darsi belgilandi', source: 'Tavsiya asosida', daysAgo: 2 },
 ];
 
+// Demo-scale monthly economics: revenue (this month) must exceed expenses so
+// the dashboard computes a believable positive profit from live records.
 const DEMO_EXPENSES = [
-  { id: 'demo-expense-001', category: 'Teacher Salary', title: "O'qituvchilar maoshi (yanvar)", amount: 27000000, recipient: 'Pedagogik jamoa', daysAgo: 5 },
-  { id: 'demo-expense-002', category: 'Rent', title: 'Ijara haqi', amount: 15000000, recipient: 'Bino egasi', daysAgo: 8 },
-  { id: 'demo-expense-003', category: 'Utilities', title: 'Kommunal to\'lovlar', amount: 3200000, recipient: 'Kommunal xizmatlar', daysAgo: 6 },
-  { id: 'demo-expense-004', category: 'Marketing', title: 'Instagram reklama', amount: 5000000, recipient: 'SMM agentlik', daysAgo: 3 },
-  { id: 'demo-expense-005', category: 'Supplies', title: "O'quv materiallari", amount: 2100000, recipient: 'Nashriyot', daysAgo: 10 },
-  { id: 'demo-expense-006', category: 'Equipment', title: 'Proyektor xizmati', amount: 1800000, recipient: 'Texnik xizmat', daysAgo: 12 },
-  { id: 'demo-expense-007', category: 'Salaries', title: 'Administrator maoshi', amount: 6000000, recipient: 'Qabulxona', daysAgo: 5 },
-  { id: 'demo-expense-008', category: 'Maintenance', title: 'Xonalarni ta\'mirlash', amount: 4500000, recipient: 'Usta', daysAgo: 15 },
-  { id: 'demo-expense-009', category: 'Marketing', title: 'Banner va flaerlar', amount: 2500000, recipient: 'Bosmaxona', daysAgo: 9 },
-  { id: 'demo-expense-010', category: 'Other', title: 'Kutilmagan xarajatlar', amount: 1200000, recipient: 'Kassa', daysAgo: 2 },
+  { id: 'demo-expense-001', category: 'Teacher Salary', title: "O'qituvchilar maoshi", amount: 1800000, recipient: 'Pedagogik jamoa', daysAgo: 5 },
+  { id: 'demo-expense-002', category: 'Rent', title: 'Ijara haqi', amount: 2500000, recipient: 'Bino egasi', daysAgo: 8 },
+  { id: 'demo-expense-003', category: 'Utilities', title: 'Kommunal to\'lovlar', amount: 400000, recipient: 'Kommunal xizmatlar', daysAgo: 6 },
+  { id: 'demo-expense-004', category: 'Marketing', title: 'Instagram reklama', amount: 600000, recipient: 'SMM agentlik', daysAgo: 3 },
+  { id: 'demo-expense-005', category: 'Supplies', title: "O'quv materiallari", amount: 300000, recipient: 'Nashriyot', daysAgo: 10 },
+  { id: 'demo-expense-006', category: 'Salaries', title: 'Administrator maoshi', amount: 700000, recipient: 'Qabulxona', daysAgo: 5 },
+  { id: 'demo-expense-007', category: 'Maintenance', title: 'Xonalarni ta\'mirlash', amount: 300000, recipient: 'Usta', daysAgo: 4 },
+  { id: 'demo-expense-008', category: 'Other', title: 'Kutilmagan xarajatlar', amount: 200000, recipient: 'Kassa', daysAgo: 2 },
 ];
 
 const DEMO_HOMEWORK = [
@@ -283,7 +283,8 @@ async function writeDemoDataset(): Promise<void> {
     }
   }
 
-  // Payments: 4 monthly installments per student spread over ~90 days.
+  // Payments: 4 installments per student, concentrated in the current month
+  // so the dashboard's monthly revenue reflects the demo cohort size.
   let payIdx = 0;
   for (const s of DEMO_STUDENTS) {
     const g = DEMO_GROUPS.find((x) => x.id === s.groupId)!;
@@ -298,7 +299,7 @@ async function writeDemoDataset(): Promise<void> {
         subjectCategory: g.course,
         paymentMethod: method,
         method: method.charAt(0).toUpperCase() + method.slice(1),
-        date: isoDay(m * 28 + (payIdx % 7)),
+        date: isoDay(m * 6 + (payIdx % 4)),
         recordedBy: 'Admin',
         status: s.payment === 'Paid' || m < 3 ? 'Completed' : 'Pending',
         cohortGroup: g.groupName,
@@ -353,6 +354,16 @@ async function writeDemoDataset(): Promise<void> {
       createdAt: nowIso,
       isDemo: true,
     }, { merge: true });
+  }
+
+  // Retire demo IDs removed from the v4 set (idempotent; missing docs are no-ops).
+  for (const retired of ['demo-expense-009', 'demo-expense-010']) {
+    try {
+      const { deleteDoc: _deleteDoc } = await import('firebase/firestore');
+      await _deleteDoc(doc(db, 'expenses', retired));
+    } catch {
+      // Already absent — nothing to do.
+    }
   }
 
   // Notifications for the demo teacher.

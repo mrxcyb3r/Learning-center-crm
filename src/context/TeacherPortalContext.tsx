@@ -40,7 +40,8 @@ const TeacherPortalContext = createContext<TeacherPortalContextType | undefined>
 
 const UZBEK_DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
 
-function isGroupScheduledToday(daysField: string): boolean {
+function isGroupScheduledToday(daysField: string | undefined | null): boolean {
+  if (!daysField) return false;
   const todayIdx = new Date().getDay(); // 0=Sun, 1=Mon, ...
   const todayAbbr = UZBEK_DAYS[todayIdx];
   return daysField.toUpperCase().includes(todayAbbr.toUpperCase());

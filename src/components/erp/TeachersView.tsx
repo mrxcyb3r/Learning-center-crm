@@ -166,6 +166,9 @@ export const TeachersView: React.FC = () => {
         activeGroups: 0,
         studentsCount: 0,
         salaryStatus: 'Paid',
+        // displayOrder is required: ordered Firestore queries exclude
+        // documents that lack the ordered field entirely.
+        displayOrder: teachers.length + 1,
       });
       showNotification(`Yangi ustoz ${formName} muvaffaqiyatli qo'shildi!`);
     }

@@ -164,18 +164,30 @@ export const ScheduleView: React.FC = () => {
     const courseObj = courses.find((c) => c.id === formCourseId);
     const teacherObj = teachers.find((t) => t.id === formTeacherId);
 
+    const groupName = formGroupName.trim();
+    const courseTitle = courseObj ? courseObj.title : (editingItem?.course || 'Kurs tanlanmagan');
+    const teacherName = teacherObj ? teacherObj.name : (editingItem?.teacher || 'Ustoz tayinlanmagan');
     const payload = {
-      groupName: formGroupName.trim(),
-      course: courseObj ? courseObj.title : (editingItem?.course || 'Kurs tanlanmagan'),
+      groupName,
+      // Canonical aliases so both the Admin ERP and the Teacher portal read
+      // the same record without undefined-field crashes.
+      name: groupName,
+      course: courseTitle,
+      courseType: courseTitle,
       courseId: formCourseId || editingItem?.courseId || '',
-      teacher: teacherObj ? teacherObj.name : (editingItem?.teacher || 'Ustoz tayinlanmagan'),
+      teacher: teacherName,
+      teacherName,
       teacherId: formTeacherId || editingItem?.teacherId || '',
       branch: formBranch,
       room: formRoom,
       days: formDays,
       time: formTime,
+      scheduleTime: `${formDays} ${formTime}`.trim(),
       maxCapacity: Number(formMaxCapacity) || 16,
       studentsCount: editingItem ? editingItem.studentsCount : 0,
+      activeStudentsCount: editingItem
+        ? ((editingItem as { activeStudentsCount?: number }).activeStudentsCount ?? editingItem.studentsCount ?? 0)
+        : 0,
       type: formType,
       status: 'Active' as const,
     };

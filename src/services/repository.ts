@@ -317,8 +317,13 @@ export const groupsService = {
   },
 
   async getAllGroups(): Promise<Group[]> {
-    const snap = await getDocs(query(collection(db, GROUPS_COL), orderBy('displayOrder', 'asc')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Group));
+    // NOTE: no server-side orderBy here. Firestore excludes documents that
+    // lack the ordered field, so ordering by a sparse field (displayOrder)
+    // would silently drop groups. Sort client-side instead.
+    const snap = await getDocs(collection(db, GROUPS_COL));
+    const groups = snap.docs.map(d => ({ id: d.id, ...d.data() } as Group));
+    groups.sort((a, b) => ((a as { displayOrder?: number }).displayOrder ?? 0) - ((b as { displayOrder?: number }).displayOrder ?? 0));
+    return groups;
   },
 
   async createGroup(data: GroupWriteInput): Promise<string> {
@@ -1081,6 +1086,45 @@ export async function registerTeacherWithInvitation(input: {
 }
 
 /**
+ * FAQs Service - shared by Admin CMS and the public landing page.
+ * The landing reads this same collection (see landingCmsService.getFaqs),
+ * so Admin edits here appear on the public site after reload.
+ */
+export interface FaqRecord {
+  id: string;
+  question: string;
+  answer: string;
+  order?: number;
+}
+
+export const faqsService = {
+  async getAllFaqs(): Promise<FaqRecord[]> {
+    const snap = await getDocs(query(collection(db, FAQS_COL), orderBy('order', 'asc')));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FaqRecord));
+  },
+
+  async createFaq(data: Omit<FaqRecord, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, FAQS_COL), cleanData(data));
+    return docRef.id;
+  },
+
+  async updateFaq(id: string, data: Partial<FaqRecord>): Promise<void> {
+    await updateDoc(doc(db, FAQS_COL, id), cleanData(data));
+  },
+
+  async deleteFaq(id: string): Promise<void> {
+    await deleteDoc(doc(db, FAQS_COL, id));
+  },
+
+  subscribeToFaqs(callback: (faqs: FaqRecord[]) => void) {
+    return onSnapshot(
+      query(collection(db, FAQS_COL), orderBy('order', 'asc')),
+      (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as FaqRecord)))
+    );
+  }
+};
+
+/**
  * CMS Service - Website Content Management
  */
 export const cmsService = {
@@ -1201,7 +1245,10 @@ export const resultsService = {
   },
 
   async createResult(data: Omit<StudentResult, 'id'>): Promise<string> {
+    // `date` is required: date-ordered reads exclude documents lacking it.
+    const today = new Date().toISOString().split('T')[0];
     const docRef = await addDoc(collection(db, RESULTS_COL), cleanData({
+      date: today,
       ...data,
       createdAt: new Date().toISOString()
     }));

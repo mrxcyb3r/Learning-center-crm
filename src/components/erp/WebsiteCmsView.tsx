@@ -19,11 +19,15 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { cmsService } from '../../services/repository';
+import { cmsService, faqsService, resultsService } from '../../services/repository';
 import { CmsData, FaqItem, StudentResult } from '../../types/crm';
 
 export const WebsiteCmsView: React.FC = () => {
   const [cms, setCms] = useState<CmsData | null>(null);
+  // FAQ + Results tabs are backed by the SAME Firestore collections the public
+  // landing page reads, so Admin edits appear on the site after reload.
+  const [cmsFaqs, setCmsFaqs] = useState<FaqItem[]>([]);
+  const [cmsResults, setCmsResults] = useState<StudentResult[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'hero' | 'stats' | 'results' | 'faqs' | 'contact'>('hero');
   const [loading, setLoading] = useState(true);
@@ -44,10 +48,50 @@ export const WebsiteCmsView: React.FC = () => {
   const [isAddingResult, setIsAddingResult] = useState(false);
 
   useEffect(() => {
-    cmsService.getCmsData().then(data => {
-      if (data) setCms(data);
-    });
+    let cancelled = false;
+    (async () => {
+      try {
+        const [cmsData, faqs, results] = await Promise.all([
+          cmsService.getCmsData().catch(() => null),
+          faqsService.getAllFaqs().catch(() => [] as FaqItem[]),
+          resultsService.getAllResults().catch(() => []),
+        ]);
+        if (cancelled) return;
+        // hero/stats/contact tabs keep working even when cms/main was never
+        // created: fall back to an empty draft instead of a stuck spinner.
+        setCms(cmsData ?? {
+          hero: { centerName: '', tagline: '', subtitle: '', badge: '' },
+          stats: { universityAdmissions: '', studentAdmittedRatio: '', highestDtmScore: '', stateGrantsCount: '' },
+          contact: { phone: '', telegram: '', branches: [] },
+          faqs: [],
+          results: [],
+        });
+        setCmsFaqs(faqs as FaqItem[]);
+        setCmsResults(results);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const refreshFaqs = async () => {
+    try {
+      setCmsFaqs(await faqsService.getAllFaqs() as FaqItem[]);
+    } catch {
+      // keep last known list on failure
+    }
+  };
+
+  const refreshResults = async () => {
+    try {
+      setCmsResults(await resultsService.getAllResults());
+    } catch {
+      // keep last known list on failure
+    }
+  };
 
   const handleSaveAll = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -60,38 +104,27 @@ export const WebsiteCmsView: React.FC = () => {
     e.preventDefault();
     if (!newFaqQ.trim() || !newFaqA.trim()) return;
 
-    const newItem: FaqItem = {
-      id: 'faq-' + Date.now(),
+    await faqsService.createFaq({
       question: newFaqQ.trim(),
       answer: newFaqA.trim(),
-    };
-
-    const updated = {
-      ...cms,
-      faqs: [...(cms.faqs || []), newItem],
-    };
-    setCms(updated);
-    await cmsService.updateCmsData(updated);
+      order: cmsFaqs.length + 1,
+    });
+    await refreshFaqs();
     setNewFaqQ('');
     setNewFaqA('');
     setIsAddingFaq(false);
   };
 
   const handleDeleteFaq = async (id: string) => {
-    const updated = {
-      ...cms,
-      faqs: cms.faqs.filter((f) => f.id !== id),
-    };
-    setCms(updated);
-    await cmsService.updateCmsData(updated);
+    await faqsService.deleteFaq(id);
+    await refreshFaqs();
   };
 
   const handleAddResult = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newResName.trim()) return;
 
-    const newItem: StudentResult = {
-      id: 'res-' + Date.now(),
+    await resultsService.createResult({
       studentName: newResName.trim(),
       subject: newResSubject.trim(),
       score: newResScore.trim(),
@@ -100,27 +133,17 @@ export const WebsiteCmsView: React.FC = () => {
       year: newResYear.trim(),
       admissionType: newResBadge.trim().toLowerCase().includes('grant') ? 'Grant' : 'Kontrakt',
       published: newResPublished,
-      order: (cms.results?.length || 0) + 1,
-    };
-
-    const updated = {
-      ...cms,
-      results: [...(cms.results || []), newItem],
-    };
-    setCms(updated);
-    await cmsService.updateCmsData(updated);
+      order: cmsResults.length + 1,
+    } as Omit<StudentResult, 'id'>);
+    await refreshResults();
     setNewResName('');
     setNewResPublished(true);
     setIsAddingResult(false);
   };
 
   const handleDeleteResult = async (id: string) => {
-    const updated = {
-      ...cms,
-      results: cms.results.filter((r) => r.id !== id),
-    };
-    setCms(updated);
-    await cmsService.updateCmsData(updated);
+    await resultsService.deleteResult(id);
+    await refreshResults();
   };
 
   return (
@@ -368,7 +391,7 @@ export const WebsiteCmsView: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-4 h-4 text-amber-500" />
-                <span>Talabalar Natijalari ({cms.results?.length || 0})</span>
+                <span>Talabalar Natijalari ({cmsResults.length})</span>
               </h3>
 
               <button
@@ -485,7 +508,7 @@ export const WebsiteCmsView: React.FC = () => {
 
             {/* Results List */}
             <div className="space-y-2">
-              {(cms.results || []).map((r) => (
+              {cmsResults.map((r) => (
                 <div
                   key={r.id}
                   className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs"
@@ -507,9 +530,8 @@ export const WebsiteCmsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={async () => {
-                          const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: true } : x)) };
-                          setCms(updated);
-                          await cmsService.updateCmsData(updated);
+                          await resultsService.updateResult(r.id, { published: true });
+                          await refreshResults();
                         }}
                         title="Saytda nashr etish"
                         className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 transition"
@@ -520,9 +542,8 @@ export const WebsiteCmsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={async () => {
-                          const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: false } : x)) };
-                          setCms(updated);
-                          await cmsService.updateCmsData(updated);
+                          await resultsService.updateResult(r.id, { published: false });
+                          await refreshResults();
                         }}
                         title="Saytdan yashirish"
                         className="p-1.5 rounded-lg text-emerald-500 hover:text-slate-500 transition"
@@ -613,7 +634,7 @@ export const WebsiteCmsView: React.FC = () => {
             )}
 
             <div className="space-y-3">
-              {(cms.faqs || []).map((faq) => (
+              {cmsFaqs.map((faq) => (
                 <div
                   key={faq.id}
                   className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1 relative"

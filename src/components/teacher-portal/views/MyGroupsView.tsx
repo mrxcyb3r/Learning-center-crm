@@ -38,8 +38,8 @@ const SUBJECT_BADGE_COLORS: Record<string, string> = {
   default: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
 };
 
-function getSubjectBadgeColor(courseType: string): string {
-  const lower = courseType.toLowerCase();
+function getSubjectBadgeColor(courseType: string | undefined | null): string {
+  const lower = (courseType || '').toLowerCase();
   for (const [key, color] of Object.entries(SUBJECT_BADGE_COLORS)) {
     if (lower.includes(key)) return color;
   }
@@ -291,9 +291,9 @@ export const MyGroupsView: React.FC = () => {
     const q = searchQuery.toLowerCase();
     return myGroups.filter(
       (g) =>
-        g.name.toLowerCase().includes(q) ||
-        g.courseType.toLowerCase().includes(q) ||
-        g.room.toLowerCase().includes(q)
+        (g.groupName || g.name || '').toLowerCase().includes(q) ||
+        (g.course || g.courseType || '').toLowerCase().includes(q) ||
+        (g.room || '').toLowerCase().includes(q)
     );
   }, [myGroups, searchQuery]);
 

@@ -17,7 +17,7 @@ import {
   Calendar,
   AlertTriangle,
 } from 'lucide-react';
-import { studentsService, coursesService, groupsService, teachersService, paymentsService } from '../../services/repository';
+import { studentsService, coursesService, groupsService, teachersService, paymentsService, assignmentService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName, formatPercent } from '../../utils/format';
 
@@ -157,6 +157,15 @@ export const StudentsView: React.FC = () => {
       (t) => t.name.toLowerCase() === mentorName.toLowerCase()
     );
 
+    // Resolve the target group document for the membership index.
+    const targetGroup = schedule.find((s) => s.groupName === formGroupName) || null;
+    const targetGroupId = targetGroup ? targetGroup.id : null;
+    // Prefer the group's canonical teacher assignment (Firebase UID) so
+    // teacher-scoped rules match; fall back to the name-matched teacher doc.
+    const targetTeacherUid = targetGroup?.teacherId
+      || matchedTeacher?.uid
+      || matchedTeacher?.id;
+
     const payload = {
       fullName: formName.trim(),
       name: formName.trim(),
@@ -167,7 +176,9 @@ export const StudentsView: React.FC = () => {
       groupName: formGroupName,
       mentor: mentorName,
       teacher: mentorName,
-      teacherId: matchedTeacher?.id,
+      // Prefer the group's canonical teacher assignment (Firebase UID) so
+      // teacher-scoped rules match; fall back to the name-matched teacher doc.
+      teacherId: targetTeacherUid,
       monthlyFee: Number(formMonthlyFee) || 0,
       paymentStatus: formPaymentStatus,
       debtAmount: Number(formDebtAmount) || 0,
@@ -177,13 +188,36 @@ export const StudentsView: React.FC = () => {
     };
 
     if (editingStudent) {
-      await studentsService.updateStudent(editingStudent.id, payload);
+      const prevGroup = schedule.find((s) => s.id === editingStudent.groupId)
+        || schedule.find((s) => s.groupName === editingStudent.groupName)
+        || null;
+      const prevGroupId = prevGroup ? prevGroup.id : null;
+      await studentsService.updateStudent(editingStudent.id, {
+        ...payload,
+        ...(targetGroupId ? { groupId: targetGroupId } : {}),
+      });
+      // Keep groups/{groupId}.studentIds synchronized (admin-only).
+      if (targetGroupId !== prevGroupId) {
+        try {
+          await assignmentService.setStudentGroup(editingStudent.id, prevGroupId, targetGroupId);
+        } catch (err) {
+          console.warn('Student membership index sync notice:', err);
+        }
+      }
       showNotification(`${formName} ma'lumotlari yangilandi!`);
     } else {
-      await studentsService.createStudent({
+      const newStudentId = await studentsService.createStudent({
         ...payload,
+        ...(targetGroupId ? { groupId: targetGroupId } : {}),
         enrollmentDate: new Date().toISOString().split('T')[0],
       });
+      if (targetGroupId) {
+        try {
+          await assignmentService.setStudentGroup(newStudentId, null, targetGroupId);
+        } catch (err) {
+          console.warn('Student membership index sync notice:', err);
+        }
+      }
       showNotification(`Yangi o'quvchi ${formName} muvaffaqiyatli ro'yxatga olindi!`);
     }
 
@@ -193,7 +227,20 @@ export const StudentsView: React.FC = () => {
 
   const handleDeleteStudent = async (id: string, name: string) => {
     if (window.confirm(`Rostdan ham ${name} o'quvchini ro'yxatdan o'chirmoqchimisiz?`)) {
+      const doomed = students.find((s) => s.id === id) || null;
+      const doomedGroup = doomed
+        ? (schedule.find((s) => s.id === doomed.groupId)
+          || schedule.find((s) => s.groupName === doomed.groupName)
+          || null)
+        : null;
       await studentsService.deleteStudent(id);
+      if (doomedGroup) {
+        try {
+          await assignmentService.setStudentGroup(id, doomedGroup.id, null);
+        } catch (err) {
+          console.warn('Student membership index sync notice:', err);
+        }
+      }
       await refreshData();
       showNotification(`${name} o'chirildi.`);
     }

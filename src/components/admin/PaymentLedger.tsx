@@ -7,8 +7,7 @@ import {
   subscribeStudents,
   subscribePayments,
   recordPaymentAndSetPaid,
-  updateStudentPaymentStatus,
-  seedFirestoreIfEmpty
+  updateStudentPaymentStatus
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_PAYMENTS } from '../../data/mockData';
 import { Student, Payment } from '../../types';
@@ -96,7 +95,6 @@ export const PaymentLedger: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    seedFirestoreIfEmpty();
 
     const unsubStudents = subscribeStudents((data) => {
       if (!isMounted) return;

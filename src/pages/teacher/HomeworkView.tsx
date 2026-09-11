@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { FileText, Upload, Clock, Trash2, Paperclip, Plus, Edit2, Eye, X, Download, Code, Headphones, BookOpen, Layers, Award, CheckCircle2, Sparkles } from 'lucide-react';
-import { subscribeAssignments, addAssignment, updateAssignment, deleteAssignment, subscribeGroups, subscribeHomeworkSubmissions, notifyStudentsNewAssignment } from '../../services/firestore';
-import { Assignment, Group, HomeworkSubmission } from '../../types';
+import { addAssignment, updateAssignment, deleteAssignment, subscribeHomeworkSubmissions, notifyStudentsNewAssignment } from '../../services/firestore';
+import { Assignment, HomeworkSubmission } from '../../types';
 import { WPSEditor } from '../../components/UI/WPSEditor';
 import { GradingModal } from '../../components/Teacher/GradingModal';
 
@@ -32,8 +33,10 @@ export const HomeworkView: React.FC = () => {
     return en;
   };
 
+  // Scoped sources: assignments via the groups' homework indexes, groups via
+  // the teacher's assignment index. Never whole-collection reads.
+  const { groups, homework: scopedHomework, isLoading: portalLoading } = useTeacherPortal();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [allSubmissions, setAllSubmissions] = useState<HomeworkSubmission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -42,7 +45,7 @@ export const HomeworkView: React.FC = () => {
   const [description, setDescription] = useState('');
   const [subjectCategory, setSubjectCategory] = useState(SUBJECT_CATEGORIES[0]);
   const [resourceFormat, setResourceFormat] = useState(RESOURCE_FORMATS[0]);
-  const [selectedGroup, setSelectedGroup] = useState('CEFR Ingliz Tili (B2 / C1) — B2 FastTrack');
+  const [selectedGroup, setSelectedGroup] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
@@ -65,50 +68,44 @@ export const HomeworkView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isCreating, viewSubmissionsAssignment, gradingSubmission]);
 
+  // Assignments come from the scoped portal (ID-driven reads only).
   useEffect(() => {
-    let unsubAssignments: () => void = () => {};
-    let unsubGroups: () => void = () => {};
+    setAssignments(scopedHomework);
+    if (!portalLoading) setIsLoading(false);
+  }, [scopedHomework, portalLoading]);
+
+  // Default the group picker to the teacher's first assigned group.
+  useEffect(() => {
+    const firstName = groups[0] ? (groups[0].groupName || groups[0].name) : '';
+    if (firstName) {
+      setSelectedGroup((prev) => prev || firstName);
+    }
+  }, [groups]);
+
+  useEffect(() => {
     let unsubSubmissions: () => void = () => {};
     let isMounted = true;
 
-    setIsLoading(true);
-
+    // Submissions have no per-teacher index; the collection subscription is
+    // fail-closed by rules (denied on mixed data → empty). Display is further
+    // restricted to this teacher's own assignment IDs (defense in depth —
+    // the rules remain the security boundary).
     try {
-      unsubAssignments = subscribeAssignments((data) => {
-        if (!isMounted) return;
-        setAssignments(data);
-        setIsLoading(false);
-      });
-
-      unsubGroups = subscribeGroups((gList) => {
-        if (!isMounted) return;
-        setGroups(gList);
-        if (gList.length > 0) {
-          setSelectedGroup(gList[0].name);
-        }
-      });
-
       unsubSubmissions = subscribeHomeworkSubmissions((subs) => {
         if (!isMounted) return;
-        setAllSubmissions(subs);
+        const ownIds = new Set(scopedHomework.map((h) => h.id));
+        setAllSubmissions(subs.filter((s) => ownIds.has(s.assignmentId)));
       });
     } catch (err) {
       console.error('Error connecting to Firestore homework:', err);
-      if (isMounted) setIsLoading(false);
+      if (isMounted) setAllSubmissions([]);
     }
-
-    const timer = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 2000);
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
-      unsubAssignments();
-      unsubGroups();
       unsubSubmissions();
     };
-  }, []);
+  }, [scopedHomework]);
 
   const handleDownloadFile = (fileUrl?: string, fileName?: string) => {
     const targetName = fileName || 'assignment_material';
@@ -141,7 +138,7 @@ export const HomeworkView: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const targetGroup = groups.find((g) => g.name === selectedGroup);
+    const targetGroup = groups.find((g) => (g.groupName || g.name) === selectedGroup);
 
     try {
       if (editingAssignment) {
@@ -152,7 +149,7 @@ export const HomeworkView: React.FC = () => {
           resourceFormat,
           group: selectedGroup,
           groupName: selectedGroup,
-          groupId: targetGroup ? targetGroup.id : editingAssignment.groupId || 'Br2GDIO86SR5GcqfbmOD',
+          groupId: targetGroup ? targetGroup.id : editingAssignment.groupId || '',
           dueDate: dueDate || editingAssignment.dueDate,
           deadline: dueDate || editingAssignment.deadline,
           file: file ? file.name : editingAssignment.file || 'Assignment_Guide.pdf',
@@ -167,7 +164,7 @@ export const HomeworkView: React.FC = () => {
           resourceFormat,
           group: selectedGroup,
           groupName: selectedGroup,
-          groupId: targetGroup ? targetGroup.id : 'Br2GDIO86SR5GcqfbmOD',
+          groupId: targetGroup ? targetGroup.id : '',
           dueDate: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
           deadline: dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
           submittedCount: 0,
@@ -177,7 +174,7 @@ export const HomeworkView: React.FC = () => {
         });
 
         // Trigger notification for students
-        const targetGroupId = targetGroup ? targetGroup.id : 'Br2GDIO86SR5GcqfbmOD';
+        const targetGroupId = targetGroup ? targetGroup.id : '';
         const formattedDueDate = dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
         console.log('🚀 Dispatching homework notification to students:', {
@@ -227,14 +224,15 @@ export const HomeworkView: React.FC = () => {
     setDescription(hw.description || '');
     setSubjectCategory(hw.subjectCategory || SUBJECT_CATEGORIES[0]);
     setResourceFormat(hw.resourceFormat || RESOURCE_FORMATS[0]);
-    setSelectedGroup(hw.group || hw.groupName || 'CEFR Ingliz Tili (B2 / C1)');
+    setSelectedGroup(hw.group || hw.groupName || '');
     setDueDate(hw.dueDate || hw.deadline || '');
     setIsCreating(true);
   };
 
   const handleDeleteAssignment = async (id: string) => {
     try {
-      await deleteAssignment(id);
+      const doomed = assignments.find((h) => h.id === id) || null;
+      await deleteAssignment(id, doomed?.groupId);
       setToastMessage(t("Topshiriq o'chirildi", "Assignment deleted", "Задание удалено"));
       setTimeout(() => setToastMessage(null), 3000);
     } catch (err) {
@@ -340,17 +338,18 @@ export const HomeworkView: React.FC = () => {
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white font-bold"
               >
                 {groups.length > 0 ? (
-                  groups.map((g) => (
-                    <option key={g.id} value={g.name}>
-                      {g.name}
-                    </option>
-                  ))
+                  groups.map((g) => {
+                    const label = g.groupName || g.name;
+                    return (
+                      <option key={g.id} value={label}>
+                        {label}
+                      </option>
+                    );
+                  })
                 ) : (
-                  <>
-                    <option value="DTM & Milliy Sertifikat — 1-guruh">DTM & Milliy Sertifikat — 1-guruh</option>
-                    <option value="Matematika & Fizika — DTM 1-guruh">Matematika & Fizika — DTM 1-guruh</option>
-                    <option value="CEFR Ingliz Tili — B2 FastTrack">CEFR Ingliz Tili — B2 FastTrack</option>
-                  </>
+                  <option value="">
+                    {t("Biriktirilgan guruh yo'q", "No assigned groups", "Нет назначенных групп")}
+                  </option>
                 )}
               </select>
             </div>

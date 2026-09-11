@@ -8,8 +8,7 @@ import {
   addStudent,
   updateStudent,
   updateStudentPaymentStatus,
-  deleteStudent,
-  seedFirestoreIfEmpty
+  deleteStudent
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_GROUPS } from '../../data/mockData';
 import { Student, Group, normalizeStudentPaymentStatus } from '../../types';
@@ -77,7 +76,6 @@ export const StudentsManagement: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    seedFirestoreIfEmpty();
 
     const unsubStudents = subscribeStudents((data) => {
       if (!isMounted) return;

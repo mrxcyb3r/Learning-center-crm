@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   BookOpen,
@@ -40,53 +41,17 @@ interface TeacherGroup {
   students: StudentGradeItem[];
 }
 
-const MOCK_TEACHER_GROUPS: TeacherGroup[] = [
-  {
-    id: 'grp_ielts_1',
-    name: 'IELTS 7.5+ Intensive',
-    subject: 'IELTS Academic Writing & Speaking',
-    category: 'IELTS',
-    schedule: 'Mon / Wed / Fri 14:00 - 16:00',
-    room: 'Room 302 (Renessans Hub)',
-    students: [
-      { id: 'std_1', name: 'Davron Abduvaliyev', telegramUsername: '@davron_ielts', telegramConnected: true, score: '7.5', feedback: 'Great Task 2 essay structure, lexical resource improved.', attendance: 'present', dispatched: false },
-      { id: 'std_2', name: 'Malika Zokirova', telegramUsername: '@malika_z', telegramConnected: true, score: '7.0', feedback: 'Fluency in speaking part 2 was strong.', attendance: 'present', dispatched: false },
-      { id: 'std_3', name: 'Sardor Qodirov', telegramUsername: '@sardor_q', telegramConnected: true, score: '6.5', feedback: 'Needs work on complex grammar and cohesion.', attendance: 'late', dispatched: false },
-      { id: 'std_4', name: 'Jasur Karimov', telegramUsername: '@jasur_k', telegramConnected: false, score: '6.0', feedback: 'Missed diagnostic test part 1.', attendance: 'absent', dispatched: false },
-      { id: 'std_5', name: 'Nigora Alimova', telegramUsername: '@nigora_a', telegramConnected: true, score: '8.0', feedback: 'Outstanding vocabulary and Task Response.', attendance: 'present', dispatched: false },
-    ]
-  },
-  {
-    id: 'grp_python_1',
-    name: 'Python & Cybersecurity',
-    subject: 'Backend Development & Ethical Hacking',
-    category: 'Programming',
-    schedule: 'Tue / Thu / Sat 16:30 - 18:30',
-    room: 'Lab 101 (Tech Wing)',
-    students: [
-      { id: 'std_6', name: 'Azizbek Rahimov', telegramUsername: '@aziz_dev', telegramConnected: true, score: '95/100', feedback: 'Completed Async Express middleware assignment.', attendance: 'present', dispatched: false },
-      { id: 'std_7', name: 'Madina Umarova', telegramUsername: '@madina_u', telegramConnected: true, score: '88/100', feedback: 'Good API route error handling logic.', attendance: 'present', dispatched: false },
-      { id: 'std_8', name: 'Bekzod Tursunov', telegramUsername: '@bek_cyber', telegramConnected: true, score: '92/100', feedback: 'Successfully implemented JWT auth guard.', attendance: 'present', dispatched: false },
-      { id: 'std_9', name: 'Shahzod Sobirov', telegramUsername: '@shahzod_s', telegramConnected: false, score: '70/100', feedback: 'Late submission for Firestore rule test.', attendance: 'late', dispatched: false },
-    ]
-  },
-  {
-    id: 'grp_cefr_1',
-    name: 'CEFR Ingliz Tili (B2 / C1)',
-    subject: 'Listening & Reading',
-    category: 'IELTS',
-    schedule: 'Dush / Chor / Juma 16:30 - 18:30',
-    room: '101-Auditoriya',
-    students: [
-      { id: 'std_10', name: 'Kamola Saidova', telegramUsername: '@kamola_cefr', telegramConnected: true, score: 'B2 (72/100)', feedback: 'Listening and reading bo\'yicha a\'lo natija.', attendance: 'present', dispatched: false },
-      { id: 'std_11', name: 'Javohir Mahmudov', telegramUsername: '@javohir_m', telegramConnected: true, score: 'B1 (68/100)', feedback: 'Grammatikada ozgina xatolar bor.', attendance: 'present', dispatched: false },
-      { id: 'std_12', name: 'Dilnoza Rahimova', telegramUsername: '@dilnoza_r', telegramConnected: true, score: 'B1 (70/100)', feedback: 'Tinglab tushunishni mustahkamlash tavsiya etiladi.', attendance: 'present', dispatched: false },
-    ]
-  }
-];
+function inferCategory(course: string): TeacherGroup['category'] {
+  if (/ielts|cefr|english|ingliz/i.test(course)) return 'IELTS';
+  if (/python|cyber|web|it\b|dastur/i.test(course)) return 'Programming';
+  if (/physic|fizika/i.test(course)) return 'Physics';
+  return 'Math & SAT';
+}
 
 export const TeacherDashboard: React.FC = () => {
   const { userProfile, currentUser } = useAuth();
+  // Scoped source: only groups/students from this teacher's assignment index.
+  const { myGroups, myStudents } = useTeacherPortal();
   const { language } = useLanguage();
 
   const t = (uz: string, en: string, ru: string) => {
@@ -95,14 +60,44 @@ export const TeacherDashboard: React.FC = () => {
     return en;
   };
 
-  const [groups, setGroups] = useState<TeacherGroup[]>(MOCK_TEACHER_GROUPS);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(MOCK_TEACHER_GROUPS[0].id);
+  // Local interactive state (grades/feedback/attendance/dispatch) seeded from
+  // scoped Firestore data. Empty when nothing is assigned — never mock data.
+  const [groups, setGroups] = useState<TeacherGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+
+  useEffect(() => {
+    const mapped: TeacherGroup[] = myGroups.map((g) => {
+      const course = g.course || g.courseType || '';
+      const memberIds = new Set(g.studentIds ?? []);
+      const members = myStudents.filter((s) => memberIds.has(s.id) || s.groupId === g.id);
+      return {
+        id: g.id,
+        name: g.groupName || g.name,
+        subject: course,
+        category: inferCategory(course),
+        schedule: g.scheduleTime || [g.days, g.time].filter(Boolean).join(' ') || '',
+        room: g.room || '',
+        students: members.map((s) => ({
+          id: s.id,
+          name: s.fullName,
+          telegramUsername: s.telegramHandle || '',
+          telegramConnected: Boolean(s.telegramHandle),
+          score: '',
+          feedback: '',
+          attendance: 'present' as const,
+          dispatched: false,
+        })),
+      };
+    });
+    setGroups(mapped);
+    setSelectedGroupId((prev) => (mapped.some((g) => g.id === prev) ? prev : (mapped[0]?.id || '')));
+  }, [myGroups, myStudents]);
   const [testTitle, setTestTitle] = useState<string>('Diagnostic Test #4');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const activeGroup = groups.find((g) => g.id === selectedGroupId) || groups[0];
+  const activeGroup = groups.find((g) => g.id === selectedGroupId) || groups[0] || null;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -170,6 +165,7 @@ export const TeacherDashboard: React.FC = () => {
 
   // Dispatch single grade via Telegram API
   const handleDispatchSingle = async (student: StudentGradeItem) => {
+    if (!activeGroup) return;
     try {
       const response = await fetch('/api/bot/notify-grade', {
         method: 'POST',
@@ -206,6 +202,7 @@ export const TeacherDashboard: React.FC = () => {
 
   // Dispatch batch grades via Telegram API
   const handleDispatchAll = async () => {
+    if (!activeGroup) return;
     setIsSubmitting(true);
     try {
       let successCount = 0;
@@ -242,6 +239,27 @@ export const TeacherDashboard: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Empty assignment set: show an empty state instead of mock data.
+  if (!activeGroup) {
+    return (
+      <div className="space-y-6">
+        <div className="p-12 text-center rounded-3xl bg-slate-900/60 border border-slate-800">
+          <GraduationCap className="w-10 h-10 mx-auto mb-3 text-slate-600" />
+          <h3 className="text-base font-extrabold text-white">
+            {t("Sizga hali guruh biriktirilmagan", "No groups assigned yet", "Вам пока не назначены группы")}
+          </h3>
+          <p className="text-xs text-slate-400 mt-2">
+            {t(
+              "Administrator guruh tayinlagach, ular shu yerda ko'rinadi.",
+              "Groups will appear here once an administrator assigns them.",
+              "Группы появятся здесь после назначения администратором."
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredStudents = activeGroup.students.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

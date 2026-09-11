@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { Award, CheckCircle2, Save, Sparkles, User, History, Loader2, BookOpen, Layers, Sliders, CheckSquare } from 'lucide-react';
-import { saveMockScore, subscribeMockScores, subscribeStudents, notifyStudentGradePublished } from '../../services/firestore';
-import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_SCORES } from '../../data/mockData';
+import { saveMockScore, subscribeMockScores, notifyStudentGradePublished } from '../../services/firestore';
 import { roundToIELTSBand } from '../../services/gemini';
-import { MockTestScore, Student } from '../../types';
+import { MockTestScore } from '../../types';
 
 export const GradebookView: React.FC = () => {
   const { language } = useLanguage();
@@ -14,11 +14,14 @@ export const GradebookView: React.FC = () => {
     return en;
   };
 
-  const [students, setStudents] = useState<Student[]>([]);
+  // Scoped source: only students from this teacher's assignment index.
+  // Scores subscription is fail-closed by rules (denied on mixed data → empty).
+  const { students: scopedStudents, isLoading: portalLoading } = useTeacherPortal();
+  const students = scopedStudents;
   const [mockScores, setMockScores] = useState<MockTestScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [studentName, setStudentName] = useState('Jasur Rahimov');
+  const [studentName, setStudentName] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   
   // Subject and Grading System State
@@ -47,35 +50,29 @@ export const GradebookView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    const unsubStudents = subscribeStudents((stList) => {
-      if (!isMounted) return;
-      const effectiveStudents = stList.length > 0 ? stList : DEFAULT_MOCK_STUDENTS;
-      setStudents(effectiveStudents);
-      if (effectiveStudents.length > 0 && !studentName) {
-        setStudentName(effectiveStudents[0].fullName);
-        setSelectedStudentId(effectiveStudents[0].id);
-      }
-      setIsLoading(false);
-    });
+    if (scopedStudents.length > 0 && !selectedStudentId) {
+      setStudentName(scopedStudents[0].fullName);
+      setSelectedStudentId(scopedStudents[0].id);
+    }
+    if (!portalLoading) setIsLoading(false);
+  }, [scopedStudents, portalLoading]);
 
+  useEffect(() => {
+    let isMounted = true;
+    // Fail-closed by rules on mixed data → empty (never mock scores).
+    // Display is restricted to this teacher's own students below.
     const unsubScores = subscribeMockScores((scoresList) => {
       if (!isMounted) return;
-      setMockScores(scoresList.length > 0 ? scoresList : DEFAULT_MOCK_SCORES);
+      const ownIds = new Set(scopedStudents.map((s) => s.id));
+      setMockScores(scoresList.filter((m) => ownIds.has(m.studentId)));
       setIsLoading(false);
     });
-
-    const timer = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 2000);
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
-      unsubStudents();
       unsubScores();
     };
-  }, []);
+  }, [scopedStudents]);
 
   // Compute calculated overall result based on active grading system
   const calculateOverallDisplay = () => {

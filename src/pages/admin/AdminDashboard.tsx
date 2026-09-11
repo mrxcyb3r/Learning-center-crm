@@ -8,8 +8,7 @@ import {
   subscribeStudents,
   subscribeGroups,
   subscribePayments,
-  updatePaymentStatus,
-  seedFirestoreIfEmpty
+  updatePaymentStatus
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_GROUPS, DEFAULT_MOCK_PAYMENTS } from '../../data/mockData';
 import { Student, Group, Payment } from '../../types';
@@ -58,7 +57,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [payments, setPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    seedFirestoreIfEmpty();
 
     const unsubStudents = subscribeStudents((data) => {
       setStudents(data.length > 0 ? data : DEFAULT_MOCK_STUDENTS);

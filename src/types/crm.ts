@@ -240,6 +240,10 @@ export interface GroupScheduleItem {
   teacher: string;
   teacherId?: string;
   branch?: string;
+  // Canonical membership index (admin-maintained): student document IDs.
+  studentIds?: string[];
+  // Homework document IDs for this group (maintained on creation).
+  homeworkIds?: string[];
   room: string;
   days: string;
   time: string;

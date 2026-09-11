@@ -478,6 +478,16 @@ export async function addAssignment(data: any) {
       } catch (e) {
         // secondary write
       }
+      // Maintain the group's homework index for ID-driven teacher reads.
+      try {
+        const { updateDoc: _updateDoc, arrayUnion: _arrayUnion } = await import('firebase/firestore');
+        const gid = (payload as { groupId?: string }).groupId;
+        if (typeof gid === 'string' && gid) {
+          await _updateDoc(doc(db, GROUPS_COL, gid), { homeworkIds: _arrayUnion(docRef.id) });
+        }
+      } catch {
+        // Index maintenance is best-effort; the homework doc itself is saved.
+      }
       console.log("✅ Firestore Write Success (Homework Created):", docRef.id, payload);
       return docRef.id;
     } catch (primaryError) {
@@ -514,12 +524,21 @@ export async function updateAssignment(id: string, data: any) {
 
 export const createHomework = addAssignment;
 
-export async function deleteAssignment(id: string) {
+export async function deleteAssignment(id: string, groupId?: string) {
   try {
     await deleteDoc(doc(db, "homework", id));
     try {
       await deleteDoc(doc(db, ASSIGNMENTS_COL, id));
     } catch (e) {}
+    // Maintain the group's homework index.
+    if (groupId) {
+      try {
+        const { updateDoc: _updateDoc, arrayRemove: _arrayRemove } = await import('firebase/firestore');
+        await _updateDoc(doc(db, GROUPS_COL, groupId), { homeworkIds: _arrayRemove(id) });
+      } catch {
+        // Best-effort index maintenance.
+      }
+    }
     console.log("✅ Firestore Delete Success (Homework Deleted):", id);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `homework/${id}`);
@@ -1129,8 +1148,10 @@ export async function notifyStudentsNewAssignment(
   const payload = {
     category: 'assignment_created' as const,
     recipientRole: 'student' as const,
-    groupId: groupId || 'Br2GDIO86SR5GcqfbmOD',
+    groupId: groupId || '',
     linkId: assignmentId,
+    // senderId is required by Firestore rules for teacher-created notifications.
+    senderId: auth.currentUser?.uid || '',
     senderName: teacherName || 'Jasur Alimov',
     title: `New Assignment: ${title}`,
     description: `New homework posted for ${groupName || 'your group'}.${dueDate ? ` Due date: ${dueDate}.` : ' Please submit your solution on time.'}`,
@@ -1169,378 +1190,9 @@ export async function notifyStudentGradePublished(studentId: string, studentName
 }
 
 /* =========================================================================
-   INITIAL DB SEEDER (IF EMPTY)
+   LEGACY SEEDER REMOVED — use src/services/seed.ts ensureSeeded()
+   (single admin-shell invocation, deterministic IDs, versioned).
    ========================================================================= */
-// Single-flight guard: the seeder is invoked from several components and
-// React StrictMode double-invokes effects. Without this, concurrent runs can
-// both observe an empty collection and seed twice. Concurrent callers share
-// one execution; completed runs are not repeated within the session.
-let seedInFlight: Promise<void> | null = null;
-let seedCompleted = false;
-
-export async function seedFirestoreIfEmpty() {
-  if (seedCompleted) return;
-  if (seedInFlight) return seedInFlight;
-  seedInFlight = (async () => {
-  try {
-    const dateDaysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split('T')[0];
-
-    const teacherId = 'demo_teacher_001';
-    const teacherName = 'Jasur Alimov';
-
-    const groups: { id: string; name: string; studentIds: { id: string; name: string }[] }[] = [];
-
-    // 1. Seed Groups & Students for the demo teacher (Jasur Alimov — Matematika & Fizika)
-    const groupSnap = await getDocs(collection(db, GROUPS_COL));
-    if (groupSnap.empty) {
-      const groupDefs = [
-        { name: 'Matematika & Fizika — DTM 1-guruh', scheduleTime: 'Dush/Chor/Jum 14:00–16:00', room: '102-xona', maxCapacity: 20, level: 'DTM', description: 'DTM va Milliy sertifikatga tayyorlov asosiy guruhi', count: 18 },
-        { name: 'Matematika & Fizika — DTM 2-guruh', scheduleTime: 'Sesh/Pay/Shan 16:00–18:00', room: '101-xona', maxCapacity: 20, level: 'DTM', description: 'Kechki DTM tayyorlov guruhi', count: 12 },
-        { name: 'Matematika & Fizika — Milliy Sertifikat', scheduleTime: 'Dush/Chor/Jum 17:00–19:00', room: '201-xona', maxCapacity: 18, level: 'Oliy', description: 'Milliy sertifikat (A+/A) guruhi', count: 10 },
-        { name: 'Matematika & Fizika — Hafta oxiri', scheduleTime: 'Shan 09:00–13:00', room: 'MindLab', maxCapacity: 16, level: 'Akseler', description: 'Hafta oxiri tezkor tayyorlov guruhi', count: 8 },
-      ];
-
-      const studentNames = [
-        'Azizbek Toshmatov', 'Jasur Rahimov', 'Malika Sharipova', 'Bekzod Umarov',
-        'Feruza Alimova', 'Odiljon Yuldashev', 'Sevara Tursunova', 'Sardor Ergashev',
-        'Dilnoza Sobirova', 'Nodirjon Qosimov', 'Ziyoda Rahimova', 'Muzaffar Xolmatov',
-        'Kamola Nazarova', "Ulug'bek Sattorov", 'Madina Karimova', 'Sherzod Mirkomilov',
-        'Gulchehra Raxmonova', 'Bobur Mahmudov', 'Sabina Nurmatova', 'Javlonbek Sodiqov',
-        'Shahnoza Ismoilova', 'Doston Rahmatov', 'Nilufar Ergasheva', "Murodjon Toshpo'latov",
-        'Aziza Qodirova', 'Farrux Mirzayev', 'Dilbar Sultonova', 'Akmal Avezov',
-        'Maftuna Utaeva', 'Otabek Rashidov', 'Munisa Abdullayeva', 'Islomjon Karimov',
-        'Yulduz Bekmurodova', 'Sirojiddin Aliyev', 'Mehriniso Xudoyberdiyeva', 'Anvarjon Nazirov',
-        'Robiya Erkaboyeva', "G'ayrat Fayzullayev", 'Shahrizoda Abdurahmonova', 'Ozodbek Normurodov',
-        'Mastura Yusupova', 'Diyorbek Haydarov', 'Barno Usmonova', 'Jasurbek Maxmudov',
-        "Charos G'aniyeva", 'Bekmurod Toshboyev', 'Umida Rajabova', 'Alisher Bozorov',
-      ];
-
-      const phonePrefixes = ['90', '91', '93', '94', '97', '99'];
-      const payCycle: Student['paymentStatus'][] = ['paid', 'paid', 'paid', 'paid', 'paid', 'pending', 'overdue'];
-
-      let nameIdx = 0;
-      for (const gd of groupDefs) {
-        const gid = await addGroup({
-          name: gd.name,
-          courseType: 'Matematika & Fizika',
-          teacherId,
-          teacherName,
-          scheduleTime: gd.scheduleTime,
-          room: gd.room,
-          activeStudentsCount: gd.count,
-          maxCapacity: gd.maxCapacity,
-          level: gd.level,
-          description: gd.description,
-        });
-        const studentIds: { id: string; name: string }[] = [];
-        if (gid) {
-          for (let i = 0; i < gd.count && nameIdx < studentNames.length; i++, nameIdx++) {
-            const fullName = studentNames[nameIdx];
-            const n = nameIdx;
-            const prefix = phonePrefixes[n % phonePrefixes.length];
-            const phone = `+998 (${prefix}) ${String(120 + ((n * 37) % 880)).padStart(3, '0')}-${String(10 + ((n * 23) % 90))}${String(10 + ((n * 17) % 90))}`;
-            const payStatus = payCycle[n % payCycle.length];
-            const sid = await addStudent({
-              fullName,
-              phone,
-              groupId: gid,
-              groupName: gd.name,
-              tuitionFee: 380000,
-              paymentStatus: payStatus,
-              lastPaymentDate: payStatus === 'paid' ? dateDaysAgo((n * 2) % 26) : dateDaysAgo(28 + (n % 18)),
-              subjectCategory: 'Aniq Fanlar',
-              nextDueDate: payStatus !== 'paid' ? dateDaysAgo(-((n % 9) + 1)) : undefined,
-              telegramHandle: `@${fullName.replace(/\s+/g, '_').toLowerCase()}`,
-              attendanceRate: 88 + (n % 11),
-            });
-            if (sid) studentIds.push({ id: sid, name: fullName });
-          }
-        }
-        groups.push({ id: gid || '', name: gd.name, studentIds });
-      }
-
-      // 2. Seed Payments (teacher-collected model) — last 4 months
-      const methods: Payment['paymentMethod'][] = ['cash', 'card', 'click', 'payme'];
-      const paymentPromises: Promise<unknown>[] = [];
-      for (const g of groups) {
-        for (let gi = 0; gi < g.studentIds.length; gi++) {
-          const { id: sid, name: sName } = g.studentIds[gi];
-          for (let m = 3; m >= 0; m--) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - m);
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            const skip = (sid.charCodeAt(sid.length - 1) + gi + m) % 7 === 0;
-            if (skip) continue;
-            const day = 1 + ((gi * 3 + m * 5) % 27);
-            const suffix = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(day).padStart(2, '0')}${gi + 1}`;
-            paymentPromises.push(
-              addDoc(
-                collection(db, PAYMENTS_COL),
-                cleanData({
-                  studentId: sid,
-                  studentName: sName,
-                  amount: 380000,
-                  paymentMethod: methods[(gi + m) % methods.length],
-                  date: `${key}-${String(day).padStart(2, '0')}`,
-                  recordedBy: teacherName,
-                  status: 'paid',
-                  cohortGroup: g.name,
-                  subjectCategory: 'Aniq Fanlar',
-                  paymentPeriod: `${key} to'lovi`,
-                  receiptRef: `REC-${suffix}`,
-                  notes: gi % 9 === 0 ? "Kechiktirilgan to'lov qabul qilindi" : undefined,
-                })
-              )
-            );
-          }
-        }
-      }
-      await Promise.all(paymentPromises);
-
-      // 3. Seed Attendance (today + recent history)
-      const buildAttendance = (studentIds: { id: string }[], present: number, late: number, excused: number, absent: number) => {
-        const records: AttendanceRecord['records'] = {};
-        let i = 0;
-        for (const s of studentIds) {
-          if (i < present) records[s.id] = 'present';
-          else if (i < present + late) records[s.id] = { status: 'late', lateMinutes: 5 + ((i * 7) % 15) };
-          else if (i < present + late + excused) records[s.id] = 'excused';
-          else records[s.id] = 'absent';
-          i++;
-        }
-        return records;
-      };
-
-      const attendanceToday: { group: (typeof groups)[number]; present: number; late: number; excused: number; absent: number }[] = [
-        { group: groups[0], present: 15, late: 2, excused: 0, absent: 1 },
-        { group: groups[1], present: 10, late: 1, excused: 0, absent: 1 },
-        { group: groups[2], present: 8, late: 1, excused: 0, absent: 1 },
-        { group: groups[3], present: 7, late: 0, excused: 0, absent: 1 },
-      ];
-      for (const at of attendanceToday) {
-        if (at.group.id) {
-          await saveAttendanceRecord(at.group.id, dateDaysAgo(0), buildAttendance(at.group.studentIds, at.present, at.late, at.excused, at.absent), teacherName);
-        }
-      }
-
-      // History for DTM 1-guruh
-      if (groups[0].id) {
-        const hist = [
-          { day: 3, present: 16, late: 0, excused: 0, absent: 2 },
-          { day: 6, present: 15, late: 1, excused: 1, absent: 1 },
-          { day: 8, present: 14, late: 2, excused: 0, absent: 2 },
-          { day: 10, present: 16, late: 1, excused: 0, absent: 1 },
-        ];
-        for (const h of hist) {
-          await saveAttendanceRecord(groups[0].id, dateDaysAgo(h.day), buildAttendance(groups[0].studentIds, h.present, h.late, h.excused, h.absent), teacherName);
-        }
-      }
-
-      // Mock score for one student
-      const firstStudent = groups[0].studentIds[1];
-      if (firstStudent) {
-        await saveMockScore({
-          studentId: firstStudent.id,
-          studentName: firstStudent.name,
-          date: dateDaysAgo(3),
-          overall: 88,
-          listening: 90,
-          reading: 85,
-          writing: 86,
-          speaking: 92,
-          teacherFeedback: "A'lo natija! Algebra blokida xatoliklar minimallashtirilgan.",
-        });
-      }
-    }
-
-    // 4. Seed Assignments if empty
-    const assignSnap = await getDocs(collection(db, ASSIGNMENTS_COL));
-    if (assignSnap.empty) {
-      await addAssignment({
-        title: 'Matematika: Trigonometriya masalalari to\'plami (25 ta)',
-        group: 'Matematika & Fizika — DTM 1-guruh',
-        dueDate: dateDaysAgo(-2),
-        submittedCount: 15,
-        totalStudents: 18,
-        file: 'Trigonometriya_masalalari.pdf'
-      });
-      await addAssignment({
-        title: 'Fizika: Kinematika test sinovi No.4',
-        group: 'Matematika & Fizika — DTM 1-guruh',
-        dueDate: dateDaysAgo(-4),
-        submittedCount: 17,
-        totalStudents: 18,
-        file: 'Kinematika_test_4.pdf'
-      });
-      await addAssignment({
-        title: 'Milliy sertifikat: Kombinatorika va ehtimollar nazariyasi',
-        group: 'Matematika & Fizika — Milliy Sertifikat',
-        dueDate: dateDaysAgo(-3),
-        submittedCount: 8,
-        totalStudents: 10,
-        file: 'Kombinatorika.pdf'
-      });
-    }
-
-    // 5. Seed Feed Posts if empty
-    const feedSnap = await getDocs(collection(db, FEED_POSTS_COL));
-    if (feedSnap.empty) {
-      await addFeedPost({
-        author: teacherName,
-        avatar: 'J',
-        role: 'Matematika & Fizika o\'qituvchisi',
-        date: 'Bugun, 09:30',
-        title: "Trigonometriya bo'yicha yangi materiallar yuklandi",
-        content: "Hurmatli DTM 1-guruh a'zolari! Trigonometrik tenglamalar va ularni yechish usullari bo'yicha yangi to'plam biriktirilgan faylda joylashgan. Keyingi darsgacha 25 ta masalani yechib kelasiz.",
-        attachment: 'Trigonometriya_masalalari.pdf',
-        attachmentSize: '1.8 MB',
-        likes: 18,
-        comments: [
-          { id: '1', author: 'Azizbek Toshmatov', text: 'Rahmat ustoz, yuklab oldim!', date: 'Bugun, 10:00' }
-        ]
-      });
-    }
-
-    // 6. Seed Notifications if empty
-    const notifSnap = await getDocs(collection(db, NOTIFICATIONS_COL));
-    if (notifSnap.empty) {
-      await createNotification({
-        category: 'assignment_created',
-        recipientRole: 'student',
-        senderName: teacherName,
-        title: 'Yangi vazifa: Trigonometriya masalalari',
-        description: `Jasur Alimov Matematika & Fizika — DTM 1-guruh uchun yangi vazifa joyladi.`,
-        isRead: false,
-        createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-      });
-      await createNotification({
-        category: 'announcement',
-        recipientRole: 'all',
-        senderName: 'Renessans Center',
-        title: "RENESSANS uchun markaziy tizim tayyor!",
-        description: "Dars jadvali, davomat, to'lovlar va vazifalarni bir joyda kuzatib boring.",
-        isRead: false,
-        createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-      });
-      await createNotification({
-        category: 'announcement',
-        recipientRole: 'admin',
-        senderName: teacherName,
-        title: "To'lov qabul qilindi",
-        description: 'Azizbek Toshmatov 380,000 so\'m to\'lovni naqd amalga oshirdi.',
-        isRead: false,
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-      });
-    }
-
-    // 6.5 Seed additional teacher notifications (recipientRole = 'teacher')
-    if (notifSnap.empty) {
-      const tsNow = Date.now();
-      const teacherNotifs = [
-        { category: 'schedule_change', title: "Haftalik jadval o'zgarishi", description: "DTM 1-guruhining dushanba darsi 14:00 dan 15:00 ga ko'chirildi.", createdAt: new Date(tsNow - 3600000 * 1).toISOString() },
-        { category: 'announcement', title: 'Haftalik diagnostik test', description: 'Hafta oxiri diagnostik testi uchun materiallarni tayyorlang.', createdAt: new Date(tsNow - 3600000 * 8).toISOString() },
-        { category: 'student_issue', title: 'O\'quvchi qarzdorligi', description: '3 ta o\'quvchining to\'lov muddati o\'tgan. Davomat sahifasidan batafsil ko\'ring.', createdAt: new Date(tsNow - 3600000 * 18).toISOString() },
-      ];
-      for (const n of teacherNotifs) {
-        await createNotification({
-          ...n,
-          category: n.category as any,
-          recipientRole: 'teacher',
-          senderName: 'Renessans Center',
-          isRead: false,
-        });
-      }
-    }
-
-    // 6.6 Seed Teacher Tasks
-    const tasksSnap = await getDocs(collection(db, 'teacher_tasks'));
-    if (tasksSnap.empty) {
-      const tNow = Date.now();
-      const tasksData = [
-        { title: 'Davomatni yangilash', description: 'Bugungi DTM 1-guruh darsida davomatni to\'ldiring.', status: 'pending', priority: 'high', dueDate: new Date(tNow + 86400000).toISOString().split('T')[0], teacherId },
-        { title: 'Haftalik test natijalarini kiritish', description: 'Sesh/Pay/Shan guruhlari uchun haftalik test ballarini tizimga kiriting.', status: 'pending', priority: 'medium', dueDate: new Date(tNow + 2 * 86400000).toISOString().split('T')[0], teacherId },
-        { title: 'O\'quvchilar qarzdorligini tekshirish', description: 'Qarzdor o\'quvchilar ro\'yxatini tekshirib, ota-onalar bilan bog\'laning.', status: 'in_progress', priority: 'high', dueDate: new Date(tNow + 1 * 86400000).toISOString().split('T')[0], teacherId },
-        { title: 'Keyingi dars materialini tayyorlash', description: 'Milliy sertifikat guruhi uchun yakuniy tayyorlov materiallarini tayyorlang.', status: 'pending', priority: 'medium', dueDate: new Date(tNow + 3 * 86400000).toISOString().split('T')[0], teacherId },
-        { title: 'Guruh natijalarini ko\'rib chiqish', description: 'Shu oy barcha guruhlar uchun natijalar tahlilini tayyorlang.', status: 'completed', priority: 'low', dueDate: new Date(tNow - 1 * 86400000).toISOString().split('T')[0], teacherId },
-      ];
-      for (const task of tasksData) {
-        await addDoc(collection(db, 'teacher_tasks'), cleanData({
-          ...task,
-          createdAt: new Date(tNow - 3600000 * 10).toISOString(),
-        }));
-      }
-    }
-
-    // 6.7 Seed Teacher Documents
-    const docsSnap = await getDocs(collection(db, 'teacher_documents'));
-    if (docsSnap.empty) {
-      const tNow = Date.now();
-      const docsData = [
-        { title: 'Dars rejasi — DTM 1-guruh', category: 'curriculum', description: 'Haftalik DTM tayyorlov dars rejasi.', fileName: 'dtm-reja.pdf', fileSize: '245 KB', createdAt: new Date(tNow - 3600000 * 24 * 10).toISOString(), teacherId },
-        { title: 'Guruh jadvali — Q1 2026', category: 'schedule', description: 'Barcha guruhlar uchun birinchi chorak jadvali.', fileName: 'jadval-q1-2026.pdf', fileSize: '128 KB', createdAt: new Date(tNow - 3600000 * 24 * 15).toISOString(), teacherId },
-        { title: 'Davomat hisoboti — Yanvar 2026', category: 'report', description: 'Yanvar oyiga oid davomat statistikasi.', fileName: 'davomat-yanvar-2026.xlsx', fileSize: '89 KB', createdAt: new Date(tNow - 3600000 * 24 * 30).toISOString(), teacherId },
-        { title: 'Haftalik test — Algebra', category: 'test', description: 'Algebra bo\'yicha haftalik nazorat testi variantlari.', fileName: 'test-algebra-haftalik.pdf', fileSize: '176 KB', createdAt: new Date(tNow - 3600000 * 24 * 5).toISOString(), teacherId },
-      ];
-      for (const d of docsData) {
-        await addDoc(collection(db, 'teacher_documents'), cleanData(d));
-      }
-    }
-
-    // 7. Seed Security Pins & Super Admin User Doc if empty
-    const pinDoc = await getDoc(doc(db, 'settings', 'security_pins'));
-    if (!pinDoc.exists()) {
-      await saveSecurityPins({
-        adminPin: 'secureadmin',
-        teacherPin: 'secureteacher',
-        studentPin: 'securestudent'
-      });
-    }
-
-    // Ensure Super Admin user doc exists
-    try {
-      const superAdminDoc = await getDoc(doc(db, 'users', SUPER_ADMIN_UID));
-      if (!superAdminDoc.exists()) {
-        await setDoc(doc(db, 'users', SUPER_ADMIN_UID), {
-          uid: SUPER_ADMIN_UID,
-          email: 'admin@admin.com',
-          displayName: 'Super Admin',
-          role: 'superadmin',
-          createdAt: new Date().toISOString()
-        }, { merge: true });
-      }
-    } catch (e) {
-      console.warn('Super Admin seed doc check notice:', e);
-    }
-
-    // Ensure demo teacher profile doc exists
-    try {
-      const teacherDoc = await getDoc(doc(db, 'users', teacherId));
-      if (!teacherDoc.exists()) {
-        await setDoc(doc(db, 'users', teacherId), {
-          uid: teacherId,
-          email: 'jasur@renessans.demo',
-          displayName: teacherName,
-          role: 'teacher',
-          phone: '+998 (99) 259-32-32',
-          bio: 'Matematika va fizika fanlari bo\'yicha tajribali o\'qituvchi. DTM va Milliy sertifikatga tayyorlov yo\'nalishi.',
-          createdAt: new Date().toISOString()
-        }, { merge: true });
-      }
-    } catch (e) {
-      console.warn('Demo teacher profile seed notice:', e);
-    }
-  } catch (err) {
-    console.warn('seedFirestoreIfEmpty notice:', err);
-  }
-  })();
-  try {
-    await seedInFlight;
-    seedCompleted = true;
-  } finally {
-    seedInFlight = null;
-  }
-}
-
 export async function updateUserProfile(uid: string, data: Record<string, any>) {
   try {
     const userRef = doc(db, 'users', uid);

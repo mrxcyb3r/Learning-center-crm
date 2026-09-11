@@ -46,6 +46,9 @@ export interface UserProfile {
   telegramChatId?: string | null;
   isBotConnected?: boolean;
   assignedPin?: string | null;
+  // Canonical teacher-group assignment index (admin-maintained).
+  // Owners can read it but rules forbid owner modification.
+  assignedGroupIds?: string[];
 }
 
 export type Language = 'UZ' | 'EN' | 'RU';
@@ -166,6 +169,10 @@ export interface Group {
   studentsCount?: number;
   type?: string;
   branch?: string;
+  // Canonical membership index (admin-maintained): student document IDs.
+  studentIds?: string[];
+  // Homework document IDs for this group (maintained on creation).
+  homeworkIds?: string[];
 }
 
 export interface Student {

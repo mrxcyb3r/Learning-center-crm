@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { notificationService } from '../../services/notificationService';
 import {
-  subscribeGroups,
-  subscribeStudents,
   saveAttendanceRecord,
-  getAttendanceRecord,
-  seedFirestoreIfEmpty
+  getAttendanceRecord
 } from '../../services/firestore';
-import { DEFAULT_MOCK_GROUPS, DEFAULT_MOCK_STUDENTS } from '../../data/mockData';
-import { Group, Student, AttendanceStudentEntry } from '../../types';
+import { AttendanceStudentEntry } from '../../types';
 import {
   Calendar,
   CheckCircle2,
@@ -46,11 +43,12 @@ export interface StudentAttendanceState {
 
 export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGroupId }) => {
   const { currentUser, userProfile } = useAuth();
+  // Scoped sources: only groups/students from this teacher's assignment index.
+  const { groups, students: scopedStudents, isLoading: portalLoading } = useTeacherPortal();
   const { language, translate } = useLanguage();
   const t = (uz: string, en: string, ru: string) => translate(uz, en, ru);
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const allStudents = scopedStudents;
   const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || '');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -68,41 +66,17 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Default to the teacher's first assigned group (never mock data).
   useEffect(() => {
-    let isMounted = true;
-    seedFirestoreIfEmpty();
-
-    const unsubGroups = subscribeGroups((groupList) => {
-      if (!isMounted) return;
-      const effectiveGroups = groupList.length > 0 ? groupList : DEFAULT_MOCK_GROUPS;
-      setGroups(effectiveGroups);
-      if (effectiveGroups.length > 0 && !selectedGroupId) {
-        setSelectedGroupId(
-          initialGroupId && effectiveGroups.some((g) => g.id === initialGroupId)
-            ? initialGroupId
-            : effectiveGroups[0].id
-        );
-      }
-      setIsLoading(false);
-    });
-
-    const unsubStudents = subscribeStudents((studentList) => {
-      if (!isMounted) return;
-      setAllStudents(studentList.length > 0 ? studentList : DEFAULT_MOCK_STUDENTS);
-      setIsLoading(false);
-    });
-
-    const timer = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 2000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-      unsubGroups();
-      unsubStudents();
-    };
-  }, []);
+    if (groups.length > 0 && !selectedGroupId) {
+      setSelectedGroupId(
+        initialGroupId && groups.some((g) => g.id === initialGroupId)
+          ? initialGroupId
+          : groups[0].id
+      );
+    }
+    if (!portalLoading) setIsLoading(false);
+  }, [groups, portalLoading]);
 
   // Filter students by selected group and sort alphabetically by name
   const activeGroupStudents = allStudents

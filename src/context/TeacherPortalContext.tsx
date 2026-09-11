@@ -6,8 +6,8 @@ import {
   BusinessModel,
   TeacherDashboardStats,
 } from '../types/teacher';
-import { Group, Student, Payment, AttendanceRecord } from '../types';
-import { groupsService, studentsService, paymentsService, attendanceService, userService } from '../services/repository';
+import { Group, Student, Payment, AttendanceRecord, Assignment } from '../types';
+import { groupsService, studentsService, paymentsService, attendanceService, homeworkService, userService } from '../services/repository';
 
 interface TeacherPortalContextType {
   teacherUid: string;
@@ -22,6 +22,7 @@ interface TeacherPortalContextType {
   students: Student[];
   payments: Payment[];
   attendance: AttendanceRecord[];
+  homework: Assignment[];
 
   myGroups: Group[];
   myStudents: Student[];
@@ -114,6 +115,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   const [students, setStudents] = useState<Student[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [homework, setHomework] = useState<Assignment[]>([]);
 
   // Teacher identity is the stable Firebase UID. Email strings are never used
   // for data matching — all scoping goes through `teacherId == uid`.
@@ -126,56 +128,70 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let mounted = true;
 
+    // Canonical index-driven load. Firestore rejects LIST queries it cannot
+    // prove authorized, so every read below addresses known IDs from the
+    // teacher's assignment index (users/{uid}.assignedGroupIds) and the
+    // groups' membership indexes — never whole-collection scans.
     const loadTeacherData = async (): Promise<(() => void) | void> => {
       setIsLoading(true);
       setError(null);
       try {
-        // Load groups for this teacher
-        const teacherGroups = await groupsService.getGroupsByTeacher(teacherUid);
+        // 1. Authorized index from the teacher's own profile.
+        const profile = await userService.getUserProfile(teacherUid);
+        const assignedGroupIds = profile?.assignedGroupIds ?? [];
+        if (!mounted) return;
+
+        // 2. Groups by ID (per-doc reads; unauthorized/missing docs skipped).
+        const teacherGroups = await groupsService.getGroupsByIds(assignedGroupIds);
         if (!mounted) return;
         setGroups(teacherGroups);
-
-        // Load students in these groups
         const groupIds = teacherGroups.map(g => g.id);
-        if (groupIds.length > 0) {
-          const teacherStudents = await studentsService.getStudentsByTeacher(teacherUid);
-          if (!mounted) return;
-          setStudents(teacherStudents);
 
-          // Load payments for these students
+        // 3. Students via the groups' membership indexes.
+        const studentIds = teacherGroups.flatMap(g => g.studentIds ?? []);
+        const teacherStudents = await studentsService.getStudentsByIds(studentIds);
+        if (!mounted) return;
+        setStudents(teacherStudents);
+
+        // 4. Attendance via deterministic `{groupId}_{date}` IDs (30-day window).
+        const recordIds = groupIds.flatMap(gid =>
+          attendanceService.attendanceWindowIds(gid, 30)
+        );
+        const teacherAttendance = await attendanceService.getAttendanceByIds(recordIds);
+        if (!mounted) return;
+        setAttendance(teacherAttendance);
+
+        // 5. Homework via the groups' homework indexes.
+        const homeworkIds = teacherGroups.flatMap(g => g.homeworkIds ?? []);
+        try {
+          const teacherHomework = await homeworkService.getHomeworkByIds(homeworkIds);
+          if (!mounted) return;
+          setHomework(teacherHomework);
+        } catch {
+          if (mounted) setHomework([]);
+        }
+
+        // 6. Payments have no per-teacher index; attempt the scoped query and
+        // degrade to empty on denial (never mock data, never broad reads).
+        try {
           const teacherPayments = await paymentsService.getPaymentsByTeacher(teacherUid);
           if (!mounted) return;
           setPayments(teacherPayments);
-
-          // Load attendance for these groups
-          const teacherAttendance = await attendanceService.getAttendanceByTeacher(teacherUid);
-          if (!mounted) return;
-          setAttendance(teacherAttendance);
+        } catch {
+          if (mounted) setPayments([]);
         }
 
-        // Set up real-time listeners
-        const unsubGroups = groupsService.subscribeToGroupsByTeacher(teacherUid, (newGroups) => {
+        // Realtime listeners on known authorized IDs only.
+        const unsubGroups = groupsService.subscribeToGroupsByIds(groupIds, (newGroups) => {
           if (mounted) setGroups(newGroups);
         });
-
-        const unsubStudents = studentsService.subscribeToStudentsByGroupIds(
-          groupIds,
-          (newStudents) => {
-            if (mounted) setStudents(newStudents);
-          }
-        );
-
-        const unsubAttendance = attendanceService.subscribeToAttendanceByGroupIds(
-          groupIds,
-          (newAttendance) => {
-            if (mounted) setAttendance(newAttendance);
-          }
-        );
+        const unsubStudents = studentsService.subscribeToStudentsByIds(studentIds, (newStudents) => {
+          if (mounted) setStudents(newStudents);
+        });
 
         return () => {
           unsubGroups();
           unsubStudents();
-          unsubAttendance();
         };
       } catch (err: any) {
         console.error('Teacher data load error:', err);
@@ -221,11 +237,37 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const refresh = useCallback(async () => {
+    if (!currentUser || role !== 'teacher') return;
     setIsLoading(true);
-    // Trigger re-fetch by updating a dependency
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setIsLoading(false);
-  }, []);
+    try {
+      const profile = await userService.getUserProfile(teacherUid);
+      const assignedGroupIds = profile?.assignedGroupIds ?? [];
+      const teacherGroups = await groupsService.getGroupsByIds(assignedGroupIds);
+      setGroups(teacherGroups);
+      const studentIds = teacherGroups.flatMap(g => g.studentIds ?? []);
+      setStudents(await studentsService.getStudentsByIds(studentIds));
+      const recordIds = teacherGroups.flatMap(g =>
+        attendanceService.attendanceWindowIds(g.id, 30)
+      );
+      setAttendance(await attendanceService.getAttendanceByIds(recordIds));
+      const homeworkIds = teacherGroups.flatMap(g => g.homeworkIds ?? []);
+      try {
+        setHomework(await homeworkService.getHomeworkByIds(homeworkIds));
+      } catch {
+        setHomework([]);
+      }
+      try {
+        setPayments(await paymentsService.getPaymentsByTeacher(teacherUid));
+      } catch {
+        setPayments([]);
+      }
+      setError(null);
+    } catch (err: any) {
+      console.error('Teacher refresh error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentUser, role, teacherUid]);
 
   return (
     <TeacherPortalContext.Provider
@@ -240,6 +282,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
         students,
         payments,
         attendance,
+        homework,
         myGroups,
         myStudents,
         stats,

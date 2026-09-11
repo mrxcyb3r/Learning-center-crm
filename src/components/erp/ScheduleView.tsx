@@ -12,7 +12,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { groupsService, coursesService, teachersService } from '../../services/repository';
+import { groupsService, coursesService, teachersService, assignmentService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, GroupType, TeacherRecord } from '../../types/crm';
 
 export const ScheduleView: React.FC = () => {
@@ -180,11 +180,40 @@ export const ScheduleView: React.FC = () => {
       status: 'Active' as const,
     };
 
+    // Resolve the teacher's Firebase Auth UID for the assignment index.
+    // TeacherRecord.uid holds it when linked; otherwise fall back to the
+    // selected teacher document ID.
+    const nextTeacherUid = teacherObj?.uid || formTeacherId || editingItem?.teacherId || null;
+    const prevTeacherUid = editingItem
+      ? (teachers.find((t) => t.id === editingItem.teacherId)?.uid || editingItem.teacherId || null)
+      : null;
+
     if (editingItem) {
       await groupsService.updateGroup(editingItem.id, payload);
+      // Keep users/{teacherUid}.assignedGroupIds synchronized (admin-only).
+      try {
+        await assignmentService.setGroupTeacher(
+          editingItem.id,
+          prevTeacherUid,
+          nextTeacherUid,
+          teacherObj ? teacherObj.name : undefined
+        );
+      } catch (err) {
+        console.warn('Teacher assignment index sync notice:', err);
+      }
       showNotification(`"${formGroupName}" guruhi yangilandi!`);
     } else {
-      await groupsService.createGroup(payload);
+      const newGroupId = await groupsService.createGroup(payload);
+      try {
+        await assignmentService.setGroupTeacher(
+          newGroupId,
+          null,
+          nextTeacherUid,
+          teacherObj ? teacherObj.name : undefined
+        );
+      } catch (err) {
+        console.warn('Teacher assignment index sync notice:', err);
+      }
       showNotification(`Yangi guruh "${formGroupName}" ochildi!`);
     }
 
@@ -194,7 +223,18 @@ export const ScheduleView: React.FC = () => {
 
   const handleDeleteGroup = async (id: string, name: string) => {
     if (window.confirm(`Rostdan ham "${name}" guruhini o'chirmoqchimisiz?`)) {
+      const doomed = schedule.find((s) => s.id === id);
+      const doomedUid = doomed
+        ? (teachers.find((t) => t.id === doomed.teacherId)?.uid || doomed.teacherId || null)
+        : null;
       await groupsService.deleteGroup(id);
+      if (doomedUid) {
+        try {
+          await assignmentService.setGroupTeacher(id, doomedUid, null);
+        } catch (err) {
+          console.warn('Teacher assignment index sync notice:', err);
+        }
+      }
       await refresh();
       showNotification(`"${name}" guruhi o'chirildi.`);
     }

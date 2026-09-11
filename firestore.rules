@@ -69,20 +69,24 @@ service cloud.firestore {
 
       // Allow update for:
       // 1. SuperAdmin - full access
-      // 2. Admin - can update teacher/student roles but NOT admin/superadmin
+      // 2. Admin - can update teacher/student roles but NOT admin/superadmin.
+      //    Admin maintains the assignedGroupIds assignment index.
       // 3. User can update their own profile fields EXCEPT role, uid, email
+      //    AND assignedGroupIds (the teacher-group assignment index is
+      //    admin-maintained; owners can read it but never modify it).
       allow update: if isSignedIn() && (
         (isSuperAdmin()) ||
-        (isAdmin() 
-          && request.resource.data.role != 'admin' 
+        (isAdmin()
+          && request.resource.data.role != 'admin'
           && request.resource.data.role != 'superadmin'
           && request.resource.data.uid == resource.data.uid
           && request.resource.data.email == resource.data.email
         ) ||
-        (isOwner(userId) 
+        (isOwner(userId)
           && request.resource.data.role == resource.data.role
           && request.resource.data.uid == resource.data.uid
           && request.resource.data.email == resource.data.email
+          && request.resource.data.get('assignedGroupIds', []) == resource.data.get('assignedGroupIds', [])
         )
       );
 
@@ -174,21 +178,31 @@ service cloud.firestore {
     }
 
     // Attendance
+    // NOTE: create must not use the per-document helpers (the target doc does
+    // not exist yet). Teacher create is allowed only when the attendance
+    // record's own groupId points at a group owned by that teacher.
     match /attendance/{attendanceId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
-      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
+      allow create: if isAdminOrSuperAdmin() || isTeacherCreatingForOwnGroup();
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
     }
 
     // Homework/Assignments (primary collection: homework)
+    // NOTE: same create rationale — a teacher may create only records tagged
+    // with their own UID in teacherId.
     match /homework/{homeworkId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
-      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
     }
 
     // Legacy assignments collection
     match /assignments/{assignmentId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
-      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
     }
 
     match /homework_submissions/{submissionId} {
@@ -229,11 +243,14 @@ service cloud.firestore {
     // =========================================================================
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && (
-        resource.data.recipientId == request.auth.uid 
-        || resource.data.recipientRole == getUserRole() 
+        resource.data.recipientId == request.auth.uid
+        || resource.data.recipientRole == getUserRole()
         || resource.data.recipientRole == 'all'
       );
-      allow write: if isAdminOrSuperAdmin() 
+      // NOTE: create must check request.resource (resource is null on create).
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher() && request.resource.data.senderId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin()
         || (isTeacher() && request.auth.uid == resource.data.senderId);
     }
 
@@ -249,7 +266,10 @@ service cloud.firestore {
     // TELEGRAM SESSIONS
     // =========================================================================
     match /telegram_sessions/{sessionId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      // NOTE: create must check request.resource (resource is null on create).
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
 
     // =========================================================================
@@ -263,6 +283,14 @@ service cloud.firestore {
     function isTeacherOfGroup(groupId) {
       let groupDoc = get(/databases/$(database)/documents/groups/$(groupId));
       return groupDoc.data.teacherId == request.auth.uid;
+    }
+
+    // For attendance CREATE: the record does not exist yet, so ownership is
+    // proven through the groupId carried in the new record itself.
+    function isTeacherCreatingForOwnGroup() {
+      return isTeacher()
+        && request.resource.data.groupId is string
+        && isTeacherOfGroup(request.resource.data.groupId);
     }
 
     function isTeacherOfPayment(paymentId) {

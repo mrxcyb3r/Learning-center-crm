@@ -40,6 +40,7 @@ import { SettingsView } from './SettingsView';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { leadsService } from '../../services/repository';
+import { ensureSeeded } from '../../services/seed';
 
 type ErpTab =
   | 'dashboard'
@@ -118,6 +119,9 @@ export const CenterErpApp: React.FC = () => {
     leadsService.getAllLeads().then((leads) => {
       setLeadsCount(leads.filter((l) => normalizeLeadStatus(l.status) === 'New').length);
     }).catch(() => setLeadsCount(0));
+    // Centralized demo-data seed — the single sanctioned invocation site.
+    // Runs only inside the admin-guarded shell; safe under StrictMode.
+    ensureSeeded().catch(() => {});
   }, []);
 
   const renderActiveView = () => {

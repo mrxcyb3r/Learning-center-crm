@@ -1,12 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import {
-  subscribeGroups,
-  subscribeStudents,
-  seedFirestoreIfEmpty
-} from '../../services/firestore';
-import { DEFAULT_MOCK_GROUPS, DEFAULT_MOCK_STUDENTS } from '../../data/mockData';
-import { Group, Student } from '../../types';
+import { useTeacherPortal } from '../../context/TeacherPortalContext';
+import { Group } from '../../types';
 import {
   BookOpen,
   Users,
@@ -32,39 +27,10 @@ export const MyClassesView: React.FC<{ onNavigateToAttendance?: (groupId: string
     return en;
   };
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Canonical scoped data: only groups/students from the teacher's own
+  // assignment index. Empty means "no assignments yet" — never mock data.
+  const { groups, students, isLoading } = useTeacherPortal();
   const [selectedGroupRoster, setSelectedGroupRoster] = useState<Group | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    seedFirestoreIfEmpty();
-
-    const unsubGroups = subscribeGroups((gList) => {
-      if (!isMounted) return;
-      setGroups(gList.length > 0 ? gList : DEFAULT_MOCK_GROUPS);
-      setIsLoading(false);
-    });
-
-    const unsubStudents = subscribeStudents((sList) => {
-      if (!isMounted) return;
-      setStudents(sList.length > 0 ? sList : DEFAULT_MOCK_STUDENTS);
-      setIsLoading(false);
-    });
-
-    // Fallback timeout to prevent stuck loading
-    const timer = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 2000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-      unsubGroups();
-      unsubStudents();
-    };
-  }, []);
 
   const getStudentsForGroup = (group: Group) => {
     return students.filter(
@@ -121,18 +87,11 @@ export const MyClassesView: React.FC<{ onNavigateToAttendance?: (groupId: string
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             {t(
-              "Ma'lumotlar bazasida guruhlar mavjud emas. Admin paneli orqali yangi guruh yarating yoki namuna ma'lumotlarni yuklang.",
-              "No group records were returned from Firestore. You can seed sample classes or create them in Admin.",
-              "В базе данных нет групп. Создайте группу в админ-панели."
+              "Sizga hali guruh biriktirilmagan. Administrator guruh tayinlagach, ular shu yerda ko'rinadi.",
+              "No groups assigned to you yet. Groups will appear here once an administrator assigns them.",
+              "Вам пока не назначены группы. Они появятся здесь после назначения администратором."
             )}
           </p>
-          <button
-            onClick={() => seedFirestoreIfEmpty()}
-            className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-2xl shadow-lg transition cursor-pointer inline-flex items-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{t("Namuna Guruhlarni Yuklash", "Seed Sample Classes", "Загрузить Пример Групп")}</span>
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

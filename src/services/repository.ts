@@ -13,6 +13,8 @@ import {
   onSnapshot,
   writeBatch,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
   limit
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
@@ -246,6 +248,59 @@ export type PaymentWriteInput = Omit<Partial<Omit<Payment, 'id'>>, 'status'> &
   };
 
 /**
+ * ID-driven reads for teacher-scoped data.
+ *
+ * Rationale: Firestore rejects a LIST query when it cannot prove every
+ * candidate document is allowed, so `where('teacherId','==',uid)` fails on a
+ * mixed collection. Per-document `getDoc()` calls succeed exactly for the
+ * documents the rules authorize — the teacher's assignment index therefore
+ * drives all reads, and unrelated documents are never even requested.
+ */
+async function getDocsByIds<T>(col: string, ids: string[]): Promise<T[]> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const results: (T | null)[] = await Promise.all(
+    unique.map(async (id): Promise<T | null> => {
+      try {
+        const snap = await getDoc(doc(db, col, id));
+        return snap.exists() ? ({ id: snap.id, ...snap.data() } as T) : null;
+      } catch {
+        // Missing or unauthorized — fail closed, skip silently.
+        return null;
+      }
+    })
+  );
+  return results.filter((d): d is T => d !== null);
+}
+
+function subscribeToDocsByIds<T>(col: string, ids: string[], callback: (docs: T[]) => void) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) {
+    callback([]);
+    return () => {};
+  }
+  const latest = new Map<string, T>();
+  const unsubs = unique.map((id) =>
+    onSnapshot(
+      doc(db, col, id),
+      (snap) => {
+        if (snap.exists()) {
+          latest.set(id, { id: snap.id, ...snap.data() } as T);
+        } else {
+          latest.delete(id);
+        }
+        callback([...latest.values()]);
+      },
+      () => {
+        // Unauthorized or missing — treat as absent, keep other docs live.
+        latest.delete(id);
+        callback([...latest.values()]);
+      }
+    )
+  );
+  return () => unsubs.forEach((u) => u());
+}
+
+/**
  * Groups Service - Teacher-scoped queries
  */
 export const groupsService = {
@@ -276,8 +331,76 @@ export const groupsService = {
     });
   },
 
+  /** Secure index-driven read: only the given IDs are requested. */
+  async getGroupsByIds(ids: string[]): Promise<Group[]> {
+    return getDocsByIds<Group>(GROUPS_COL, ids);
+  },
+
+  /** Realtime listeners on known authorized IDs only (never whole collection). */
+  subscribeToGroupsByIds(ids: string[], callback: (groups: Group[]) => void) {
+    return subscribeToDocsByIds<Group>(GROUPS_COL, ids, callback);
+  },
+
   async deleteGroup(id: string): Promise<void> {
     await deleteDoc(doc(db, GROUPS_COL, id));
+  }
+};
+
+/**
+ * Assignment Service - Admin-maintained teacher/group/student relationships.
+ *
+ * Canonical model:
+ * - groups/{groupId}.teacherId  → assigned teacher's Firebase UID
+ * - users/{teacherUid}.assignedGroupIds → group IDs (admin-maintained index)
+ * - groups/{groupId}.studentIds → student IDs (admin-maintained index)
+ * Only Admin (or SuperAdmin) may call these; rules forbid owner modification
+ * of assignedGroupIds and roles.
+ */
+export const assignmentService = {
+  async setGroupTeacher(
+    groupId: string,
+    prevTeacherUid: string | null,
+    nextTeacherUid: string | null,
+    teacherName?: string
+  ): Promise<void> {
+    const updates: Record<string, unknown> = {};
+    if (nextTeacherUid !== null) {
+      updates.teacherId = nextTeacherUid;
+      if (teacherName !== undefined) {
+        updates.teacher = teacherName;
+        updates.teacherName = teacherName;
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(doc(db, GROUPS_COL, groupId), cleanData(updates));
+    }
+    if (prevTeacherUid) {
+      await updateDoc(doc(db, USERS_COL, prevTeacherUid), {
+        assignedGroupIds: arrayRemove(groupId)
+      });
+    }
+    if (nextTeacherUid) {
+      await updateDoc(doc(db, USERS_COL, nextTeacherUid), {
+        assignedGroupIds: arrayUnion(groupId)
+      });
+    }
+  },
+
+  async setStudentGroup(
+    studentId: string,
+    prevGroupId: string | null,
+    nextGroupId: string | null
+  ): Promise<void> {
+    if (prevGroupId) {
+      await updateDoc(doc(db, GROUPS_COL, prevGroupId), {
+        studentIds: arrayRemove(studentId)
+      });
+    }
+    if (nextGroupId) {
+      await updateDoc(doc(db, GROUPS_COL, nextGroupId), {
+        studentIds: arrayUnion(studentId)
+      });
+    }
   }
 };
 
@@ -306,6 +429,16 @@ export const studentsService = {
   async getAllStudents(): Promise<Student[]> {
     const snap = await getDocs(collection(db, STUDENTS_COL));
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Student));
+  },
+
+  /** Secure index-driven read: only the given IDs are requested. */
+  async getStudentsByIds(ids: string[]): Promise<Student[]> {
+    return getDocsByIds<Student>(STUDENTS_COL, ids);
+  },
+
+  /** Realtime listeners on known authorized IDs only (never whole collection). */
+  subscribeToStudentsByIds(ids: string[], callback: (students: Student[]) => void) {
+    return subscribeToDocsByIds<Student>(STUDENTS_COL, ids, callback);
   },
 
   async createStudent(data: StudentWriteInput): Promise<string> {
@@ -407,6 +540,25 @@ export const attendanceService = {
     return recordId;
   },
 
+  /**
+   * Secure index-driven read for deterministic `{groupId}_{date}` IDs.
+   * Only the given record IDs are requested — no collection list query.
+   */
+  async getAttendanceByIds(recordIds: string[]): Promise<AttendanceRecord[]> {
+    return getDocsByIds<AttendanceRecord>(ATTENDANCE_COL, recordIds);
+  },
+
+  /** Record IDs for a group's recent window (deterministic ID scheme). */
+  attendanceWindowIds(groupId: string, daysBack: number, refDate: Date = new Date()): string[] {
+    const ids: string[] = [];
+    for (let i = 0; i < daysBack; i++) {
+      const d = new Date(refDate);
+      d.setDate(d.getDate() - i);
+      ids.push(`${groupId}_${d.toISOString().split('T')[0]}`);
+    }
+    return ids;
+  },
+
   subscribeToAttendanceByGroupIds(groupIds: string[], callback: (records: AttendanceRecord[]) => void) {
     if (groupIds.length === 0) {
       callback([]);
@@ -453,7 +605,21 @@ export const homeworkService = {
   async createHomework(data: Omit<Assignment, 'id'> & Record<string, unknown>): Promise<string> {
     const ref = doc(collection(db, HOMEWORK_COL));
     await setDoc(ref, cleanData(data));
+    // Maintain the group's homework index so teachers can load it by ID.
+    const groupId = (data as { groupId?: string }).groupId;
+    if (typeof groupId === 'string' && groupId) {
+      try {
+        await updateDoc(doc(db, GROUPS_COL, groupId), { homeworkIds: arrayUnion(ref.id) });
+      } catch {
+        // Index maintenance is best-effort; the homework doc itself is saved.
+      }
+    }
     return ref.id;
+  },
+
+  /** Secure index-driven read: only the given IDs are requested. */
+  async getHomeworkByIds(ids: string[]): Promise<Assignment[]> {
+    return getDocsByIds<Assignment>(HOMEWORK_COL, ids);
   },
 
   async updateHomework(id: string, data: Partial<Assignment> & Record<string, unknown>): Promise<void> {
@@ -598,6 +764,26 @@ export const leadsService = {
     const enrollmentDate = opts.startDate || new Date().toISOString().split('T')[0];
     const teacherName = opts.teacher || lead.assignedTo || '';
 
+    // Resolve the target group document so the membership index stays in sync.
+    let targetGroupId = opts.groupId || '';
+    let targetGroupTeacherId = opts.teacherId || '';
+    if ((!targetGroupId || !targetGroupTeacherId) && opts.groupName) {
+      try {
+        const gsnap = await getDocs(
+          query(collection(db, GROUPS_COL), where('groupName', '==', opts.groupName), limit(1))
+        );
+        if (!gsnap.empty) {
+          if (!targetGroupId) targetGroupId = gsnap.docs[0].id;
+          const gdata = gsnap.docs[0].data();
+          if (!targetGroupTeacherId && typeof gdata.teacherId === 'string') {
+            targetGroupTeacherId = gdata.teacherId;
+          }
+        }
+      } catch {
+        // Index sync is best-effort; conversion proceeds regardless.
+      }
+    }
+
     const studentPayload: Omit<StudentRecord, 'id'> = {
       fullName: lead.name,
       name: lead.name,
@@ -606,9 +792,9 @@ export const leadsService = {
       parentPhone: opts.parentPhone || '',
       mentor: teacherName,
       teacher: teacherName,
-      teacherId: opts.teacherId || '',
+      teacherId: targetGroupTeacherId,
       course: courseTitle,
-      groupId: opts.groupId || '',
+      groupId: targetGroupId,
       groupName: opts.groupName || '',
       enrollmentDate,
       tuitionFee: fee,
@@ -632,6 +818,16 @@ export const leadsService = {
       enrollmentDate
     });
     await batch.commit();
+    // Maintain the group's membership index (admin-only path).
+    if (targetGroupId) {
+      try {
+        await updateDoc(doc(db, GROUPS_COL, targetGroupId), {
+          studentIds: arrayUnion(studentRef.id)
+        });
+      } catch {
+        // Index maintenance is best-effort; the student record itself is saved.
+      }
+    }
     return {
       leadId,
       created: true,

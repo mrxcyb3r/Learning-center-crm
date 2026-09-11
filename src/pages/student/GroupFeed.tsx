@@ -27,7 +27,6 @@ import {
   subscribeAssignments,
   addPostComment,
   submitHomework,
-  seedFirestoreIfEmpty,
   notifyTeacherNewSubmission
 } from '../../services/firestore';
 import { FeedPost, Assignment, SubmissionAttachment } from '../../types';
@@ -139,7 +138,6 @@ export const GroupFeed: React.FC = () => {
     let isMounted = true;
 
     setIsLoading(true);
-    seedFirestoreIfEmpty();
 
     try {
       unsubPosts = subscribeFeedPosts((data) => {

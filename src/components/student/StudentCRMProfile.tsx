@@ -35,7 +35,7 @@ import {
   ExternalLink,
   ShieldCheck
 } from 'lucide-react';
-import { Student, HomeworkSubmission, Payment, AttendanceRecord } from '../../types';
+import { Student, HomeworkSubmission, Payment, AttendanceRecord, normalizeStudentPaymentStatus } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import {
   subscribeHomeworkSubmissions,
@@ -269,12 +269,12 @@ export const StudentCRMProfile: React.FC<StudentCRMProfileProps> = ({
   });
 
   const [currentPaymentStatus, setCurrentPaymentStatus] = useState<'paid' | 'pending' | 'overdue'>(
-    student?.paymentStatus || 'pending'
+    normalizeStudentPaymentStatus(student?.paymentStatus)
   );
 
   useEffect(() => {
     if (student) {
-      setCurrentPaymentStatus(student.paymentStatus || 'pending');
+      setCurrentPaymentStatus(normalizeStudentPaymentStatus(student.paymentStatus));
     }
   }, [student]);
 

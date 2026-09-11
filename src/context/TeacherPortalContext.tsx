@@ -115,9 +115,10 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
+  // Teacher identity is the stable Firebase UID. Email strings are never used
+  // for data matching — all scoping goes through `teacherId == uid`.
   const teacherUid = currentUser?.uid || '';
   const teacherName = currentUser?.displayName || 'Teacher';
-  const teacherEmail = currentUser?.email || '';
 
   // Load teacher profile and verify role
   useEffect(() => {
@@ -186,10 +187,22 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    const cleanup = loadTeacherData();
+    // loadTeacherData is async and resolves with an optional unsubscribe
+    // function. Store it when it arrives; the effect cleanup uses the stored
+    // value instead of calling the promise itself.
+    let unsubscribe: (() => void) | void;
+    loadTeacherData().then((cleanup) => {
+      if (typeof cleanup === 'function') {
+        if (mounted) {
+          unsubscribe = cleanup;
+        } else {
+          cleanup();
+        }
+      }
+    });
     return () => {
       mounted = false;
-      if (cleanup && typeof cleanup === 'function') cleanup();
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [currentUser, role, teacherUid]);
 

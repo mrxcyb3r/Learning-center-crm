@@ -4,6 +4,7 @@ import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight,
 import { useTheme } from '../../context/ThemeContext';
 import { DEMO_MODE } from '../../config/demo';
 import { cmsBridge } from '../../services/cmsBridge';
+import { landingCmsService } from '../../services/repository';
 
 interface PublicNavbarProps {
   onOpenTrialModal: () => void;
@@ -19,7 +20,18 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
   const [phone, setPhone] = useState(cmsBridge.getContact().phone);
 
   useEffect(() => {
-    setPhone(cmsBridge.getContact().phone);
+    // Production path: Firestore `settings/landing_cms` (public read).
+    let cancelled = false;
+    landingCmsService.getLandingContent()
+      .then((doc) => {
+        if (cancelled) return;
+        const livePhone = (doc?.contact?.phone || doc?.phone) as string | undefined;
+        setPhone(livePhone || cmsBridge.getContact().phone);
+      })
+      .catch(() => {
+        if (!cancelled) setPhone(cmsBridge.getContact().phone);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

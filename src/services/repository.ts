@@ -60,6 +60,7 @@ const FEED_POSTS_COL = 'feed_posts';
 const MOCK_SCORES_COL = 'mock_scores';
 const LEADS_COL = 'leads';
 const INQUIRIES_COL = 'inquiries';
+const QUESTIONS_COL = 'questions';
 const NOTIFICATIONS_COL = 'notifications';
 const SETTINGS_COL = 'settings';
 const COURSES_COL = 'courses';
@@ -222,6 +223,29 @@ export const teachersService = {
 };
 
 /**
+ * Shared Firestore write inputs. Collections are schemaless and serve both the
+ * Admin ERP (CRM shapes) and the Teacher portal (canonical shapes), so writes
+ * accept a partial superset of both. Required-field validation lives in forms.
+ */
+// Note: conflicting `status`/`paymentStatus` fields are rebuilt as unions below.
+// A plain `A & B` intersection would narrow them to `never` because the Admin
+// ERP and Teacher portal historically use different status vocabularies for the
+// same collection. Writers may persist either vocabulary; readers normalize.
+export type GroupWriteInput = Omit<Partial<Omit<Group, 'id'>>, 'status'> &
+  Omit<Partial<Omit<GroupScheduleItem, 'id'>>, 'status'> & {
+    status?: Group['status'] | GroupScheduleItem['status'];
+  };
+export type StudentWriteInput = Omit<Partial<Omit<Student, 'id'>>, 'paymentStatus' | 'status'> &
+  Omit<Partial<Omit<StudentRecord, 'id'>>, 'paymentStatus' | 'status'> & {
+    paymentStatus?: Student['paymentStatus'] | StudentRecord['paymentStatus'];
+    status?: string;
+  };
+export type PaymentWriteInput = Omit<Partial<Omit<Payment, 'id'>>, 'status'> &
+  Omit<Partial<Omit<IncomePaymentRecord, 'id'>>, 'status'> & {
+    status?: Payment['status'] | IncomePaymentRecord['status'];
+  };
+
+/**
  * Groups Service - Teacher-scoped queries
  */
 export const groupsService = {
@@ -236,12 +260,12 @@ export const groupsService = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Group));
   },
 
-  async createGroup(data: Omit<Group, 'id'>): Promise<string> {
+  async createGroup(data: GroupWriteInput): Promise<string> {
     const docRef = await addDoc(collection(db, GROUPS_COL), cleanData(data));
     return docRef.id;
   },
 
-  async updateGroup(id: string, data: Partial<Group>): Promise<void> {
+  async updateGroup(id: string, data: GroupWriteInput): Promise<void> {
     await updateDoc(doc(db, GROUPS_COL, id), cleanData(data));
   },
 
@@ -284,12 +308,12 @@ export const studentsService = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Student));
   },
 
-  async createStudent(data: Omit<Student, 'id'>): Promise<string> {
+  async createStudent(data: StudentWriteInput): Promise<string> {
     const docRef = await addDoc(collection(db, STUDENTS_COL), cleanData(data));
     return docRef.id;
   },
 
-  async updateStudent(id: string, data: Partial<Student>): Promise<void> {
+  async updateStudent(id: string, data: StudentWriteInput): Promise<void> {
     await updateDoc(doc(db, STUDENTS_COL, id), cleanData(data));
   },
 
@@ -347,7 +371,7 @@ export const paymentsService = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment));
   },
 
-  async recordPayment(data: Omit<Payment, 'id'>): Promise<string> {
+  async recordPayment(data: PaymentWriteInput): Promise<string> {
     const docRef = await addDoc(collection(db, PAYMENTS_COL), cleanData(data));
     return docRef.id;
   },
@@ -411,18 +435,28 @@ export const attendanceService = {
  * Homework/Assignments Service
  */
 export const homeworkService = {
-  async getHomeworkByTeacher(teacherEmail: string): Promise<Assignment[]> {
-    const q = query(collection(db, HOMEWORK_COL), where('teacherEmail', '==', teacherEmail));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
+  // Scoped by stable Firebase UID. Legacy docs that only carry `teacherEmail`
+  // are matched in a second query so old records remain visible.
+  async getHomeworkByTeacher(teacherUid: string, teacherEmail?: string): Promise<Assignment[]> {
+    const byId = await getDocs(query(collection(db, HOMEWORK_COL), where('teacherId', '==', teacherUid)));
+    const items = byId.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
+    if (teacherEmail) {
+      const byEmail = await getDocs(query(collection(db, HOMEWORK_COL), where('teacherEmail', '==', teacherEmail)));
+      const seen = new Set(items.map(i => i.id));
+      for (const d of byEmail.docs) {
+        if (!seen.has(d.id)) items.push({ id: d.id, ...d.data() } as Assignment);
+      }
+    }
+    return items;
   },
 
-  async createHomework(data: any): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, HOMEWORK_COL)), cleanData(data));
-    return docRef.id;
+  async createHomework(data: Omit<Assignment, 'id'> & Record<string, unknown>): Promise<string> {
+    const ref = doc(collection(db, HOMEWORK_COL));
+    await setDoc(ref, cleanData(data));
+    return ref.id;
   },
 
-  async updateHomework(id: string, data: any): Promise<void> {
+  async updateHomework(id: string, data: Partial<Assignment> & Record<string, unknown>): Promise<void> {
     await updateDoc(doc(db, HOMEWORK_COL, id), cleanData(data));
   }
 };
@@ -489,6 +523,27 @@ export const notificationsService = {
 /**
  * Leads/Inquiries Service - CRM Lead Management
  */
+export interface LeadConversionOptions {
+  course?: string;
+  groupId?: string;
+  groupName?: string;
+  teacher?: string;
+  teacherId?: string;
+  monthlyFee?: number;
+  discount?: number;
+  paymentStatus?: StudentRecord['paymentStatus'];
+  parentName?: string;
+  parentPhone?: string;
+  startDate?: string;
+}
+
+export interface LeadConversionResult {
+  leadId: string;
+  created: boolean;
+  message: string;
+  student?: StudentRecord;
+}
+
 export const leadsService = {
   async getAllLeads(): Promise<Lead[]> {
     const snap = await getDocs(query(collection(db, LEADS_COL), orderBy('createdAt', 'desc')));
@@ -501,10 +556,20 @@ export const leadsService = {
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as Lead) : null;
   },
 
-  async createLead(data: Omit<Lead, 'id'>): Promise<string> {
+  // Accepts lead input without server-generated fields; fills CRM defaults
+  // (status based on trial presence, timestamps, fallbacks) mirroring legacy crmService.
+  async createLead(
+    data: Omit<Lead, 'id' | 'createdAt' | 'status'> & Partial<Pick<Lead, 'createdAt' | 'status'>>
+  ): Promise<string> {
+    const hasTrial = Boolean(data.trialDateTime);
     const docRef = await addDoc(collection(db, LEADS_COL), cleanData({
+      course: 'DTM & Milliy Sertifikat',
+      assignedTo: 'Qabulxona',
+      notes: 'Bepul sinov darsiga yozildi.',
+      source: 'Sayt orqali ariza',
       ...data,
-      createdAt: new Date().toISOString()
+      status: data.status ?? (hasTrial ? 'Sinov darsi belgilandi' : 'Yangi'),
+      createdAt: data.createdAt ?? new Date().toISOString()
     }));
     return docRef.id;
   },
@@ -517,23 +582,62 @@ export const leadsService = {
     await deleteDoc(doc(db, LEADS_COL, id));
   },
 
-  async convertLeadToStudent(leadId: string, studentData: Omit<StudentRecord, 'id'>): Promise<string> {
+  async convertLeadToStudent(
+    leadId: string,
+    opts: LeadConversionOptions = {}
+  ): Promise<LeadConversionResult> {
+    const leadSnap = await getDoc(doc(db, LEADS_COL, leadId));
+    if (!leadSnap.exists()) {
+      return { leadId, created: false, message: 'Ariza topilmadi.' };
+    }
+    const lead = { id: leadSnap.id, ...leadSnap.data() } as Lead;
+
+    const fee = Number(opts.monthlyFee) || 0;
+    const discount = Math.min(Math.max(Number(opts.discount) || 0, 0), fee);
+    const courseTitle = opts.course || lead.course || '';
+    const enrollmentDate = opts.startDate || new Date().toISOString().split('T')[0];
+    const teacherName = opts.teacher || lead.assignedTo || '';
+
+    const studentPayload: Omit<StudentRecord, 'id'> = {
+      fullName: lead.name,
+      name: lead.name,
+      phone: lead.phone,
+      parentName: opts.parentName || '',
+      parentPhone: opts.parentPhone || '',
+      mentor: teacherName,
+      teacher: teacherName,
+      teacherId: opts.teacherId || '',
+      course: courseTitle,
+      groupId: opts.groupId || '',
+      groupName: opts.groupName || '',
+      enrollmentDate,
+      tuitionFee: fee,
+      monthlyFee: fee,
+      paymentStatus: opts.paymentStatus || 'Due',
+      debtAmount: Math.max(fee - discount, 0),
+      isActive: true,
+      status: 'Active',
+      attendanceRate: 0,
+      notes: discount > 0
+        ? `CRM arizasidan o'quvchiga aylantirildi (chegirma: ${discount})`
+        : `CRM arizasidan o'quvchiga aylantirildi`,
+    };
+
     const batch = writeBatch(db);
-
     const studentRef = doc(collection(db, STUDENTS_COL));
-    batch.set(studentRef, cleanData({
-      ...studentData,
-      createdAt: new Date().toISOString()
-    }));
-
+    batch.set(studentRef, cleanData({ ...studentPayload, createdAt: new Date().toISOString() }));
     const leadRef = doc(db, LEADS_COL, leadId);
-    batch.update(leadRef, { 
+    batch.update(leadRef, {
       status: "O'quvchiga aylandi" as LeadStatus,
-      enrollmentDate: new Date().toISOString().split('T')[0]
+      enrollmentDate
     });
-
     await batch.commit();
-    return studentRef.id;
+    return {
+      leadId,
+      created: true,
+      message: "O'quvchi muvaffaqiyatli yaratildi.",
+      student: { ...studentPayload, id: studentRef.id }
+    };
   },
 
   subscribeToLeads(callback: (leads: Lead[]) => void) {
@@ -541,6 +645,32 @@ export const leadsService = {
       query(collection(db, LEADS_COL), orderBy('createdAt', 'desc')),
       (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
     );
+  }
+};
+
+/**
+ * Public questions Service - website "Ask a question" form.
+ * Public create is allowed by Firestore rules; reads are admin-only.
+ */
+export interface PublicQuestionInput {
+  fullName: string;
+  phone: string;
+  email?: string;
+  course?: string;
+  subject: string;
+  message: string;
+  preferredContact?: 'phone' | 'email' | 'telegram';
+  source?: string;
+}
+
+export const questionsService = {
+  async createQuestion(data: PublicQuestionInput): Promise<string> {
+    const docRef = await addDoc(collection(db, QUESTIONS_COL), cleanData({
+      ...data,
+      status: 'New',
+      createdAt: new Date().toISOString()
+    }));
+    return docRef.id;
   }
 };
 
@@ -735,25 +865,33 @@ export const telegramService = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as TelegramAlertLog));
   },
 
-  async sendTelegramMessage(data: Omit<TelegramAlertLog, 'id'>): Promise<string> {
-    const docRef = await addDoc(collection(db, TELEGRAM_LOGS_COL), cleanData({
-      ...data,
-      sentAt: new Date().toISOString()
-    }));
-    return docRef.id;
+  // Legacy-compatible API: accepts a plain message string, persists a log
+  // document, and resolves with the full log record (as crmService did).
+  async sendTelegramMessage(text: string): Promise<TelegramAlertLog> {
+    const log: Omit<TelegramAlertLog, 'id'> = {
+      sentAt: new Date().toISOString(),
+      status: 'Sent',
+      messageText: text,
+      message: text
+    };
+    const docRef = await addDoc(collection(db, TELEGRAM_LOGS_COL), cleanData(log));
+    return { ...log, id: docRef.id };
   },
 
-  async sendLeadNotification(leadId: string, leadName: string, leadPhone: string, course: string): Promise<string> {
+  async sendLeadNotification(leadId: string, leadName: string, leadPhone: string, course: string): Promise<TelegramAlertLog> {
     const messageText = `🆕 Yangi murojaat!\n👤 ${leadName}\n📞 ${leadPhone}\n📚 ${course}\n🆔 ${leadId}`;
-    return this.sendTelegramMessage({
+    const log: Omit<TelegramAlertLog, 'id'> = {
       leadId,
       leadName,
       leadPhone,
       course,
       sentAt: new Date().toISOString(),
-      status: 'Pending',
-      messageText
-    });
+      status: 'Sent',
+      messageText,
+      message: messageText
+    };
+    const docRef = await addDoc(collection(db, TELEGRAM_LOGS_COL), cleanData(log));
+    return { ...log, id: docRef.id };
   },
 
   subscribeToTelegramLogs(callback: (logs: TelegramAlertLog[]) => void) {

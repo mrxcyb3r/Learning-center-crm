@@ -1,5 +1,21 @@
 export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'guest';
 
+/** Canonical narrow payment status used by teacher-portal logic. */
+export type CanonicalPaymentStatus = 'paid' | 'pending' | 'overdue';
+
+/**
+ * Normalize a student payment status read from Firestore to the canonical
+ * lowercase vocabulary. Admin ERP writes historically use 'Paid' | 'Due' |
+ * 'Overdue'; both vocabularies persist in the shared `students` collection.
+ */
+export function normalizeStudentPaymentStatus(
+  status: Student['paymentStatus'] | string | undefined | null
+): CanonicalPaymentStatus {
+  if (status === 'paid' || status === 'Paid') return 'paid';
+  if (status === 'overdue' || status === 'Overdue') return 'overdue';
+  return 'pending';
+}
+
 export type SubjectCategory = 'english' | 'ielts' | 'mathematics' | 'physics' | 'cybersecurity' | 'webdev';
 
 export interface SubjectCourse {
@@ -119,6 +135,14 @@ export interface FAQItem {
   category: 'general' | 'courses' | 'exams' | 'schedule';
 }
 
+// Canonical Firestore document types.
+//
+// The `groups`, `students`, and `payments` collections are shared by the Admin
+// ERP (which historically uses the CRM shapes in `src/types/crm.ts`) and the
+// Teacher portal (which uses the shapes below). A single Firestore document
+// therefore carries a superset of fields; each reader uses its own subset.
+// Optional legacy/CRM aliases below are intentional and documented — they keep
+// Admin → Firestore → Teacher synchronization working from one record.
 export interface Group {
   id: string;
   name: string;
@@ -132,6 +156,16 @@ export interface Group {
   level?: string;
   description?: string;
   status?: string;
+  // Admin ERP (GroupScheduleItem) aliases — same record, alternate field names.
+  groupName?: string;
+  course?: string;
+  courseId?: string;
+  teacher?: string;
+  days?: string;
+  time?: string;
+  studentsCount?: number;
+  type?: string;
+  branch?: string;
 }
 
 export interface Student {
@@ -141,12 +175,29 @@ export interface Student {
   groupId: string;
   groupName: string;
   tuitionFee: number;
-  paymentStatus: 'paid' | 'pending' | 'overdue';
+  // Lowercase values are canonical for the teacher portal; capitalized CRM
+  // values ('Paid' | 'Due' | 'Overdue') are accepted when reading legacy/admin
+  // writes and normalized by writers going forward.
+  paymentStatus: 'paid' | 'pending' | 'overdue' | 'Paid' | 'Due' | 'Overdue';
   lastPaymentDate: string;
   subjectCategory?: string;
   nextDueDate?: string;
   telegramHandle?: string;
   attendanceRate?: number;
+  // Admin ERP (StudentRecord) aliases — same record, alternate field names.
+  name?: string;
+  course?: string;
+  courseId?: string;
+  teacher?: string;
+  teacherId?: string;
+  mentor?: string;
+  parentName?: string;
+  parentPhone?: string;
+  monthlyFee?: number;
+  debtAmount?: number;
+  enrollmentDate?: string;
+  status?: string;
+  notes?: string;
 }
 
 export interface Payment {
@@ -157,12 +208,17 @@ export interface Payment {
   paymentMethod: 'cash' | 'card' | 'click' | 'payme' | string;
   date: string;
   recordedBy: string;
-  status?: 'paid' | 'pending' | 'refunded';
+  status?: 'paid' | 'pending' | 'refunded' | 'Completed' | 'Pending' | 'Voided' | 'Sent' | 'Failed' | 'Delivered';
   cohortGroup?: string;
   subjectCategory?: string;
   paymentPeriod?: string;
   receiptRef?: string;
   notes?: string;
+  // Admin ERP (IncomePaymentRecord) aliases — same record, alternate field names.
+  course?: string;
+  method?: string;
+  receiptNumber?: string;
+  month?: string;
 }
 
 export interface AttendanceStudentEntry {
@@ -209,6 +265,7 @@ export interface Assignment {
   instructions?: string;
   resourceFormat?: string;
   teacherName?: string;
+  teacherId?: string;
   teacherEmail?: string;
 }
 

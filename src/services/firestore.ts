@@ -466,6 +466,7 @@ export async function addAssignment(data: any) {
       submittedCount: data.submittedCount ?? 0,
       totalStudents: data.totalStudents ?? 14,
       createdAt: new Date().toISOString(),
+      teacherId: auth.currentUser?.uid || '',
       teacherEmail: auth.currentUser?.email || '',
       teacherName: auth.currentUser?.displayName || "Jasur Alimov"
     });

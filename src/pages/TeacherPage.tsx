@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, Sparkles, Phone, Send, Briefcase, Award, GraduationCap, Users, CalendarClock } from 'lucide-react';
 import { crmService } from '../services/crmService';
+import { coursesService, teachersService } from '../services/repository';
 import { CourseData, TeacherRecord } from '../types/crm';
 import { getCourseSlug, slugify } from '../utils/content';
 import { PublicLayout, useTrialModal } from '../components/public/PublicLayout';
@@ -22,24 +23,55 @@ export const TeacherPage: React.FC = () => {
   const [courses, setCourses] = useState<CourseData[]>([]);
 
   useEffect(() => {
-    const teachers = crmService.getTeachers();
-    const found =
-      teachers.find((t) => slugify(t.name) === slug) ||
-      teachers.find((t) => t.name.toLowerCase().includes(slug.replace(/-/g, ' '))) ||
-      null;
-    setTeacher(found && found.isPublic !== false ? found : null);
+    // Production path: Firestore `teachers`/`courses`. Legacy crmService is
+    // only the offline fallback.
+    let cancelled = false;
+    (async () => {
+      try {
+        const [teacherDocs, courseDocs] = await Promise.all([
+          teachersService.getAllTeachers(),
+          coursesService.getPublicCourses(),
+        ]);
+        if (cancelled) return;
+        const teachers = (
+          teacherDocs.length > 0 ? teacherDocs : crmService.getTeachers()
+        ) as TeacherRecord[];
+        const found =
+          teachers.find((t) => slugify(t.name) === slug) ||
+          teachers.find((t) => t.name.toLowerCase().includes(slug.replace(/-/g, ' '))) ||
+          null;
+        setTeacher(found && found.isPublic !== false ? found : null);
 
-    if (found) {
-      const publicCourses = crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false);
-      const taught = publicCourses.filter(
-        (c) =>
-          c.teacherId === found.id ||
-          (c.teacherName && c.teacherName.toLowerCase() === found.name.toLowerCase())
-      );
-      setCourses(taught);
-    } else {
-      setCourses([]);
-    }
+        if (found) {
+          const publicCourses = (
+            (courseDocs.length > 0 ? courseDocs : crmService.getCourses()) as CourseData[]
+          ).filter((c) => c.isActive && c.isPublic !== false);
+          const taught = publicCourses.filter(
+            (c) =>
+              c.teacherId === found.id ||
+              (c.teacherName && c.teacherName.toLowerCase() === found.name.toLowerCase())
+          );
+          setCourses(taught);
+        } else {
+          setCourses([]);
+        }
+      } catch {
+        if (cancelled) return;
+        const teachers = crmService.getTeachers();
+        const found =
+          teachers.find((t) => slugify(t.name) === slug) ||
+          teachers.find((t) => t.name.toLowerCase().includes(slug.replace(/-/g, ' '))) ||
+          null;
+        setTeacher(found && found.isPublic !== false ? found : null);
+        setCourses(found
+          ? crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false).filter(
+              (c) => c.teacherId === found.id ||
+                (c.teacherName && c.teacherName.toLowerCase() === found.name.toLowerCase())
+            )
+          : []);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [slug]);
 
   if (!teacher) {

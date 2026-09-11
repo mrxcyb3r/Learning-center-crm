@@ -30,6 +30,13 @@ import {
   Zap,
   X,
 } from "lucide-react";
+import {
+  coursesService,
+  teachersService,
+  resultsService,
+  landingCmsService,
+  leadsService,
+} from "../services/repository";
 
 /* ============================================================================
    TYPES & CONTRACTS (STRICTLY PRESERVED)
@@ -97,7 +104,7 @@ export interface RenessansLandingPageProps {
 }
 
 /* ============================================================================
-   CANONICAL DATA (6 COURSES & 6 INSTRUCTORS 1-TO-1 ALIGNED)
+   CANONICAL DATA
 ============================================================================ */
 
 const DEFAULT_COURSES: CoursePath[] = [
@@ -584,7 +591,153 @@ const HERO_TYPED_STRINGS = [
 const EASING_CURVE = [0.16, 1, 0.3, 1] as const;
 
 /* ============================================================================
-   HOISTED REUSABLE UI PRIMITIVES (AVOID REFERENCE ERRORS)
+   WORD-BY-WORD ANIMATED HERO TITLE COMPONENT
+============================================================================ */
+
+export function HeroTitleAnimated() {
+  const reduceMotion = useReducedMotion();
+
+  const lines = [
+    { text: "Farzandingizning", className: "block text-stone-100" },
+    { text: "kelajagini bugundan", className: "block text-stone-100" },
+    { text: "boshlang!", className: "block italic text-amber-400 drop-shadow-[0_0_35px_rgba(245,158,11,0.25)]" },
+  ];
+
+  if (reduceMotion) {
+    return (
+      <h1 className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em]">
+        <span className="block text-stone-100">Farzandingizning</span>
+        <span className="block text-stone-100">kelajagini bugundan</span>
+        <span className="block italic text-amber-400">boshlang!</span>
+      </h1>
+    );
+  }
+
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const wordVariants = {
+    hidden: {
+      opacity: 0,
+      y: 28,
+      filter: "blur(12px)",
+      scale: 0.96,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      scale: 1,
+      transition: {
+        duration: 0.75,
+        ease: EASING_CURVE,
+      },
+    },
+  };
+
+  return (
+    <motion.h1
+      className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em]"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {lines.map((line, lIdx) => (
+        <span key={lIdx} className={`${line.className} block overflow-hidden py-1`}>
+          {line.text.split(" ").map((word, wIdx) => (
+            <motion.span
+              key={`${word}-${wIdx}`}
+              variants={wordVariants}
+              className="inline-block mr-[0.24em] last:mr-0 transform-gpu"
+            >
+              {word}
+            </motion.span>
+          ))}
+        </span>
+      ))}
+    </motion.h1>
+  );
+}
+
+/* ============================================================================
+   WORD BY WORD FADE ANIMATION COMPONENT FOR PARAGRAPHS
+============================================================================ */
+
+export function WordFadeText({
+  text,
+  className = "",
+  delay = 0.2,
+  stagger = 0.035,
+}: {
+  text: string;
+  className?: string;
+  delay?: number;
+  stagger?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+  const words = useMemo(() => text.split(" "), [text]);
+
+  if (reduceMotion) {
+    return <span className={className}>{text}</span>;
+  }
+
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: stagger,
+        delayChildren: delay,
+      },
+    },
+  };
+
+  const wordVariants = {
+    hidden: {
+      opacity: 0,
+      y: 8,
+      filter: "blur(4px)",
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: {
+        duration: 0.45,
+        ease: EASING_CURVE,
+      },
+    },
+  };
+
+  return (
+    <motion.span
+      className={`inline-block ${className}`}
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-40px" }}
+    >
+      {words.map((word, idx) => (
+        <motion.span
+          key={`${word}-${idx}`}
+          variants={wordVariants}
+          className="inline-block mr-[0.28em] last:mr-0"
+        >
+          {word}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+}
+
+/* ============================================================================
+   HOISTED REUSABLE UI PRIMITIVES
 ============================================================================ */
 
 export function BackgroundGridMesh() {
@@ -831,7 +984,7 @@ function SectionHeader({
       </h2>
       {subtitle && (
         <p className="mt-3 text-sm sm:text-base font-serif italic text-stone-400 max-w-2xl mx-auto leading-relaxed">
-          "{subtitle}"
+          <WordFadeText text={`"${subtitle}"`} delay={0.2} stagger={0.03} />
         </p>
       )}
     </motion.div>
@@ -880,7 +1033,7 @@ function SeamlessMarqueeTicker() {
 }
 
 /* ============================================================================
-   STICKY SEQUENTIAL SCROLL-FOCUS METODIKA ENGINE (PINNED & PROGRESSIVE)
+   STICKY SEQUENTIAL SCROLL-FOCUS METODIKA ENGINE
 ============================================================================ */
 
 function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
@@ -909,7 +1062,6 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8 items-center">
-            {/* Left: Sequentially focused stages in a single central area */}
             <div className="lg:col-span-6 relative h-[360px] sm:h-[340px] w-full">
               {stages.map((stage, index) => {
                 const stepStart = index / stages.length;
@@ -994,7 +1146,6 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
               })}
             </div>
 
-            {/* Right: Synchronous Visualizer Stage */}
             <div className="lg:col-span-6 flex justify-center">
               <div className="w-full h-[360px] sm:h-[340px] rounded-3xl border border-amber-400/30 bg-[#0c1017]/95 backdrop-blur-3xl p-8 flex items-center justify-center relative shadow-2xl overflow-hidden">
                 {stages.map((stage, index) => {
@@ -1018,7 +1169,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                       className="absolute inset-0 flex items-center justify-center p-8 pointer-events-none"
                     >
                       {stage.visualType === "radar" && (
-                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
                           <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="opacity-30 animate-spin" style={{ animationDuration: "35s" }} />
                           <circle cx="100" cy="100" r="55" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-50" />
                           <circle cx="100" cy="100" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-80" />
@@ -1029,7 +1180,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                         </svg>
                       )}
                       {stage.visualType === "target" && (
-                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
                           <circle cx="100" cy="100" r="76" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="6 4" className="opacity-40" />
                           <circle cx="100" cy="100" r="48" fill="none" stroke="currentColor" strokeWidth="1.8" className="opacity-75" />
                           <circle cx="100" cy="100" r="22" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" />
@@ -1042,7 +1193,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                         </svg>
                       )}
                       {stage.visualType === "system" && (
-                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-emerald-400">
+                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-emerald-400">
                           <path d="M 60 52 L 140 52 L 140 102 M 140 102 L 60 102 L 60 152 M 60 152 L 140 152" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
                           <rect x="25" y="32" width="70" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
                           <text x="60" y="55" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">01 NAZARIYA</text>
@@ -1053,7 +1204,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                         </svg>
                       )}
                       {stage.visualType === "analytics" && (
-                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
                           <line x1="25" y1="165" x2="180" y2="165" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
                           <rect x="35" y="115" width="20" height="50" rx="4" fill="rgba(245,158,11,0.25)" />
                           <rect x="68" y="90" width="20" height="75" rx="4" fill="rgba(245,158,11,0.45)" />
@@ -1065,7 +1216,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                         </svg>
                       )}
                       {stage.visualType === "award" && (
-                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-emerald-400">
+                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-emerald-400">
                           <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" strokeDasharray="4 4" />
                           <polygon points="100,20 122,68 174,74 135,110 148,162 100,136 52,162 65,110 26,74 78,68" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="2" />
                           <circle cx="100" cy="98" r="32" fill="#080b10" stroke="#f59e0b" strokeWidth="2.5" />
@@ -1101,21 +1252,112 @@ export function RenessansLandingPage({
   const reduceMotion = useReducedMotion();
   const { scrollY } = useScroll();
 
+  const [liveCourses, setLiveCourses] = useState<CoursePath[] | null>(null);
+  const [liveTeachers, setLiveTeachers] = useState<TeacherRecord[] | null>(null);
+  const [liveResults, setLiveResults] = useState<StudentResult[] | null>(null);
+  const [liveFaqs, setLiveFaqs] = useState<FAQItem[] | null>(null);
+
+  useEffect(() => {
+    if (propsCourses && propsCourses.length > 0) return;
+    let cancelled = false;
+    coursesService.getPublicCourses()
+      .then((docs) => {
+        if (cancelled || !docs || docs.length === 0) return;
+        const mapped: CoursePath[] = docs.map((c: any) => ({
+          id: c.id,
+          slug: c.slug || c.id,
+          title: c.title,
+          category: c.category || 'Umumiy',
+          duration: c.duration || '',
+          level: c.lessonsPerWeek || '',
+          description: c.description || '',
+          isFeatured: c.featured,
+          highlights: c.features || [],
+          teacherName: c.teacherName,
+          price: c.formattedFee || (c.monthlyFee != null ? String(c.monthlyFee) : undefined),
+        }));
+        if (!cancelled) setLiveCourses(mapped);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [propsCourses]);
+
+  useEffect(() => {
+    if (propsTeachers && propsTeachers.length > 0) return;
+    let cancelled = false;
+    teachersService.getPublicTeachers()
+      .then((docs) => {
+        if (cancelled || !docs || docs.length === 0) return;
+        const mapped: TeacherRecord[] = docs.map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          subject: t.subject || t.specialization || '',
+          experienceYears: t.experience,
+          photo: t.photo,
+          bio: t.description,
+          achievements: t.achievements,
+          resultsCount: t.studentsCount,
+        }));
+        if (!cancelled) setLiveTeachers(mapped);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [propsTeachers]);
+
+  useEffect(() => {
+    if (propsResults && propsResults.length > 0) return;
+    let cancelled = false;
+    resultsService.getPublishedResults()
+      .then((docs) => {
+        if (cancelled || !docs || docs.length === 0) return;
+        const mapped: StudentResult[] = docs.map((r: any) => ({
+          id: r.id,
+          name: r.studentName || r.name || '',
+          score: r.score,
+          examType: r.category || 'DTM',
+          university: r.university,
+          year: r.year,
+          certificateUrl: r.certificateImage,
+          badge: r.badge,
+        }));
+        if (!cancelled) setLiveResults(mapped);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [propsResults]);
+
+  useEffect(() => {
+    if (propsFaqs && propsFaqs.length > 0) return;
+    let cancelled = false;
+    landingCmsService.getFaqs()
+      .then((docs) => {
+        if (cancelled || !docs || docs.length === 0) return;
+        const mapped: FAQItem[] = docs.map((f: any) => ({
+          id: f.id,
+          question: f.question,
+          answer: f.answer,
+        }));
+        if (!cancelled) setLiveFaqs(mapped);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [propsFaqs]);
+
   const results = useMemo(
-    () => (propsResults && propsResults.length > 0 ? propsResults : DEFAULT_RESULTS),
-    [propsResults]
+    () => (propsResults && propsResults.length > 0 ? propsResults : liveResults && liveResults.length > 0 ? liveResults : DEFAULT_RESULTS),
+    [propsResults, liveResults]
   );
   const teachers = useMemo(
-    () => (propsTeachers && propsTeachers.length > 0 ? propsTeachers : DEFAULT_TEACHERS),
-    [propsTeachers]
+    () => (propsTeachers && propsTeachers.length > 0 ? propsTeachers : liveTeachers && liveTeachers.length > 0 ? liveTeachers : DEFAULT_TEACHERS),
+    [propsTeachers, liveTeachers]
   );
   const courses = useMemo(
-    () => (propsCourses && propsCourses.length > 0 ? propsCourses : DEFAULT_COURSES),
-    [propsCourses]
+    () => (propsCourses && propsCourses.length > 0 ? propsCourses : liveCourses && liveCourses.length > 0 ? liveCourses : DEFAULT_COURSES),
+    [propsCourses, liveCourses]
   );
   const faqs = useMemo(
-    () => (propsFaqs && propsFaqs.length > 0 ? propsFaqs : DEFAULT_FAQS),
-    [propsFaqs]
+    () => (propsFaqs && propsFaqs.length > 0 ? propsFaqs : liveFaqs && liveFaqs.length > 0 ? liveFaqs : DEFAULT_FAQS),
+    [propsFaqs, liveFaqs]
   );
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1233,7 +1475,12 @@ export function RenessansLandingPage({
           ...(subject ? { subject } : {}),
         });
       } else {
-        await new Promise((res) => setTimeout(res, 850));
+        await leadsService.createLead({
+          name,
+          phone,
+          course: subject || 'Bepul konsultatsiya',
+          source: 'Bosh sahifa (Hero forma)',
+        });
       }
       setIsSubmitted(true);
     } catch {
@@ -1424,7 +1671,7 @@ export function RenessansLandingPage({
       </AnimatePresence>
 
       {/* ====================================================================
-          2. HERO SECTION — INTEGRATED RENESSANS EMBLEM
+          2. HERO SECTION — WITH STAGGERED WORD-BY-WORD HERO TITLE ANIMATION
       ==================================================================== */}
       <section
         id="top"
@@ -1438,11 +1685,8 @@ export function RenessansLandingPage({
                 Yangioboddagi Yetakchi Ta'lim Kampusi
               </div>
 
-              <h1 className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em] text-stone-100">
-                <span className="block">Farzandingizning</span>
-                <span className="block">kelajagini bugundan</span>
-                <span className="block italic text-amber-400">boshlang!</span>
-              </h1>
+              {/* ANIMATED HERO HEADING */}
+              <HeroTitleAnimated />
 
               <div className="mt-8 flex flex-wrap items-center gap-3 text-sm sm:text-base text-stone-300">
                 <span className="font-mono text-stone-500 uppercase tracking-widest text-xs">
@@ -1456,10 +1700,14 @@ export function RenessansLandingPage({
               {/* BRAND EMBLEM / LOGO BADGE */}
               <HeroLogoBadge />
 
-              <p className="text-base leading-relaxed text-stone-300 sm:text-lg">
-                Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov.
-                Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani.
-              </p>
+              {/* WORD-BY-WORD ANIMATED PARAGRAPH */}
+              <div className="text-base leading-relaxed text-stone-300 sm:text-lg">
+                <WordFadeText
+                  text="Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov. Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani."
+                  delay={0.25}
+                  stagger={0.035}
+                />
+              </div>
 
               <div className="mt-8 flex flex-col gap-3.5 sm:flex-row">
                 <button
@@ -1529,7 +1777,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          3. SEAMLESS MARQUEE TICKER
+          3. SEAMLESS DUAL-TRACK MARQUEE TICKER
       ==================================================================== */}
       <SeamlessMarqueeTicker />
 
@@ -1612,12 +1860,12 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          5. METODIKA — STICKY SEQUENTIAL SCROLL CONTAINER (1 THROUGH 5)
+          5. METODIKA — STICKY SCROLL ENGINE
       ==================================================================== */}
       <StickyMetodikaSection stages={METHOD_STAGES} />
 
       {/* ====================================================================
-          6. KURSLAR — RESPONSIVE PRODUCT CATALOG GRID
+          6. KURSLAR
       ==================================================================== */}
       <section
         id="kurslar"
@@ -1631,7 +1879,6 @@ export function RenessansLandingPage({
             align="left"
           />
 
-          {/* Filter Bar */}
           <div className="mt-10 flex flex-wrap gap-2">
             {[
               ["BARCHASI", "Barchasi"],
@@ -1660,7 +1907,6 @@ export function RenessansLandingPage({
             })}
           </div>
 
-          {/* Responsive Course Grid */}
           <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course, idx) => (
               <motion.div
@@ -1745,7 +1991,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          7. PREZIDENT MAKTABIGA TAYYORLOV — ACADEMIC ROADMAP GRID
+          7. PREZIDENT MAKTABIGA TAYYORLOV
       ==================================================================== */}
       <section
         id="prezident-maktabi"
@@ -1818,7 +2064,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          8. TIZIM USTOZLARI — 6 NAFAR MUTAXASSIS (AVATAR FALLBACK BILAN)
+          8. TIZIM USTOZLARI
       ==================================================================== */}
       <section
         id="ustozlar"
@@ -1844,7 +2090,6 @@ export function RenessansLandingPage({
                 <SpotlightCard className="h-full">
                   <div className="p-8 flex flex-col justify-between h-full">
                     <div>
-                      {/* Photo Container with Ring Accents & Glass Experience Badge */}
                       <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 ring-2 ring-amber-400/20 aspect-[4/3] bg-stone-900 group">
                         <TeacherAvatar
                           src={t.photo}
@@ -1909,7 +2154,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          9. FANLAR — ACADEMIC SYLLABUS DOSSIER MATRIX
+          9. FANLAR
       ==================================================================== */}
       <section
         id="fanlar"
@@ -1982,7 +2227,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          10. REAL NATIJALAR — VERIFIED EVIDENCE ARCHIVE
+          10. REAL NATIJALAR
       ==================================================================== */}
       <section
         id="natijalar"
@@ -2021,7 +2266,6 @@ export function RenessansLandingPage({
           </div>
 
           <div className="mt-12 grid lg:grid-cols-12 gap-8 items-start">
-            {/* Results Table List */}
             <div className="lg:col-span-8 divide-y divide-white/[0.06] rounded-3xl border border-white/[0.08] bg-[#0c1017]/90 backdrop-blur-2xl p-4 sm:p-6 shadow-2xl">
               {filteredResults.map((res, index) => {
                 const isSelected = activeResultIndex === index;
@@ -2089,7 +2333,6 @@ export function RenessansLandingPage({
               })}
             </div>
 
-            {/* Sticky Verified Certificate / Evidence Inspector */}
             <div className="lg:col-span-4 sticky top-28">
               {filteredResults[activeResultIndex] && (
                 <SpotlightCard borderGradient="from-amber-400/60 via-white/15 to-transparent">
@@ -2226,7 +2469,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          12. MANZIL — YANGIOBOD 1-MAKTAB OFFICIAL CAMPUS
+          12. MANZIL & BEPUL KONSULTATSIYA
       ==================================================================== */}
       <section
         id="manzil"
@@ -2308,60 +2551,104 @@ export function RenessansLandingPage({
               </div>
             </div>
 
-            <div className="lg:col-span-6">
-              <SpotlightCard>
+            <div id="konsultatsiya" className="lg:col-span-6 scroll-mt-28">
+              <SpotlightCard glowColor="rgba(245,158,11,0.25)">
                 <div className="p-8 sm:p-12">
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-400">
                     BEVOSITA BOG'LANISH //
                   </div>
-                  <h3 className="font-serif text-3xl text-stone-100 mt-2">
-                    Qo'ng'iroq Qiling
+                  <h3 className="font-serif text-3xl text-stone-100 mt-2 font-bold">
+                    Bepul Sinov Darsiga Yozilish
                   </h3>
                   <p className="text-sm text-stone-400 mt-2">
-                    O'quv bo'limi sizga dars jadvali va bepul sinov darsi vaqtini belgilab beradi:
+                    O'quv bo'limi sizga dars jadvali va diagnostik sinov darsi vaqtini belgilab beradi.
                   </p>
 
-                  <div className="mt-8 space-y-4">
-                    <a
-                      href="tel:+998886484949"
-                      className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group min-h-[44px]"
+                  {isSubmitted ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-8 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-6 text-center"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
-                          <Phone className="h-5 w-5" />
+                      <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
+                      <h4 className="mt-3 font-serif text-xl font-bold text-stone-100">
+                        Arizangiz Qabul Qilindi!
+                      </h4>
+                      <p className="mt-2 text-xs text-stone-300 font-mono">
+                        Tez orada menejerlarimiz siz bilan bog'lanishadi.
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleFormSubmit} className="mt-8 space-y-4">
+                      {submitError && (
+                        <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-3 text-xs text-red-300 font-mono">
+                          {submitError}
                         </div>
-                        <div>
-                          <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                            +998 (88) 648-49-49
-                          </span>
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                            Asosiy aloqa liniyasi
-                          </span>
-                        </div>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 transition-all" />
-                    </a>
+                      )}
 
-                    <a
-                      href="tel:+998992593232"
-                      className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group min-h-[44px]"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
-                          <Phone className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                            +998 (99) 259-32-32
-                          </span>
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                            Ma'muriyat & Maslahat
-                          </span>
-                        </div>
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                          Ismingiz
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formName}
+                          onChange={(e) => setFormName(e.target.value)}
+                          placeholder="F.I.SH."
+                          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-stone-100 placeholder-stone-600 focus:border-amber-400 focus:outline-none transition-colors"
+                        />
                       </div>
-                      <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 transition-all" />
-                    </a>
-                  </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                          Telefon raqamingiz
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={formPhone}
+                          onChange={(e) => setFormPhone(e.target.value)}
+                          placeholder="+998 (90) 123-45-67"
+                          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-stone-100 placeholder-stone-600 focus:border-amber-400 focus:outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-widest text-stone-400 mb-1">
+                          Qiziqqan fangingiz (ixtiyoriy)
+                        </label>
+                        <select
+                          value={formSubject}
+                          onChange={(e) => setFormSubject(e.target.value)}
+                          className="w-full rounded-xl border border-white/10 bg-[#090d14] px-4 py-3 text-sm text-stone-100 focus:border-amber-400 focus:outline-none transition-colors"
+                        >
+                          <option value="">Fan / Kursni tanlang</option>
+                          <option value="Tarix • Huquq • Geografiya">Tarix • Huquq • Geografiya</option>
+                          <option value="Matematika & Prezident Maktabi">Matematika & Prezident Maktabi</option>
+                          <option value="CEFR Ingliz Tili">CEFR Ingliz Tili (B2/C1)</option>
+                          <option value="Kids & General English">Kids & General English</option>
+                          <option value="Mental Arifmetika">Mental Arifmetika</option>
+                          <option value="Ona Tili va Adabiyot">Ona Tili va Adabiyot</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 py-3.5 min-h-[48px] text-xs font-bold uppercase tracking-widest text-black shadow-[0_0_25px_rgba(245,158,11,0.3)] hover:shadow-[0_0_35px_rgba(245,158,11,0.5)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isSubmitting ? (
+                          <span>Yuborilmoqda...</span>
+                        ) : (
+                          <>
+                            <span>Sinov Darsiga Yozilish</span>
+                            <ArrowRight className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
                 </div>
               </SpotlightCard>
             </div>
@@ -2370,209 +2657,34 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          13. KONSULTATSIYA — HIGH-CONVERTING SECURE REGISTRATION FLOW
+          13. FOOTER
       ==================================================================== */}
-      <section
-        id="konsultatsiya"
-        className="scroll-mt-20 bg-[#07090d] py-28 sm:py-36 relative overflow-hidden"
-      >
-        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 relative z-10">
-          <SpotlightCard borderGradient="from-amber-400/50 via-white/15 to-transparent">
-            <div className="p-8 sm:p-14">
-              <div className="grid lg:grid-cols-12 gap-12 items-center">
-                <div className="lg:col-span-6">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
-                    10 / RO‘YXATDAN O‘TISH
-                  </span>
-
-                  <div className="mt-4 flex items-center gap-3 font-mono text-xs text-stone-500 uppercase tracking-widest">
-                    <span>MAQSAD</span>
-                    <ArrowRight className="h-3 w-3 text-amber-400" />
-                    <span>TIZIM</span>
-                    <ArrowRight className="h-3 w-3 text-amber-400" />
-                    <span className="text-emerald-400 font-bold">NATIJA</span>
-                  </div>
-
-                  <h2 className="mt-4 font-serif text-[clamp(2.4rem,4.5vw,4.4rem)] leading-[0.95] text-stone-100">
-                    Bepul Sinov Darsiga
-                    <br />
-                    <span className="italic text-amber-400">Hoziroq Yoziling</span>
-                  </h2>
-
-                  <p className="mt-6 text-sm sm:text-base text-stone-300 leading-relaxed max-w-lg">
-                    Ismingiz va telefon raqamingizni qoldiring. Administratorimiz siz bilan
-                    bog‘lanib, diagnostik test va sinov darsi vaqtini belgilaydi.
-                  </p>
-                </div>
-
-                <div className="lg:col-span-6 rounded-3xl border border-white/[0.1] bg-[#07090d]/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
-                  <AnimatePresence mode="wait">
-                    {isSubmitted ? (
-                      <motion.div
-                        key="success"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.35 }}
-                        className="text-center py-10"
-                        aria-live="polite"
-                      >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/30">
-                          <CheckCircle2 className="h-8 w-8" />
-                        </div>
-                        <h3 className="mt-5 font-serif text-2xl sm:text-3xl text-stone-100">
-                          Arizangiz Muvaffaqiyatli Qabul Qilindi!
-                        </h3>
-                        <p className="mt-3 text-xs font-mono text-stone-400">
-                          Tez orada administratorimiz siz bilan bog'lanadi.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setIsSubmitted(false)}
-                          className="mt-6 rounded-full border border-white/20 px-6 py-2.5 min-h-[44px] text-xs font-mono uppercase text-stone-300 hover:text-white"
-                        >
-                          Boshqa ariza qoldirish
-                        </button>
-                      </motion.div>
-                    ) : (
-                      <form onSubmit={handleFormSubmit} className="space-y-4">
-                        <div>
-                          <label
-                            htmlFor="lead-name"
-                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                          >
-                            F.I.SH (Ismingiz)
-                          </label>
-                          <input
-                            id="lead-name"
-                            type="text"
-                            required
-                            value={formName}
-                            onChange={(e) => setFormName(e.target.value)}
-                            placeholder="Ismingiz va familiyangiz"
-                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="lead-phone"
-                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                          >
-                            Telefon Raqamingiz
-                          </label>
-                          <input
-                            id="lead-phone"
-                            type="tel"
-                            required
-                            value={formPhone}
-                            onChange={(e) => setFormPhone(e.target.value)}
-                            placeholder="+998 (88) 648-49-49"
-                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="lead-subject"
-                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                          >
-                            Qiziqtirgan Yo'nalish
-                          </label>
-                          <select
-                            id="lead-subject"
-                            value={formSubject}
-                            onChange={(e) => setFormSubject(e.target.value)}
-                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-[#0c1017] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
-                          >
-                            <option value="">Yo‘nalishni tanlang</option>
-                            <option value="Tarix • Huquq • Geografiya">
-                              Tarix • Huquq • Geografiya (DTM)
-                            </option>
-                            <option value="Matematika & Prezident Maktabi">
-                              Matematika & Prezident Maktabi
-                            </option>
-                            <option value="CEFR Ingliz Tili (B2 / C1)">
-                              CEFR Ingliz Tili (B2 / C1)
-                            </option>
-                            <option value="General & Kids English">
-                              General & Kids English (3–10 yosh)
-                            </option>
-                            <option value="Mental Arifmetika">
-                              Mental Arifmetika & Tez Hisob
-                            </option>
-                            <option value="Ona Tili va Adabiyot">
-                              Ona Tili va Adabiyot (Milliy Sertifikat)
-                            </option>
-                          </select>
-                        </div>
-
-                        {submitError && (
-                          <div
-                            role="alert"
-                            className="rounded-xl border border-red-500/20 bg-red-500/[0.08] p-3 text-xs text-red-300"
-                          >
-                            {submitError}
-                          </div>
-                        )}
-
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="w-full min-h-[48px] rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-                        >
-                          {isSubmitting ? "Yuborilmoqda..." : "Bepul Sinov Darsiga Yozilish"}
-                          <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </form>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-          </SpotlightCard>
-        </div>
-      </section>
-
-      {/* ====================================================================
-          14. FOOTER
-      ==================================================================== */}
-      <footer className="border-t border-white/[0.08] bg-[#05070a] py-16 relative">
-        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 border-b border-white/[0.08] pb-12">
-            <div>
-              <div className="font-serif text-2xl font-bold tracking-[0.18em] text-stone-100">
-                RENESSANS O‘QUV MARKAZI
-              </div>
-              <p className="mt-2 text-xs font-mono text-stone-400">
-                Yangiobod tumani, 1-sonli maktab binosi • Tel: +998 (88) 648-49-49
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-6 text-[11px] font-mono uppercase tracking-[0.16em] text-stone-400">
-              {navItems.map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => scrollTo(id)}
-                  className="hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 min-h-[44px]"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+      <footer className="bg-[#05070a] border-t border-white/[0.08] py-12 text-stone-400 font-mono text-xs">
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 font-serif font-bold text-black text-sm">
+              R
+            </span>
+            <span className="font-serif font-bold text-stone-200 tracking-wider">
+              RENESSANS O'QUV MARKAZI
+            </span>
           </div>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-stone-500">
-            <div>
-              © {new Date().getFullYear()} RENESSANS O‘quv Markazi. Barcha huquqlar himoyalangan.
-            </div>
-            <div className="text-amber-400 font-bold">MAQSAD • TIZIM • NATIJA</div>
+          <div>
+            © {new Date().getFullYear()} RENESSANS. Yangiobod tumanidagi yagona OTM qamrovi yetakchisi.
+          </div>
+
+          <div className="flex items-center gap-6 text-stone-500">
+            <a href="tel:+998886484949" className="hover:text-amber-400 transition-colors">
+              +998 (88) 648-49-49
+            </a>
+            <span>•</span>
+            <a href="https://t.me/D_Furqatovich" target="_blank" rel="noreferrer" className="hover:text-amber-400 transition-colors">
+              Telegram
+            </a>
           </div>
         </div>
       </footer>
     </main>
   );
 }
-
-export default RenessansLandingPage;

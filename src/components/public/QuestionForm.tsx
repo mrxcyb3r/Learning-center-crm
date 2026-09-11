@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { Send, User, Phone, Mail, BookOpen, MessageCircle, HelpCircle } from 'lucide-react';
-import { demoData } from '../../services/demoData';
+import { questionsService } from '../../services/repository';
 import { notificationService } from '../../services/notificationService';
 
 interface QuestionFormProps {
@@ -64,18 +64,17 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     try {
       setIsSubmitting(true);
 
-      const source = coursePreselected ? 'Course Page' as const : 'Website' as const;
+      const source = coursePreselected ? 'Course Page' : 'Website';
 
-      demoData.addQuestion({
+      // Production path: persist to Firestore `questions` (public create allowed).
+      await questionsService.createQuestion({
         fullName: fullName.trim(),
         phone: phone.trim(),
-        email: email.trim() || undefined,
-        courseName: course || courseName || undefined,
+        ...(email.trim() ? { email: email.trim() } : {}),
+        ...((course || courseName) ? { course: course || courseName } : {}),
         subject: subject.trim(),
         message: message.trim(),
         preferredContact,
-        agreedToContact: true,
-        status: 'New',
         source,
       });
 

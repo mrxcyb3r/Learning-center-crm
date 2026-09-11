@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Calendar, Clock, User, CheckCircle2, Sparkles, ArrowRight, GraduationCap, Phone, Send, Award } from 'lucide-react';
 import { crmService } from '../services/crmService';
+import { coursesService, teachersService, resultsService } from '../services/repository';
 import { CourseData, StudentResult, TeacherRecord } from '../types/crm';
 import { getCourseSlug, getCourseUrl, getPublicResults, getResultsForCourse, getHeadTeacher, slugify } from '../utils/content';
 import { getSubjectVisual } from '../config/subjectVisuals';
@@ -32,19 +33,44 @@ export const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ isPreview = 
   const [results, setResults] = useState<StudentResult[]>([]);
 
   useEffect(() => {
-    const allCourses = crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false);
-    setCourses(allCourses);
-    setTeachers(crmService.getTeachers());
-
-    if (isPreview) {
-      const found = allCourses.find((c) => getCourseSlug(c) === slug) || null;
-      setCourse(found);
-      setResults(getPublicResults(crmService.getCmsData().results || []));
-    } else {
-      const found = crmService.getCourseBySlug(slug) || null;
-      setCourse(found);
-      setResults(getPublicResults(crmService.getCmsData().results || []));
-    }
+    // Production path: Firestore collections. Legacy crmService is only the
+    // offline fallback.
+    let cancelled = false;
+    (async () => {
+      try {
+        const [courseDocs, teacherDocs, resultDocs] = await Promise.all([
+          coursesService.getPublicCourses(),
+          teachersService.getAllTeachers(),
+          resultsService.getPublishedResults(),
+        ]);
+        if (cancelled) return;
+        const allCourses = ((courseDocs.length > 0 ? courseDocs : crmService.getCourses()) as CourseData[])
+          .filter((c) => c.isActive && c.isPublic !== false);
+        const allTeachers = (
+          teacherDocs.length > 0 ? teacherDocs : crmService.getTeachers()
+        ) as TeacherRecord[];
+        setCourses(allCourses);
+        setTeachers(allTeachers);
+        const found =
+          allCourses.find((c) => getCourseSlug(c) === slug) ||
+          crmService.getCourseBySlug(slug) ||
+          null;
+        setCourse(found);
+        setResults(
+          resultDocs.length > 0
+            ? getPublicResults(resultDocs as unknown as StudentResult[])
+            : getPublicResults(crmService.getCmsData().results || [])
+        );
+      } catch {
+        if (cancelled) return;
+        const allCourses = crmService.getCourses().filter((c) => c.isActive && c.isPublic !== false);
+        setCourses(allCourses);
+        setTeachers(crmService.getTeachers());
+        setCourse(crmService.getCourseBySlug(slug) || null);
+        setResults(getPublicResults(crmService.getCmsData().results || []));
+      }
+    })();
+    return () => { cancelled = true; };
   }, [slug, isPreview]);
 
   useEffect(() => {

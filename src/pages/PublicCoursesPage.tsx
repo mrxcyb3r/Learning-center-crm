@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Sparkles, LayoutGrid, Search } from 'lucide-react';
 import { crmService } from '../services/crmService';
+import { coursesService } from '../services/repository';
 import { CourseData } from '../types/crm';
 import { PublicLayout, useTrialModal } from '../components/public/PublicLayout';
 import { CourseCard } from '../components/public/CourseCard';
@@ -19,11 +20,34 @@ export const PublicCoursesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Barchasi');
 
   useEffect(() => {
-    const activeCourses = crmService
-      .getCourses()
-      .filter((c) => c.isActive && c.isPublic !== false)
-      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-    setCourses(activeCourses);
+    // Production path: Firestore `courses` (public). Legacy crmService is only
+    // the offline fallback so the catalog never renders blank.
+    let cancelled = false;
+    coursesService.getPublicCourses()
+      .then((docs) => {
+        if (cancelled) return;
+        const list = (docs as unknown as CourseData[])
+          .filter((c) => (c as { isActive?: boolean }).isActive !== false)
+          .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+        if (list.length > 0) {
+          setCourses(list);
+          return;
+        }
+        setCourses(
+          crmService.getCourses()
+            .filter((c) => c.isActive && c.isPublic !== false)
+            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCourses(
+          crmService.getCourses()
+            .filter((c) => c.isActive && c.isPublic !== false)
+            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+        );
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const categories = ['Barchasi', ...Array.from(new Set(courses.map((c) => c.category)).values()).filter(Boolean)];

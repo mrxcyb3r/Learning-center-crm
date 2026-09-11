@@ -2,13 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Send, Phone, MapPin, ExternalLink, ShieldCheck } from 'lucide-react';
 import { cmsBridge } from '../../services/cmsBridge';
+import { landingCmsService } from '../../services/repository';
 
 export const PublicFooter: React.FC = () => {
   const navigate = useNavigate();
   const [contact, setContact] = useState(cmsBridge.getContact());
 
   useEffect(() => {
-    setContact(cmsBridge.getContact());
+    // Production path: Firestore `settings/landing_cms` (public read).
+    // Legacy cmsBridge is only the offline fallback.
+    let cancelled = false;
+    landingCmsService.getLandingContent()
+      .then((doc) => {
+        if (cancelled || !doc) return;
+        const live = (doc.contact || doc) as { phone?: string; telegram?: string; branches?: string[] };
+        if (live && (live.phone || live.telegram)) {
+          setContact((prev) => ({
+            ...prev,
+            ...(live.phone ? { phone: live.phone } : {}),
+            ...(live.telegram ? { telegram: live.telegram } : {}),
+            ...(live.branches ? { branches: live.branches } : {}),
+          }));
+          return;
+        }
+        setContact(cmsBridge.getContact());
+      })
+      .catch(() => {
+        if (!cancelled) setContact(cmsBridge.getContact());
+      });
+    return () => { cancelled = true; };
   }, []);
 
   return (

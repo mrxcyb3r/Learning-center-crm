@@ -12,7 +12,7 @@ import {
   seedFirestoreIfEmpty
 } from '../../services/firestore';
 import { DEFAULT_MOCK_STUDENTS, DEFAULT_MOCK_GROUPS } from '../../data/mockData';
-import { Student, Group } from '../../types';
+import { Student, Group, normalizeStudentPaymentStatus } from '../../types';
 import {
   Users,
   UserPlus,
@@ -146,7 +146,7 @@ export const StudentsManagement: React.FC = () => {
     setPhone(student.phone);
     setGroupId(student.groupId || '');
     setTuitionFee(student.tuitionFee ? student.tuitionFee.toString() : '650000');
-    setPaymentStatus(student.paymentStatus || 'pending');
+    setPaymentStatus(normalizeStudentPaymentStatus(student.paymentStatus));
     setIsAddModalOpen(true);
   };
 

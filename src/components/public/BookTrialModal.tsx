@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle2, Sparkles, Send, Phone, User, BookOpen, Clock, ShieldCheck, Check } from 'lucide-react';
 import { crmService } from '../../services/crmService';
+import { coursesService, leadsService } from '../../services/repository';
 import { notificationService } from '../../services/notificationService';
-import { demoData } from '../../services/demoData';
 
 interface BookTrialModalProps {
   isOpen: boolean;
@@ -28,14 +28,31 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
   const [courseOptions, setCourseOptions] = useState<string[]>([defaultCourse]);
 
   React.useEffect(() => {
-    // Dynamic course options from live CMS data (no hardcoded list).
-    const courses = crmService
-      .getCourses()
-      .filter((c) => c.isActive && c.isPublic !== false)
-      .map((c) => c.title);
-    if (courses.length > 0) {
-      setCourseOptions(courses);
-    }
+    // Course options from Firestore `courses`; legacy crmService is fallback.
+    let cancelled = false;
+    coursesService.getPublicCourses()
+      .then((docs) => {
+        if (cancelled) return;
+        const titles = docs.map((c: { title: string }) => c.title).filter(Boolean);
+        if (titles.length > 0) {
+          setCourseOptions(titles);
+          return;
+        }
+        const legacy = crmService
+          .getCourses()
+          .filter((c) => c.isActive && c.isPublic !== false)
+          .map((c) => c.title);
+        if (legacy.length > 0) setCourseOptions(legacy);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const legacy = crmService
+          .getCourses()
+          .filter((c) => c.isActive && c.isPublic !== false)
+          .map((c) => c.title);
+        if (legacy.length > 0) setCourseOptions(legacy);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   React.useEffect(() => {
@@ -60,7 +77,8 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      await crmService.createLead({
+      // Production path: persist to Firestore `leads` (public create allowed).
+      await leadsService.createLead({
         name: fullName.trim(),
         phone: phone.trim(),
         course: selectedCourse,
@@ -69,14 +87,6 @@ export const BookTrialModal: React.FC<BookTrialModalProps> = ({
       });
 
       notificationService.onTrialLessonSubmitted(fullName.trim(), selectedCourse, phone.trim());
-      demoData.addLead({
-        name: fullName.trim(),
-        phone: phone.trim(),
-        course: selectedCourse,
-        status: 'New',
-        source: 'Website',
-        notes: `Sinov darsi arizasi — ${new Date().toLocaleString('uz-UZ')}`,
-      });
       setIsSuccess(true);
       if (onLeadSuccess) onLeadSuccess();
     } catch (err) {

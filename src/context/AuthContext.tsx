@@ -26,11 +26,16 @@ interface AuthContextType {
   isLoading: boolean;
   isEmailVerified: boolean;
   unverifiedUserEmail: string | null;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
-  registerWithEmail: (email: string, pass: string, name: string) => Promise<void>;
+  // The optional `requestedRole` parameter is accepted for backward compatibility
+  // with call sites that pass a UI-selected role. It is intentionally NOT used
+  // for authorization: the authoritative role always comes from Firestore
+  // `users/{uid}` via handleUserRole. Frontend role arguments must never grant
+  // privileges on their own.
+  loginWithEmail: (email: string, pass: string, requestedRole?: UserRole | string) => Promise<void>;
+  registerWithEmail: (email: string, pass: string, name: string, requestedRole?: UserRole | string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   checkEmailVerification: () => Promise<boolean>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (requestedRole?: UserRole | string) => Promise<void>;
   logout: () => Promise<void>;
   // Demo login functions for demo environment
   loginAsDemoAdmin: () => Promise<void>;
@@ -159,7 +164,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, [handleUserRole]);
 
-  const loginWithEmail = async (email: string, pass: string) => {
+  const loginWithEmail = async (_email: string, _pass: string, _requestedRole?: UserRole | string) => {
+    const email = _email;
+    const pass = _pass;
+    void _requestedRole;
     setIsLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, pass);
@@ -173,8 +181,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerWithEmail = async (
     email: string,
     pass: string,
-    name: string
+    name: string,
+    _requestedRole?: UserRole | string
   ) => {
+    void _requestedRole;
     setIsLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -235,7 +245,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (_requestedRole?: UserRole | string) => {
+    void _requestedRole;
     setIsLoading(true);
     try {
       let cred;

@@ -1,5 +1,13 @@
 import { crmService } from './crmService';
 
+/**
+ * @deprecated Offline fallback only. The production path for public content is
+ * Firestore via `src/services/repository.ts` (`coursesService`,
+ * `teachersService`, `resultsService`, `landingCmsService`, `leadsService`,
+ * `questionsService`). This bridge reads legacy localStorage-backed
+ * `crmService` data so public pages never render blank when Firestore is
+ * unreachable or unseeded.
+ */
 export const cmsBridge = {
   getHero() {
     const cms = crmService.getCmsData();

@@ -104,7 +104,8 @@ export const userService = {
         telegramUsername: data.telegramUsername || null,
         telegramChatId: data.telegramChatId || null,
         isBotConnected: data.isBotConnected || false,
-        assignedPin: data.assignedPin || null
+        assignedPin: data.assignedPin || null,
+        assignedGroupIds: Array.isArray(data.assignedGroupIds) ? data.assignedGroupIds : []
       };
     }
     return null;
@@ -141,7 +142,8 @@ export const userService = {
         telegramUsername: data.telegramUsername || null,
         telegramChatId: data.telegramChatId || null,
         isBotConnected: data.isBotConnected || false,
-        assignedPin: data.assignedPin || null
+        assignedPin: data.assignedPin || null,
+        assignedGroupIds: Array.isArray(data.assignedGroupIds) ? data.assignedGroupIds : []
       } as UserProfile;
     });
   },

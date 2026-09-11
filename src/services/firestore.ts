@@ -11,7 +11,8 @@ import {
   query,
   where,
   orderBy,
-  writeBatch
+  writeBatch,
+  DocumentData
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import {
@@ -318,7 +319,7 @@ export async function saveAttendanceRecord(
       updatedAt: new Date().toISOString()
     });
     await setDoc(doc(db, ATTENDANCE_COL, recordId), payload, { merge: true });
-    console.log("✅ Firestore Write Success: attendance", recordId, payload);
+    console.debug("Firestore write: attendance", recordId, payload);
     return recordId;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${ATTENDANCE_COL}/${groupId}_${date}`);
@@ -488,12 +489,12 @@ export async function addAssignment(data: any) {
       } catch {
         // Index maintenance is best-effort; the homework doc itself is saved.
       }
-      console.log("✅ Firestore Write Success (Homework Created):", docRef.id, payload);
+      console.debug("Firestore write (Homework Created):", docRef.id, payload);
       return docRef.id;
     } catch (primaryError) {
       try {
         const docRef = await addDoc(collection(db, ASSIGNMENTS_COL), payload);
-        console.log("✅ Firestore Write Success (Assignments Created):", docRef.id, payload);
+        console.debug("Firestore write (Assignments Created):", docRef.id, payload);
         return docRef.id;
       } catch (secondaryError) {
         handleFirestoreError(secondaryError, OperationType.CREATE, "homework");
@@ -516,7 +517,7 @@ export async function updateAssignment(id: string, data: any) {
     try {
       await setDoc(doc(db, ASSIGNMENTS_COL, id), payload, { merge: true });
     } catch (e) {}
-    console.log("✅ Firestore Write Success (Homework Updated):", id, payload);
+    console.debug("Firestore write (Homework Updated):", id, payload);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `homework/${id}`);
   }
@@ -539,7 +540,7 @@ export async function deleteAssignment(id: string, groupId?: string) {
         // Best-effort index maintenance.
       }
     }
-    console.log("✅ Firestore Delete Success (Homework Deleted):", id);
+    console.debug("Firestore homework deleted:", id);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `homework/${id}`);
   }
@@ -575,7 +576,7 @@ export async function addFeedPost(data: Omit<FeedPost, 'id'>) {
   try {
     const payload = cleanData(data);
     const docRef = await addDoc(collection(db, FEED_POSTS_COL), payload);
-    console.log("✅ Firestore Write Success: feed_posts", docRef.id, payload);
+    console.debug("Firestore write: feed_posts", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, FEED_POSTS_COL);
@@ -597,7 +598,7 @@ export async function addPostComment(postId: string, commentText: string, author
       await updateDoc(postRef, {
         comments: [...currentComments, newComment]
       });
-      console.log("✅ Firestore Write Success: feed_post comment", postId);
+      console.debug("Firestore write: feed_post comment", postId);
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${FEED_POSTS_COL}/${postId}`);
@@ -649,7 +650,7 @@ export async function saveMockScore(data: Omit<MockTestScore, 'id'>) {
       }
     }
 
-    console.log("✅ Firestore Write Success: mock_scores", docRef.id, payload);
+    console.debug("Firestore write: mock_scores", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, MOCK_SCORES_COL);
@@ -921,7 +922,7 @@ export async function submitHomework(submission: {
       createdAt: new Date().toISOString()
     });
     const docRef = await addDoc(collection(db, SUBMISSIONS_COL), payload);
-    console.log("✅ Firestore Write Success: homework_submissions", docRef.id, payload);
+    console.debug("Firestore write: homework_submissions", docRef.id, payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, SUBMISSIONS_COL);
@@ -1043,54 +1044,73 @@ export function subscribeNotifications(
   callback?: (notifications: AppNotification[]) => void
 ) {
   if (!callback) return () => {};
+  // Scoped realtime listeners only: one listener per authorized slice, merged
+  // by document ID. Never subscribes to the whole collection (rules fail such
+  // reads closed on mixed data).
+  const mapDoc = (docSnap: FirebaseFirestoreDoc): AppNotification => {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      title: data.title || data.subject || 'Notification',
+      description: data.description || data.message || '',
+      category: data.category || data.type || 'announcement',
+      isRead: data.isRead ?? false,
+      createdAt: data.createdAt || new Date().toISOString(),
+      recipientId: data.recipientId,
+      recipientRole: data.recipientRole || 'all',
+      linkId: data.linkId,
+      groupId: data.groupId,
+      senderName: data.senderName
+    };
+  };
+  const passesFilter = (n: AppNotification): boolean => {
+    if (n.recipientId && recipientId && n.recipientId === recipientId) return true;
+    if (n.recipientRole) {
+      if (n.recipientRole === 'all') return true;
+      if (!recipientRole) return true; // Show student broadcasts if role is pending
+      if (recipientRole === 'student' && n.recipientRole === 'student') return true;
+      if (recipientRole === 'teacher' && n.recipientRole === 'teacher') return true;
+      if (recipientRole === 'admin' || recipientRole === 'superadmin') return true;
+    }
+    if (!n.recipientId && (!n.recipientRole || n.recipientRole === 'all')) return true;
+    return false;
+  };
+  type FirebaseFirestoreDoc = { id: string; data: () => DocumentData };
   try {
-    return onSnapshot(
-      collection(db, NOTIFICATIONS_COL),
-      (snapshot) => {
-        const rawDocs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        console.log('🔔 Notifications received in listener:', rawDocs);
-
-        const items: AppNotification[] = snapshot.docs.map((docSnap) => {
-          const data = docSnap.data();
-          return {
-            id: docSnap.id,
-            title: data.title || data.subject || 'Notification',
-            description: data.description || data.message || '',
-            category: data.category || data.type || 'announcement',
-            isRead: data.isRead ?? false,
-            createdAt: data.createdAt || new Date().toISOString(),
-            recipientId: data.recipientId,
-            recipientRole: data.recipientRole || 'all',
-            linkId: data.linkId,
-            groupId: data.groupId,
-            senderName: data.senderName
-          };
-        });
-
-        // Filter for user or role
-        const filtered = items.filter((n) => {
-          if (n.recipientId && recipientId && n.recipientId === recipientId) return true;
-          if (n.recipientRole) {
-            if (n.recipientRole === 'all') return true;
-            if (!recipientRole) return true; // Show student broadcasts if role is pending
-            if (recipientRole === 'student' && n.recipientRole === 'student') return true;
-            if (recipientRole === 'teacher' && n.recipientRole === 'teacher') return true;
-            if (recipientRole === 'admin' || recipientRole === 'superadmin') return true;
-          }
-          if (!n.recipientId && (!n.recipientRole || n.recipientRole === 'all')) return true;
-          return false;
-        });
-
-        // Sort by createdAt desc
-        filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-        callback(filtered);
-      },
-      (error) => {
-        console.warn('Firestore subscribeNotifications notice:', error);
-        callback([]);
-      }
+    const merged = new Map<string, AppNotification>();
+    const emit = () => {
+      const filtered = [...merged.values()].filter(passesFilter);
+      filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      callback(filtered);
+    };
+    const queries: ReturnType<typeof query>[] = [];
+    if (recipientId) {
+      queries.push(query(collection(db, NOTIFICATIONS_COL), where('recipientId', '==', recipientId)));
+    }
+    if (recipientRole) {
+      queries.push(
+        query(collection(db, NOTIFICATIONS_COL), where('recipientRole', 'in', [recipientRole, 'all']))
+      );
+    } else {
+      queries.push(query(collection(db, NOTIFICATIONS_COL), where('recipientRole', '==', 'all')));
+    }
+    const unsubs = queries.map((q) =>
+      onSnapshot(
+        q,
+        (snapshot) => {
+          snapshot.docChanges().forEach((ch) => {
+            if (ch.type === 'removed') merged.delete(ch.doc.id);
+            else merged.set(ch.doc.id, mapDoc(ch.doc as unknown as FirebaseFirestoreDoc));
+          });
+          emit();
+        },
+        (error) => {
+          console.warn('Firestore subscribeNotifications notice:', error);
+          emit();
+        }
+      )
     );
+    return () => unsubs.forEach((u) => u());
   } catch (error) {
     console.warn('Firestore subscribeNotifications error:', error);
     callback([]);
@@ -1105,9 +1125,9 @@ export async function createNotification(data: Omit<AppNotification, 'id'>) {
       isRead: false,
       createdAt: data.createdAt || new Date().toISOString()
     });
-    console.log('🚀 Creating Notification Payload:', payload);
+    console.debug('Creating notification');
     const docRef = await addDoc(collection(db, NOTIFICATIONS_COL), payload);
-    console.log("✅ Firestore Write Success: notification created with ID", docRef.id);
+    console.debug("Firestore write: notification created with ID", docRef.id);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, NOTIFICATIONS_COL);
@@ -1159,7 +1179,7 @@ export async function notifyStudentsNewAssignment(
     createdAt: new Date().toISOString()
   };
 
-  console.log('🚀 Dispatching homework notification to students:', payload);
+  console.debug('Dispatching homework notification');
   return createNotification(payload);
 }
 

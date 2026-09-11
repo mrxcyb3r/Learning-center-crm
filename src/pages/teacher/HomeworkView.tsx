@@ -177,16 +177,6 @@ export const HomeworkView: React.FC = () => {
         const targetGroupId = targetGroup ? targetGroup.id : '';
         const formattedDueDate = dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
-        console.log('🚀 Dispatching homework notification to students:', {
-          category: 'assignment_created',
-          recipientRole: 'student',
-          groupId: targetGroupId,
-          linkId: newId,
-          title: `New Assignment: ${title.trim()}`,
-          message: `New homework posted for ${selectedGroup}. Due date: ${formattedDueDate}.`,
-          isRead: false
-        });
-
         await notifyStudentsNewAssignment(
           title.trim(),
           selectedGroup,

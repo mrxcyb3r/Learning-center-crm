@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Mail, Lock, User, Phone, Eye, EyeOff, AlertCircle, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { invitationsService, registerTeacherWithInvitation, InvitationErrorCode } from '../../services/repository';
 import { TeacherInvitation } from '../../types/crm';
 import { PublicLayout } from '../../components/public/PublicLayout';
+import { useAuth } from '../../context/AuthContext';
+
+// Invitations redeemed in this browser session. Consulted on every render so
+// a remount after successful redemption shows the success screen instead of
+// re-validating the (by design, now-used) invitation link.
+const completedInvitations = new Set<string>();
 
 function invitationErrorMessage(code: string | undefined, fallback: string): string {
   switch (code as InvitationErrorCode | string) {
@@ -34,6 +40,7 @@ function invitationErrorMessage(code: string | undefined, fallback: string): str
 export const TeacherRegisterPage: React.FC = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshUserRole } = useAuth();
   const invitationId = params.get('invitation') || '';
   const secret = params.get('s') || '';
 
@@ -49,11 +56,19 @@ export const TeacherRegisterPage: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [done, setDone] = useState(false);
+  // Once registration succeeds, later validation re-runs (StrictMode remounts)
+  // must not overwrite the success screen with a stale "already used" error —
+  // the invitation is SUPPOSED to be used at that point.
+  const doneRef = useRef(false);
+  // Module-level completion record: survives component remounts (e.g. auth
+  // state transitions re-creating the route element). A remount re-derives
+  // the success screen instead of re-validating a spent invitation.
 
   // Validate the invitation link (public single-doc read; rules enforce the rest).
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (doneRef.current) return;
       setChecking(true);
       setInviteError('');
       try {
@@ -62,6 +77,9 @@ export const TeacherRegisterPage: React.FC = () => {
           return;
         }
         const inv = await invitationsService.getInvitation(invitationId);
+        // Re-check: the registration may have committed while this fetch was
+        // in flight (its own success marks the invitation used by design).
+        if (cancelled || doneRef.current) return;
         if (!inv) {
           setInviteError('Taklifnoma topilmadi.');
           return;
@@ -124,6 +142,12 @@ export const TeacherRegisterPage: React.FC = () => {
         password,
         phone: phone.trim(),
       });
+      // Re-resolve role after the redemption commit (the auth-state listener
+      // fired before the transaction committed and may hold a stale profile).
+      await refreshUserRole();
+      doneRef.current = true;
+      completedInvitations.add(invitationId);
+      setInviteError('');
       setDone(true);
     } catch (err: unknown) {
       const code = (err as { code?: string } | null)?.code;
@@ -155,17 +179,7 @@ export const TeacherRegisterPage: React.FC = () => {
             Renessans O'quv Markazi — bir martalik taklifnoma orqali.
           </p>
 
-          {checking ? (
-            <div className="py-10 flex flex-col items-center gap-3 text-slate-400">
-              <Loader2 className="w-7 h-7 animate-spin text-amber-500" />
-              <span className="text-xs font-bold">Taklifnoma tekshirilmoqda...</span>
-            </div>
-          ) : inviteError || !invitation ? (
-            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{inviteError || 'Taklifnoma yaroqsiz.'}</span>
-            </div>
-          ) : done ? (
+          {done || completedInvitations.has(invitationId) ? (
             <div className="text-center py-6 space-y-4">
               <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
@@ -181,6 +195,16 @@ export const TeacherRegisterPage: React.FC = () => {
               >
                 Kirish sahifasiga o'tish
               </button>
+            </div>
+          ) : checking ? (
+            <div className="py-10 flex flex-col items-center gap-3 text-slate-400">
+              <Loader2 className="w-7 h-7 animate-spin text-amber-500" />
+              <span className="text-xs font-bold">Taklifnoma tekshirilmoqda...</span>
+            </div>
+          ) : inviteError || !invitation ? (
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{inviteError || 'Taklifnoma yaroqsiz.'}</span>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

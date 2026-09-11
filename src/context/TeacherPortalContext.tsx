@@ -105,7 +105,7 @@ function computeStats(
 // ── Provider ──
 
 export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<TeacherTab>('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +120,8 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   // Teacher identity is the stable Firebase UID. Email strings are never used
   // for data matching — all scoping goes through `teacherId == uid`.
   const teacherUid = currentUser?.uid || '';
-  const teacherName = currentUser?.displayName || 'Teacher';
+  const teacherName =
+    currentUser?.displayName || userProfile?.displayName || userProfile?.fullName || 'Teacher';
 
   // Load teacher profile and verify role
   useEffect(() => {

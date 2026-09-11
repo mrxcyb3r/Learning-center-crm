@@ -237,12 +237,19 @@ service cloud.firestore {
     // =========================================================================
     // TEACHER-SPECIFIC COLLECTIONS
     // =========================================================================
+    // NOTE: reads/creates use direct teacherId checks so teacher-filtered
+    // list queries stay provable; updates/deletes keep per-document checks.
+    // A teacher can only ever touch documents tagged with their own UID.
     match /teacher_tasks/{taskId} {
-      allow read, write: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherTask(taskId));
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow create: if isAdminOrSuperAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherTask(taskId));
     }
 
     match /teacher_documents/{docId} {
-      allow read, write: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherDocument(docId));
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow create: if isAdminOrSuperAdmin() || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isOwnTeacherDocument(docId));
     }
 
     // =========================================================================
@@ -312,7 +319,7 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdminOrSuperAdmin();
       allow create: if isAdminOrSuperAdmin();
-      allow update: if isAdminOrSuperAdmin() || isValidRedemption(invitationId);
+      allow update: if isAdminOrSuperAdmin() || isValidRedemption();
       allow delete: if isAdminOrSuperAdmin();
     }
 
@@ -367,15 +374,15 @@ service cloud.firestore {
     // Invitation status may move pending -> used exactly once, by the teacher
     // completing registration. All identifying fields must remain unchanged;
     // only status/usedByUid/usedAt change, and expiry is re-checked.
-    function isValidRedemption(invitationId) {
+    function isValidRedemption() {
       let cur = resource.data;
       let nxt = request.resource.data;
       return isSignedIn()
         && cur.status == 'pending'
         && cur.expiresAt > request.time
-        && nxt.status == 'used'
-        && nxt.usedByUid == request.auth.uid
-        && nxt.usedAt == request.time
+      && nxt.status == 'used'
+      && nxt.usedByUid == request.auth.uid
+      && nxt.usedAt is timestamp
         && nxt.secret == cur.secret
         && nxt.teacherEmail == cur.teacherEmail
         && nxt.teacherName == cur.teacherName

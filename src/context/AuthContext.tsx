@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
+import { cleanData } from '../services/firestore';
 import { UserRole, UserProfile } from '../types';
 
 export const SUPER_ADMIN_UID = 'CI1sJzLxSrQHvvCwFQnHqeVHxrs2';
@@ -43,6 +44,8 @@ interface AuthContextType {
   loginAsDemoStudent: () => Promise<void>;
   loginAsDemoUser: (role: UserRole) => Promise<void>;
   setRole: (role: UserRole) => void;
+  /** Re-resolve role/profile from Firestore for the current user. */
+  refreshUserRole: () => Promise<void>;
   // Backward compatibility for components using old AppDataContext
   activeRole: UserRole;
   setMockRole: (role: UserRole) => void;
@@ -106,7 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole(userRole);
         return userRole;
       } else {
-        // No user document exists - default to guest (no auto-role assignment)
+        // No user document exists - default to guest (no auto-role assignment).
+        // Created transactionally (create-if-absent): a blind setDoc here
+        // could clobber a profile written concurrently (e.g. an invitation
+        // redemption committing role='teacher' between our read and write).
+        // The transaction re-reads first, so a concurrently created profile
+        // (with its authoritative role) is adopted instead of overwritten.
         const newProfile: UserProfile = {
           uid: user.uid,
           email: user.email,
@@ -115,10 +123,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           photoURL: user.photoURL,
           createdAt: new Date().toISOString()
         };
-        await setDoc(docRef, newProfile);
-        setUserProfile(newProfile);
-        setRole('guest');
-        return 'guest';
+        const { runTransaction: runUserTx } = await import('firebase/firestore');
+        const resolvedRole = await runUserTx(db, async (tx) => {
+          const fresh = await tx.get(docRef);
+          if (fresh.exists()) {
+            return (fresh.data() as UserProfile).role || 'guest';
+          }
+          console.debug('[auth] tx creating guest doc');
+          tx.set(docRef, cleanData(newProfile));
+          return 'guest' as UserRole;
+        });
+        if (resolvedRole === 'guest') {
+          setUserProfile(newProfile);
+          setRole('guest');
+          return 'guest';
+        }
+        const adopted = { ...newProfile, role: resolvedRole };
+        setUserProfile(adopted);
+        setRole(resolvedRole);
+        return resolvedRole;
       }
     } catch (err) {
       console.warn('Error fetching Firestore user role, defaulting to guest:', err);
@@ -396,6 +419,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshUserRole = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      setCurrentUser(user);
+      await handleUserRole(user);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -418,7 +449,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole,
         activeRole: role,
         setMockRole,
-        resetMockRole
+        resetMockRole,
+        refreshUserRole
       }}
     >
       {children}

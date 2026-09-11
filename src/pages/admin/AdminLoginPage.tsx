@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD } from '../../services/demoProvisioning';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ export const AdminLoginPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
-                  placeholder="admin@renessans.demo"
+                  placeholder={DEMO_ADMIN_EMAIL}
                   required
                   autoComplete="email"
                   disabled={isLoading || isGoogleLoading}
@@ -202,7 +203,7 @@ export const AdminLoginPage: React.FC = () => {
 
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
             <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-              Demo credentials: admin@renessans.demo / demo123
+              Demo credentials: {DEMO_ADMIN_EMAIL} / {DEMO_ADMIN_PASSWORD}
             </p>
           </div>
         </div>

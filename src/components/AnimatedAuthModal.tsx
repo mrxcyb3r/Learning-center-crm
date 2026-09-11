@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { subscribeSecurityPins, SecurityPinsData } from '../services/firestore';
 import { TelegramBotConnectModal } from './Auth/TelegramBotConnectModal';
+import { describeDemoAuthError } from '../services/demoProvisioning';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import {
   X,
@@ -39,7 +40,6 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
     registerWithEmail,
     loginWithGoogle,
     loginAsDemoUser,
-    setRole,
     isLoading,
     currentUser,
     isEmailVerified,
@@ -225,6 +225,20 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
       } else {
         setErrorMsg(err?.message || 'Google Sign-In failed.');
       }
+    }
+  };
+
+  // Demo login uses real Firebase Auth only. Continuation (navigation/modal
+  // flow) happens ONLY after successful authentication; failures surface the
+  // mapped Firebase error code and leave auth state untouched.
+  const handleDemoLogin = async (demoRole: UserRole, onSuccess: () => void) => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      await loginAsDemoUser(demoRole);
+      onSuccess();
+    } catch (err: any) {
+      setErrorMsg(`${describeDemoAuthError(err?.code)}${err?.code ? ` (${err.code})` : ''}`);
     }
   };
 
@@ -525,9 +539,10 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                         )}
                         <button
                           type="button"
-                          onClick={async () => {
-                            await loginAsDemoUser(selectedRole);
-                            onClose();
+                          onClick={() => {
+                            void handleDemoLogin(selectedRole, () => {
+                              onClose();
+                            });
                           }}
                           className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[11px] transition cursor-pointer"
                         >
@@ -702,12 +717,11 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileHover={{ scale: 1.03, translateY: -1 }}
                       whileTap={{ scale: 0.97 }}
                       type="button"
-                      onClick={async () => {
-                        // Role comes from Firestore users/{uid} after real Firebase
-                        // sign-in. Never set a frontend-only role here.
-                        await loginAsDemoUser('student');
-                        navigate('/dashboard/student');
-                        setShowTelegramConnect(true);
+                      onClick={() => {
+                        void handleDemoLogin('student', () => {
+                          navigate('/dashboard/student');
+                          setShowTelegramConnect(true);
+                        });
                       }}
                       className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
@@ -719,10 +733,11 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileHover={{ scale: 1.03, translateY: -1 }}
                       whileTap={{ scale: 0.97 }}
                       type="button"
-                      onClick={async () => {
-                        await loginAsDemoUser('teacher');
-                        navigate('/dashboard/teacher');
-                        setShowTelegramConnect(true);
+                      onClick={() => {
+                        void handleDemoLogin('teacher', () => {
+                          navigate('/dashboard/teacher');
+                          setShowTelegramConnect(true);
+                        });
                       }}
                       className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
@@ -734,10 +749,11 @@ export const AnimatedAuthModal: React.FC<AnimatedAuthModalProps> = ({ isOpen, on
                       whileHover={{ scale: 1.03, translateY: -1 }}
                       whileTap={{ scale: 0.97 }}
                       type="button"
-                      onClick={async () => {
-                        await loginAsDemoUser('admin');
-                        navigate('/dashboard/admin');
-                        onClose();
+                      onClick={() => {
+                        void handleDemoLogin('admin', () => {
+                          navigate('/dashboard/admin');
+                          onClose();
+                        });
                       }}
                       className="py-2 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
                     >

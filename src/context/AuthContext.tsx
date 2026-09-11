@@ -307,64 +307,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole('guest');
   };
 
-  // Demo login functions for demo environment
-  const loginAsDemoAdmin = async () => {
+  // Demo login functions for demo environment (real Firebase Auth only).
+  // On failure these THROW (preserving the Firebase error code) so callers can
+  // show a diagnostic and must not navigate. No role is set, no redirect
+  // happens, and no protected listeners start until real authentication
+  // succeeds. The flow starts from a signed-out state so a failed attempt
+  // never leaves a stale/partial session behind.
+  const runDemoSignIn = async (
+    roleLabel: string,
+    signIn: () => Promise<{ success: boolean; uid?: string; code?: string; error?: string }>
+  ): Promise<void> => {
     setIsLoading(true);
     try {
-      const { signInAsDemoAdmin } = await import('../services/demoProvisioning');
-      const result = await signInAsDemoAdmin();
-      if (result.success && result.uid) {
-        // The handleUserRole will be called automatically via onAuthStateChanged
-        // but we can also trigger it manually
-        const user = auth.currentUser;
-        if (user) {
-          await handleUserRole(user);
-        }
+      try {
+        await signOut(auth);
+      } catch {
+        // Ignore — guarantees a clean auth state before the attempt.
       }
-    } catch (err) {
-      console.error('Demo admin login failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setCurrentUser(null);
+      setUserProfile(null);
+      setRole('guest');
 
-  const loginAsDemoTeacher = async () => {
-    setIsLoading(true);
-    try {
-      const { signInAsDemoTeacher } = await import('../services/demoProvisioning');
-      const result = await signInAsDemoTeacher();
-      if (result.success && result.uid) {
-        const user = auth.currentUser;
-        if (user) {
-          await handleUserRole(user);
-        }
+      const result = await signIn();
+      if (!result.success || !result.uid) {
+        const err = new Error(result.error || 'Demo sign-in failed.') as Error & { code?: string };
+        if (result.code) err.code = result.code;
+        throw err;
+      }
+      // Role resolution happens via onAuthStateChanged, but resolve it here
+      // too so callers observe the Firestore-authorized role immediately.
+      const user = auth.currentUser;
+      if (user) {
+        setCurrentUser(user);
+        await handleUserRole(user);
+      } else {
+        throw new Error('Demo sign-in did not establish a Firebase session.');
       }
     } catch (err) {
-      console.error('Demo teacher login failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loginAsDemoStudent = async () => {
-    setIsLoading(true);
-    try {
-      const { signInAsDemoStudent } = await import('../services/demoProvisioning');
-      const result = await signInAsDemoStudent();
-      if (result.success && result.uid) {
-        const user = auth.currentUser;
-        if (user) {
-          await handleUserRole(user);
-        }
-      } else if (result.error) {
-        throw new Error(result.error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(`[demo-login] ${roleLabel} login failed:`, err);
       }
-    } catch (err) {
-      console.error('Demo student login failed:', err);
       throw err;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loginAsDemoAdmin = async () => {
+    const { signInAsDemoAdmin } = await import('../services/demoProvisioning');
+    await runDemoSignIn('admin', signInAsDemoAdmin);
+  };
+
+  const loginAsDemoTeacher = async () => {
+    const { signInAsDemoTeacher } = await import('../services/demoProvisioning');
+    await runDemoSignIn('teacher', signInAsDemoTeacher);
+  };
+
+  const loginAsDemoStudent = async () => {
+    const { signInAsDemoStudent } = await import('../services/demoProvisioning');
+    await runDemoSignIn('student', signInAsDemoStudent);
   };
 
   // All demo roles resolve through real Firebase Auth + Firestore

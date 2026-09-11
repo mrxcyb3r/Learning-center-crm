@@ -87,8 +87,18 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
 
   const handleSelectRole = async (targetRole: UserRole) => {
     setIsOpen(false);
+    // Real Firebase demo sign-in first; only continue on success so a failed
+    // attempt never leaves a frontend-only role behind.
+    try {
+      await loginAsDemoUser(targetRole);
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn('[dev-role] demo sign-in failed:', err);
+      }
+      return;
+    }
     setMockRole(targetRole);
-    await loginAsDemoUser(targetRole);
     const targetPath = targetRole === 'superadmin' ? '/dashboard/admin' : `/dashboard/${targetRole}`;
     try {
       navigate(targetPath);

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { DEMO_TEACHER_EMAIL, DEMO_TEACHER_PASSWORD } from '../../services/demoProvisioning';
 
 export const TeacherLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ export const TeacherLoginPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  placeholder="teacher@renessans.demo"
+                  placeholder={DEMO_TEACHER_EMAIL}
                   required
                   autoComplete="email"
                   disabled={isLoading || isGoogleLoading}
@@ -200,7 +201,7 @@ export const TeacherLoginPage: React.FC = () => {
 
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
             <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-              Demo credentials: jasur@renessans.demo / demo123
+              Demo credentials: {DEMO_TEACHER_EMAIL} / {DEMO_TEACHER_PASSWORD}
             </p>
           </div>
         </div>

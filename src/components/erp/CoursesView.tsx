@@ -17,7 +17,7 @@ import {
   Link2,
   ExternalLink,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { coursesService, teachersService, groupsService, studentsService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, StudentRecord, TeacherRecord } from '../../types/crm';
 import { formatCurrency } from '../../utils/format';
 import { slugify } from '../../utils/content';
@@ -51,11 +51,17 @@ export const CoursesView: React.FC = () => {
   const [formImageUrl, setFormImageUrl] = useState('');
   const [formFeatured, setFormFeatured] = useState(false);
 
-  const refreshData = () => {
-    setCourses(crmService.getCourses());
-    setTeachers(crmService.getTeachers().filter((t) => t.status === 'Active'));
-    setSchedule(crmService.getSchedule());
-    setStudents(crmService.getStudents());
+  const refreshData = async () => {
+    const [coursesData, teachersData, scheduleData, studentsData] = await Promise.all([
+      coursesService.getAllCourses(),
+      teachersService.getAllTeachers(),
+      groupsService.getAllGroups(),
+      studentsService.getAllStudents()
+    ]);
+    setCourses(coursesData as unknown as CourseData[]);
+    setTeachers((teachersData as unknown as TeacherRecord[]).filter((t) => t.status === 'Active'));
+    setSchedule(scheduleData as unknown as GroupScheduleItem[]);
+    setStudents(studentsData as unknown as StudentRecord[]);
   };
 
   const courseStats = (title: string) => {
@@ -121,7 +127,7 @@ export const CoursesView: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveCourse = (e: React.FormEvent) => {
+  const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
@@ -157,21 +163,21 @@ export const CoursesView: React.FC = () => {
     };
 
     if (editingCourse) {
-      crmService.updateCourse(editingCourse.id, payload);
+      await coursesService.updateCourse(editingCourse.id, payload);
       showNotification(`${formTitle} kursi muvaffaqiyatli saqlandi!`);
     } else {
-      crmService.addCourse(payload);
+      await coursesService.createCourse(payload);
       showNotification(`Yangi kurs "${formTitle}" qo'shildi!`);
     }
 
-    refreshData();
+    await refreshData();
     setIsModalOpen(false);
   };
 
-  const handleDeleteCourse = (id: string, title: string) => {
+  const handleDeleteCourse = async (id: string, title: string) => {
     if (window.confirm(`Rostdan ham "${title}" kursini o'chirmoqchimisiz?`)) {
-      crmService.deleteCourse(id);
-      refreshData();
+      await coursesService.deleteCourse(id);
+      await refreshData();
       showNotification(`"${title}" kursi o'chirildi.`);
     }
   };

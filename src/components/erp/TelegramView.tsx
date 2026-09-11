@@ -13,8 +13,8 @@ import {
   Smartphone,
   CreditCard,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
-import { TelegramAlertLog, StudentRecord } from '../../types/crm';
+import { telegramService, studentsService, leadsService } from '../../services/repository';
+import { TelegramAlertLog, StudentRecord, LeadRecord } from '../../types/crm';
 
 export const TelegramView: React.FC = () => {
   const [history, setHistory] = useState<TelegramAlertLog[]>([]);
@@ -38,9 +38,13 @@ export const TelegramView: React.FC = () => {
   });
   const [isConfigSaved, setIsConfigSaved] = useState(false);
 
-  const refresh = () => {
-    setStudents(crmService.getStudents());
-    setHistory(crmService.getTelegramLogs());
+  const refresh = async () => {
+    const [studentsData, historyData] = await Promise.all([
+      studentsService.getAllStudents(),
+      telegramService.getTelegramLogs()
+    ]);
+    setStudents(studentsData as unknown as StudentRecord[]);
+    setHistory(historyData);
   };
 
   useEffect(() => {
@@ -56,8 +60,18 @@ export const TelegramView: React.FC = () => {
     setTimeout(() => setIsConfigSaved(false), 3000);
   };
 
-  const debts = crmService.getTuitionDebts();
-  const unpaidStudents = debts.filter((d) => d.status === 'Unpaid' || d.status === 'Partial');
+  const [debts, setDebts] = useState<LeadRecord[]>([]);
+  const [unpaidStudents, setUnpaidStudents] = useState<StudentRecord[]>([]);
+
+  useEffect(() => {
+    const loadDebts = async () => {
+      const debtsData = await leadsService.getAllLeads();
+      setDebts(debtsData);
+      const unpaid = students.filter((s) => (s.debtAmount && s.debtAmount > 0) || s.paymentStatus === 'Overdue' || s.paymentStatus === 'Due');
+      setUnpaidStudents(unpaid);
+    };
+    loadDebts();
+  }, [students]);
 
   const botConfigured = botToken.trim() !== '';
   const sentCount = history.filter((h) => h.status === 'Sent').length;
@@ -70,7 +84,7 @@ export const TelegramView: React.FC = () => {
         ? `💳 To'lov eslatmasi: ${unpaidStudents.length} ta o'quvchi va ota-onaga qarzdorlik bo'yicha ogohlantirish yuborildi.`
         : `📢 E'lon (${students.length} o'quvchiga): ${announcementText}`;
 
-      const result = await crmService.sendTelegramMessage(msgText);
+      const result = await telegramService.sendTelegramMessage(msgText);
       refresh();
       setBroadcastSuccess(
         result.status === 'Sent'
@@ -84,15 +98,13 @@ export const TelegramView: React.FC = () => {
     }
   };
 
-  const handleSendTestNotification = async () => {
-    const result = await crmService.sendTelegramLeadNotification({
-      id: 'test-' + Date.now(),
-      name: 'Sinov Murojaatchisi (Test)',
-      phone: '+998 90 862 22 26',
-      course: 'DTM & Milliy Sertifikat',
-      status: 'Yangi',
-      createdAt: new Date().toISOString(),
-    });
+const handleSendTestNotification = async () => {
+    const result = await telegramService.sendLeadNotification(
+      'test-' + Date.now(),
+      'Sinov Murojaatchisi (Test)',
+      '+998 90 862 22 26',
+      'DTM & Milliy Sertifikat'
+    );
     refresh();
     setBroadcastSuccess(
       result.status === 'Sent'

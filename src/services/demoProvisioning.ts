@@ -48,6 +48,7 @@ export async function provisionDemoAdmin(): Promise<DemoAccountResult> {
           email: DEMO_ADMIN_EMAIL,
           displayName: DEMO_ADMIN_NAME,
           role: 'admin',
+          phoneNumber: '+998 (90) 123-45-67',
           createdAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'users', cred.user.uid), profile);
@@ -91,8 +92,7 @@ export async function provisionDemoTeacher(): Promise<DemoAccountResult> {
           email: DEMO_TEACHER_EMAIL,
           displayName: DEMO_TEACHER_NAME,
           role: 'teacher',
-          phone: '+998 (99) 259-32-32',
-          bio: 'Matematika va fizika fanlari bo\'yicha tajribali o\'qituvchi. DTM va Milliy sertifikatga tayyorlov yo\'nalishi.',
+          phoneNumber: '+998 (99) 259-32-32',
           createdAt: new Date().toISOString()
         };
         await setDoc(doc(db, 'users', cred.user.uid), profile);

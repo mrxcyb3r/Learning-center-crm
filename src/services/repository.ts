@@ -5,12 +5,15 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
+  addDoc,
   query,
   where,
   orderBy,
   onSnapshot,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  limit
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import {
@@ -27,6 +30,24 @@ import {
   Inquiry,
   AppNotification
 } from '../types';
+import {
+  Lead,
+  LeadStatus,
+  StudentRecord,
+  TeacherRecord,
+  CourseData,
+  GroupScheduleItem,
+  IncomePaymentRecord,
+  ExpenseRecord,
+  CmsData,
+  StudentResult,
+  CenterSettings,
+  AuditLogEntry,
+  TelegramAlertLog,
+  CampusBranch,
+  ClassroomRoom,
+  StaffMember
+} from '../types/crm';
 import { cleanData } from './firestore';
 
 const USERS_COL = 'users';
@@ -47,6 +68,13 @@ const RESULTS_COL = 'results';
 const FAQS_COL = 'faqs';
 const BRANCHES_COL = 'branches';
 const TESTIMONIALS_COL = 'testimonials';
+const EXPENSES_COL = 'expenses';
+const CMS_COL = 'cms';
+const TELEGRAM_LOGS_COL = 'telegram_logs';
+const AUDIT_LOGS_COL = 'audit_logs';
+const BRANCHES_CONFIG_COL = 'branches_config';
+const ROOMS_CONFIG_COL = 'rooms_config';
+const STAFF_CONFIG_COL = 'staff_config';
 
 /**
  * User Service - Canonical user management
@@ -55,7 +83,24 @@ export const userService = {
   async getUserProfile(uid: string): Promise<UserProfile | null> {
     const docRef = doc(db, USERS_COL, uid);
     const snap = await getDoc(docRef);
-    return snap.exists() ? (snap.data() as UserProfile) : null;
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        uid: data.uid || uid,
+        email: data.email || null,
+        displayName: data.displayName || null,
+        role: data.role || 'guest',
+        photoURL: data.photoURL || null,
+        phoneNumber: data.phoneNumber || null,
+        createdAt: data.createdAt,
+        fullName: data.fullName || data.displayName,
+        telegramUsername: data.telegramUsername || null,
+        telegramChatId: data.telegramChatId || null,
+        isBotConnected: data.isBotConnected || false,
+        assignedPin: data.assignedPin || null
+      };
+    }
+    return null;
   },
 
   async createUserProfile(profile: UserProfile): Promise<void> {
@@ -75,7 +120,23 @@ export const userService = {
 
   async getAllUsers(): Promise<UserProfile[]> {
     const snap = await getDocs(collection(db, USERS_COL));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as UserProfile));
+    return snap.docs.map(d => {
+      const data = d.data();
+      return {
+        uid: data.uid || d.id,
+        email: data.email || null,
+        displayName: data.displayName || null,
+        role: data.role || 'guest',
+        photoURL: data.photoURL || null,
+        phoneNumber: data.phoneNumber || null,
+        createdAt: data.createdAt,
+        fullName: data.fullName || data.displayName,
+        telegramUsername: data.telegramUsername || null,
+        telegramChatId: data.telegramChatId || null,
+        isBotConnected: data.isBotConnected || false,
+        assignedPin: data.assignedPin || null
+      } as UserProfile;
+    });
   },
 
   subscribeToUser(uid: string, callback: (profile: UserProfile | null) => void) {
@@ -103,7 +164,7 @@ export const coursesService = {
   },
 
   async createCourse(data: any): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, COURSES_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, COURSES_COL), cleanData(data));
     return docRef.id;
   },
 
@@ -140,7 +201,7 @@ export const teachersService = {
   },
 
   async createTeacher(data: any): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, TEACHERS_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, TEACHERS_COL), cleanData(data));
     return docRef.id;
   },
 
@@ -153,6 +214,10 @@ export const teachersService = {
       query(collection(db, TEACHERS_COL), orderBy('displayOrder', 'asc')),
       (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     );
+  },
+
+  async deleteTeacher(id: string): Promise<void> {
+    await deleteDoc(doc(db, TEACHERS_COL, id));
   }
 };
 
@@ -172,7 +237,7 @@ export const groupsService = {
   },
 
   async createGroup(data: Omit<Group, 'id'>): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, GROUPS_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, GROUPS_COL), cleanData(data));
     return docRef.id;
   },
 
@@ -185,6 +250,10 @@ export const groupsService = {
     return onSnapshot(q, (snap) => {
       callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Group)));
     });
+  },
+
+  async deleteGroup(id: string): Promise<void> {
+    await deleteDoc(doc(db, GROUPS_COL, id));
   }
 };
 
@@ -216,7 +285,7 @@ export const studentsService = {
   },
 
   async createStudent(data: Omit<Student, 'id'>): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, STUDENTS_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, STUDENTS_COL), cleanData(data));
     return docRef.id;
   },
 
@@ -246,6 +315,10 @@ export const studentsService = {
     }
 
     return () => unsubscribers.forEach(u => u());
+  },
+
+  async deleteStudent(id: string): Promise<void> {
+    await deleteDoc(doc(db, STUDENTS_COL, id));
   }
 };
 
@@ -275,8 +348,12 @@ export const paymentsService = {
   },
 
   async recordPayment(data: Omit<Payment, 'id'>): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, PAYMENTS_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, PAYMENTS_COL), cleanData(data));
     return docRef.id;
+  },
+
+  async voidPayment(id: string, reason: string): Promise<void> {
+    await updateDoc(doc(db, PAYMENTS_COL, id), { status: 'Voided', voidReason: reason, voidedAt: new Date().toISOString() });
   }
 };
 
@@ -400,11 +477,367 @@ export const notificationsService = {
   },
 
   async createNotification(data: Omit<AppNotification, 'id'>): Promise<string> {
-    const docRef = await setDoc(doc(collection(db, NOTIFICATIONS_COL)), cleanData(data));
+    const docRef = await addDoc(collection(db, NOTIFICATIONS_COL), cleanData(data));
     return docRef.id;
   },
 
   async markAsRead(id: string): Promise<void> {
     await updateDoc(doc(db, NOTIFICATIONS_COL, id), { isRead: true });
+  }
+};
+
+/**
+ * Leads/Inquiries Service - CRM Lead Management
+ */
+export const leadsService = {
+  async getAllLeads(): Promise<Lead[]> {
+    const snap = await getDocs(query(collection(db, LEADS_COL), orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
+  },
+
+  async getLeadById(id: string): Promise<Lead | null> {
+    const docRef = doc(db, LEADS_COL, id);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Lead) : null;
+  },
+
+  async createLead(data: Omit<Lead, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, LEADS_COL), cleanData({
+      ...data,
+      createdAt: new Date().toISOString()
+    }));
+    return docRef.id;
+  },
+
+  async updateLead(id: string, data: Partial<Lead>): Promise<void> {
+    await updateDoc(doc(db, LEADS_COL, id), cleanData(data));
+  },
+
+  async deleteLead(id: string): Promise<void> {
+    await deleteDoc(doc(db, LEADS_COL, id));
+  },
+
+  async convertLeadToStudent(leadId: string, studentData: Omit<StudentRecord, 'id'>): Promise<string> {
+    const batch = writeBatch(db);
+
+    const studentRef = doc(collection(db, STUDENTS_COL));
+    batch.set(studentRef, cleanData({
+      ...studentData,
+      createdAt: new Date().toISOString()
+    }));
+
+    const leadRef = doc(db, LEADS_COL, leadId);
+    batch.update(leadRef, { 
+      status: "O'quvchiga aylandi" as LeadStatus,
+      enrollmentDate: new Date().toISOString().split('T')[0]
+    });
+
+    await batch.commit();
+    return studentRef.id;
+  },
+
+  subscribeToLeads(callback: (leads: Lead[]) => void) {
+    return onSnapshot(
+      query(collection(db, LEADS_COL), orderBy('createdAt', 'desc')),
+      (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
+    );
+  }
+};
+
+/**
+ * Expenses Service
+ */
+export const expensesService = {
+  async getAllExpenses(): Promise<ExpenseRecord[]> {
+    const snap = await getDocs(query(collection(db, EXPENSES_COL), orderBy('date', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as ExpenseRecord));
+  },
+
+  async getExpensesByMonth(month: string): Promise<ExpenseRecord[]> {
+    const snap = await getDocs(query(collection(db, EXPENSES_COL), where('month', '==', month), orderBy('date', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as ExpenseRecord));
+  },
+
+  async createExpense(data: Omit<ExpenseRecord, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, EXPENSES_COL), cleanData({
+      ...data,
+      createdAt: new Date().toISOString()
+    }));
+    return docRef.id;
+  },
+
+  async updateExpense(id: string, data: Partial<ExpenseRecord>): Promise<void> {
+    await updateDoc(doc(db, EXPENSES_COL, id), cleanData(data));
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    await deleteDoc(doc(db, EXPENSES_COL, id));
+  },
+
+  subscribeToExpenses(callback: (expenses: ExpenseRecord[]) => void) {
+    return onSnapshot(
+      query(collection(db, EXPENSES_COL), orderBy('date', 'desc')),
+      (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as ExpenseRecord)))
+    );
+  }
+};
+
+/**
+ * CMS Service - Website Content Management
+ */
+export const cmsService = {
+  async getCmsData(): Promise<CmsData | null> {
+    const docRef = doc(db, CMS_COL, 'main');
+    const snap = await getDoc(docRef);
+    return snap.exists() ? snap.data() as CmsData : null;
+  },
+
+  async updateCmsData(data: Partial<CmsData>): Promise<void> {
+    const docRef = doc(db, CMS_COL, 'main');
+    await setDoc(docRef, cleanData({
+      ...data,
+      updatedAt: new Date().toISOString()
+    }), { merge: true });
+  },
+
+  subscribeToCms(callback: (cms: CmsData | null) => void) {
+    return onSnapshot(
+      doc(db, CMS_COL, 'main'),
+      (snap) => callback(snap.exists() ? snap.data() as CmsData : null)
+    );
+  }
+};
+
+/**
+ * Settings Service - Center Configuration
+ */
+export const settingsService = {
+  async getSettings(): Promise<CenterSettings | null> {
+    const docRef = doc(db, SETTINGS_COL, 'center');
+    const snap = await getDoc(docRef);
+    return snap.exists() ? snap.data() as CenterSettings : null;
+  },
+
+  async updateSettings(data: Partial<CenterSettings>): Promise<void> {
+    const docRef = doc(db, SETTINGS_COL, 'center');
+    await setDoc(docRef, cleanData({
+      ...data,
+      updatedAt: new Date().toISOString()
+    }), { merge: true });
+  },
+
+  async getBranches(): Promise<CampusBranch[]> {
+    const snap = await getDocs(query(collection(db, BRANCHES_CONFIG_COL), orderBy('displayOrder', 'asc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CampusBranch));
+  },
+
+  async addBranch(data: Omit<CampusBranch, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, BRANCHES_CONFIG_COL), cleanData(data));
+    return docRef.id;
+  },
+
+  async updateBranch(id: string, data: Partial<CampusBranch>): Promise<void> {
+    await updateDoc(doc(db, BRANCHES_CONFIG_COL, id), cleanData(data));
+  },
+
+  async deleteBranch(id: string): Promise<void> {
+    await deleteDoc(doc(db, BRANCHES_CONFIG_COL, id));
+  },
+
+  async getRooms(): Promise<ClassroomRoom[]> {
+    const snap = await getDocs(query(collection(db, ROOMS_CONFIG_COL), orderBy('branchId', 'asc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as ClassroomRoom));
+  },
+
+  async addRoom(data: Omit<ClassroomRoom, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, ROOMS_CONFIG_COL), cleanData(data));
+    return docRef.id;
+  },
+
+  async updateRoom(id: string, data: Partial<ClassroomRoom>): Promise<void> {
+    await updateDoc(doc(db, ROOMS_CONFIG_COL, id), cleanData(data));
+  },
+
+  async deleteRoom(id: string): Promise<void> {
+    await deleteDoc(doc(db, ROOMS_CONFIG_COL, id));
+  },
+
+  async getStaff(): Promise<StaffMember[]> {
+    const snap = await getDocs(query(collection(db, STAFF_CONFIG_COL), orderBy('role', 'asc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as StaffMember));
+  },
+
+  async addStaff(data: Omit<StaffMember, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, STAFF_CONFIG_COL), cleanData(data));
+    return docRef.id;
+  },
+
+  async updateStaff(id: string, data: Partial<StaffMember>): Promise<void> {
+    await updateDoc(doc(db, STAFF_CONFIG_COL, id), cleanData(data));
+  },
+
+  async deleteStaff(id: string): Promise<void> {
+    await deleteDoc(doc(db, STAFF_CONFIG_COL, id));
+  },
+
+  subscribeToSettings(callback: (settings: CenterSettings | null) => void) {
+    return onSnapshot(
+      doc(db, SETTINGS_COL, 'center'),
+      (snap) => callback(snap.exists() ? snap.data() as CenterSettings : null)
+    );
+  }
+};
+
+/**
+ * Results Service - Student Achievements
+ */
+export const resultsService = {
+  async getAllResults(): Promise<StudentResult[]> {
+    const snap = await getDocs(query(collection(db, RESULTS_COL), orderBy('date', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentResult));
+  },
+
+  async getPublishedResults(): Promise<StudentResult[]> {
+    const snap = await getDocs(query(collection(db, RESULTS_COL), where('published', '==', true), orderBy('date', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentResult));
+  },
+
+  async createResult(data: Omit<StudentResult, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, RESULTS_COL), cleanData({
+      ...data,
+      createdAt: new Date().toISOString()
+    }));
+    return docRef.id;
+  },
+
+  async updateResult(id: string, data: Partial<StudentResult>): Promise<void> {
+    await updateDoc(doc(db, RESULTS_COL, id), cleanData(data));
+  },
+
+  async deleteResult(id: string): Promise<void> {
+    await deleteDoc(doc(db, RESULTS_COL, id));
+  },
+
+  subscribeToResults(callback: (results: StudentResult[]) => void) {
+    return onSnapshot(
+      query(collection(db, RESULTS_COL), orderBy('date', 'desc')),
+      (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentResult)))
+    );
+  }
+};
+
+/**
+ * Telegram Service - Bot Integration Logs
+ */
+export const telegramService = {
+  async getTelegramLogs(): Promise<TelegramAlertLog[]> {
+    const snap = await getDocs(query(collection(db, TELEGRAM_LOGS_COL), orderBy('sentAt', 'desc'), limit(100)));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as TelegramAlertLog));
+  },
+
+  async sendTelegramMessage(data: Omit<TelegramAlertLog, 'id'>): Promise<string> {
+    const docRef = await addDoc(collection(db, TELEGRAM_LOGS_COL), cleanData({
+      ...data,
+      sentAt: new Date().toISOString()
+    }));
+    return docRef.id;
+  },
+
+  async sendLeadNotification(leadId: string, leadName: string, leadPhone: string, course: string): Promise<string> {
+    const messageText = `🆕 Yangi murojaat!\n👤 ${leadName}\n📞 ${leadPhone}\n📚 ${course}\n🆔 ${leadId}`;
+    return this.sendTelegramMessage({
+      leadId,
+      leadName,
+      leadPhone,
+      course,
+      sentAt: new Date().toISOString(),
+      status: 'Pending',
+      messageText
+    });
+  },
+
+  subscribeToTelegramLogs(callback: (logs: TelegramAlertLog[]) => void) {
+    return onSnapshot(
+      query(collection(db, TELEGRAM_LOGS_COL), orderBy('sentAt', 'desc'), limit(50)),
+      (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as TelegramAlertLog)))
+    );
+  }
+};
+
+/**
+ * Audit Logs Service
+ */
+export const auditService = {
+  async getAuditLogs(limitCount = 100): Promise<AuditLogEntry[]> {
+    const snap = await getDocs(query(collection(db, AUDIT_LOGS_COL), orderBy('timestamp', 'desc'), limit(limitCount)));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLogEntry));
+  },
+
+  async logAuditAction(user: string, action: string, entity: string, entityId?: string, details?: string, previousValue?: string, newValue?: string): Promise<void> {
+    await addDoc(collection(db, AUDIT_LOGS_COL), cleanData({
+      user,
+      action,
+      entity,
+      entityId,
+      details,
+      previousValue,
+      newValue,
+      timestamp: new Date().toISOString()
+    }));
+  },
+
+  subscribeToAuditLogs(callback: (logs: AuditLogEntry[]) => void) {
+    return onSnapshot(
+      query(collection(db, AUDIT_LOGS_COL), orderBy('timestamp', 'desc'), limit(50)),
+      (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLogEntry)))
+    );
+  }
+};
+
+/**
+ * Backup/Export Service
+ */
+export const backupService = {
+  async exportFullBackup(): Promise<any> {
+    const [
+      leads,
+      students,
+      teachers,
+      courses,
+      groups,
+      payments,
+      expenses,
+      results,
+      settings,
+      auditLogs,
+      telegramLogs
+    ] = await Promise.all([
+      getDocs(collection(db, LEADS_COL)),
+      getDocs(collection(db, STUDENTS_COL)),
+      getDocs(collection(db, TEACHERS_COL)),
+      getDocs(collection(db, COURSES_COL)),
+      getDocs(collection(db, GROUPS_COL)),
+      getDocs(collection(db, PAYMENTS_COL)),
+      getDocs(collection(db, EXPENSES_COL)),
+      getDocs(collection(db, RESULTS_COL)),
+      getDoc(doc(db, SETTINGS_COL, 'center')),
+      getDocs(query(collection(db, AUDIT_LOGS_COL), limit(1000))),
+      getDocs(query(collection(db, TELEGRAM_LOGS_COL), limit(1000)))
+    ]);
+
+    return {
+      leads: leads.docs.map(d => ({ id: d.id, ...d.data() })),
+      students: students.docs.map(d => ({ id: d.id, ...d.data() })),
+      teachers: teachers.docs.map(d => ({ id: d.id, ...d.data() })),
+      courses: courses.docs.map(d => ({ id: d.id, ...d.data() })),
+      groups: groups.docs.map(d => ({ id: d.id, ...d.data() })),
+      payments: payments.docs.map(d => ({ id: d.id, ...d.data() })),
+      expenses: expenses.docs.map(d => ({ id: d.id, ...d.data() })),
+      results: results.docs.map(d => ({ id: d.id, ...d.data() })),
+      settings: settings.exists() ? settings.data() : null,
+      auditLogs: auditLogs.docs.map(d => ({ id: d.id, ...d.data() })),
+      telegramLogs: telegramLogs.docs.map(d => ({ id: d.id, ...d.data() })),
+      exportedAt: new Date().toISOString()
+    };
   }
 };

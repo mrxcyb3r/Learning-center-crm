@@ -125,7 +125,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let mounted = true;
 
-    const loadTeacherData = async () => {
+    const loadTeacherData = async (): Promise<(() => void) | void> => {
       setIsLoading(true);
       setError(null);
       try {
@@ -207,10 +207,11 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
     saveBusinessModel(model);
   }, []);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
     // Trigger re-fetch by updating a dependency
-    setTimeout(() => setIsLoading(false), 300);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setIsLoading(false);
   }, []);
 
   return (

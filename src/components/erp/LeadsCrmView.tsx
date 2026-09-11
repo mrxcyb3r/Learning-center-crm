@@ -18,7 +18,7 @@ import {
   ChevronRight,
   FilterX,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { leadsService, coursesService, groupsService, teachersService } from '../../services/repository';
 import { notificationService } from '../../services/notificationService';
 import { CourseData, GroupScheduleItem, Lead, LeadStatus, PaymentStatus, TeacherRecord } from '../../types/crm';
 import { formatDate, formatDateTime } from '../../utils/format';
@@ -119,11 +119,17 @@ export const LeadsCrmView: React.FC = () => {
   const [newNotes, setNewNotes] = useState('');
   const [newError, setNewError] = useState('');
 
-  const refreshLeads = () => {
-    setLeads(crmService.getLeads());
-    setCourses(crmService.getCourses());
-    setSchedule(crmService.getSchedule());
-    setTeachers(crmService.getTeachers());
+  const refreshLeads = async () => {
+    const [leadsData, coursesData, scheduleData, teachersData] = await Promise.all([
+      leadsService.getAllLeads(),
+      coursesService.getAllCourses(),
+      groupsService.getAllGroups(),
+      teachersService.getAllTeachers()
+    ]);
+    setLeads(leadsData);
+    setCourses(coursesData as unknown as CourseData[]);
+    setSchedule(scheduleData as unknown as GroupScheduleItem[]);
+    setTeachers(teachersData as unknown as TeacherRecord[]);
   };
 
   useEffect(() => {
@@ -162,7 +168,7 @@ export const LeadsCrmView: React.FC = () => {
         (editTrialRoom === '' || l.trialRoom === editTrialRoom)
     );
 
-  const handleSaveDetail = () => {
+  const handleSaveDetail = async () => {
     if (!detailLead) return;
     setDetailError('');
 
@@ -194,7 +200,7 @@ export const LeadsCrmView: React.FC = () => {
     };
     if (!isConverting) updates.status = editStatus;
 
-    crmService.updateLead(detailLead.id, updates);
+    await leadsService.updateLead(detailLead.id, updates);
 
     if (editStatus !== detailLead.status) {
       notificationService.logActivity({
@@ -259,14 +265,14 @@ export const LeadsCrmView: React.FC = () => {
     }
   };
 
-  const handleConfirmConvert = () => {
+  const handleConfirmConvert = async () => {
     if (!convertLead) return;
     setConvertError('');
 
     const fee = Number(convertMonthlyFee) || 0;
     const discount = Math.min(Math.max(Number(convertDiscount) || 0, 0), fee);
 
-    const result = crmService.convertLeadToStudent(convertLead.id, {
+    const result = await leadsService.convertLeadToStudent(convertLead.id, {
       course: convertCourse,
       groupName: convertGroup,
       teacher: convertTeacher,
@@ -287,15 +293,15 @@ export const LeadsCrmView: React.FC = () => {
     refreshLeads();
   };
 
-  const handleDeleteLead = (id: string, name: string) => {
-    if (window.confirm(`"${name}" arizasini ro'yxatdan o'chirmoqchimisiz?`)) {
-      crmService.deleteLead(id);
-      refreshLeads();
-      showNotice('success', 'Ariza o\'chirildi.');
-    }
-  };
+const handleDeleteLead = async (id: string, name: string) => {
+      if (window.confirm(`"${name}" arizasini ro'yxatdan o'chirmoqchimisiz?`)) {
+        await leadsService.deleteLead(id);
+        refreshLeads();
+        showNotice('success', 'Ariza o\'chirildi.');
+      }
+    };
 
-  const handleCreateLead = (e: React.FormEvent) => {
+  const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     setNewError('');
 
@@ -313,7 +319,7 @@ export const LeadsCrmView: React.FC = () => {
       return;
     }
 
-    crmService.createLead({
+    await leadsService.createLead({
       name: newName.trim(),
       phone: newPhone.trim(),
       course: newCourse,
@@ -333,17 +339,30 @@ export const LeadsCrmView: React.FC = () => {
     showNotice('success', 'Yangi ariza qo\'shildi.');
   };
 
-  const handleMarkContacted = (lead: Lead) => {
+  const handleMarkContacted = async (lead: Lead) => {
     const updates: Partial<Lead> = { lastContactedAt: new Date().toISOString() };
     if (lead.status === 'Yangi') updates.status = "Bog'lanildi";
-    crmService.updateLead(lead.id, updates);
+    await leadsService.updateLead(lead.id, updates);
     refreshLeads();
     showNotice('success', `"${lead.name}" uchun murojaat vaqti yangilandi.`);
     setDetailLead(null);
   };
 
   const handleExportCSV = () => {
-    const csvContent = crmService.exportLeadsCSV();
+    const headers = ['ID', 'Name', 'Phone', 'Course', 'Status', 'Source', 'Assigned To', 'Created At', 'Trial Date', 'Notes'];
+    const rows = filteredLeads.map(l => [
+      l.id,
+      l.name,
+      l.phone,
+      l.course || '',
+      l.status,
+      l.source || '',
+      l.assignedTo || '',
+      new Date(l.createdAt).toLocaleString('uz-UZ'),
+      l.trialDateTime ? new Date(l.trialDateTime).toLocaleString('uz-UZ') : '',
+      l.notes || ''
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

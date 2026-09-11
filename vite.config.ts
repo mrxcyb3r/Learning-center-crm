@@ -12,6 +12,8 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: 'localhost',
+      port: 3000,
       headers: {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',

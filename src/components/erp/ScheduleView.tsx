@@ -12,7 +12,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { groupsService, coursesService, teachersService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, GroupType, TeacherRecord } from '../../types/crm';
 
 export const ScheduleView: React.FC = () => {
@@ -36,10 +36,15 @@ export const ScheduleView: React.FC = () => {
   const [formType, setFormType] = useState<GroupType>('Regular');
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
 
-  const refresh = () => {
-    setSchedule(crmService.getSchedule());
-    setCourses(crmService.getCourses().filter((c) => c.isActive));
-    setTeachers(crmService.getTeachers().filter((t) => t.status === 'Active'));
+  const refresh = async () => {
+    const [scheduleData, coursesData, teachersData] = await Promise.all([
+      groupsService.getAllGroups(),
+      coursesService.getAllCourses(),
+      teachersService.getAllTeachers()
+    ]);
+    setSchedule(scheduleData as unknown as GroupScheduleItem[]);
+    setCourses(coursesData.filter((c) => c.isActive) as unknown as CourseData[]);
+    setTeachers(teachersData.filter((t) => t.status === 'Active') as unknown as TeacherRecord[]);
   };
 
   useEffect(() => {
@@ -59,12 +64,13 @@ export const ScheduleView: React.FC = () => {
     }
 
     const selectedTeacher = teachers.find((t) => t.id === formTeacherId)?.name || '';
-    const conflictCheck = crmService.checkScheduleConflict(
+    const conflictCheck = checkScheduleConflict(
       editingItem?.id,
       formDays,
       formTime,
       formRoom,
-      selectedTeacher
+      selectedTeacher,
+      schedule
     );
 
     if (conflictCheck.hasConflict) {
@@ -72,7 +78,50 @@ export const ScheduleView: React.FC = () => {
     } else {
       setConflictWarning(null);
     }
-  }, [formDays, formTime, formRoom, formTeacherId, isModalOpen, editingItem, teachers]);
+  }, [formDays, formTime, formRoom, formTeacherId, isModalOpen, editingItem, teachers, schedule]);
+
+  // Local conflict check function
+  function checkScheduleConflict(
+    excludeId: string | undefined,
+    days: string,
+    time: string,
+    room: string,
+    teacherName: string,
+    currentSchedule: GroupScheduleItem[]
+  ) {
+    const dayOverlap = (d1: string, d2: string) => {
+      const normalize = (s: string) => s.toLowerCase().replace(/[/,]/g, ' ').split(/\s+/).filter(Boolean);
+      const days1 = new Set(normalize(d1));
+      const days2 = new Set(normalize(d2));
+      for (const d of days1) if (days2.has(d)) return true;
+      return false;
+    };
+
+    const timeOverlap = (t1: string, t2: string) => {
+      const parse = (s: string) => {
+        const [start, end] = s.split(/[-–]/).map(x => x.trim());
+        const toMin = (x: string) => {
+          const [h, m] = x.split(':').map(Number);
+          return h * 60 + (m || 0);
+        };
+        return { start: toMin(start), end: toMin(end) };
+      };
+      const { start: s1, end: e1 } = parse(t1);
+      const { start: s2, end: e2 } = parse(t2);
+      return s1 < e2 && s2 < e1;
+    };
+
+    for (const item of currentSchedule) {
+      if (excludeId && item.id === excludeId) continue;
+      if (item.room === room && dayOverlap(item.days, days) && timeOverlap(item.time, time)) {
+        return { hasConflict: true, reason: `Xona "${room}" bu vaqda band (${item.groupName}: ${item.days} ${item.time})` };
+      }
+      if (teacherName && item.teacher === teacherName && dayOverlap(item.days, days) && timeOverlap(item.time, time)) {
+        return { hasConflict: true, reason: `Ustoz ${teacherName} bu vaqda band (${item.groupName}: ${item.days} ${item.time})` };
+      }
+    }
+    return { hasConflict: false, reason: '' };
+  }
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -103,7 +152,7 @@ export const ScheduleView: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveGroup = (e: React.FormEvent) => {
+  const handleSaveGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formGroupName.trim()) return;
 
@@ -132,21 +181,21 @@ export const ScheduleView: React.FC = () => {
     };
 
     if (editingItem) {
-      crmService.updateGroup(editingItem.id, payload);
+      await groupsService.updateGroup(editingItem.id, payload);
       showNotification(`"${formGroupName}" guruhi yangilandi!`);
     } else {
-      crmService.addGroup(payload);
+      await groupsService.createGroup(payload);
       showNotification(`Yangi guruh "${formGroupName}" ochildi!`);
     }
 
-    refresh();
+    await refresh();
     setIsModalOpen(false);
   };
 
-  const handleDeleteGroup = (id: string, name: string) => {
+  const handleDeleteGroup = async (id: string, name: string) => {
     if (window.confirm(`Rostdan ham "${name}" guruhini o'chirmoqchimisiz?`)) {
-      crmService.deleteGroup(id);
-      refresh();
+      await groupsService.deleteGroup(id);
+      await refresh();
       showNotification(`"${name}" guruhi o'chirildi.`);
     }
   };

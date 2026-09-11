@@ -9,8 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { crmService } from '../../services/crmService';
-import { TeacherRecord, StudentRecord, CourseData, LeadRecord } from '../../types/crm';
+import { teachersService, studentsService, coursesService, leadsService, expensesService, paymentsService } from '../../services/repository';
+import { TeacherRecord, StudentRecord, CourseData, LeadRecord, IncomePaymentRecord, ExpenseRecord } from '../../types/crm';
 import { formatCurrency, toSafeNumber } from '../../utils/format';
 import { normalizeLeadStatus } from '../../utils/leads';
 
@@ -19,16 +19,31 @@ export const ReportsView: React.FC = () => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [leads, setLeads] = useState<LeadRecord[]>([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
 
   useEffect(() => {
-    setTeachers(crmService.getTeachers());
-    setStudents(crmService.getStudents());
-    setCourses(crmService.getCourses());
-    setLeads(crmService.getLeads());
-  }, []);
+    const loadData = async () => {
+      const [teachersData, studentsData, coursesData, leadsData, expensesData, paymentsData] = await Promise.all([
+        teachersService.getAllTeachers(),
+        studentsService.getAllStudents(),
+        coursesService.getAllCourses(),
+        leadsService.getAllLeads(),
+        expensesService.getAllExpenses(),
+        paymentsService.getAllPayments()
+      ]);
+      setTeachers(teachersData as unknown as TeacherRecord[]);
+      setStudents(studentsData as unknown as StudentRecord[]);
+      setCourses(coursesData as unknown as CourseData[]);
+      setLeads(leadsData as unknown as LeadRecord[]);
 
-  const totalIncome = crmService.getTotalRevenue();
-  const totalExpenses = crmService.getExpenses().reduce((acc, e) => acc + toSafeNumber(e.amount), 0);
+      const income = (paymentsData as unknown as IncomePaymentRecord[]).reduce((acc, p) => acc + toSafeNumber(p.amount), 0);
+      const expenses = (expensesData as unknown as ExpenseRecord[]).reduce((acc, e) => acc + toSafeNumber(e.amount), 0);
+      setTotalIncome(income);
+      setTotalExpenses(expenses);
+    };
+    loadData();
+  }, []);
   const netProfit = totalIncome - totalExpenses;
 
   // Calculate leads by source

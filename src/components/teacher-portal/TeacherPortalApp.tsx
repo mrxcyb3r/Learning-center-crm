@@ -19,7 +19,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Loader2 } from 'lucide-react';
 
 const TeacherPortalLayout: React.FC = () => {
-  const { activeTab, isLoading, isDemoMode } = useTeacherPortal();
+  const { activeTab, isLoading } = useTeacherPortal();
   const { theme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,16 +85,6 @@ const TeacherPortalLayout: React.FC = () => {
         style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? sidebarWidth : 0 }}
       >
         <TeacherHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} mobileMenuOpen={mobileMenuOpen} />
-
-        {/* Demo Mode Banner */}
-        {isDemoMode && (
-          <div className="mx-4 sm:mx-6 mt-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-              Demo rejim — ko'rsatilgan ma'lumotlar namoyish uchun
-            </span>
-          </div>
-        )}
 
         {/* Content Area */}
         <main className="flex-1 p-4 sm:p-6">

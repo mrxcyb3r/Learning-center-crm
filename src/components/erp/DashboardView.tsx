@@ -6,8 +6,8 @@ import {
   Phone,
   AlertCircle,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
-import { Lead, GroupScheduleItem, StudentRecord } from '../../types/crm';
+import { leadsService, studentsService, paymentsService, expensesService, coursesService, groupsService } from '../../services/repository';
+import { Lead, GroupScheduleItem, StudentRecord, IncomePaymentRecord, ExpenseRecord, CourseData } from '../../types/crm';
 import { formatCurrencyShort, formatCompactCurrency, toSafeNumber, getStudentName } from '../../utils/format';
 import { normalizeLeadStatus } from '../../utils/leads';
 
@@ -20,17 +20,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   const [leads, setLeads] = useState<Lead[]>([]);
   const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [courses, setCourses] = useState<CourseData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLeads(crmService.getLeads());
-    setSchedule(crmService.getSchedule());
-    setStudents(crmService.getStudents());
+    let mounted = true;
+
+    const loadData = async () => {
+      try {
+        const [leadsData, scheduleData, studentsData, paymentsData, expensesData, coursesData] = await Promise.all([
+          leadsService.getAllLeads(),
+          groupsService.getAllGroups(),
+          studentsService.getAllStudents(),
+          paymentsService.getAllPayments(),
+          expensesService.getAllExpenses(),
+          coursesService.getAllCourses()
+        ]);
+
+        if (mounted) {
+          setLeads(leadsData);
+          setSchedule(scheduleData as unknown as GroupScheduleItem[]);
+          setStudents(studentsData as unknown as StudentRecord[]);
+          setPayments(paymentsData as unknown as IncomePaymentRecord[]);
+          setExpenses(expensesData as unknown as ExpenseRecord[]);
+          setCourses(coursesData as unknown as CourseData[]);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Dashboard data load error:', err);
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => { mounted = false; };
   }, []);
 
-  const studentsList = crmService.getStudents();
-  const payments = crmService.getPayments();
-  const expenses = crmService.getExpenses();
-  const courses = crmService.getCourses();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+      </div>
+    );
+  }
+
+  const studentsList = students;
 
   // ---- REAL DATA CALCULATIONS ----
   const activeStudents = studentsList.filter((s) => s.status === 'Active' || s.status === 'Trial' || s.status === 'Paused').length;
@@ -105,9 +142,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
     overdue: studentsList.filter((s) => s.paymentStatus === 'Overdue').length,
   };
 
-  const handleStatusChange = (leadId: string, newStatus: string) => {
-    crmService.updateLeadStatus(leadId, newStatus as Lead['status']);
-    setLeads(crmService.getLeads());
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    await leadsService.updateLead(leadId, { status: newStatus as Lead['status'] });
+    const updatedLeads = await leadsService.getAllLeads();
+    setLeads(updatedLeads);
   };
 
   const today = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' });

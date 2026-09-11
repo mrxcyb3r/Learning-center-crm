@@ -17,7 +17,7 @@ import {
   UserCheck,
   Calendar,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { teachersService } from '../../services/repository';
 import { TeacherGender, TeacherRecord, TeacherStatus } from '../../types/crm';
 import { TeacherAvatar } from '../common/TeacherAvatar';
 import { formatCurrency } from '../../utils/format';
@@ -48,8 +48,9 @@ export const TeachersView: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formAchievements, setFormAchievements] = useState('');
 
-  const refreshTeachers = () => {
-    setTeachers(crmService.getTeachers());
+  const refreshTeachers = async () => {
+    const data = await teachersService.getAllTeachers();
+    setTeachers(data as unknown as TeacherRecord[]);
   };
 
   useEffect(() => {
@@ -123,7 +124,7 @@ export const TeachersView: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSaveTeacher = (e: React.FormEvent) => {
+  const handleSaveTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const structuredName = [formFirstName, formMiddleName, formLastName].filter(Boolean).join(' ').trim();
@@ -156,10 +157,10 @@ export const TeachersView: React.FC = () => {
     };
 
     if (editingTeacher) {
-      crmService.updateTeacher(editingTeacher.id, payload);
+      await teachersService.updateTeacher(editingTeacher.id, payload);
       showNotification(`${formName} ma'lumotlari yangilandi!`);
     } else {
-      crmService.addTeacher({
+      await teachersService.createTeacher({
         ...payload,
         activeGroups: 0,
         studentsCount: 0,
@@ -168,14 +169,14 @@ export const TeachersView: React.FC = () => {
       showNotification(`Yangi ustoz ${formName} muvaffaqiyatli qo'shildi!`);
     }
 
-    refreshTeachers();
+    await refreshTeachers();
     setIsAddModalOpen(false);
   };
 
-  const handleDeleteTeacher = (id: string, name: string) => {
+  const handleDeleteTeacher = async (id: string, name: string) => {
     if (window.confirm(`Rostdan ham ${name} ustozni o'chirmoqchimisiz?`)) {
-      crmService.deleteTeacher(id);
-      refreshTeachers();
+      await teachersService.deleteTeacher(id);
+      await refreshTeachers();
       showNotification(`${name} o'chirildi.`);
     }
   };

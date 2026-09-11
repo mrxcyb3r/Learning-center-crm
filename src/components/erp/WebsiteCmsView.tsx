@@ -19,13 +19,14 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { cmsService } from '../../services/repository';
 import { CmsData, FaqItem, StudentResult } from '../../types/crm';
 
 export const WebsiteCmsView: React.FC = () => {
-  const [cms, setCms] = useState<CmsData>(crmService.getCmsData());
+  const [cms, setCms] = useState<CmsData | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'hero' | 'stats' | 'results' | 'faqs' | 'contact'>('hero');
+  const [loading, setLoading] = useState(true);
 
   // New FAQ Form
   const [newFaqQ, setNewFaqQ] = useState('');
@@ -43,17 +44,19 @@ export const WebsiteCmsView: React.FC = () => {
   const [isAddingResult, setIsAddingResult] = useState(false);
 
   useEffect(() => {
-    setCms(crmService.getCmsData());
+    cmsService.getCmsData().then(data => {
+      if (data) setCms(data);
+    });
   }, []);
 
-  const handleSaveAll = (e?: React.FormEvent) => {
+  const handleSaveAll = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    crmService.updateCmsData(cms);
+    await cmsService.updateCmsData(cms);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const handleAddFaq = (e: React.FormEvent) => {
+  const handleAddFaq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFaqQ.trim() || !newFaqA.trim()) return;
 
@@ -68,22 +71,22 @@ export const WebsiteCmsView: React.FC = () => {
       faqs: [...(cms.faqs || []), newItem],
     };
     setCms(updated);
-    crmService.updateCmsData(updated);
+    await cmsService.updateCmsData(updated);
     setNewFaqQ('');
     setNewFaqA('');
     setIsAddingFaq(false);
   };
 
-  const handleDeleteFaq = (id: string) => {
+  const handleDeleteFaq = async (id: string) => {
     const updated = {
       ...cms,
       faqs: cms.faqs.filter((f) => f.id !== id),
     };
     setCms(updated);
-    crmService.updateCmsData(updated);
+    await cmsService.updateCmsData(updated);
   };
 
-  const handleAddResult = (e: React.FormEvent) => {
+  const handleAddResult = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newResName.trim()) return;
 
@@ -105,23 +108,30 @@ export const WebsiteCmsView: React.FC = () => {
       results: [...(cms.results || []), newItem],
     };
     setCms(updated);
-    crmService.updateCmsData(updated);
+    await cmsService.updateCmsData(updated);
     setNewResName('');
     setNewResPublished(true);
     setIsAddingResult(false);
   };
 
-  const handleDeleteResult = (id: string) => {
+  const handleDeleteResult = async (id: string) => {
     const updated = {
       ...cms,
       results: cms.results.filter((r) => r.id !== id),
     };
     setCms(updated);
-    crmService.updateCmsData(updated);
+    await cmsService.updateCmsData(updated);
   };
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
+        </div>
+      )}
+      {!loading && (
+      <>
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -496,10 +506,10 @@ export const WebsiteCmsView: React.FC = () => {
                     {r.published === false ? (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: true } : x)) };
                           setCms(updated);
-                          crmService.updateCmsData(updated);
+                          await cmsService.updateCmsData(updated);
                         }}
                         title="Saytda nashr etish"
                         className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 transition"
@@ -509,10 +519,10 @@ export const WebsiteCmsView: React.FC = () => {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const updated = { ...cms, results: (cms.results || []).map((x) => (x.id === r.id ? { ...x, published: false } : x)) };
                           setCms(updated);
-                          crmService.updateCmsData(updated);
+                          await cmsService.updateCmsData(updated);
                         }}
                         title="Saytdan yashirish"
                         className="p-1.5 rounded-lg text-emerald-500 hover:text-slate-500 transition"
@@ -730,6 +740,8 @@ export const WebsiteCmsView: React.FC = () => {
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 };

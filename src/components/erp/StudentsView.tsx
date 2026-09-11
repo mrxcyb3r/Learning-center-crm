@@ -17,7 +17,7 @@ import {
   Calendar,
   AlertTriangle,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { studentsService, coursesService, groupsService, teachersService, paymentsService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName, formatPercent } from '../../utils/format';
 
@@ -65,10 +65,15 @@ export const StudentsView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<StudentStatus>('Active');
   const [formNotes, setFormNotes] = useState('');
 
-  const refreshData = () => {
-    setStudents(crmService.getStudents());
-    setCourses(crmService.getCourses());
-    setSchedule(crmService.getSchedule());
+  const refreshData = async () => {
+    const [studentsData, coursesData, scheduleData] = await Promise.all([
+      studentsService.getAllStudents(),
+      coursesService.getAllCourses(),
+      groupsService.getAllGroups()
+    ]);
+    setStudents(studentsData as unknown as StudentRecord[]);
+    setCourses(coursesData as unknown as CourseData[]);
+    setSchedule(scheduleData as unknown as GroupScheduleItem[]);
   };
 
   useEffect(() => {
@@ -142,12 +147,13 @@ export const StudentsView: React.FC = () => {
     }
   };
 
-  const handleSaveStudent = (e: React.FormEvent) => {
+  const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) return;
 
     const mentorName = formMentor.trim();
-    const matchedTeacher = crmService.getTeachers().find(
+    const teachersData = await teachersService.getAllTeachers();
+    const matchedTeacher = teachersData.find(
       (t) => t.name.toLowerCase() === mentorName.toLowerCase()
     );
 
@@ -171,24 +177,24 @@ export const StudentsView: React.FC = () => {
     };
 
     if (editingStudent) {
-      crmService.updateStudent(editingStudent.id, payload);
+      await studentsService.updateStudent(editingStudent.id, payload);
       showNotification(`${formName} ma'lumotlari yangilandi!`);
     } else {
-      crmService.addStudent({
+      await studentsService.createStudent({
         ...payload,
         enrollmentDate: new Date().toISOString().split('T')[0],
       });
       showNotification(`Yangi o'quvchi ${formName} muvaffaqiyatli ro'yxatga olindi!`);
     }
 
-    refreshData();
+    await refreshData();
     setIsModalOpen(false);
   };
 
-  const handleDeleteStudent = (id: string, name: string) => {
+  const handleDeleteStudent = async (id: string, name: string) => {
     if (window.confirm(`Rostdan ham ${name} o'quvchini ro'yxatdan o'chirmoqchimisiz?`)) {
-      crmService.deleteStudent(id);
-      refreshData();
+      await studentsService.deleteStudent(id);
+      await refreshData();
       showNotification(`${name} o'chirildi.`);
     }
   };
@@ -199,22 +205,27 @@ export const StudentsView: React.FC = () => {
     setPayMethod('Click');
   };
 
-  const handleProcessPayment = (e: React.FormEvent) => {
+  const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickPayStudent) return;
 
-    crmService.createPayment({
+    await paymentsService.recordPayment({
       studentId: quickPayStudent.id,
       studentName: quickPayStudent.fullName || quickPayStudent.name,
       course: quickPayStudent.course,
       amount: Number(payAmount),
-      method: payMethod,
-      month: currentMonthLabel(),
+      paymentMethod: payMethod.toLowerCase() as 'cash' | 'card' | 'click' | 'payme',
+      date: new Date().toISOString().split('T')[0],
+      recordedBy: 'Admin',
+      status: 'paid',
+      cohortGroup: quickPayStudent.groupName,
+      subjectCategory: quickPayStudent.course,
+      paymentPeriod: currentMonthLabel(),
     });
 
     showNotification(`${quickPayStudent.fullName || quickPayStudent.name} uchun to'lov qabul qilindi!`);
     setQuickPayStudent(null);
-    refreshData();
+    await refreshData();
   };
 
   const filtered = students.filter((st) => {

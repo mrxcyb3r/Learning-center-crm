@@ -9,8 +9,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return getUserData().role;
     }
 
     function isAdmin() {
@@ -41,26 +45,45 @@ service cloud.firestore {
       return isAdmin() || isSuperAdmin() || isTeacher();
     }
 
+    function getTeacherUid() {
+      return request.auth.uid;
+    }
+
     // =========================================================================
     // USERS COLLECTION - Canonical role document
     // =========================================================================
     match /users/{userId} {
       // Allow read for authenticated users (to check their own role)
+      // Admin/SuperAdmin can read all users
       allow read: if isSignedIn() && (isOwner(userId) || isAdminOrSuperAdmin());
 
       // Allow create ONLY for:
-      // 1. SuperAdmin (server-side/Admin SDK)
-      // 2. Authenticated user creating their OWN document with role='guest' (default)
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.role == 'guest';
+      // 1. SuperAdmin (server-side/Admin SDK) - they bypass rules
+      // 2. Authenticated user creating their OWN document with role='guest' (default on first login)
+      //    This is for first-time users who sign up - they get 'guest' until admin assigns role
+      allow create: if isSignedIn() 
+        && isOwner(userId) 
+        && request.resource.data.role == 'guest'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
 
       // Allow update for:
       // 1. SuperAdmin - full access
       // 2. Admin - can update teacher/student roles but NOT admin/superadmin
-      // 3. User can update their own profile fields EXCEPT role
+      // 3. User can update their own profile fields EXCEPT role, uid, email
       allow update: if isSignedIn() && (
         (isSuperAdmin()) ||
-        (isAdmin() && request.resource.data.role != 'admin' && request.resource.data.role != 'superadmin') ||
-        (isOwner(userId) && request.resource.data.role == resource.data.role)
+        (isAdmin() 
+          && request.resource.data.role != 'admin' 
+          && request.resource.data.role != 'superadmin'
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.email == resource.data.email
+        ) ||
+        (isOwner(userId) 
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.email == resource.data.email
+        )
       );
 
       // Allow delete only for SuperAdmin
@@ -156,19 +179,22 @@ service cloud.firestore {
       allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAttendance(attendanceId));
     }
 
-    // Homework/Assignments
+    // Homework/Assignments (primary collection: homework)
     match /homework/{homeworkId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
       allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfHomework(homeworkId));
     }
 
+    // Legacy assignments collection
     match /assignments/{assignmentId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
       allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfAssignment(assignmentId));
     }
 
     match /homework_submissions/{submissionId} {
-      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfSubmission(submissionId));
+      allow read: if isAdminOrSuperAdmin() 
+        || (isTeacher() && isTeacherOfSubmission(submissionId))
+        || (isStudent() && isOwnSubmission(submissionId));
       allow create: if isSignedIn(); // Students can submit
       allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfSubmission(submissionId));
     }
@@ -181,7 +207,9 @@ service cloud.firestore {
 
     // Mock Scores
     match /mock_scores/{scoreId} {
-      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfMockScore(scoreId)) || (isStudent() && isOwnMockScore(scoreId));
+      allow read: if isAdminOrSuperAdmin() 
+        || (isTeacher() && isTeacherOfMockScore(scoreId)) 
+        || (isStudent() && isOwnMockScore(scoreId));
       allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfMockScore(scoreId));
     }
 
@@ -200,8 +228,13 @@ service cloud.firestore {
     // NOTIFICATIONS
     // =========================================================================
     match /notifications/{notificationId} {
-      allow read: if isSignedIn() && (resource.data.recipientId == request.auth.uid || resource.data.recipientRole == getUserRole() || resource.data.recipientRole == 'all');
-      allow write: if isAdminOrSuperAdmin() || (isTeacher() && request.auth.uid == resource.data.senderId);
+      allow read: if isSignedIn() && (
+        resource.data.recipientId == request.auth.uid 
+        || resource.data.recipientRole == getUserRole() 
+        || resource.data.recipientRole == 'all'
+      );
+      allow write: if isAdminOrSuperAdmin() 
+        || (isTeacher() && request.auth.uid == resource.data.senderId);
     }
 
     // =========================================================================
@@ -246,23 +279,24 @@ service cloud.firestore {
 
     function isTeacherOfHomework(homeworkId) {
       let homeworkDoc = get(/databases/$(database)/documents/homework/$(homeworkId));
-      return homeworkDoc.data.teacherEmail == request.auth.token.email;
+      return homeworkDoc.data.teacherId == request.auth.uid;
     }
 
     function isTeacherOfAssignment(assignmentId) {
       let assignmentDoc = get(/databases/$(database)/documents/assignments/$(assignmentId));
-      return assignmentDoc.data.teacherEmail == request.auth.token.email;
+      return assignmentDoc.data.teacherId == request.auth.uid;
     }
 
     function isTeacherOfSubmission(submissionId) {
       let submissionDoc = get(/databases/$(database)/documents/homework_submissions/$(submissionId));
-      let assignmentDoc = get(/databases/$(database)/documents/homework/$(submissionDoc.data.assignmentId));
-      return assignmentDoc.data.teacherEmail == request.auth.token.email;
+      let homeworkDoc = get(/databases/$(database)/documents/homework/$(submissionDoc.data.assignmentId));
+      return homeworkDoc.data.teacherId == request.auth.uid;
     }
 
     function isTeacherOfFeedPost(postId) {
       let postDoc = get(/databases/$(database)/documents/feed_posts/$(postId));
-      return postDoc.data.author == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.displayName;
+      let teacherDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return postDoc.data.author == teacherDoc.data.displayName;
     }
 
     function isTeacherOfMockScore(scoreId) {
@@ -274,6 +308,11 @@ service cloud.firestore {
     function isOwnMockScore(scoreId) {
       let scoreDoc = get(/databases/$(database)/documents/mock_scores/$(scoreId));
       return scoreDoc.data.studentId == request.auth.uid;
+    }
+
+    function isOwnSubmission(submissionId) {
+      let submissionDoc = get(/databases/$(database)/documents/homework_submissions/$(submissionId));
+      return submissionDoc.data.studentId == request.auth.uid;
     }
 
     function isOwnTeacherTask(taskId) {

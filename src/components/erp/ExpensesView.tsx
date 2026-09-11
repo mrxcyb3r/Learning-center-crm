@@ -13,7 +13,7 @@ import {
   CreditCard,
   Briefcase,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { expensesService, teachersService } from '../../services/repository';
 import { ExpenseCategory, ExpenseRecord, TeacherRecord } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 
@@ -31,9 +31,13 @@ export const ExpensesView: React.FC = () => {
   const [formRecipient, setFormRecipient] = useState('');
   const [formMonth, setFormMonth] = useState('Sentyabr 2026');
 
-  const refresh = () => {
-    setExpenses(crmService.getExpenses());
-    setTeachers(crmService.getTeachers().filter((t) => t.status === 'Active'));
+  const refresh = async () => {
+    const [expensesData, teachersData] = await Promise.all([
+      expensesService.getAllExpenses(),
+      teachersService.getAllTeachers()
+    ]);
+    setExpenses(expensesData);
+    setTeachers(teachersData.filter((t) => t.status === 'Active') as unknown as TeacherRecord[]);
   };
 
   useEffect(() => {
@@ -64,16 +68,17 @@ export const ExpensesView: React.FC = () => {
     }
   };
 
-  const handleCreateExpense = (e: React.FormEvent) => {
+  const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
-    crmService.createExpense({
+    await expensesService.createExpense({
       category: formCategory,
       title: formTitle.trim(),
       amount: Number(formAmount),
       recipient: formRecipient.trim(),
       month: formMonth,
+      date: new Date().toISOString().split('T')[0],
     });
 
     showNotification(`Xarajat ("${formTitle}") muvaffaqiyatli saqlandi!`);
@@ -81,9 +86,9 @@ export const ExpensesView: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleDeleteExpense = (id: string, title: string) => {
+  const handleDeleteExpense = async (id: string, title: string) => {
     if (window.confirm(`Rostdan ham "${title}" xarajatini o'chirmoqchimisiz?`)) {
-      crmService.deleteExpense(id);
+      await expensesService.deleteExpense(id);
       refresh();
       showNotification(`"${title}" xarajati o'chirildi.`);
     }

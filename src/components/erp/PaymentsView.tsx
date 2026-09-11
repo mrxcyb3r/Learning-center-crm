@@ -11,7 +11,7 @@ import {
   X,
   FileText,
 } from 'lucide-react';
-import { crmService } from '../../services/crmService';
+import { paymentsService, studentsService, coursesService } from '../../services/repository';
 import { CourseData, IncomePaymentRecord, StudentRecord } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 
@@ -44,10 +44,15 @@ export const PaymentsView: React.FC = () => {
   const [formMethod, setFormMethod] = useState<'Click' | 'Payme' | 'Cash' | 'Card'>('Click');
   const [formMonth, setFormMonth] = useState(currentMonthLabel());
 
-  const refresh = () => {
-    setPayments(crmService.getPayments());
-    setStudents(crmService.getStudents());
-    setCourses(crmService.getCourses());
+  const refresh = async () => {
+    const [paymentsData, studentsData, coursesData] = await Promise.all([
+      paymentsService.getAllPayments(),
+      studentsService.getAllStudents(),
+      coursesService.getAllCourses()
+    ]);
+    setPayments(paymentsData as unknown as IncomePaymentRecord[]);
+    setStudents(studentsData as unknown as StudentRecord[]);
+    setCourses(coursesData as unknown as CourseData[]);
   };
 
   useEffect(() => {
@@ -88,17 +93,22 @@ export const PaymentsView: React.FC = () => {
     }
   };
 
-  const handleCreatePayment = (e: React.FormEvent) => {
+  const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formStudentName.trim()) return;
 
-    crmService.createPayment({
+    await paymentsService.recordPayment({
       studentId: formStudentId,
       studentName: formStudentName.trim(),
       course: formCourse,
       amount: Number(formAmount),
-      method: formMethod,
-      month: formMonth,
+      paymentMethod: formMethod.toLowerCase() as 'cash' | 'card' | 'click' | 'payme',
+      date: new Date().toISOString().split('T')[0],
+      recordedBy: 'Admin',
+      status: 'paid',
+      cohortGroup: '',
+      subjectCategory: formCourse,
+      paymentPeriod: formMonth,
     });
 
     showNotification(`To'lov (${formatCurrency(Number(formAmount))}) muvaffaqiyatli qabul qilindi!`);
@@ -106,13 +116,13 @@ export const PaymentsView: React.FC = () => {
     setIsAddModalOpen(false);
   };
 
-  const handleVoidPayment = (id: string, name: string) => {
+  const handleVoidPayment = async (id: string, name: string) => {
     const reason = window.prompt(`"${name}" uchun to'lovni bekor qilish sababini kiriting:`, 'Xato kirish');
     if (reason === null) return; // user cancelled
     if (!window.confirm(`To'lov bekor qilinadimi? Barcha hisob-kitoblardan chiqariladi (bekor qilingan kvitansiya arxivda saqlanadi).`)) {
       return;
     }
-    crmService.voidPayment(id, reason.trim() || 'Sabab ko\'rsatilmagan');
+    await paymentsService.voidPayment(id, reason.trim() || 'Sabab ko\'rsatilmagan');
     refresh();
     showNotification('To\'lov bekor qilindi va moliya hisob-kitoblaridan olib tashlandi.');
   };

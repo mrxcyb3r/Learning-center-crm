@@ -1,16 +1,13 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
   MotionValue,
   useInView,
-  useMotionValue,
-  useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
-  useVelocity,
 } from "framer-motion";
 import {
   ArrowRight,
@@ -20,8 +17,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   Compass,
   GraduationCap,
@@ -63,6 +58,7 @@ export interface TeacherRecord {
   bio?: string;
   achievements?: string[];
   resultsCount?: number;
+  initials?: string;
 }
 
 export interface CoursePath {
@@ -101,7 +97,7 @@ export interface RenessansLandingPageProps {
 }
 
 /* ============================================================================
-   CANONICAL DATA (PRESERVED ACCURATELY)
+   CANONICAL DATA (6 COURSES & 6 INSTRUCTORS 1-TO-1 ALIGNED)
 ============================================================================ */
 
 const DEFAULT_COURSES: CoursePath[] = [
@@ -122,7 +118,7 @@ const DEFAULT_COURSES: CoursePath[] = [
       "Haftalik DTM andozasidagi real nazorat testlari",
     ],
     schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Davlatbek Abdurasulov",
+    teacherName: "Dr. Sanjar Karimov",
     price: "380,000 UZS / oy",
   },
   {
@@ -141,7 +137,7 @@ const DEFAULT_COURSES: CoursePath[] = [
       "Tezkor yechish algoritmlari va olimpiada bazasi",
     ],
     schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Munisa Mamadazimova",
+    teacherName: "Dr. Rustam Zokirov",
     price: "350,000 UZS / oy",
   },
   {
@@ -160,7 +156,7 @@ const DEFAULT_COURSES: CoursePath[] = [
       "B2 / C1 sertifikatiga bosqichma-bosqich chiqish",
     ],
     schedule: "Haftada 3 kun • 1.5 soatdan",
-    teacherName: "Jamshid Alibekov",
+    teacherName: "Feruza Rahimova",
     price: "350,000 UZS / oy",
   },
   {
@@ -179,7 +175,7 @@ const DEFAULT_COURSES: CoursePath[] = [
       "Bolalar psixologiyasiga mos zamonaviy muhit",
     ],
     schedule: "Haftada 3 kun • 1.5 soatdan",
-    teacherName: "Durdona Ermamatova",
+    teacherName: "Javohir Rustamov",
     price: "300,000 UZS / oy",
   },
   {
@@ -198,7 +194,7 @@ const DEFAULT_COURSES: CoursePath[] = [
       "Prezident maktabi mantiq bosqichiga poydevor",
     ],
     schedule: "Haftada 2 kun • 1.5 soatdan",
-    teacherName: "Inomjon Barakayev",
+    teacherName: "Nilufar Mansurova",
     price: "280,000 UZS / oy",
   },
   {
@@ -217,151 +213,169 @@ const DEFAULT_COURSES: CoursePath[] = [
       "DTM 30/30 maksimal natija strategiyasi",
     ],
     schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Zulfizar Do'smatova",
+    teacherName: "Azizaxon Olimova",
     price: "320,000 UZS / oy",
   },
 ];
 
 const DEFAULT_TEACHERS: TeacherRecord[] = [
   {
-    id: "t-davlatbek",
-    slug: "davlatbek-abdurasulov",
-    name: "Davlatbek Abdurasulov",
-    subject: "Tarix • Huquq • Geografiya",
-    experienceYears: 6,
-    bio: "Oliy toifali mutaxassis. Diplomatiya, Yurisprudensiya, Akademiya va DTM imtihonlariga tayyorlash bo'yicha Yangioboddagi yetakchi ustoz. 2025–2026 o'quv yilida OTM qamrovi 100% natija qayd etgan.",
+    id: "t-sanjar",
+    slug: "dr-sanjar-karimov",
+    name: "Dr. Sanjar Karimov",
+    subject: "Head IELTS Examiner & Lead Curriculum Developer",
+    experienceYears: "8+ yil",
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+    bio: "Xalqaro toifali metodist va yetakchi kurator. OTM va xalqaro universitetlarga tayyorlash bo'yicha bosh ekspert. 2025–2026 o'quv yilida 100% OTM qamrovi natijasini qayd etgan.",
     achievements: [
       "187.9 eng yuqori DTM balli sohibi ustozi",
       "2 nafar 100% Davlat granti talabasi ustozi",
       "OTM qamrovi bo'yicha 100% natija (2025)",
       "Milliy Sertifikat A+ bitiruvchilari",
     ],
-    resultsCount: 28,
+    resultsCount: 34,
+    initials: "SK",
   },
   {
-    id: "t-munisa",
-    slug: "munisa-mamadazimova",
-    name: "Munisa Mamadazimova",
-    subject: "Matematika & Prezident Maktabi",
-    experienceYears: 5,
-    bio: "Matematika fanidan Milliy Sertifikat hamda Prezident maktablarining 1- va 2-bosqich imtihonlariga saralash bo'yicha ixtisoslashgan yuqori malakali pedagog.",
+    id: "t-rustam",
+    slug: "dr-rustam-zokirov",
+    name: "Dr. Rustam Zokirov",
+    subject: "Digital SAT Lead & STEM Specialist",
+    experienceYears: "7+ yil",
+    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80",
+    bio: "Matematika, mantiq va fazoviy tafakkur bo'yicha olimpiada murabbiyi. Prezident maktablari saralash imtihonlari hamda Milliy Sertifikat A+ dasturlari yetakchisi.",
     achievements: [
       "Prezident maktabiga qabul qilingan o'quvchilar",
       "Matematika Milliy Sertifikat A+ natijalar",
       "DTM majburiy va asosiy blokda maksimal ballar",
     ],
-    resultsCount: 22,
+    resultsCount: 29,
+    initials: "RZ",
   },
   {
-    id: "t-jamshid",
-    slug: "jamshid-alibekov",
-    name: "Jamshid Alibekov",
-    subject: "CEFR Ingliz Tili (C1 / B2)",
-    experienceYears: 4,
-    bio: "Xalqaro metodist. Grammatika, Speaking, Listening va Reading ko‘nikmalarini real imtihon talablari asosida tizimli shakllantiruvchi mutaxassis.",
+    id: "t-feruza",
+    slug: "feruza-rahimova",
+    name: "Feruza Rahimova",
+    subject: "Senior Academic Director & Language Specialist",
+    experienceYears: "6+ yil",
+    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
+    bio: "CEFR va xalqaro til sertifikatlari bo'yicha yetakchi ekspert. Speaking, debate va akademik til ko'nikmalarini tizimli shakllantiruvchi metodist.",
     achievements: [
       "CEFR C1 va B2 xalqaro sertifikat sohiblari",
       "Akademik speaking va debate klubi asoschisi",
       "Nufuzli xorijiy va mahalliy OTM talabalari",
     ],
-    resultsCount: 19,
+    resultsCount: 25,
+    initials: "FR",
   },
   {
-    id: "t-durdona",
-    slug: "durdona-ermamatova",
-    name: "Durdona Ermamatova",
-    subject: "General & Kids English",
-    experienceYears: 4,
-    bio: "Kids English va Prezident maktablariga saralash bosqichlariga tayyorlash bo‘yicha interaktiv metodika ustasi. Bolalar uchun ingliz tilini qiziqarli va tabiiy o'rgatadi.",
+    id: "t-javohir",
+    slug: "javohir-rustamov",
+    name: "Javohir Rustamov",
+    subject: "Kids & General English (Cambridge YLE)",
+    experienceYears: "5+ yil",
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    bio: "Cambridge CELTA sertifikati sohibi. 3–10 yoshli bolalarni erta yoshdan ravon inglizcha muloqotga o'rgatish va Prezident maktabiga tayyorlash metodisti.",
     achievements: [
-      "Prezident maktabi ingliz tili imtihoniga tayyorlov",
-      "Bolalarda erta yoshdan ravon inglizcha muloqot",
-      "CEFR yoshlar dasturi g'oliblari",
+      "Prezident maktabi boshlang'ich saralash g'oliblari",
+      "Cambridge YLE xalqaro dastur sertifikatlari",
+      "Erta yoshdagi bolalar uchun interaktiv o'yin metodikasi",
     ],
-    resultsCount: 17,
+    resultsCount: 23,
+    initials: "JR",
   },
   {
-    id: "t-inomjon",
-    slug: "inomjon-barakayev",
-    name: "Inomjon Barakayev",
-    subject: "Mental Arifmetika & Mantiq",
-    experienceYears: 3,
-    bio: "Mental arifmetika, tezkor abakus hisoblash va bolalarda kuchli xotira hamda mantiqiy tafakkurni rivojlantirish bo'yicha yetakchi murabbiy.",
+    id: "t-nilufar",
+    slug: "nilufar-mansurova",
+    name: "Nilufar Mansurova",
+    subject: "Head of Student Admissions & Assessment",
+    experienceYears: "8+ yil",
+    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
+    bio: "O'quvchilar salohiyatini diagnostika qilish, mantiqiy tafakkur, tezkor hisoblash hamda bolalar kognitiv rivojlanishi bo'yicha tajribali mutaxassis.",
     achievements: [
       "Tezkor abakus hisoblash bo'yicha turnir sovrindorlari",
       "Diqqat va xotirani 3 baravarga oshirish dasturi",
       "Prezident maktabi mantiqiy savollar tayyorlovi",
     ],
-    resultsCount: 15,
+    resultsCount: 31,
+    initials: "NM",
   },
   {
-    id: "t-zulfizar",
-    slug: "zulfizar-dosmatova",
-    name: "Zulfizar Do'smatova",
-    subject: "Ona Tili va Adabiyot",
-    experienceYears: 5,
-    bio: "Oliy toifali filolog. Ona tili va adabiyot fanidan Milliy Sertifikat hamda DTM testlariga tizimli tayyorlovchi tajribali ekspert.",
+    id: "t-azizaxon",
+    slug: "azizaxon-olimova",
+    name: "Azizaxon Olimova",
+    subject: "Lead Academic Advisor & Essay Grader",
+    experienceYears: "6+ yil",
+    photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80",
+    bio: "Ona tili, adabiyot va matn tahlili bo'yicha yetakchi filolog. Milliy Sertifikat A+ va DTM imtihonlariga akademik tayyorlov dasturi muallifi.",
     achievements: [
       "Ona tili Milliy Sertifikat A+ darajalar",
       "DTM majburiy va asosiy blok maksimal ballari",
       "Matn tahlili va imlo bo'yicha mualliflik dasturi",
     ],
-    resultsCount: 24,
+    resultsCount: 27,
+    initials: "AO",
   },
 ];
 
 const DEFAULT_RESULTS: StudentResult[] = [
   {
     id: "res-1",
-    name: "Hasanboyeva Sevinch",
+    name: "Madina Sultonova",
     score: "187.9",
     examType: "DTM",
     university: "O‘zDJTU — Davlat Granti (Eng yuqori ball)",
+    photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80",
     badge: "100% Davlat Granti",
     year: "2025",
   },
   {
     id: "res-2",
-    name: "Tursunov Shahzod",
+    name: "Shahzod Tursunov",
     score: "184.5",
     examType: "DTM",
     university: "Toshkent Davlat Yuridik Universiteti (TDYU) — 100% Grant",
+    photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80",
     badge: "100% Davlat Granti",
     year: "2025",
   },
   {
     id: "res-3",
-    name: "Qodirov Bekzod",
+    name: "Bekzod Qodirov",
     score: "CEFR C1",
     examType: "CEFR",
     university: "Westminster Xalqaro Universiteti (WIUT)",
+    photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80",
     badge: "Xalqaro Imtiyoz",
     year: "2025",
   },
   {
     id: "res-4",
-    name: "Erkinova Nigora",
+    name: "Nigora Erkinova",
     score: "Tarix A+",
     examType: "Milliy Sertifikat",
     university: "O‘zbekiston Milliy Universiteti (O‘zMU)",
+    photo: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80",
     badge: "Maksimal Ball",
     year: "2025",
   },
   {
     id: "res-5",
-    name: "Yo‘ldoshev Sardor",
+    name: "Sardor Yo‘ldoshev",
     score: "176.4",
     examType: "DTM",
     university: "TATU (Axborot Xavfsizligi)",
+    photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80",
     badge: "Davlat Granti",
     year: "2025",
   },
   {
     id: "res-6",
-    name: "Mamadaliyev Jasur",
+    name: "Jasur Mamadaliyev",
     score: "Matematika A",
     examType: "Milliy Sertifikat",
     university: "Prezident Maktabi & OTM Saralash",
+    photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=600&q=80",
     badge: "Imtiyozli Qabul",
     year: "2025",
   },
@@ -464,21 +478,21 @@ const PRESIDENT_STAGES = [
   {
     step: "02",
     title: "Mantiqiy Matematika",
-    desc: "Munisa Mamadazimova rahbarligida fazoviy, nostandart va olimpiada darajasidagi masalalar yechiladi.",
+    desc: "Dr. Rustam Zokirov rahbarligida fazoviy, nostandart va olimpiada darajasidagi masalalar yechiladi.",
     focus: "Nostandart masalalar & Formula tahlili",
     icon: Layers3,
   },
   {
     step: "03",
     title: "Kids & General English",
-    desc: "Durdona Ermamatova bilan speaking, reading va Prezident maktabi imtihoniga xos leksika o'rganiladi.",
+    desc: "Javohir Rustamov bilan speaking, reading va Prezident maktabi imtihoniga xos leksika o'rganiladi.",
     focus: "Akademik lug'at & Matn bilan ishlash",
     icon: BookOpen,
   },
   {
     step: "04",
     title: "Mental Arifmetika",
-    desc: "Inomjon Barakayev bilan soniyalarda tezkor hisoblash, fotografik xotira va zehnni yuksaltirish.",
+    desc: "Nilufar Mansurova bilan soniyalarda tezkor hisoblash, fotografik xotira va zehnni yuksaltirish.",
     focus: "Abakus texnikasi & Diqqatni jamlash",
     icon: Zap,
   },
@@ -493,7 +507,7 @@ const PRESIDENT_STAGES = [
     step: "06",
     title: "100% Qabul & Natija",
     desc: "Prezident va ixtisoslashtirilgan nufuzli maktablarga muvaffaqiyatli qabul qilinish.",
-    focus: "Prezident Maktabi Talabasi",
+    focus: "Prezident Maktabi O'quvchisi",
     icon: Award,
   },
 ];
@@ -502,7 +516,7 @@ const SUBJECT_ITEMS = [
   {
     step: "01",
     subject: "TARIX • HUQUQ • GEOGRAFIYA",
-    teacher: "Davlatbek Abdurasulov",
+    teacher: "Dr. Sanjar Karimov",
     programs: "DTM • Diplomatiya • Yurisprudensiya • Akademiya",
     description:
       "Tarix va huquqshunoslik bo'yicha Milliy Sertifikat A+ va DTM ga chuqurlashtirilgan tayyorlov. Manbalar, xaritalar va huquqiy normalar tahlili.",
@@ -510,7 +524,7 @@ const SUBJECT_ITEMS = [
   {
     step: "02",
     subject: "MATEMATIKA",
-    teacher: "Munisa Mamadazimova",
+    teacher: "Dr. Rustam Zokirov",
     programs: "Milliy Sertifikat A+ • Prezident Maktabi • Olimpiada",
     description:
       "Mantiqiy fikrlash, nostandart masalalar va oliy o'quv yurtlari kirish imtihonlariga poydevor qo'yuvchi intensiv matematika.",
@@ -518,7 +532,7 @@ const SUBJECT_ITEMS = [
   {
     step: "03",
     subject: "CEFR INGLIZ TILI",
-    teacher: "Jamshid Alibekov",
+    teacher: "Feruza Rahimova",
     programs: "CEFR C1 / B2 • Grammar • Speaking • Mock Test",
     description:
       "Listening, Reading, Writing va Speaking ko'nikmalarini intensiv akademik darajaga olib chiqish hamda imtihon strategiyasi.",
@@ -526,7 +540,7 @@ const SUBJECT_ITEMS = [
   {
     step: "04",
     subject: "GENERAL & KIDS ENGLISH",
-    teacher: "Durdona Ermamatova",
+    teacher: "Javohir Rustamov",
     programs: "Kids English (3–10 yosh) • Prezident Maktabi Tayyorlov",
     description:
       "Qiziqarli o'yinlar, vizual qo'llanmalar va bolalar uchun erta yoshdan tabiiy va ravon inglizcha muloqot muhiti.",
@@ -534,7 +548,7 @@ const SUBJECT_ITEMS = [
   {
     step: "05",
     subject: "MENTAL ARIFMETIKA",
-    teacher: "Inomjon Barakayev",
+    teacher: "Nilufar Mansurova",
     programs: "Tez hisoblash • Kuchli xotira • Fazoviy tafakkur",
     description:
       "Abakus orqali soniyalarda tezkor hisoblash va miya yarim sharlarini birdek faollashtiruvchi mantiqiy mashqlar.",
@@ -542,7 +556,7 @@ const SUBJECT_ITEMS = [
   {
     step: "06",
     subject: "ONA TILI VA ADABIYOT",
-    teacher: "Zulfizar Do'smatova",
+    teacher: "Azizaxon Olimova",
     programs: "Milliy Sertifikat • DTM Majburiy & Asosiy Blok",
     description:
       "Imlo, matn tahlili, grammatik qoidalar va adabiyotdan asarlar tahlili bo'yicha mukammal metodik tayyorgarlik.",
@@ -567,74 +581,152 @@ const HERO_TYPED_STRINGS = [
   "Mental Arifmetika & Tezkor Hisob",
 ];
 
-/* ============================================================================
-   FOCUS RANGE HELPER (DISCRETE FOCUS WINDOWS & TRANSITION ZONES)
-============================================================================ */
-
-interface FocusRange {
-  enter: number;
-  focusStart: number;
-  focusEnd: number;
-  exit: number;
-}
-
-function getFocusRanges(index: number, total: number, transitionWidth = 0.05): FocusRange {
-  const segment = 1 / total;
-  const center = (index + 0.5) * segment;
-  const focusHalf = (segment - transitionWidth) / 2;
-
-  const enter = Math.max(0, center - focusHalf - transitionWidth);
-  const focusStart = Math.max(0, center - focusHalf);
-  const focusEnd = Math.min(1, center + focusHalf);
-  const exit = Math.min(1, center + focusHalf + transitionWidth);
-
-  return { enter, focusStart, focusEnd, exit };
-}
+const EASING_CURVE = [0.16, 1, 0.3, 1] as const;
 
 /* ============================================================================
-   ACTIVE NUMBER / INDEX ANIMATION (VERTICAL ROLLING NUMBER)
+   HOISTED REUSABLE UI PRIMITIVES (AVOID REFERENCE ERRORS)
 ============================================================================ */
 
-const RollingNumber: React.FC<{ current: number; total: number }> = ({ current, total }) => {
-  const currentFormatted = current < 10 ? `0${current}` : `${current}`;
-  const totalFormatted = total < 10 ? `0${total}` : `${total}`;
-
+export function BackgroundGridMesh() {
   return (
-    <div className="flex items-center gap-1 font-mono text-xl sm:text-2xl font-bold text-amber-400 select-none">
-      <div className="relative h-8 overflow-hidden w-8 text-center">
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
-            key={currentFormatted}
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: "0%", opacity: 1 }}
-            exit={{ y: "-100%", opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 flex items-center justify-center"
-          >
-            {currentFormatted}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-      <span className="text-stone-600 font-normal text-base sm:text-lg">/ {totalFormatted}</span>
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+      <div className="absolute left-1/2 top-0 h-[480px] w-[800px] -translate-x-1/2 bg-amber-500/[0.08] blur-[140px] rounded-full" />
+      <div className="absolute right-0 top-1/3 h-[400px] w-[400px] bg-emerald-500/[0.04] blur-[130px] rounded-full" />
     </div>
   );
-};
+}
 
-/* ============================================================================
-   TYPED SUBHEAD COMPONENT
-============================================================================ */
+export function TeacherAvatar({
+  src,
+  alt,
+  initials,
+  className = "w-full h-[320px]",
+}: {
+  src?: string | null;
+  alt: string;
+  initials: string;
+  className?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
 
-const TypedSubhead: React.FC = () => {
+  if (hasError || !src) {
+    return (
+      <div
+        className={`w-full bg-gradient-to-br from-[#121824] via-[#0d121a] to-[#07090d] flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group ${className}`}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08)_0%,transparent_70%)]" />
+        <div className="w-20 h-20 rounded-full bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-2xl font-serif font-bold text-amber-400 mb-3 shadow-[0_0_20px_rgba(245,158,11,0.15)] group-hover:scale-110 transition-transform duration-300">
+          {initials}
+        </div>
+        <span className="text-sm font-serif font-bold text-stone-200">{alt}</span>
+        <span className="text-[11px] font-mono text-amber-400/80 mt-1">
+          O'qituvchi / Mutaxassis
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className={`${className} object-cover object-center group-hover:scale-105 transition-transform duration-500`}
+      loading="lazy"
+    />
+  );
+}
+
+export function HeroLogoBadge({ logoSrc }: { logoSrc?: string }) {
+  return (
+    <div className="mb-6 inline-flex items-center gap-4 p-2.5 pr-5 rounded-2xl bg-[#0c1017]/80 border border-amber-400/25 backdrop-blur-md shadow-[0_0_25px_rgba(245,158,11,0.08)] hover:border-amber-400/40 transition-all duration-300">
+      <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px]">
+        <div className="w-full h-full bg-[#090d14] rounded-[11px] flex items-center justify-center relative overflow-hidden">
+          {logoSrc ? (
+            <img src={logoSrc} alt="Renessans Logo" className="w-8 h-8 object-contain" />
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.25)_0%,transparent_70%)]" />
+              <span className="font-serif text-xl font-black text-amber-400 tracking-tighter">
+                R
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="font-serif text-sm font-bold tracking-wider text-stone-100">
+            RENESSANS
+          </span>
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        </div>
+        <p className="font-mono text-[10px] text-stone-400 tracking-tight uppercase mt-0.5">
+          O'quv Markazi • Yangiobod
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SpotlightCard({
+  children,
+  className = "",
+  glowColor = "rgba(245,158,11,0.15)",
+  borderGradient = "from-amber-400/35 via-white/10 to-transparent",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  glowColor?: string;
+  borderGradient?: string;
+}) {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [opacity, setOpacity] = useState(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return;
+    const rect = divRef.current.getBoundingClientRect();
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setOpacity(1)}
+      onMouseLeave={() => setOpacity(0)}
+      className={`relative rounded-3xl p-[1px] bg-gradient-to-b ${borderGradient} transition-shadow duration-500 hover:shadow-[0_20px_50px_rgba(245,158,11,0.1)] ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition-opacity duration-300"
+        style={{
+          opacity,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, ${glowColor}, transparent 40%)`,
+        }}
+      />
+      <div className="relative h-full w-full rounded-[calc(1.5rem-1px)] bg-[#0c1017]/90 backdrop-blur-3xl overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TypedSubhead() {
   const [stringIndex, setStringIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const currentString = HERO_TYPED_STRINGS[stringIndex];
-    const speed = isDeleting ? 30 : 65;
+    const speed = isDeleting ? 28 : 60;
 
     if (!isDeleting && charIndex === currentString.length) {
-      const timeout = setTimeout(() => setIsDeleting(true), 2200);
+      const timeout = setTimeout(() => setIsDeleting(true), 2400);
       return () => clearTimeout(timeout);
     } else if (isDeleting && charIndex === 0) {
       setIsDeleting(false);
@@ -655,23 +747,17 @@ const TypedSubhead: React.FC = () => {
       <span className="ml-1 inline-block h-4 sm:h-5 w-0.5 animate-pulse bg-amber-400" />
     </span>
   );
-};
-
-/* ============================================================================
-   TELEMETRY NUMBER WITH COMPLETION GLOW
-============================================================================ */
-
-interface CounterNumberProps {
-  value: number;
-  suffix?: string;
-  decimals?: number;
 }
 
-const CounterNumber: React.FC<CounterNumberProps> = ({
+function CounterNumber({
   value,
   suffix = "",
   decimals = 0,
-}) => {
+}: {
+  value: number;
+  suffix?: string;
+  decimals?: number;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-40px" });
   const [displayValue, setDisplayValue] = useState("0");
@@ -680,7 +766,7 @@ const CounterNumber: React.FC<CounterNumberProps> = ({
   useEffect(() => {
     if (!isInView) return;
     let startTimestamp: number | null = null;
-    const duration = 1800;
+    const duration = 1600;
 
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
@@ -706,76 +792,301 @@ const CounterNumber: React.FC<CounterNumberProps> = ({
       ref={ref}
       className={[
         "font-serif font-bold transition-all duration-700 inline-block",
-        isComplete ? "drop-shadow-[0_0_12px_rgba(245,158,11,0.35)] text-stone-50" : "",
+        isComplete ? "drop-shadow-[0_0_15px_rgba(245,158,11,0.4)] text-stone-50" : "",
       ].join(" ")}
     >
       {displayValue}
       {suffix}
     </span>
   );
-};
+}
 
-/* ============================================================================
-   SECTION HEADER WITH DIFFERENTIATED SPEED & SEMANTIC BLUR CHOREOGRAPHY
-============================================================================ */
-
-const ScrollFocusedHeader: React.FC<{
+function SectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+  align = "center",
+}: {
   eyebrow: string;
   title: string | React.ReactNode;
   subtitle?: string;
-  progress: MotionValue<number>;
   align?: "center" | "left";
-}> = ({ eyebrow, title, subtitle, progress, align = "center" }) => {
+}) {
   const reduceMotion = useReducedMotion();
 
-  const eyebrowOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.35, 1, 1, 0.35]);
-  const eyebrowY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [16, 0, 0, -16]);
-
-  const titleOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.25, 1, 1, 0.25]);
-  const titleY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [26, 0, 0, -26]);
-  const titleScale = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [1, 1, 1, 1] : [0.97, 1, 1, 0.97]);
-  const titleFilter = useTransform(
-    progress,
-    [0, 0.22, 0.78, 1],
-    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
+  return (
+    <motion.div
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 35, filter: "blur(6px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.75, ease: EASING_CURVE }}
+      className={`relative ${align === "center" ? "text-center mx-auto" : "text-left"}`}
+    >
+      <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/25 bg-amber-400/[0.05] px-4 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-amber-400 backdrop-blur-md">
+        <Sparkles className="h-3 w-3 text-amber-400" />
+        {eyebrow}
+      </div>
+      <h2 className="mt-4 font-serif text-[clamp(2.4rem,4.5vw,4.5rem)] text-stone-100 leading-tight tracking-tight">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="mt-3 text-sm sm:text-base font-serif italic text-stone-400 max-w-2xl mx-auto leading-relaxed">
+          "{subtitle}"
+        </p>
+      )}
+    </motion.div>
   );
+}
 
-  const subOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.3, 1, 1, 0.3]);
-  const subY = useTransform(progress, [0, 0.22, 0.78, 1], reduceMotion ? [0, 0, 0, 0] : [14, 0, 0, -14]);
-  const subFilter = useTransform(
-    progress,
-    [0, 0.22, 0.78, 1],
-    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(2px)", "blur(0px)", "blur(0px)", "blur(2px)"]
-  );
+function SeamlessMarqueeTicker() {
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div className={align === "center" ? "text-center" : "text-left"}>
-      <motion.span
-        style={{ opacity: eyebrowOpacity, y: eyebrowY }}
-        className="inline-block font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400"
-      >
-        {eyebrow}
-      </motion.span>
-      <motion.h2
-        style={{ opacity: titleOpacity, y: titleY, scale: titleScale, filter: titleFilter }}
-        className="mt-3 font-serif text-[clamp(2.4rem,4.5vw,4.5rem)] text-stone-100 leading-tight"
-      >
-        {title}
-      </motion.h2>
-      {subtitle && (
-        <motion.p
-          style={{ opacity: subOpacity, y: subY, filter: subFilter }}
-          className="mt-2 text-sm font-serif italic text-stone-400"
+    <section className="w-full overflow-hidden select-none relative bg-[#0a0d13]/80 backdrop-blur-2xl border-y border-white/[0.08] py-4">
+      <div className="flex w-max overflow-x-hidden">
+        <motion.div
+          className="flex shrink-0 items-center justify-around gap-10 whitespace-nowrap will-change-transform transform-gpu"
+          animate={reduceMotion ? {} : { x: ["0%", "-100%"] }}
+          transition={{ ease: "linear", duration: 28, repeat: Infinity }}
         >
-          "{subtitle}"
-        </motion.p>
-      )}
-    </div>
+          {TICKER_ITEMS.map((item, idx) => (
+            <div
+              key={`t1-${idx}`}
+              className="flex items-center gap-10 text-xs font-mono font-bold tracking-[0.22em] text-stone-300 hover:text-amber-400 transition-colors"
+            >
+              <span>{item}</span>
+              <span className="text-amber-400 text-sm shadow-[0_0_8px_#f59e0b]">✦</span>
+            </div>
+          ))}
+        </motion.div>
+        <motion.div
+          className="flex shrink-0 items-center justify-around gap-10 whitespace-nowrap will-change-transform transform-gpu"
+          animate={reduceMotion ? {} : { x: ["0%", "-100%"] }}
+          transition={{ ease: "linear", duration: 28, repeat: Infinity }}
+        >
+          {TICKER_ITEMS.map((item, idx) => (
+            <div
+              key={`t2-${idx}`}
+              className="flex items-center gap-10 text-xs font-mono font-bold tracking-[0.22em] text-stone-300 hover:text-amber-400 transition-colors"
+            >
+              <span>{item}</span>
+              <span className="text-amber-400 text-sm shadow-[0_0_8px_#f59e0b]">✦</span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
   );
-};
+}
 
 /* ============================================================================
-   MAIN COMPONENT
+   STICKY SEQUENTIAL SCROLL-FOCUS METODIKA ENGINE (PINNED & PROGRESSIVE)
+============================================================================ */
+
+function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  return (
+    <section ref={containerRef} id="metodika" className="relative h-[400vh] bg-[#070a0f]">
+      <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden px-6 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1400px] w-full">
+          <div className="mb-8 flex items-end justify-between border-b border-white/[0.08] pb-6">
+            <SectionHeader
+              eyebrow="02 / METODIKA & BOSQICHLAR"
+              title="Bosqichma-Bosqich Tizim"
+              subtitle="Har bir o'quvchi diagnostikadan boshlab yakuniy 100% natijagacha yagona zanjirda harakat qiladi."
+              align="left"
+            />
+            <div className="hidden sm:flex items-center gap-2 font-mono text-xs text-amber-400 font-bold uppercase tracking-widest">
+              <span>SKROLL BILAN BOSQICHMA-BOSQICH</span>
+              <span className="text-stone-600">•</span>
+              <span className="text-stone-400">01 — 05</span>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            {/* Left: Sequentially focused stages in a single central area */}
+            <div className="lg:col-span-6 relative h-[360px] sm:h-[340px] w-full">
+              {stages.map((stage, index) => {
+                const stepStart = index / stages.length;
+                const stepEnd = (index + 1) / stages.length;
+
+                const opacity = useTransform(
+                  scrollYProgress,
+                  index === 0
+                    ? [0, stepEnd - 0.06, stepEnd]
+                    : index === stages.length - 1
+                    ? [stepStart - 0.06, stepStart, 1]
+                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
+                  index === 0 ? [1, 1, 0] : index === stages.length - 1 ? [0, 1, 1] : [0, 1, 1, 0]
+                );
+
+                const y = useTransform(
+                  scrollYProgress,
+                  index === 0
+                    ? [0, stepEnd - 0.06, stepEnd]
+                    : index === stages.length - 1
+                    ? [stepStart - 0.06, stepStart, 1]
+                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
+                  index === 0 ? [0, 0, -35] : index === stages.length - 1 ? [35, 0, 0] : [35, 0, 0, -35]
+                );
+
+                const scale = useTransform(
+                  scrollYProgress,
+                  index === 0
+                    ? [0, stepEnd - 0.06, stepEnd]
+                    : index === stages.length - 1
+                    ? [stepStart - 0.06, stepStart, 1]
+                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
+                  index === 0 ? [1, 1, 0.95] : index === stages.length - 1 ? [0.95, 1, 1] : [0.95, 1, 1, 0.95]
+                );
+
+                const filter = useTransform(
+                  scrollYProgress,
+                  index === 0
+                    ? [0, stepEnd - 0.06, stepEnd]
+                    : index === stages.length - 1
+                    ? [stepStart - 0.06, stepStart, 1]
+                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
+                  index === 0
+                    ? ["blur(0px)", "blur(0px)", "blur(4px)"]
+                    : index === stages.length - 1
+                    ? ["blur(4px)", "blur(0px)", "blur(0px)"]
+                    : ["blur(4px)", "blur(0px)", "blur(0px)", "blur(4px)"]
+                );
+
+                return (
+                  <motion.div
+                    key={stage.step}
+                    style={{ opacity, y, scale, filter }}
+                    className="absolute inset-0 p-8 rounded-3xl border border-amber-400/35 bg-[#0c1017]/95 backdrop-blur-3xl shadow-2xl flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-amber-400 tracking-wider">
+                          BOSQICH 0{index + 1} // {stage.badge}
+                        </span>
+                        <span className="text-xs font-mono text-stone-500 font-semibold">
+                          {stage.percent}% TAYYORGARLIK
+                        </span>
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-3">
+                        {stage.title}
+                      </h3>
+                      <p className="text-amber-400/90 font-mono text-xs uppercase mt-1">
+                        {stage.subtitle}
+                      </p>
+                      <p className="text-stone-300 text-sm sm:text-base mt-3 leading-relaxed">
+                        {stage.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-mono text-stone-400">
+                      <span>Metodika zanjiri:</span>
+                      <span className="text-amber-400 font-bold">RENESSANS STANDARTI</span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Right: Synchronous Visualizer Stage */}
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="w-full h-[360px] sm:h-[340px] rounded-3xl border border-amber-400/30 bg-[#0c1017]/95 backdrop-blur-3xl p-8 flex items-center justify-center relative shadow-2xl overflow-hidden">
+                {stages.map((stage, index) => {
+                  const stepStart = index / stages.length;
+                  const stepEnd = (index + 1) / stages.length;
+
+                  const visOpacity = useTransform(
+                    scrollYProgress,
+                    index === 0
+                      ? [0, stepEnd - 0.06, stepEnd]
+                      : index === stages.length - 1
+                      ? [stepStart - 0.06, stepStart, 1]
+                      : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
+                    index === 0 ? [1, 1, 0] : index === stages.length - 1 ? [0, 1, 1] : [0, 1, 1, 0]
+                  );
+
+                  return (
+                    <motion.div
+                      key={stage.step}
+                      style={{ opacity: visOpacity }}
+                      className="absolute inset-0 flex items-center justify-center p-8 pointer-events-none"
+                    >
+                      {stage.visualType === "radar" && (
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                          <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="opacity-30 animate-spin" style={{ animationDuration: "35s" }} />
+                          <circle cx="100" cy="100" r="55" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-50" />
+                          <circle cx="100" cy="100" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-80" />
+                          <circle cx="100" cy="100" r="6" fill="currentColor" className="opacity-90" />
+                          <line x1="15" y1="100" x2="185" y2="100" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
+                          <line x1="100" y1="15" x2="100" y2="185" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
+                          <path d="M 100 100 L 180 100 A 80 80 0 0 0 100 20 Z" fill="rgba(245, 158, 11, 0.35)" />
+                        </svg>
+                      )}
+                      {stage.visualType === "target" && (
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                          <circle cx="100" cy="100" r="76" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="6 4" className="opacity-40" />
+                          <circle cx="100" cy="100" r="48" fill="none" stroke="currentColor" strokeWidth="1.8" className="opacity-75" />
+                          <circle cx="100" cy="100" r="22" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" />
+                          <circle cx="100" cy="100" r="4" fill="#f59e0b" />
+                          <path d="M 60 40 L 40 40 L 40 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                          <path d="M 140 40 L 160 40 L 160 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                          <path d="M 40 140 L 40 160 L 60 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                          <path d="M 160 140 L 160 160 L 140 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                          <text x="100" y="104" textAnchor="middle" fill="#f59e0b" fontSize="10" fontFamily="monospace" fontWeight="bold">LOCK A+</text>
+                        </svg>
+                      )}
+                      {stage.visualType === "system" && (
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-emerald-400">
+                          <path d="M 60 52 L 140 52 L 140 102 M 140 102 L 60 102 L 60 152 M 60 152 L 140 152" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+                          <rect x="25" y="32" width="70" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
+                          <text x="60" y="55" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">01 NAZARIYA</text>
+                          <rect x="105" y="82" width="72" height="36" rx="8" fill="#090d14" stroke="#f59e0b" strokeWidth="1.5" />
+                          <text x="141" y="105" textAnchor="middle" fill="#f59e0b" fontSize="9" fontFamily="monospace" fontWeight="bold">02 AMALIYOT</text>
+                          <rect x="25" y="132" width="80" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
+                          <text x="65" y="155" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">03 MUSTAHKAM</text>
+                        </svg>
+                      )}
+                      {stage.visualType === "analytics" && (
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-amber-400">
+                          <line x1="25" y1="165" x2="180" y2="165" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                          <rect x="35" y="115" width="20" height="50" rx="4" fill="rgba(245,158,11,0.25)" />
+                          <rect x="68" y="90" width="20" height="75" rx="4" fill="rgba(245,158,11,0.45)" />
+                          <rect x="101" y="65" width="20" height="100" rx="4" fill="rgba(245,158,11,0.7)" />
+                          <rect x="134" y="35" width="20" height="130" rx="4" fill="#f59e0b" />
+                          <path d="M 45 110 Q 90 75, 144 32" fill="none" stroke="#10b981" strokeWidth="2.5" />
+                          <circle cx="144" cy="32" r="5" fill="#10b981" />
+                          <text x="144" y="20" textAnchor="middle" fill="#10b981" fontSize="8" fontFamily="monospace" fontWeight="bold">+42.5%</text>
+                        </svg>
+                      )}
+                      {stage.visualType === "award" && (
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 text-emerald-400">
+                          <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" strokeDasharray="4 4" />
+                          <polygon points="100,20 122,68 174,74 135,110 148,162 100,136 52,162 65,110 26,74 78,68" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="2" />
+                          <circle cx="100" cy="98" r="32" fill="#080b10" stroke="#f59e0b" strokeWidth="2.5" />
+                          <text x="100" y="103" textAnchor="middle" fill="#f59e0b" fontSize="13" fontFamily="monospace" fontWeight="bold">100%</text>
+                          <text x="100" y="116" textAnchor="middle" fill="#10b981" fontSize="7" fontFamily="monospace" letterSpacing="1">GRANT</text>
+                        </svg>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================================
+   MAIN COMPONENT RENDERER
 ============================================================================ */
 
 export function RenessansLandingPage({
@@ -810,13 +1121,11 @@ export function RenessansLandingPage({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
 
-  // Interaction State
   const [activeResultIndex, setActiveResultIndex] = useState(0);
-  const [hoveredResultId, setHoveredResultId] = useState<string | null>(null);
   const [selectedResultFilter, setSelectedResultFilter] = useState("BARCHASI");
   const [openFaq, setOpenFaq] = useState<string | null>(faqs[0]?.id ?? null);
+  const [courseCategoryFilter, setCourseCategoryFilter] = useState("BARCHASI");
 
-  // Form State
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formSubject, setFormSubject] = useState("");
@@ -824,24 +1133,12 @@ export function RenessansLandingPage({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // Smooth Scroll-Linked Navbar Transformations
   const navBackground = useTransform(
     scrollY,
     [0, 80],
-    ["rgba(7,9,13,0.6)", "rgba(7,9,13,0.94)"]
-  );
-  const navBorderColor = useTransform(
-    scrollY,
-    [0, 80],
-    ["rgba(255,255,255,0.05)", "rgba(255,255,255,0.12)"]
-  );
-  const navShadow = useTransform(
-    scrollY,
-    [0, 80],
-    ["none", "0 20px 50px rgba(0,0,0,0.8)"]
+    ["rgba(7,9,13,0.65)", "rgba(7,9,13,0.92)"]
   );
 
-  // Dynamic Navigation Section Observer
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sectionIds = [
@@ -920,7 +1217,10 @@ export function RenessansLandingPage({
     const phone = formPhone.trim();
     const subject = formSubject.trim();
 
-    if (!name || !phone) return;
+    if (!name || !phone) {
+      setSubmitError("Iltimos, ismingiz va telefon raqamingizni to'liq kiriting.");
+      return;
+    }
 
     setSubmitError("");
     setIsSubmitting(true);
@@ -936,8 +1236,7 @@ export function RenessansLandingPage({
         await new Promise((res) => setTimeout(res, 850));
       }
       setIsSubmitted(true);
-    } catch (error) {
-      console.error(error);
+    } catch {
       setSubmitError("Arizani yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko‘ring.");
     } finally {
       setIsSubmitting(false);
@@ -950,6 +1249,13 @@ export function RenessansLandingPage({
       (r) => (r.examType || "").toUpperCase() === selectedResultFilter.toUpperCase()
     );
   }, [results, selectedResultFilter]);
+
+  const filteredCourses = useMemo(() => {
+    if (courseCategoryFilter === "BARCHASI") return courses;
+    return courses.filter((c) =>
+      c.category.toLowerCase().includes(courseCategoryFilter.toLowerCase())
+    );
+  }, [courses, courseCategoryFilter]);
 
   const navItems = [
     ["falsafa", "Falsafa"],
@@ -965,24 +1271,23 @@ export function RenessansLandingPage({
 
   return (
     <main className="min-h-screen overflow-x-clip bg-[#07090d] text-stone-100 antialiased selection:bg-amber-400 selection:text-black font-sans relative">
+      <BackgroundGridMesh />
+
       {/* ====================================================================
-          1. NAVBAR — FLOATING ACTIVE COMMAND BAR
+          1. NAVBAR
       ==================================================================== */}
       <header className="fixed inset-x-0 top-0 z-[100] px-4 sm:px-8 py-3.5 transition-all duration-300">
         <motion.div
-          style={{
-            backgroundColor: navBackground,
-            borderColor: navBorderColor,
-            boxShadow: navShadow,
-          }}
-          className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border px-5 py-2.5 backdrop-blur-xl"
+          style={{ backgroundColor: navBackground }}
+          className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border border-white/[0.08] px-5 py-2.5 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
         >
           <button
             type="button"
             onClick={() => scrollTo("top")}
             className="group flex items-center gap-3 text-left focus:outline-none"
+            aria-label="Renessans Asosiy Sahifa"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 font-serif text-base font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-transform group-hover:scale-105">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 font-serif text-base font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.45)] transition-transform group-hover:scale-105">
               R
             </span>
             <div className="flex flex-col">
@@ -1006,14 +1311,14 @@ export function RenessansLandingPage({
                   key={id}
                   type="button"
                   onClick={() => scrollTo(id)}
-                  className="relative px-3.5 py-1.5 transition-colors hover:text-stone-100 focus:outline-none"
+                  className="relative px-3.5 py-2 transition-colors hover:text-stone-100 min-h-[44px] flex items-center rounded-full"
                 >
                   <span className="relative z-10">{label}</span>
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-pill"
-                      className="absolute inset-0 z-0 rounded-full bg-white/[0.08] border border-white/10"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      className="absolute inset-0 z-0 rounded-full bg-amber-400/[0.12] border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+                      transition={{ type: "spring", stiffness: 220, damping: 26 }}
                     />
                   )}
                 </button>
@@ -1024,7 +1329,7 @@ export function RenessansLandingPage({
           <div className="flex items-center gap-4">
             <a
               href="tel:+998886484949"
-              className="hidden sm:flex items-center gap-2 font-mono text-xs text-stone-300 hover:text-amber-400 transition-colors"
+              className="hidden sm:flex items-center gap-2 font-mono text-xs text-stone-300 hover:text-amber-400 transition-colors min-h-[44px] px-2"
             >
               <Phone className="h-3.5 w-3.5 text-amber-400" />
               <span>+998 (88) 648-49-49</span>
@@ -1033,7 +1338,7 @@ export function RenessansLandingPage({
             <button
               type="button"
               onClick={() => scrollTo("konsultatsiya")}
-              className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-amber-400 px-5 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] focus:outline-none"
+              className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-6 py-2.5 min-h-[44px] text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.45)]"
             >
               <span>Sinov Darsi</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
@@ -1042,10 +1347,10 @@ export function RenessansLandingPage({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-stone-300 xl:hidden hover:text-amber-400 transition-colors"
-              aria-label="Menyuni ochish"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-stone-300 xl:hidden hover:text-amber-400 transition-colors"
+              aria-label="Menyu"
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-5 w-5" />
             </button>
           </div>
         </motion.div>
@@ -1055,11 +1360,10 @@ export function RenessansLandingPage({
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[200] bg-[#07090d]/96 flex flex-col justify-between p-6 sm:p-10 xl:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-[#07090d]/96 backdrop-blur-2xl flex flex-col justify-between p-6 sm:p-10 xl:hidden"
           >
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-6">
               <div className="flex items-center gap-3">
@@ -1073,23 +1377,19 @@ export function RenessansLandingPage({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-stone-300 hover:text-white"
-                aria-label="Menyuni yopish"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-stone-300 hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="py-8 space-y-2 overflow-y-auto">
-              <div className="font-mono text-[9px] uppercase tracking-widest text-amber-400/80 mb-3">
-                BOB VA YO'NALISHLAR //
-              </div>
               {navItems.map(([id, label], index) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => scrollTo(id)}
-                  className="flex w-full items-center justify-between py-3 text-left font-serif text-2xl text-stone-200 hover:text-amber-400 transition-colors border-b border-white/[0.04]"
+                  className="flex w-full items-center justify-between py-3.5 min-h-[44px] text-left font-serif text-2xl text-stone-200 hover:text-amber-400 transition-colors border-b border-white/[0.04]"
                 >
                   <span className="flex items-center gap-4">
                     <span className="font-mono text-xs text-stone-500 font-normal">
@@ -1097,7 +1397,7 @@ export function RenessansLandingPage({
                     </span>
                     {label}
                   </span>
-                  <ChevronRight className="h-5 w-5 text-stone-600" />
+                  <ArrowRight className="h-5 w-5 text-stone-600" />
                 </button>
               ))}
             </div>
@@ -1105,7 +1405,7 @@ export function RenessansLandingPage({
             <div className="pt-6 border-t border-white/[0.08] space-y-4">
               <a
                 href="tel:+998886484949"
-                className="flex items-center gap-3 font-mono text-sm text-stone-300"
+                className="flex items-center gap-3 font-mono text-sm text-stone-300 min-h-[44px]"
               >
                 <Phone className="h-4 w-4 text-amber-400" />
                 +998 (88) 648-49-49
@@ -1113,7 +1413,7 @@ export function RenessansLandingPage({
               <button
                 type="button"
                 onClick={() => scrollTo("konsultatsiya")}
-                className="w-full rounded-2xl bg-amber-400 py-3.5 text-xs font-bold uppercase tracking-widest text-black flex items-center justify-center gap-2"
+                className="w-full rounded-2xl bg-amber-400 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-widest text-black flex items-center justify-center gap-2"
               >
                 Bepul Sinov Darsi
                 <ArrowRight className="h-4 w-4" />
@@ -1124,103 +1424,1120 @@ export function RenessansLandingPage({
       </AnimatePresence>
 
       {/* ====================================================================
-          2. HERO — CINEMATIC OPENING SCENE & FOCUSED RETREAT
+          2. HERO SECTION — INTEGRATED RENESSANS EMBLEM
       ==================================================================== */}
-      <HeroSceneSection scrollTo={scrollTo} />
+      <section
+        id="top"
+        className="relative min-h-[95svh] flex flex-col justify-between border-b border-white/[0.08] pt-36 pb-16 overflow-hidden"
+      >
+        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="grid gap-12 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-400/[0.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400 backdrop-blur-md">
+                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                Yangioboddagi Yetakchi Ta'lim Kampusi
+              </div>
+
+              <h1 className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em] text-stone-100">
+                <span className="block">Farzandingizning</span>
+                <span className="block">kelajagini bugundan</span>
+                <span className="block italic text-amber-400">boshlang!</span>
+              </h1>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3 text-sm sm:text-base text-stone-300">
+                <span className="font-mono text-stone-500 uppercase tracking-widest text-xs">
+                  Ixtisoslashuv:
+                </span>
+                <TypedSubhead />
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 lg:pb-3 flex flex-col justify-center">
+              {/* BRAND EMBLEM / LOGO BADGE */}
+              <HeroLogoBadge />
+
+              <p className="text-base leading-relaxed text-stone-300 sm:text-lg">
+                Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov.
+                Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3.5 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => scrollTo("konsultatsiya")}
+                  className="group inline-flex min-h-[48px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-8 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_16px_50px_rgba(245,158,11,0.4)]"
+                >
+                  Bepul Sinov Darsi
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => scrollTo("kurslar")}
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-200 transition-all hover:border-amber-400/50 hover:bg-white/[0.08]"
+                >
+                  Kurslarni Ko‘rish
+                  <ChevronDown className="h-4 w-4 text-amber-400" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Bottom Telemetry Grid */}
+        <div className="relative mt-16 border-t border-white/[0.08] pt-10">
+          <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+              <div className="border-l border-amber-400/40 pl-5">
+                <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-stone-100 leading-none">
+                  <CounterNumber value={76.2} decimals={1} suffix="%" />
+                </div>
+                <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
+                  OTMga Kirish Ko'rsatkichi
+                </div>
+              </div>
+
+              <div className="border-l border-amber-400/40 pl-5">
+                <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-amber-400 leading-none">
+                  <CounterNumber value={187.9} decimals={1} />
+                </div>
+                <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
+                  Eng Yuqori DTM Balli
+                </div>
+              </div>
+
+              <div className="border-l border-amber-400/40 pl-5">
+                <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-serif font-bold text-stone-100 leading-none">
+                  16 / 21
+                </div>
+                <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
+                  Talaba Bo'lganlar
+                </div>
+              </div>
+
+              <div className="border-l border-amber-400/40 pl-5">
+                <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-emerald-400 leading-none">
+                  <CounterNumber value={100} decimals={0} suffix="%" />
+                </div>
+                <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
+                  Davlat Granti & Qamrov
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          3. MARQUEE — PHYSICAL VELOCITY RESPONSE
+          3. SEAMLESS MARQUEE TICKER
       ==================================================================== */}
-      <MarqueeWithVelocity />
+      <SeamlessMarqueeTicker />
 
       {/* ====================================================================
-          4. FALSAFA — SEQUENTIAL FOCUS TYPOGRAPHY MOMENTS
+          4. FALSAFA & MANIFESTO
       ==================================================================== */}
-      <ManifestoFocusNarrative />
+      <section
+        id="falsafa"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#080b10] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <SectionHeader
+            eyebrow="01 / FALSAFA & MAQSAD"
+            title="Tasodif emas, Aniq Tizim"
+            subtitle="Har bir o‘quvchining boshlang‘ich nuqtasi boshqa — shuning uchun tayyorgarlik shaxsiy maqsaddan boshlanadi."
+            align="center"
+          />
+
+          <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                step: "01",
+                word: "TASODIFGA O'RIN YO'Q",
+                desc: "Kelajak omadga tashlab qo‘yilmaydi. Natija har haftalik monitoring va individual tahlil qilingan xatolar zanjiri orqali kafolatlanadi.",
+                accent: "text-stone-400",
+                badge: "PRINSIP",
+              },
+              {
+                step: "02",
+                word: "ANIQ MAQSAD & TARGET",
+                desc: "Har bir o'quvchining OTM yo‘nalishi, grant bali va ixtisosligi aniqlanib, shaxsiy maqsadli grafik ishlab chiqiladi.",
+                accent: "text-amber-400",
+                badge: "BOSHQARUV",
+              },
+              {
+                step: "03",
+                word: "TIZIMLI METODIKA",
+                desc: "Nazariya amaliyot bilan bog'lanadi. Murakkab olimpiada va DTM masalalari yechish algoritmlari bosqichma-bosqich o'rgatiladi.",
+                accent: "text-amber-400",
+                badge: "STANDART",
+              },
+              {
+                step: "04",
+                word: "100% OTM QAMROVI",
+                desc: "187.9 ballik rekord natija va eng nufuzli universitetlarga (TDYU, JIDU, WIUT) 100% grantga kirish kafolatlangan ko'rsatkichi.",
+                accent: "text-emerald-400",
+                badge: "NATIJA",
+              },
+            ].map((card, idx) => (
+              <motion.div
+                key={idx}
+                initial={reduceMotion ? {} : { opacity: 0, y: 35, scale: 0.98 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: EASING_CURVE }}
+              >
+                <SpotlightCard className="h-full">
+                  <div className="p-8 flex flex-col justify-between h-full">
+                    <div>
+                      <div className="flex items-center justify-between font-mono text-xs">
+                        <span className="text-stone-500">{card.step}</span>
+                        <span className="text-amber-400 font-bold tracking-wider">{card.badge}</span>
+                      </div>
+                      <h3 className={`mt-4 font-serif text-2xl font-bold ${card.accent}`}>
+                        {card.word}
+                      </h3>
+                      <p className="mt-3 text-sm text-stone-300 leading-relaxed">
+                        {card.desc}
+                      </p>
+                    </div>
+                    <div className="mt-8 pt-4 border-t border-white/[0.06] text-[10px] font-mono text-stone-500 uppercase tracking-widest">
+                      RENESSANS AKADEMIYASI
+                    </div>
+                  </div>
+                </SpotlightCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          5. BOSQICHMA-BOSQICH TIZIM — 420VH STICKY FOCUS ENGINE
-             (STRICTLY PRESERVED AS BENCHMARK)
+          5. METODIKA — STICKY SEQUENTIAL SCROLL CONTAINER (1 THROUGH 5)
       ==================================================================== */}
-      <MethodologyStickyFocus stages={METHOD_STAGES} />
+      <StickyMetodikaSection stages={METHOD_STAGES} />
 
       {/* ====================================================================
-          6. KURSLAR — "COURSE PASSAGE" (SCROLL-DRIVEN CATALOG PASSAGE)
+          6. KURSLAR — RESPONSIVE PRODUCT CATALOG GRID
       ==================================================================== */}
-      <CoursesPassageSection
-        courses={courses}
-        onOpenCourse={handleNavigateToCourse}
-        onRegisterClick={() => scrollTo("konsultatsiya")}
-      />
+      <section
+        id="kurslar"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#080b10] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <SectionHeader
+            eyebrow="03 / AKADEMIK DASTURLAR"
+            title="Kurslar Katalogi"
+            subtitle="Har bir yo‘nalish uchun chuqurlashtirilgan o‘quv dasturi va ixtisoslashgan pedagoglar."
+            align="left"
+          />
+
+          {/* Filter Bar */}
+          <div className="mt-10 flex flex-wrap gap-2">
+            {[
+              ["BARCHASI", "Barchasi"],
+              ["Ijtimoiy", "Ijtimoiy-Gumanitar"],
+              ["Aniq", "Aniq Fanlar"],
+              ["Til", "Xalqaro Tillar"],
+              ["Bolalar", "Kids Dasturi"],
+            ].map(([val, label]) => {
+              const isSelected = courseCategoryFilter === val;
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setCourseCategoryFilter(val)}
+                  className={[
+                    "px-5 py-2.5 rounded-full text-xs font-mono transition-all min-h-[44px] flex items-center border focus:outline-none",
+                    isSelected
+                      ? "bg-amber-400 text-black border-amber-400 font-bold shadow-[0_0_20px_rgba(245,158,11,0.35)]"
+                      : "bg-[#0c1017] text-stone-400 border-white/[0.08] hover:border-white/20 hover:text-white",
+                  ].join(" ")}
+                  aria-pressed={isSelected}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Responsive Course Grid */}
+          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course, idx) => (
+              <motion.div
+                key={course.id}
+                initial={reduceMotion ? {} : { opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: idx * 0.08, ease: EASING_CURVE }}
+              >
+                <SpotlightCard className="h-full">
+                  <div className="p-8 flex flex-col justify-between h-full">
+                    <div>
+                      <div className="flex items-center justify-between text-xs font-mono mb-3">
+                        <span className="text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+                          {course.category}
+                        </span>
+                        <span className="text-stone-400 font-mono">{course.duration}</span>
+                      </div>
+
+                      <h3 className="font-serif text-2xl text-stone-100 font-bold group-hover:text-amber-300 transition-colors">
+                        {course.title}
+                      </h3>
+
+                      <p className="mt-3 text-sm text-stone-300 leading-relaxed line-clamp-3">
+                        {course.description}
+                      </p>
+
+                      <div className="mt-6 space-y-2">
+                        {course.highlights.map((h, i) => (
+                          <div key={i} className="flex items-start gap-2.5 text-xs text-stone-300">
+                            <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                            <span>{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-white/[0.08]">
+                      <div className="flex items-baseline justify-between mb-5">
+                        <div>
+                          <div className="text-[10px] font-mono text-stone-400 uppercase">
+                            Oylik to'lov
+                          </div>
+                          <div className="font-serif text-2xl font-bold text-amber-400">
+                            {course.price}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-mono text-stone-400 uppercase">
+                            Ustoz
+                          </div>
+                          <div className="text-xs font-mono text-stone-200 font-semibold">
+                            {course.teacherName}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateToCourse(course.slug)}
+                          className="rounded-xl border border-white/15 py-2.5 min-h-[44px] text-xs font-mono text-stone-300 hover:text-white hover:border-white/30 transition-all text-center flex items-center justify-center"
+                        >
+                          Batafsil
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollTo("konsultatsiya")}
+                          className="rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 py-2.5 min-h-[44px] text-xs font-bold uppercase tracking-wider text-black hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all text-center flex items-center justify-center gap-1.5"
+                        >
+                          Yozilish
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          7. PREZIDENT MAKTABIGA TAYYORLOV — "CHECKPOINT JOURNEY"
+          7. PREZIDENT MAKTABIGA TAYYORLOV — ACADEMIC ROADMAP GRID
       ==================================================================== */}
-      <PresidentSchoolJourneySection
-        stages={PRESIDENT_STAGES}
-        onRegisterClick={() => scrollTo("konsultatsiya")}
-      />
+      <section
+        id="prezident-maktabi"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#090d14] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <SectionHeader
+            eyebrow="04 / MAXSUS TAYYORLOV YO'LI"
+            title="Prezident Maktabiga Tayyorlov"
+            subtitle="1- va 2-bosqich saralash imtihonlariga intellektual va psixologik tayyorgarlik zanjiri."
+            align="center"
+          />
+
+          <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {PRESIDENT_STAGES.map((stage, idx) => {
+              const Icon = stage.icon;
+              return (
+                <motion.div
+                  key={stage.step}
+                  initial={reduceMotion ? {} : { opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.5, delay: idx * 0.08, ease: EASING_CURVE }}
+                >
+                  <SpotlightCard className="h-full">
+                    <div className="p-8 flex flex-col justify-between h-full">
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="font-mono text-xs font-bold text-amber-400">
+                            {stage.step} // CHECKPOINT
+                          </span>
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/25 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                        </div>
+                        <h3 className="font-serif text-2xl text-stone-100 font-bold">
+                          {stage.title}
+                        </h3>
+                        <p className="mt-3 text-sm text-stone-300 leading-relaxed">
+                          {stage.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-6 pt-4 border-t border-white/[0.08]">
+                        <div className="text-[10px] font-mono uppercase text-stone-500 mb-1">
+                          Asosiy ko'nikma:
+                        </div>
+                        <div className="text-sm font-serif font-bold text-amber-400">
+                          {stage.focus}
+                        </div>
+                      </div>
+                    </div>
+                  </SpotlightCard>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 text-center">
+            <button
+              type="button"
+              onClick={() => scrollTo("konsultatsiya")}
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-8 text-xs font-bold uppercase tracking-widest text-black hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all"
+            >
+              Prezident Maktabi Guruhiga Yozilish
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          8. TIZIM USTOZLARI — "TEACHER SPOTLIGHT JOURNEY"
+          8. TIZIM USTOZLARI — 6 NAFAR MUTAXASSIS (AVATAR FALLBACK BILAN)
       ==================================================================== */}
-      <TeachersSpotlightSection
-        teachers={teachers}
-        onOpenTeacher={handleNavigateToTeacher}
-      />
+      <section
+        id="ustozlar"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <SectionHeader
+            eyebrow="05 / PEDAGOGIK JAMOASI"
+            title="Tizim Ustozlari"
+            subtitle="O'z yo'nalishi bo'yicha yillik tajribaga va 100% OTM natijalariga ega yuqori malakali pedagoglar."
+            align="left"
+          />
+
+          <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teachers.map((t, idx) => (
+              <motion.div
+                key={t.id}
+                initial={reduceMotion ? {} : { opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: idx * 0.08, ease: EASING_CURVE }}
+              >
+                <SpotlightCard className="h-full">
+                  <div className="p-8 flex flex-col justify-between h-full">
+                    <div>
+                      {/* Photo Container with Ring Accents & Glass Experience Badge */}
+                      <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 ring-2 ring-amber-400/20 aspect-[4/3] bg-stone-900 group">
+                        <TeacherAvatar
+                          src={t.photo}
+                          alt={t.name}
+                          initials={t.initials || t.name.split(" ").map((n) => n[0]).join("")}
+                          className="w-full h-full"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                        
+                        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                          <span className="rounded-full bg-black/60 px-3 py-1 font-mono text-[10px] font-bold text-amber-400 backdrop-blur-md border border-amber-400/30">
+                            {t.experienceYears} Tajriba
+                          </span>
+                          <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 font-mono text-[9px] font-bold text-emerald-300 backdrop-blur-md border border-emerald-500/30">
+                            Verified
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-mono text-amber-400 uppercase font-bold tracking-wider">
+                        {t.subject}
+                      </span>
+                      <h3 className="mt-1 font-serif text-2xl font-bold text-stone-100 group-hover:text-amber-300 transition-colors">
+                        {t.name}
+                      </h3>
+
+                      <p className="mt-3 text-sm text-stone-300 leading-relaxed line-clamp-3">
+                        {t.bio}
+                      </p>
+
+                      {t.achievements && (
+                        <div className="mt-5 space-y-2">
+                          {t.achievements.slice(0, 3).map((ach, i) => (
+                            <div key={i} className="flex items-start gap-2.5 text-xs text-stone-300">
+                              <Check className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                              <span className="line-clamp-1">{ach}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between">
+                      <span className="font-mono text-xs text-stone-400">
+                        {t.resultsCount ? `${t.resultsCount}+ o'quvchi natijasi` : "Yetakchi mutaxassis"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigateToTeacher(t.slug || t.id)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400 hover:text-amber-300 min-h-[44px]"
+                      >
+                        Profilni ko'rish
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          9. FANLAR — "ACADEMIC DOSSIER" (ARCHIVAL DOCUMENT REVEAL)
+          9. FANLAR — ACADEMIC SYLLABUS DOSSIER MATRIX
       ==================================================================== */}
-      <SubjectsDossierSection
-        items={SUBJECT_ITEMS}
-        onRegisterClick={() => scrollTo("konsultatsiya")}
-      />
+      <section
+        id="fanlar"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#080b10] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <SectionHeader
+            eyebrow="06 / AKADEMIK RO'YXAT"
+            title="Fanlar & Yo‘nalishlar"
+            subtitle="Har bir fanning imtihon qamrovi, metodikasi va mas'ul o'qituvchisi."
+            align="left"
+          />
+
+          <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SUBJECT_ITEMS.map((item, idx) => (
+              <motion.div
+                key={item.step}
+                initial={reduceMotion ? {} : { opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: idx * 0.08, ease: EASING_CURVE }}
+              >
+                <SpotlightCard className="h-full">
+                  <div className="p-8 flex flex-col justify-between h-full">
+                    <div>
+                      <div className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-widest mb-2">
+                        DOSSIER // REF-{item.step}
+                      </div>
+                      <h3 className="font-serif text-2xl text-stone-100 font-bold">
+                        {item.subject}
+                      </h3>
+                      <p className="mt-3 text-sm text-stone-300 leading-relaxed">
+                        {item.description}
+                      </p>
+
+                      <div className="mt-6 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+                        <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1">
+                          Imtihon targetlari:
+                        </div>
+                        <div className="font-mono text-xs text-amber-400 font-semibold">
+                          {item.programs}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-mono text-stone-400 uppercase">
+                          Mas'ul pedagog
+                        </div>
+                        <div className="text-xs font-serif font-bold text-stone-200">
+                          {item.teacher}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => scrollTo("konsultatsiya")}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-black hover:bg-amber-300 min-h-[44px]"
+                      >
+                        Yozilish
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          10. REAL NATIJALAR — EVIDENCE BENCHMARK ARCHIVE
+          10. REAL NATIJALAR — VERIFIED EVIDENCE ARCHIVE
       ==================================================================== */}
-      <ResultsBenchmarkArchive
-        results={filteredResults}
-        activeResultIndex={activeResultIndex}
-        setActiveResultIndex={setActiveResultIndex}
-        hoveredResultId={hoveredResultId}
-        setHoveredResultId={setHoveredResultId}
-        selectedFilter={selectedResultFilter}
-        setSelectedFilter={setSelectedResultFilter}
-      />
+      <section
+        id="natijalar"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
+            <SectionHeader
+              eyebrow="07 / REAL NATIJALAR"
+              title="Bitiruvchilar Natijalari"
+              subtitle="Natija — tizimli tayyorgarlikning eng aniq dalili."
+              align="left"
+            />
+
+            <div className="flex flex-wrap gap-2">
+              {["BARCHASI", "DTM", "CEFR", "MILLIY SERTIFIKAT"].map((filter) => {
+                const isActive = selectedResultFilter === filter;
+                return (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setSelectedResultFilter(filter)}
+                    className={[
+                      "px-5 py-2.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest transition-all min-h-[44px] flex items-center border focus:outline-none",
+                      isActive
+                        ? "bg-amber-400 text-black border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.35)]"
+                        : "bg-[#0d1118] text-stone-400 border-white/10 hover:text-stone-200",
+                    ].join(" ")}
+                    aria-pressed={isActive}
+                  >
+                    {filter}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-12 grid lg:grid-cols-12 gap-8 items-start">
+            {/* Results Table List */}
+            <div className="lg:col-span-8 divide-y divide-white/[0.06] rounded-3xl border border-white/[0.08] bg-[#0c1017]/90 backdrop-blur-2xl p-4 sm:p-6 shadow-2xl">
+              {filteredResults.map((res, index) => {
+                const isSelected = activeResultIndex === index;
+                return (
+                  <div
+                    key={res.id}
+                    onClick={() => setActiveResultIndex(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveResultIndex(index);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={[
+                      "py-5 px-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all rounded-2xl cursor-pointer focus:outline-none",
+                      isSelected
+                        ? "bg-white/[0.06] border border-amber-400/40 shadow-[0_0_25px_rgba(245,158,11,0.15)]"
+                        : "hover:bg-white/[0.02] border border-transparent",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center gap-5">
+                      {res.photo ? (
+                        <img
+                          src={res.photo}
+                          alt={res.name}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-amber-400/30 shrink-0"
+                        />
+                      ) : (
+                        <span className="font-mono text-xs font-bold text-amber-400">
+                          0{index + 1}
+                        </span>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-serif text-xl sm:text-2xl text-stone-100 font-semibold">
+                            {res.name}
+                          </h4>
+                          {res.badge && (
+                            <span className="rounded-full bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 text-[9px] font-mono font-bold text-emerald-400 uppercase">
+                              {res.badge}
+                            </span>
+                          )}
+                        </div>
+                        {res.university && (
+                          <p className="text-xs text-stone-400 mt-1 flex items-center gap-2 font-mono">
+                            <GraduationCap className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                            {res.university}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-left md:text-right pl-10 md:pl-0">
+                      <div className="font-serif text-3xl font-bold text-amber-400 leading-none">
+                        {res.score}
+                      </div>
+                      <span className="block text-[9px] font-mono uppercase tracking-widest text-stone-500 mt-1">
+                        {res.examType} // {res.year || "2025"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Sticky Verified Certificate / Evidence Inspector */}
+            <div className="lg:col-span-4 sticky top-28">
+              {filteredResults[activeResultIndex] && (
+                <SpotlightCard borderGradient="from-amber-400/60 via-white/15 to-transparent">
+                  <div className="p-8 relative">
+                    <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                      <span className="font-mono text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+                        TASDIQLANGAN NATIJA
+                      </span>
+                      <span className="font-mono text-[10px] text-stone-400 uppercase tracking-widest">
+                        {filteredResults[activeResultIndex].examType}
+                      </span>
+                    </div>
+
+                    <div className="mt-8 text-center">
+                      {filteredResults[activeResultIndex].photo && (
+                        <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full ring-2 ring-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.25)]">
+                          <img
+                            src={filteredResults[activeResultIndex].photo!}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="font-mono text-xs uppercase tracking-widest text-stone-400">
+                        Qayd etilgan ball
+                      </div>
+                      <div className="mt-2 font-serif text-5xl font-bold text-amber-400 leading-none">
+                        {filteredResults[activeResultIndex].score}
+                      </div>
+                      <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[10px] font-mono font-bold uppercase">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        {filteredResults[activeResultIndex].badge || "100% Rasmiy"}
+                      </div>
+                    </div>
+
+                    <div className="mt-8 space-y-4 pt-6 border-t border-white/[0.08]">
+                      <div>
+                        <span className="text-[10px] font-mono uppercase text-stone-500">
+                          O'quvchi:
+                        </span>
+                        <div className="font-serif text-xl font-bold text-stone-100 mt-0.5">
+                          {filteredResults[activeResultIndex].name}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-mono uppercase text-stone-500">
+                          Tavsiya etilgan OTM:
+                        </span>
+                        <div className="text-xs font-mono text-stone-300 mt-1 leading-relaxed">
+                          {filteredResults[activeResultIndex].university}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 text-[10px] font-mono text-stone-500">
+                        <span>Mavsum: {filteredResults[activeResultIndex].year || "2025"}</span>
+                        <span className="text-amber-400 font-bold">RENESSANS TIZIMI</span>
+                      </div>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          11. FAQ — INTERACTIVE ACCORDION
+          11. FAQ SECTION
       ==================================================================== */}
-      <FAQSection faqs={faqs} openFaq={openFaq} setOpenFaq={setOpenFaq} />
+      <section
+        id="faq"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1000px] px-6 sm:px-8">
+          <SectionHeader
+            eyebrow="08 / SAVOLLAR"
+            title="Ko‘p So‘raladigan Savollar"
+            subtitle="Aniq savollarga — ochiq va professional javoblar."
+            align="center"
+          />
+
+          <div className="mt-14 divide-y divide-white/[0.08] border-y border-white/[0.08]">
+            {faqs.map((faq, index) => {
+              const isOpen = openFaq === faq.id;
+
+              return (
+                <div key={faq.id} className="py-6 transition-colors duration-200">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : faq.id)}
+                    className="w-full text-left flex items-center justify-between gap-6 group min-h-[44px] focus:outline-none rounded-xl px-2"
+                  >
+                    <div className="flex items-center gap-5 sm:gap-6">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-amber-400">
+                        0{index + 1}
+                      </span>
+                      <span className="font-serif text-lg sm:text-2xl text-stone-200 group-hover:text-amber-300 transition-colors">
+                        {faq.question}
+                      </span>
+                    </div>
+                    <div
+                      className={[
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-transform duration-300",
+                        isOpen
+                          ? "border-amber-400 bg-amber-400 text-black rotate-180"
+                          : "border-white/10 text-stone-400 group-hover:border-amber-400/50",
+                      ].join(" ")}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: EASING_CURVE }}
+                        className="overflow-hidden"
+                      >
+                        <p className="mt-4 pl-10 sm:pl-12 text-sm sm:text-base leading-relaxed text-stone-300 max-w-3xl">
+                          {faq.answer}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          12. MANZIL — GEOGRAPHIC DEPTH MOMENT
+          12. MANZIL — YANGIOBOD 1-MAKTAB OFFICIAL CAMPUS
       ==================================================================== */}
-      <CampusMapSection />
+      <section
+        id="manzil"
+        className="scroll-mt-20 border-b border-white/[0.08] bg-[#0a0d13] py-28 sm:py-36 relative"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-6">
+              <SectionHeader
+                eyebrow="09 / YAGONA RASMIY BINOMIZ"
+                title={
+                  <>
+                    YANGIOBOD <br />
+                    <span className="italic text-amber-400">1-MAKTAB</span>
+                  </>
+                }
+                align="left"
+              />
+
+              <p className="mt-6 text-base text-stone-300 leading-relaxed max-w-lg">
+                RENESSANS O'quv Markazi Yangiobod tumani markazidagi yagona rasmiy
+                binoda — 1-sonli umumiy o'rta ta'lim maktabi binosida faoliyat ko'rsatadi.
+              </p>
+
+              <div className="mt-10 space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                    <MapPin className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
+                      ASOSIY MANZIL:
+                    </div>
+                    <p className="text-base font-medium text-stone-200 mt-1">
+                      Yangiobod tumani, 1-sonli umumiy o'rta ta'lim maktabi binosi
+                    </p>
+                    <span className="text-xs font-mono text-stone-500">
+                      Yagona rasmiy o'quv kampusi
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                    <Clock3 className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
+                      ISH VAQTI:
+                    </div>
+                    <p className="text-sm font-medium text-stone-200 mt-1">
+                      Dushanba – Shanba: 08:00 – 19:00
+                    </p>
+                    <p className="text-xs font-mono text-emerald-400 mt-0.5">
+                      Yakshanba: Haftalik Diagnostik & Mock Testlar
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
+                    <Send className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
+                      RASMIY TELEGRAM:
+                    </div>
+                    <a
+                      href="https://t.me/D_Furqatovich"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-stone-200 hover:text-amber-400 transition-colors mt-1 inline-flex items-center gap-1.5 min-h-[44px]"
+                    >
+                      @D_Furqatovich
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6">
+              <SpotlightCard>
+                <div className="p-8 sm:p-12">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
+                    BEVOSITA BOG'LANISH //
+                  </div>
+                  <h3 className="font-serif text-3xl text-stone-100 mt-2">
+                    Qo'ng'iroq Qiling
+                  </h3>
+                  <p className="text-sm text-stone-400 mt-2">
+                    O'quv bo'limi sizga dars jadvali va bepul sinov darsi vaqtini belgilab beradi:
+                  </p>
+
+                  <div className="mt-8 space-y-4">
+                    <a
+                      href="tel:+998886484949"
+                      className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group min-h-[44px]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
+                          <Phone className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
+                            +998 (88) 648-49-49
+                          </span>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
+                            Asosiy aloqa liniyasi
+                          </span>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 transition-all" />
+                    </a>
+
+                    <a
+                      href="tel:+998992593232"
+                      className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group min-h-[44px]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
+                          <Phone className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
+                            +998 (99) 259-32-32
+                          </span>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
+                            Ma'muriyat & Maslahat
+                          </span>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 transition-all" />
+                    </a>
+                  </div>
+                </div>
+              </SpotlightCard>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ====================================================================
-          13. KONSULTATSIYA — CINEMATIC CONVERSION
+          13. KONSULTATSIYA — HIGH-CONVERTING SECURE REGISTRATION FLOW
       ==================================================================== */}
-      <ConsultationSceneSection
-        formName={formName}
-        setFormName={setFormName}
-        formPhone={formPhone}
-        setFormPhone={setFormPhone}
-        formSubject={formSubject}
-        setFormSubject={setFormSubject}
-        isSubmitting={isSubmitting}
-        isSubmitted={isSubmitted}
-        setIsSubmitted={setIsSubmitted}
-        submitError={submitError}
-        handleFormSubmit={handleFormSubmit}
-      />
+      <section
+        id="konsultatsiya"
+        className="scroll-mt-20 bg-[#07090d] py-28 sm:py-36 relative overflow-hidden"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 relative z-10">
+          <SpotlightCard borderGradient="from-amber-400/50 via-white/15 to-transparent">
+            <div className="p-8 sm:p-14">
+              <div className="grid lg:grid-cols-12 gap-12 items-center">
+                <div className="lg:col-span-6">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
+                    10 / RO‘YXATDAN O‘TISH
+                  </span>
+
+                  <div className="mt-4 flex items-center gap-3 font-mono text-xs text-stone-500 uppercase tracking-widest">
+                    <span>MAQSAD</span>
+                    <ArrowRight className="h-3 w-3 text-amber-400" />
+                    <span>TIZIM</span>
+                    <ArrowRight className="h-3 w-3 text-amber-400" />
+                    <span className="text-emerald-400 font-bold">NATIJA</span>
+                  </div>
+
+                  <h2 className="mt-4 font-serif text-[clamp(2.4rem,4.5vw,4.4rem)] leading-[0.95] text-stone-100">
+                    Bepul Sinov Darsiga
+                    <br />
+                    <span className="italic text-amber-400">Hoziroq Yoziling</span>
+                  </h2>
+
+                  <p className="mt-6 text-sm sm:text-base text-stone-300 leading-relaxed max-w-lg">
+                    Ismingiz va telefon raqamingizni qoldiring. Administratorimiz siz bilan
+                    bog‘lanib, diagnostik test va sinov darsi vaqtini belgilaydi.
+                  </p>
+                </div>
+
+                <div className="lg:col-span-6 rounded-3xl border border-white/[0.1] bg-[#07090d]/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl">
+                  <AnimatePresence mode="wait">
+                    {isSubmitted ? (
+                      <motion.div
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.35 }}
+                        className="text-center py-10"
+                        aria-live="polite"
+                      >
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/30">
+                          <CheckCircle2 className="h-8 w-8" />
+                        </div>
+                        <h3 className="mt-5 font-serif text-2xl sm:text-3xl text-stone-100">
+                          Arizangiz Muvaffaqiyatli Qabul Qilindi!
+                        </h3>
+                        <p className="mt-3 text-xs font-mono text-stone-400">
+                          Tez orada administratorimiz siz bilan bog'lanadi.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setIsSubmitted(false)}
+                          className="mt-6 rounded-full border border-white/20 px-6 py-2.5 min-h-[44px] text-xs font-mono uppercase text-stone-300 hover:text-white"
+                        >
+                          Boshqa ariza qoldirish
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <form onSubmit={handleFormSubmit} className="space-y-4">
+                        <div>
+                          <label
+                            htmlFor="lead-name"
+                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
+                          >
+                            F.I.SH (Ismingiz)
+                          </label>
+                          <input
+                            id="lead-name"
+                            type="text"
+                            required
+                            value={formName}
+                            onChange={(e) => setFormName(e.target.value)}
+                            placeholder="Ismingiz va familiyangiz"
+                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="lead-phone"
+                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
+                          >
+                            Telefon Raqamingiz
+                          </label>
+                          <input
+                            id="lead-phone"
+                            type="tel"
+                            required
+                            value={formPhone}
+                            onChange={(e) => setFormPhone(e.target.value)}
+                            placeholder="+998 (88) 648-49-49"
+                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="lead-subject"
+                            className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
+                          >
+                            Qiziqtirgan Yo'nalish
+                          </label>
+                          <select
+                            id="lead-subject"
+                            value={formSubject}
+                            onChange={(e) => setFormSubject(e.target.value)}
+                            className="w-full min-h-[48px] rounded-xl border border-white/[0.1] bg-[#0c1017] px-4 text-sm text-stone-100 outline-none focus:border-amber-400 transition-all"
+                          >
+                            <option value="">Yo‘nalishni tanlang</option>
+                            <option value="Tarix • Huquq • Geografiya">
+                              Tarix • Huquq • Geografiya (DTM)
+                            </option>
+                            <option value="Matematika & Prezident Maktabi">
+                              Matematika & Prezident Maktabi
+                            </option>
+                            <option value="CEFR Ingliz Tili (B2 / C1)">
+                              CEFR Ingliz Tili (B2 / C1)
+                            </option>
+                            <option value="General & Kids English">
+                              General & Kids English (3–10 yosh)
+                            </option>
+                            <option value="Mental Arifmetika">
+                              Mental Arifmetika & Tez Hisob
+                            </option>
+                            <option value="Ona Tili va Adabiyot">
+                              Ona Tili va Adabiyot (Milliy Sertifikat)
+                            </option>
+                          </select>
+                        </div>
+
+                        {submitError && (
+                          <div
+                            role="alert"
+                            className="rounded-xl border border-red-500/20 bg-red-500/[0.08] p-3 text-xs text-red-300"
+                          >
+                            {submitError}
+                          </div>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full min-h-[48px] rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                        >
+                          {isSubmitting ? "Yuborilmoqda..." : "Bepul Sinov Darsiga Yozilish"}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </form>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </SpotlightCard>
+        </div>
+      </section>
 
       {/* ====================================================================
-          14. FOOTER — CALM CLOSURE
+          14. FOOTER
       ==================================================================== */}
-      <footer className="border-t border-white/[0.08] bg-[#05070a] py-16">
+      <footer className="border-t border-white/[0.08] bg-[#05070a] py-16 relative">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 border-b border-white/[0.08] pb-12">
             <div>
@@ -1238,7 +2555,7 @@ export function RenessansLandingPage({
                   key={id}
                   type="button"
                   onClick={() => scrollTo(id)}
-                  className="hover:text-amber-400 transition-colors focus:outline-none"
+                  className="hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 min-h-[44px]"
                 >
                   {label}
                 </button>
@@ -1250,2275 +2567,11 @@ export function RenessansLandingPage({
             <div>
               © {new Date().getFullYear()} RENESSANS O‘quv Markazi. Barcha huquqlar himoyalangan.
             </div>
-            <div className="text-amber-400/80 font-bold">MAQSAD • TIZIM • NATIJA</div>
+            <div className="text-amber-400 font-bold">MAQSAD • TIZIM • NATIJA</div>
           </div>
         </div>
       </footer>
     </main>
-  );
-}
-
-/* ============================================================================
-   SECTION 02: HERO SCENE
-============================================================================ */
-
-function HeroSceneSection({ scrollTo }: { scrollTo: (id: string) => void }) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const reduceMotion = useReducedMotion();
-
-  const bgGlowY = useTransform(smooth, [0, 1], reduceMotion ? [0, 0] : [0, -140]);
-  const bgGlowScale = useTransform(smooth, [0, 1], reduceMotion ? [1, 1] : [1, 1.15]);
-
-  const eyebrowY = useTransform(smooth, [0, 0.6, 1], reduceMotion ? [0, 0, 0] : [0, 0, -32]);
-
-  const headlineY = useTransform(smooth, [0, 0.6, 1], reduceMotion ? [0, 0, 0] : [0, 0, -48]);
-  const headlineOpacity = useTransform(smooth, [0, 0.65, 1], [1, 1, 0.15]);
-  const headlineScale = useTransform(smooth, [0, 0.65, 1], reduceMotion ? [1, 1, 1] : [1, 1, 0.96]);
-  const headlineFilter = useTransform(
-    smooth,
-    [0, 0.65, 1],
-    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(0px)", "blur(0px)", "blur(3.5px)"]
-  );
-
-  const descY = useTransform(smooth, [0, 0.6, 1], reduceMotion ? [0, 0, 0] : [0, 0, -38]);
-  const descOpacity = useTransform(smooth, [0, 0.65, 1], [1, 1, 0.2]);
-
-  const ctaY = useTransform(smooth, [0, 0.5, 1], reduceMotion ? [0, 0, 0] : [0, 0, -22]);
-  const ctaOpacity = useTransform(smooth, [0, 0.45, 0.85], [1, 0.85, 0]);
-
-  const statsY = useTransform(smooth, [0, 1], reduceMotion ? [0, 0] : [0, -18]);
-
-  return (
-    <section
-      id="top"
-      ref={containerRef}
-      className="relative flex min-h-[100svh] flex-col justify-between border-b border-white/[0.08] pt-32 pb-14 overflow-hidden"
-    >
-      <motion.div
-        aria-hidden="true"
-        style={{ y: bgGlowY, scale: bgGlowScale }}
-        className="pointer-events-none absolute left-1/2 top-1/4 h-[580px] w-[580px] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[160px]"
-      />
-
-      <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="grid gap-12 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-8">
-            <motion.div
-              style={{ y: eyebrowY }}
-              initial={{ opacity: 0, y: 15, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-400/[0.06] px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Yangioboddagi Zamonaviy O‘quv Markazi
-            </motion.div>
-
-            <motion.h1
-              style={{ y: headlineY, opacity: headlineOpacity, scale: headlineScale, filter: headlineFilter }}
-              className="font-serif text-[clamp(3.4rem,7.4vw,7.8rem)] font-medium leading-[0.92] tracking-[-0.04em] text-stone-100"
-            >
-              <span className="block overflow-hidden">
-                <motion.span
-                  initial={{ y: "100%" }}
-                  animate={{ y: "0%" }}
-                  transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="block"
-                >
-                  Farzandingizning
-                </motion.span>
-              </span>
-              <span className="block overflow-hidden">
-                <motion.span
-                  initial={{ y: "100%" }}
-                  animate={{ y: "0%" }}
-                  transition={{ duration: 0.8, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  className="block"
-                >
-                  kelajagini bugundan
-                </motion.span>
-              </span>
-              <span className="block overflow-hidden">
-                <motion.span
-                  initial={{ y: "100%" }}
-                  animate={{ y: "0%" }}
-                  transition={{ duration: 0.8, delay: 0.34, ease: [0.16, 1, 0.3, 1] }}
-                  className="block italic text-amber-400"
-                >
-                  boshlang!
-                </motion.span>
-              </span>
-            </motion.h1>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.45 }}
-              className="mt-8 flex flex-wrap items-center gap-3 text-sm sm:text-base text-stone-300"
-            >
-              <span className="font-mono text-stone-500 uppercase tracking-widest text-xs">
-                Yo'nalish:
-              </span>
-              <TypedSubhead />
-            </motion.div>
-          </div>
-
-          <div className="lg:col-span-4 lg:pb-3">
-            <motion.p
-              style={{ y: descY, opacity: descOpacity }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-base leading-relaxed text-stone-300 sm:text-lg"
-            >
-              Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov.
-              Bilimga sarmoya — kelajakka investitsiya!
-            </motion.p>
-
-            <motion.div
-              style={{ y: ctaY, opacity: ctaOpacity }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.52 }}
-              className="mt-8 flex flex-col gap-3.5 sm:flex-row lg:flex-col xl:flex-row"
-            >
-              <button
-                type="button"
-                onClick={() => scrollTo("konsultatsiya")}
-                className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-amber-400 px-8 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-amber-300 hover:shadow-[0_16px_50px_rgba(245,158,11,0.28)]"
-              >
-                Bepul Sinov Darsi
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => scrollTo("metodika")}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-200 transition-all hover:border-amber-400/40 hover:bg-white/[0.08]"
-              >
-                Tizimni Ko‘rish
-                <ChevronDown className="h-4 w-4 text-amber-400" />
-              </button>
-            </motion.div>
-          </div>
-        </div>
-      </div>
-
-      <motion.div
-        style={{ y: statsY }}
-        className="relative mt-16 border-t border-white/[0.08] pt-10"
-      >
-        <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            <div className="border-l border-amber-400/40 pl-5">
-              <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-stone-100 leading-none">
-                <CounterNumber value={76.2} decimals={1} suffix="%" />
-              </div>
-              <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
-                OTMga Kirish Ko'rsatkichi
-              </div>
-            </div>
-
-            <div className="border-l border-amber-400/40 pl-5">
-              <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-amber-400 leading-none">
-                <CounterNumber value={187.9} decimals={1} />
-              </div>
-              <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
-                Eng Yuqori DTM Balli
-              </div>
-            </div>
-
-            <div className="border-l border-amber-400/40 pl-5">
-              <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-serif font-bold text-stone-100 leading-none">
-                16 / 21
-              </div>
-              <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
-                Talaba Bo'lganlar
-              </div>
-            </div>
-
-            <div className="border-l border-amber-400/40 pl-5">
-              <div className="text-[clamp(2.5rem,4vw,3.6rem)] font-bold text-emerald-400 leading-none">
-                <CounterNumber value={100} decimals={0} suffix="%" />
-              </div>
-              <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400">
-                Davlat Granti & Qamrov
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 03: MARQUEE
-============================================================================ */
-
-function MarqueeWithVelocity() {
-  const { scrollY } = useScroll();
-  const scrollVelocity = useVelocity(scrollY);
-  const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 350 });
-
-  const scrollShift = useTransform(scrollY, [0, 4000], [0, -700]);
-  const skewX = useTransform(smoothVelocity, [-1500, 0, 1500], [-3, 0, 3]);
-
-  return (
-    <section className="relative overflow-hidden border-b border-white/[0.08] bg-[#0a0d13] py-4 select-none">
-      <div className="flex whitespace-nowrap overflow-hidden">
-        <motion.div
-          style={{ x: scrollShift, skewX }}
-          className="flex gap-10 items-center cursor-default"
-        >
-          {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-10 text-xs font-mono font-bold tracking-[0.22em] text-stone-300 hover:text-amber-400 transition-colors"
-            >
-              <span>{item}</span>
-              <span className="text-amber-400/60 animate-pulse">✦</span>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 04: FALSAFA
-============================================================================ */
-
-function ManifestoFocusNarrative() {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const [activeWordIdx, setActiveWordIdx] = useState(0);
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const idx = Math.min(3, Math.max(0, Math.floor(latest * 4)));
-    setActiveWordIdx(idx);
-  });
-
-  const manifestoStages = [
-    {
-      num: "01",
-      word: "TASODIF",
-      state: "STRIKE",
-      tagline: "Tasodifga o'rin yo'q",
-      description:
-        "Farzandingizning kelajagi omad yoki tasodifga tashlab qo‘yilmaydi. Tayyorgarlik sinovdan o'tgan qat'iy standartlar bilan boshlanadi.",
-    },
-    {
-      num: "02",
-      word: "MAQSAD",
-      state: "ACTIVE",
-      tagline: "Aniq va o'lchanadigan target",
-      description:
-        "Har bir o‘quvchining boshlang‘ich nuqtasi chuqur diagnostika qilinib, kirish bali va orzu qilingan grant maqsadi belgilanadi.",
-    },
-    {
-      num: "03",
-      word: "TIZIM",
-      state: "CORE",
-      tagline: "Uzluksiz nazorat va metodika",
-      description:
-        "Haftalik real imtihon simulyatsiyasi, individual xatolar tahlili va o'quvchi bilan ustoz o'rtasidagi yagona zanjir.",
-    },
-    {
-      num: "04",
-      word: "NATIJA",
-      state: "GOAL",
-      tagline: "100% OTM Qamrovi & Davlat Granti",
-      description:
-        "Bilimdan Natijaga: bitiruvchilarimizning 187.9 ballik eng yuqori natijasi va nufuzli universitetlarga imtiyozli qabuli.",
-    },
-  ];
-
-  return (
-    <section
-      id="falsafa"
-      ref={containerRef}
-      className="relative h-[300vh] bg-[#080b10] border-b border-white/[0.08]"
-    >
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-[1300px] px-6 sm:px-8 lg:px-12">
-          <div className="grid gap-12 lg:grid-cols-12 items-center">
-            <div className="lg:col-span-4 space-y-4">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
-                01 / FALSAFA & MANIFEST
-              </span>
-
-              <div className="space-y-3 pt-6">
-                {manifestoStages.map((st, idx) => {
-                  const isFocused = activeWordIdx === idx;
-                  return (
-                    <div
-                      key={st.word}
-                      className={[
-                        "flex items-center gap-4 transition-all duration-500",
-                        isFocused
-                          ? "opacity-100 scale-100 translate-x-2 blur-none"
-                          : "opacity-25 scale-95 translate-x-0 blur-[2px]",
-                      ].join(" ")}
-                    >
-                      <span
-                        className={[
-                          "font-mono text-xs font-bold",
-                          isFocused ? "text-amber-400" : "text-stone-600",
-                        ].join(" ")}
-                      >
-                        {st.num} //
-                      </span>
-                      <span
-                        className={[
-                          "font-serif text-2xl sm:text-3xl font-bold tracking-wider",
-                          idx === 0
-                            ? "line-through text-stone-500"
-                            : isFocused
-                            ? idx === 3
-                              ? "text-emerald-400"
-                              : "text-amber-400"
-                            : "text-stone-500",
-                        ].join(" ")}
-                      >
-                        {st.word}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="lg:col-span-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeWordIdx}
-                  initial={{ opacity: 0, y: 35, scale: 0.96, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, y: -35, scale: 0.96, filter: "blur(4px)" }}
-                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                  className="rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-14 shadow-2xl relative overflow-hidden"
-                >
-                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-                    <span className="font-mono text-xs font-bold uppercase tracking-widest text-amber-400">
-                      BOSQICH: {manifestoStages[activeWordIdx].num} // {manifestoStages[activeWordIdx].word}
-                    </span>
-                    <span className="font-mono text-xs text-stone-500">
-                      SCROLL PROGRESS
-                    </span>
-                  </div>
-
-                  <h3 className="mt-6 font-serif text-[clamp(2.2rem,4vw,3.8rem)] leading-tight text-stone-100">
-                    {manifestoStages[activeWordIdx].tagline}
-                  </h3>
-
-                  <p className="mt-6 text-base sm:text-lg leading-relaxed text-stone-300 max-w-2xl">
-                    {manifestoStages[activeWordIdx].description}
-                  </p>
-
-                  <div className="mt-8 flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-stone-400 pt-6 border-t border-white/[0.08]">
-                    <span className="text-amber-400 font-bold">BILIMDAN NATIJAGA</span>
-                    <span>•</span>
-                    <span>YANGIOBOD 1-MAKTAB</span>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 05: BOSQICHMA-BOSQICH TIZIM (420VH STICKY FOCUS ENGINE)
-   (STRICTLY PRESERVED AS BENCHMARK)
-============================================================================ */
-
-function MethodologyStickyFocus({ stages }: { stages: typeof METHOD_STAGES }) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, mass: 0.25 });
-  const progressWidth = useTransform(smoothProgress, [0, 1], ["0%", "100%"]);
-  const [activeStage, setActiveStage] = useState(0);
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const idx = Math.min(stages.length - 1, Math.max(0, Math.floor(latest * stages.length)));
-    setActiveStage(idx);
-  });
-
-  return (
-    <section id="metodika" ref={containerRef} className="relative h-[420vh] bg-[#07090d]">
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden border-b border-white/[0.08]">
-        <div className="pointer-events-none absolute left-0 right-0 top-0 h-1 bg-white/[0.08]">
-          <motion.div
-            className="h-full bg-amber-400 shadow-[0_0_15px_#f59e0b]"
-            style={{ width: progressWidth }}
-          />
-        </div>
-
-        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="mb-8 flex items-end justify-between gap-6 border-b border-white/[0.08] pb-6">
-            <div>
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
-                02 / METODIKA & BOSQICHLAR
-              </span>
-              <h2 className="mt-2 font-serif text-[clamp(2.2rem,4.5vw,4.5rem)] text-stone-100">
-                Bosqichma-Bosqich Tizim
-              </h2>
-            </div>
-            <RollingNumber current={activeStage + 1} total={stages.length} />
-          </div>
-
-          <div className="grid lg:grid-cols-12 gap-8 items-center relative">
-            <div className="lg:col-span-6 relative h-[380px] sm:h-[340px]">
-              {stages.map((stage, idx) => (
-                <MethodologyFocusCard
-                  key={stage.step}
-                  stage={stage}
-                  index={idx}
-                  total={stages.length}
-                  scrollYProgress={scrollYProgress}
-                />
-              ))}
-            </div>
-
-            <div className="lg:col-span-6 rounded-3xl border border-white/[0.08] bg-[#080b10] flex items-center justify-center p-6 shadow-inner relative h-[380px] sm:h-[340px] overflow-hidden">
-              {stages.map((stage, idx) => (
-                <MethodologyFocusVisual
-                  key={stage.step}
-                  type={stage.visualType}
-                  step={stage.step}
-                  index={idx}
-                  total={stages.length}
-                  scrollYProgress={scrollYProgress}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MethodologyFocusCard({
-  stage,
-  index,
-  total,
-  scrollYProgress,
-}: {
-  stage: (typeof METHOD_STAGES)[number];
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-}) {
-  const ranges = getFocusRanges(index, total, 0.05);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const y = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [0, 0, -40] : isLast ? [40, 0, 0] : [40, 0, 0, -40]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0.95] : isLast ? [0.95, 1, 1] : [0.95, 1, 1, 0.95]
-  );
-
-  return (
-    <motion.div
-      style={{ opacity, y, scale }}
-      className="absolute inset-0 rounded-3xl border border-white/[0.1] bg-[#0b0e14] p-8 sm:p-10 shadow-2xl flex flex-col justify-between"
-    >
-      <div>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-amber-400">
-          {stage.badge}
-        </span>
-        <h3 className="mt-2 font-serif text-[clamp(1.8rem,3vw,2.8rem)] leading-tight text-stone-100">
-          {stage.title}
-        </h3>
-        <p className="mt-1 text-xs font-mono uppercase text-stone-400">
-          {stage.subtitle}
-        </p>
-        <p className="mt-4 text-sm sm:text-base text-stone-300 leading-relaxed">
-          {stage.description}
-        </p>
-      </div>
-
-      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-mono text-stone-400">
-        <span>Bosqich Progressi:</span>
-        <span className="text-amber-400 font-bold">{stage.percent}%</span>
-      </div>
-    </motion.div>
-  );
-}
-
-function MethodologyFocusVisual({
-  type,
-  step,
-  index,
-  total,
-  scrollYProgress,
-}: {
-  type: string;
-  step: string;
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-}) {
-  const patternId = useId();
-  const ranges = getFocusRanges(index, total, 0.05);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0.92] : isLast ? [0.92, 1, 1] : [0.92, 1, 1, 0.92]
-  );
-
-  const radarSweep = useTransform(scrollYProgress, [ranges.enter, ranges.exit], [0, 360]);
-  const conduitProgress = useTransform(scrollYProgress, [ranges.focusStart, ranges.focusEnd], [0, 1]);
-  const graphProgress = useTransform(scrollYProgress, [ranges.focusStart, ranges.focusEnd], [0, 1]);
-  const starAssemble = useTransform(scrollYProgress, [ranges.focusStart, ranges.focusEnd], [60, 0]);
-
-  return (
-    <motion.div
-      style={{ opacity, scale }}
-      className="absolute inset-0 flex items-center justify-center p-6 select-none"
-    >
-      <svg
-        className="absolute inset-0 h-full w-full opacity-20 pointer-events-none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern id={patternId} width="30" height="30" patternUnits="userSpaceOnUse">
-            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(245, 158, 11, 0.4)" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
-      </svg>
-
-      {type === "radar" && (
-        <svg viewBox="0 0 200 200" className="w-48 h-48 sm:w-60 sm:h-60 text-amber-400">
-          <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="opacity-30" />
-          <circle cx="100" cy="100" r="55" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-50" />
-          <circle cx="100" cy="100" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-80" />
-          <circle cx="100" cy="100" r="6" fill="currentColor" className="opacity-90" />
-          <line x1="15" y1="100" x2="185" y2="100" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
-          <line x1="100" y1="15" x2="100" y2="185" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
-
-          <motion.g style={{ rotate: radarSweep, originX: "100px", originY: "100px" }}>
-            <path d="M 100 100 L 180 100 A 80 80 0 0 0 100 20 Z" fill="rgba(245, 158, 11, 0.35)" />
-            <line x1="100" y1="100" x2="180" y2="100" stroke="#f59e0b" strokeWidth="1.8" />
-          </motion.g>
-        </svg>
-      )}
-
-      {type === "target" && (
-        <svg viewBox="0 0 200 200" className="w-48 h-48 sm:w-60 sm:h-60 text-amber-400">
-          <circle cx="100" cy="100" r="76" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="6 4" className="opacity-40" />
-          <circle cx="100" cy="100" r="48" fill="none" stroke="currentColor" strokeWidth="1.8" className="opacity-75" />
-          <circle cx="100" cy="100" r="22" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="100" cy="100" r="4" fill="#f59e0b" />
-          <path d="M 60 40 L 40 40 L 40 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          <path d="M 140 40 L 160 40 L 160 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          <path d="M 40 140 L 40 160 L 60 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          <path d="M 160 140 L 160 160 L 140 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          <text x="100" y="104" textAnchor="middle" fill="#f59e0b" fontSize="10" fontFamily="monospace" fontWeight="bold">
-            LOCK A+
-          </text>
-        </svg>
-      )}
-
-      {type === "system" && (
-        <svg viewBox="0 0 200 200" className="w-48 h-48 sm:w-60 sm:h-60 text-emerald-400">
-          <path d="M 60 52 L 140 52 L 140 102 M 140 102 L 60 102 L 60 152 M 60 152 L 140 152" fill="none" stroke="rgba(245,158,11,0.2)" strokeWidth="2.5" />
-          <motion.path
-            d="M 60 52 L 140 52 L 140 102 M 140 102 L 60 102 L 60 152 M 60 152 L 140 152"
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="2.5"
-            style={{ pathLength: conduitProgress }}
-          />
-          <rect x="25" y="32" width="70" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
-          <text x="60" y="55" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">01 NAZARIYA</text>
-          <rect x="105" y="82" width="72" height="36" rx="8" fill="#090d14" stroke="#f59e0b" strokeWidth="1.5" />
-          <text x="141" y="105" textAnchor="middle" fill="#f59e0b" fontSize="9" fontFamily="monospace" fontWeight="bold">02 AMALIYOT</text>
-          <rect x="25" y="132" width="80" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
-          <text x="65" y="155" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">03 MUSTAHKAM</text>
-        </svg>
-      )}
-
-      {type === "analytics" && (
-        <svg viewBox="0 0 200 200" className="w-48 h-48 sm:w-60 sm:h-60 text-amber-400">
-          <line x1="25" y1="165" x2="180" y2="165" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-          <rect x="35" y="115" width="20" height="50" rx="4" fill="rgba(245,158,11,0.25)" />
-          <rect x="68" y="90" width="20" height="75" rx="4" fill="rgba(245,158,11,0.45)" />
-          <rect x="101" y="65" width="20" height="100" rx="4" fill="rgba(245,158,11,0.7)" />
-          <rect x="134" y="35" width="20" height="130" rx="4" fill="#f59e0b" />
-          <motion.path
-            d="M 45 110 Q 90 75, 144 32"
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            style={{ pathLength: graphProgress }}
-          />
-          <circle cx="144" cy="32" r="5" fill="#10b981" />
-          <text x="144" y="20" textAnchor="middle" fill="#10b981" fontSize="8" fontFamily="monospace" fontWeight="bold">
-            +42.5%
-          </text>
-        </svg>
-      )}
-
-      {type === "award" && (
-        <svg viewBox="0 0 200 200" className="w-48 h-48 sm:w-60 sm:h-60 text-emerald-400">
-          <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" strokeDasharray="4 4" />
-          <motion.polygon
-            points="100,20 122,68 174,74 135,110 148,162 100,136 52,162 65,110 26,74 78,68"
-            fill="rgba(16,185,129,0.15)"
-            stroke="#10b981"
-            strokeWidth="2"
-            style={{ rotate: starAssemble, originX: "100px", originY: "100px" }}
-          />
-          <circle cx="100" cy="98" r="32" fill="#080b10" stroke="#f59e0b" strokeWidth="2.5" />
-          <text x="100" y="103" textAnchor="middle" fill="#f59e0b" fontSize="13" fontFamily="monospace" fontWeight="bold">
-            100%
-          </text>
-          <text x="100" y="116" textAnchor="middle" fill="#10b981" fontSize="7" fontFamily="monospace" letterSpacing="1">
-            GRANT
-          </text>
-        </svg>
-      )}
-
-      <div className="absolute bottom-2 right-2 font-mono text-[9px] text-amber-400/60 uppercase tracking-widest">
-        METODIKA // 0{step}
-      </div>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   SECTION 06: KURSLAR — "COURSE PASSAGE"
-============================================================================ */
-
-function CoursesPassageSection({
-  courses,
-  onOpenCourse,
-  onRegisterClick,
-}: {
-  courses: CoursePath[];
-  onOpenCourse: (slug: string) => void;
-  onRegisterClick: () => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-
-  return (
-    <section
-      id="kurslar"
-      ref={containerRef}
-      className="relative h-[360vh] bg-[#080b10] border-b border-white/[0.08]"
-    >
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
-            <ScrollFocusedHeader
-              eyebrow="03 / AKADEMIK DASTURLAR"
-              title="Kurslar Katalogi"
-              subtitle="Har bir yo‘nalish uchun chuqurlashtirilgan o‘quv dasturi."
-              progress={headerProgress}
-              align="left"
-            />
-            <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-amber-400">
-              <span>KATALOG BO‘YICHA HARAKATLANING</span>
-              <span className="text-stone-600">•</span>
-              <span className="text-stone-400">SCROLL DOWN</span>
-            </div>
-          </div>
-
-          <div className="relative h-[440px] sm:h-[400px]">
-            {courses.map((course, idx) => (
-              <CoursePassageCard
-                key={course.id}
-                course={course}
-                index={idx}
-                total={courses.length}
-                scrollYProgress={scrollYProgress}
-                onOpenCourse={onOpenCourse}
-                onRegisterClick={onRegisterClick}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CoursePassageCard({
-  course,
-  index,
-  total,
-  scrollYProgress,
-  onOpenCourse,
-  onRegisterClick,
-}: {
-  course: CoursePath;
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-  onOpenCourse: (slug: string) => void;
-  onRegisterClick: () => void;
-}) {
-  const reduceMotion = useReducedMotion();
-  const ranges = getFocusRanges(index, total, 0.04);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const y = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [0, 0, 0]
-      : isFirst
-      ? [0, 0, -45]
-      : isLast
-      ? [45, 0, 0]
-      : [45, 0, 0, -45]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [1, 1, 1]
-      : isFirst
-      ? [1, 1, 0.96]
-      : isLast
-      ? [0.96, 1, 1]
-      : [0.96, 1, 1, 0.96]
-  );
-
-  const filter = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
-      : isFirst
-      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
-      : isLast
-      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
-      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
-  );
-
-  return (
-    <motion.div
-      style={{ opacity, y, scale, filter }}
-      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
-    >
-      <div className="grid lg:grid-cols-12 gap-8 items-center">
-        <div className="lg:col-span-8">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="font-mono text-xs font-bold text-amber-400">
-              0{index + 1} //
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400/90 font-bold">
-              {course.category}
-            </span>
-          </div>
-
-          <h3 className="font-serif text-[clamp(2.2rem,3.8vw,3.6rem)] leading-tight text-stone-100">
-            {course.title}
-          </h3>
-
-          <p className="mt-4 text-sm sm:text-base text-stone-300 leading-relaxed max-w-2xl">
-            {course.description}
-          </p>
-
-          <div className="grid sm:grid-cols-2 gap-2.5 mt-6 max-w-2xl">
-            {course.highlights.map((h, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-200">
-                <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>{h}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 rounded-2xl border border-white/[0.08] bg-[#07090d] p-6 sm:p-8 flex flex-col justify-between space-y-5 shadow-xl">
-          <div>
-            <span className="text-[10px] font-mono uppercase text-stone-500">
-              Oylik Kurs To'lovi
-            </span>
-            <div className="mt-1 font-serif text-3xl font-bold text-amber-400">
-              {course.price}
-            </div>
-            <div className="mt-1 text-xs font-mono text-stone-400 uppercase">
-              Davomiyligi: {course.duration}
-            </div>
-          </div>
-
-          <div className="space-y-2 pt-3 border-t border-white/[0.08] text-xs font-mono">
-            <div className="flex items-center justify-between">
-              <span className="text-stone-500">Dars jadvali:</span>
-              <span className="text-stone-200">{course.schedule}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-stone-500">Mas'ul ustoz:</span>
-              <span className="text-amber-400 font-semibold">{course.teacherName}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onRegisterClick}
-              className="w-full rounded-xl bg-amber-400 py-3 text-center text-xs font-bold uppercase tracking-widest text-black hover:bg-amber-300 transition-colors shadow-lg"
-            >
-              Guruhga Yozilish
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenCourse(course.slug)}
-              className="w-full rounded-xl border border-white/20 py-2.5 text-center text-xs font-mono uppercase text-stone-300 hover:text-white transition-colors"
-            >
-              Batafsil O'rganish
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-stone-500 uppercase tracking-widest">
-        <span>KURS BOSQICHI: 0{index + 1} / 0{total}</span>
-        <span className="text-amber-400 font-bold">RENESSANS METODIKASI</span>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   SECTION 07: PREZIDENT MAKTABIGA TAYYORLOV — "CHECKPOINT JOURNEY"
-============================================================================ */
-
-function PresidentSchoolJourneySection({
-  stages,
-  onRegisterClick,
-}: {
-  stages: typeof PRESIDENT_STAGES;
-  onRegisterClick: () => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const railProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const [activeStageIdx, setActiveStageIdx] = useState(0);
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const idx = Math.min(stages.length - 1, Math.max(0, Math.floor(latest * stages.length)));
-    setActiveStageIdx(idx);
-  });
-
-  return (
-    <section
-      id="prezident-maktabi"
-      ref={containerRef}
-      className="relative h-[340vh] bg-[#090d14] border-b border-white/[0.08]"
-    >
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
-            <ScrollFocusedHeader
-              eyebrow="04 / MAXSUS TAYYORLOV YO'LI"
-              title="Prezident Maktabiga Tayyorlov"
-              subtitle="1- va 2-bosqich saralash imtihonlariga kompleks intellektual tayyorgarlik."
-              progress={railProgress}
-              align="left"
-            />
-            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-              MARSHRUT CHIZIG‘I // 0{activeStageIdx + 1}
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-4 relative pl-8 border-l border-white/[0.1] space-y-6">
-              <motion.div
-                style={{ scaleY: railProgress, originY: 0 }}
-                className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-400 shadow-[0_0_12px_#f59e0b]"
-              />
-
-              {stages.map((st, idx) => {
-                const isActive = activeStageIdx === idx;
-                const isPassed = idx < activeStageIdx;
-                const Icon = st.icon;
-
-                return (
-                  <div
-                    key={st.step}
-                    className={[
-                      "relative transition-all duration-300",
-                      isActive
-                        ? "opacity-100 translate-x-2"
-                        : isPassed
-                        ? "opacity-60 translate-x-0"
-                        : "opacity-25 translate-x-0",
-                    ].join(" ")}
-                  >
-                    <div
-                      className={[
-                        "absolute -left-[37px] top-1.5 h-4 w-4 rounded-full border flex items-center justify-center transition-colors",
-                        isActive
-                          ? "border-amber-400 bg-amber-400 text-black shadow-[0_0_12px_#f59e0b]"
-                          : isPassed
-                          ? "border-amber-400/60 bg-black text-amber-400"
-                          : "border-white/20 bg-black",
-                      ].join(" ")}
-                    >
-                      {isPassed && <span className="text-[9px] font-bold">✓</span>}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Icon className={["h-4 w-4", isActive ? "text-amber-400" : "text-stone-500"].join(" ")} />
-                      <span
-                        className={[
-                          "font-serif text-lg sm:text-xl font-bold transition-colors",
-                          isActive ? "text-stone-100" : "text-stone-500",
-                        ].join(" ")}
-                      >
-                        {st.title}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="lg:col-span-8 relative h-[360px] sm:h-[320px]">
-              {stages.map((stage, idx) => (
-                <PresidentCheckpointCard
-                  key={stage.step}
-                  stage={stage}
-                  index={idx}
-                  total={stages.length}
-                  scrollYProgress={scrollYProgress}
-                  onRegisterClick={onRegisterClick}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PresidentCheckpointCard({
-  stage,
-  index,
-  total,
-  scrollYProgress,
-  onRegisterClick,
-}: {
-  stage: (typeof PRESIDENT_STAGES)[number];
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-  onRegisterClick: () => void;
-}) {
-  const reduceMotion = useReducedMotion();
-  const ranges = getFocusRanges(index, total, 0.04);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const y = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [0, 0, 0]
-      : isFirst
-      ? [0, 0, -40]
-      : isLast
-      ? [40, 0, 0]
-      : [40, 0, 0, -40]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [1, 1, 1]
-      : isFirst
-      ? [1, 1, 0.96]
-      : isLast
-      ? [0.96, 1, 1]
-      : [0.96, 1, 1, 0.96]
-  );
-
-  const filter = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
-      : isFirst
-      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
-      : isLast
-      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
-      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
-  );
-
-  return (
-    <motion.div
-      style={{ opacity, y, scale, filter }}
-      className="absolute inset-0 rounded-3xl border border-amber-400/40 bg-[#0c1017] p-8 sm:p-10 shadow-2xl flex flex-col justify-between"
-    >
-      <div>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-amber-400">
-          CHECKPOINT {stage.step}
-        </span>
-        <h3 className="mt-2 font-serif text-[clamp(2rem,3.4vw,3.2rem)] text-stone-100">
-          {stage.title}
-        </h3>
-        <p className="mt-3 text-sm sm:text-base text-stone-300 leading-relaxed">
-          {stage.desc}
-        </p>
-
-        <div className="mt-6 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="text-[10px] font-mono uppercase text-stone-500 mb-1">
-            Asosiy Yo'naltirilgan Ko'nikma:
-          </div>
-          <div className="font-serif text-base sm:text-lg font-bold text-amber-400">
-            {stage.focus}
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
-        <span className="text-xs font-mono text-stone-400">Prezident Maktabi Standarti</span>
-        <button
-          type="button"
-          onClick={onRegisterClick}
-          className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-lg"
-        >
-          Guruhga yozilish
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   SECTION 08: TIZIM USTOZLARI — "TEACHER SPOTLIGHT JOURNEY"
-============================================================================ */
-
-function TeachersSpotlightSection({
-  teachers,
-  onOpenTeacher,
-}: {
-  teachers: TeacherRecord[];
-  onOpenTeacher: (slug: string) => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const [activeTeacherIdx, setActiveTeacherIdx] = useState(0);
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const idx = Math.min(teachers.length - 1, Math.max(0, Math.floor(latest * teachers.length)));
-    setActiveTeacherIdx(idx);
-  });
-
-  return (
-    <section
-      id="ustozlar"
-      ref={containerRef}
-      className="relative h-[340vh] bg-[#07090d] border-b border-white/[0.08]"
-    >
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
-            <ScrollFocusedHeader
-              eyebrow="05 / PEDAGOGIK JAMOASI"
-              title="Tizim Ustozlari"
-              subtitle="Yuqori malakali, o'z fani bo'yicha yillik tajribaga ega yetakchi mutaxassislar."
-              progress={headerProgress}
-              align="left"
-            />
-            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-              USTOZLAR SAFARI // 0{activeTeacherIdx + 1}
-            </div>
-          </div>
-
-          <div className="relative h-[420px] sm:h-[380px]">
-            {teachers.map((teacher, idx) => (
-              <TeacherSpotlightCard
-                key={teacher.id}
-                teacher={teacher}
-                index={idx}
-                total={teachers.length}
-                scrollYProgress={scrollYProgress}
-                onOpenTeacher={onOpenTeacher}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TeacherSpotlightCard({
-  teacher,
-  index,
-  total,
-  scrollYProgress,
-  onOpenTeacher,
-}: {
-  teacher: TeacherRecord;
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-  onOpenTeacher: (slug: string) => void;
-}) {
-  const reduceMotion = useReducedMotion();
-  const ranges = getFocusRanges(index, total, 0.04);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const y = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [0, 0, 0]
-      : isFirst
-      ? [0, 0, -40]
-      : isLast
-      ? [40, 0, 0]
-      : [40, 0, 0, -40]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [1, 1, 1]
-      : isFirst
-      ? [1, 1, 0.96]
-      : isLast
-      ? [0.96, 1, 1]
-      : [0.96, 1, 1, 0.96]
-  );
-
-  const filter = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
-      : isFirst
-      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
-      : isLast
-      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
-      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
-  );
-
-  return (
-    <motion.div
-      style={{ opacity, y, scale, filter }}
-      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
-    >
-      <div className="grid lg:grid-cols-12 gap-8 items-center">
-        <div className="lg:col-span-8">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">
-            {teacher.subject}
-          </span>
-          <h3 className="mt-1 font-serif text-[clamp(2.4rem,4vw,3.8rem)] leading-tight text-stone-100">
-            {teacher.name}
-          </h3>
-
-          <p className="mt-4 text-sm sm:text-base leading-relaxed text-stone-300">
-            {teacher.bio}
-          </p>
-
-          {teacher.achievements && (
-            <div className="mt-5 space-y-2">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-                Asosiy Natijalar:
-              </div>
-              {teacher.achievements.slice(0, 3).map((ach, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-200">
-                  <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>{ach}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="lg:col-span-4 rounded-2xl border border-white/[0.08] bg-[#07090d] p-6 text-center flex flex-col items-center justify-center relative shadow-inner">
-          <div className="h-28 w-28 rounded-full border border-amber-400/30 bg-amber-400/[0.05] flex items-center justify-center font-serif text-4xl font-bold text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
-            {teacher.name.charAt(0)}
-          </div>
-
-          <div className="mt-4 font-serif text-2xl font-bold text-stone-100">
-            {teacher.experienceYears} Yil
-          </div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
-            Pedagogik Tajriba
-          </div>
-
-          <div className="mt-4 w-full pt-4 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-center">
-            <div className="border-r border-white/[0.08] pr-2">
-              <div className="font-serif text-lg font-bold text-amber-400">100%</div>
-              <div className="text-[9px] font-mono text-stone-400 uppercase">OTM Qamrovi</div>
-            </div>
-            <div className="pl-2">
-              <div className="font-serif text-lg font-bold text-emerald-400">Grant</div>
-              <div className="text-[9px] font-mono text-stone-400 uppercase">Talabalari</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
-        <span className="font-mono text-xs text-stone-400">
-          {teacher.resultsCount ? `${teacher.resultsCount}+ o'quvchi natijasi` : "Yetakchi mutaxassis"}
-        </span>
-        <button
-          type="button"
-          onClick={() => onOpenTeacher(teacher.slug || teacher.id)}
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-400 hover:text-amber-300"
-        >
-          Profilni ko‘rish
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   SECTION 09: FANLAR — "ACADEMIC DOSSIER"
-============================================================================ */
-
-function SubjectsDossierSection({
-  items,
-  onRegisterClick,
-}: {
-  items: typeof SUBJECT_ITEMS;
-  onRegisterClick: () => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  const headerProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const [activeDossierIdx, setActiveDossierIdx] = useState(0);
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const idx = Math.min(items.length - 1, Math.max(0, Math.floor(latest * items.length)));
-    setActiveDossierIdx(idx);
-  });
-
-  return (
-    <section
-      id="fanlar"
-      ref={containerRef}
-      className="relative h-[320vh] bg-[#080b10] border-b border-white/[0.08]"
-    >
-      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
-        <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="mb-6 flex items-end justify-between border-b border-white/[0.08] pb-6">
-            <ScrollFocusedHeader
-              eyebrow="06 / AKADEMIK RO'YXAT"
-              title="Fanlar & Yo‘nalishlar"
-              subtitle="Fan → Dastur → Mas'ul Pedagog bog'liqligi."
-              progress={headerProgress}
-              align="left"
-            />
-            <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-              AKADEMIK DOSSIYE // 0{activeDossierIdx + 1}
-            </div>
-          </div>
-
-          <div className="relative h-[380px] sm:h-[340px]">
-            {items.map((item, idx) => (
-              <AcademicDossierCard
-                key={item.step}
-                item={item}
-                index={idx}
-                total={items.length}
-                scrollYProgress={scrollYProgress}
-                onRegisterClick={onRegisterClick}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AcademicDossierCard({
-  item,
-  index,
-  total,
-  scrollYProgress,
-  onRegisterClick,
-}: {
-  item: (typeof SUBJECT_ITEMS)[number];
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-  onRegisterClick: () => void;
-}) {
-  const reduceMotion = useReducedMotion();
-  const ranges = getFocusRanges(index, total, 0.04);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-
-  const opacity = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
-  );
-
-  const y = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [0, 0, 0]
-      : isFirst
-      ? [0, 0, -40]
-      : isLast
-      ? [40, 0, 0]
-      : [40, 0, 0, -40]
-  );
-
-  const scale = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? [1, 1, 1]
-      : isFirst
-      ? [1, 1, 0.96]
-      : isLast
-      ? [0.96, 1, 1]
-      : [0.96, 1, 1, 0.96]
-  );
-
-  const filter = useTransform(
-    scrollYProgress,
-    isFirst
-      ? [0, ranges.focusEnd, ranges.exit]
-      : isLast
-      ? [ranges.enter, ranges.focusStart, 1]
-      : [ranges.enter, ranges.focusStart, ranges.focusEnd, ranges.exit],
-    reduceMotion
-      ? ["blur(0px)", "blur(0px)", "blur(0px)"]
-      : isFirst
-      ? ["blur(0px)", "blur(0px)", "blur(3px)"]
-      : isLast
-      ? ["blur(3px)", "blur(0px)", "blur(0px)"]
-      : ["blur(3px)", "blur(0px)", "blur(0px)", "blur(3px)"]
-  );
-
-  return (
-    <motion.div
-      style={{ opacity, y, scale, filter }}
-      className="absolute inset-0 rounded-3xl border border-amber-400/30 bg-[#0c1017] p-8 sm:p-12 shadow-2xl overflow-hidden flex flex-col justify-between"
-    >
-      <div>
-        <div className="font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold mb-2">
-          DOSSIER // REF-{item.step}
-        </div>
-        <h3 className="font-serif text-[clamp(2rem,3.2vw,3.2rem)] leading-tight text-stone-100">
-          {item.subject}
-        </h3>
-
-        <p className="mt-4 text-sm sm:text-base leading-relaxed text-stone-300 max-w-3xl">
-          {item.description}
-        </p>
-
-        <div className="mt-6 p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] max-w-2xl">
-          <div className="text-[10px] font-mono uppercase tracking-widest text-stone-500 mb-1">
-            Qamrab Olingan Imtihonlar & Targetlar:
-          </div>
-          <div className="font-mono text-sm text-amber-400 font-semibold">
-            {item.programs}
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-mono uppercase text-stone-500">Mas'ul Pedagog:</span>
-          <div className="font-serif text-base sm:text-lg font-bold text-stone-100">{item.teacher}</div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onRegisterClick}
-          className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black hover:bg-amber-300 transition-all shadow-md"
-        >
-          Darsga yozilish
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   SECTION 10: REAL NATIJALAR
-============================================================================ */
-
-function ResultsBenchmarkArchive({
-  results,
-  activeResultIndex,
-  setActiveResultIndex,
-  hoveredResultId,
-  setHoveredResultId,
-  selectedFilter,
-  setSelectedFilter,
-}: {
-  results: StudentResult[];
-  activeResultIndex: number;
-  setActiveResultIndex: (i: number) => void;
-  hoveredResultId: string | null;
-  setHoveredResultId: (id: string | null) => void;
-  selectedFilter: string;
-  setSelectedFilter: (f: string) => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-
-  const activeStudent =
-    (hoveredResultId ? results.find((r) => r.id === hoveredResultId) : null) ||
-    results[activeResultIndex] ||
-    results[0];
-
-  return (
-    <section
-      id="natijalar"
-      ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36 overflow-hidden"
-    >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-10">
-          <ScrollFocusedHeader
-            eyebrow="07 / REAL NATIJALAR"
-            title="Bitiruvchilar Natijalari"
-            subtitle="Natija — tizimli tayyorgarlikning eng aniq dalili."
-            progress={smooth}
-            align="left"
-          />
-
-          <div className="flex flex-wrap gap-2">
-            {["BARCHASI", "DTM", "CEFR", "MILLIY SERTIFIKAT"].map((filter) => {
-              const isActive = selectedFilter === filter;
-              return (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setSelectedFilter(filter)}
-                  className={[
-                    "relative rounded-full px-5 py-2 text-[10px] font-mono font-bold uppercase tracking-widest transition-colors focus:outline-none",
-                    isActive ? "text-black" : "border border-white/10 bg-[#0d1118] text-stone-400 hover:text-stone-200",
-                  ].join(" ")}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="result-filter-pill"
-                      className="absolute inset-0 rounded-full bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{filter}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-12 grid lg:grid-cols-12 gap-10 items-start">
-          <motion.div layout className="lg:col-span-8 divide-y divide-white/[0.06]">
-            <AnimatePresence mode="popLayout">
-              {results.map((res, index) => {
-                const isTargeted =
-                  hoveredResultId !== null
-                    ? hoveredResultId === res.id
-                    : activeResultIndex === index;
-
-                return (
-                  <motion.div
-                    layout
-                    key={res.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    onClick={() => setActiveResultIndex(index)}
-                    onMouseEnter={() => {
-                      setHoveredResultId(res.id);
-                      setActiveResultIndex(index);
-                    }}
-                    onMouseLeave={() => setHoveredResultId(null)}
-                    className={[
-                      "py-6 sm:py-8 px-4 sm:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 relative group cursor-pointer rounded-2xl",
-                      isTargeted
-                        ? "border border-amber-400 bg-white/[0.05] shadow-[0_0_30px_rgba(245,158,11,0.12)] opacity-100 scale-[1.01]"
-                        : "border border-transparent opacity-40 hover:opacity-85 hover:border-white/10",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center gap-6">
-                      <span
-                        className={[
-                          "font-mono text-xs font-bold transition-colors",
-                          isTargeted ? "text-amber-400" : "text-stone-500",
-                        ].join(" ")}
-                      >
-                        0{index + 1}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-serif text-2xl sm:text-3xl text-stone-100 group-hover:text-amber-300 transition-colors">
-                            {res.name}
-                          </h4>
-                          {res.badge && (
-                            <span className="hidden sm:inline-block rounded-full bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-0.5 text-[9px] font-mono font-bold text-emerald-400 uppercase">
-                              {res.badge}
-                            </span>
-                          )}
-                        </div>
-                        {res.university && (
-                          <p className="text-xs text-stone-400 mt-1.5 flex items-center gap-2 font-mono">
-                            <GraduationCap className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                            {res.university}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-left md:text-right pl-10 md:pl-0 flex md:flex-col items-center md:items-end justify-between md:justify-center gap-2">
-                      <div className="font-serif text-3xl sm:text-4xl font-bold text-amber-400 leading-none">
-                        {res.score}
-                      </div>
-                      <span className="block text-[9px] font-mono uppercase tracking-widest text-stone-500">
-                        {res.examType} // {res.year || "2025"}
-                      </span>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </motion.div>
-
-          <div className="lg:col-span-4 sticky top-28 hidden lg:block">
-            {activeStudent && (
-              <div className="rounded-3xl border border-amber-400/40 bg-[#0c1017] p-8 relative shadow-2xl">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-                  <span className="font-mono text-[10px] font-bold text-amber-400 uppercase tracking-widest">
-                    SCROLL // 0{activeResultIndex + 1} OF 0{results.length}
-                  </span>
-                  <span className="font-mono text-[10px] text-stone-500 uppercase tracking-widest">
-                    NATIJA // {activeStudent.examType}
-                  </span>
-                </div>
-
-                <div className="mt-8 text-center">
-                  <div className="font-mono text-xs uppercase tracking-widest text-stone-400">
-                    Qayd etilgan natija
-                  </div>
-                  <div className="mt-2 font-serif text-5xl font-bold text-amber-400 leading-none">
-                    {activeStudent.score}
-                  </div>
-                  <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[10px] font-mono font-bold uppercase">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    {activeStudent.badge || "Tasdiqlangan Natija"}
-                  </div>
-                </div>
-
-                <div className="mt-8 space-y-4 pt-6 border-t border-white/[0.08]">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-stone-500">O'quvchi:</span>
-                    <div className="font-serif text-xl font-bold text-stone-100 mt-0.5">
-                      {activeStudent.name}
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-stone-500">
-                      Tavsiya etilgan OTM:
-                    </span>
-                    <div className="text-xs font-mono text-stone-300 mt-1 leading-relaxed">
-                      {activeStudent.university}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 text-[10px] font-mono text-stone-500">
-                    <span>Mavsum: {activeStudent.year || "2025"}</span>
-                    <span className="text-amber-400 font-bold">RENESSANS TIZIMI</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 11: FAQ
-============================================================================ */
-
-function FAQSection({
-  faqs,
-  openFaq,
-  setOpenFaq,
-}: {
-  faqs: FAQItem[];
-  openFaq: string | null;
-  setOpenFaq: (id: string | null) => void;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-
-  return (
-    <section
-      id="faq"
-      ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#07090d] py-28 sm:py-36"
-    >
-      <div className="mx-auto max-w-[1000px] px-6 sm:px-8">
-        <ScrollFocusedHeader
-          eyebrow="08 / SAVOLLAR"
-          title="Ko‘p So‘raladigan Savollar"
-          subtitle="Aniq savollarga — ochiq va professional javoblar."
-          progress={smooth}
-        />
-
-        <div className="mt-14 divide-y divide-white/[0.08] border-y border-white/[0.08]">
-          {faqs.map((faq, index) => {
-            const isOpen = openFaq === faq.id;
-            return (
-              <div
-                key={faq.id}
-                className={[
-                  "py-6 sm:py-8 transition-colors duration-300 relative pl-4 sm:pl-6",
-                  isOpen ? "bg-white/[0.015]" : "",
-                ].join(" ")}
-              >
-                {isOpen && (
-                  <motion.div
-                    layoutId="faq-accent-line"
-                    className="absolute left-0 top-6 bottom-6 w-1 rounded-full bg-amber-400 shadow-[0_0_10px_#f59e0b]"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(isOpen ? null : faq.id)}
-                  className="w-full text-left flex items-center justify-between gap-6 group focus:outline-none"
-                >
-                  <div className="flex items-center gap-5 sm:gap-6">
-                    <span
-                      className={[
-                        "font-mono text-xs sm:text-sm font-bold transition-colors",
-                        isOpen ? "text-amber-400" : "text-stone-500",
-                      ].join(" ")}
-                    >
-                      0{index + 1}
-                    </span>
-                    <span
-                      className={[
-                        "font-serif text-lg sm:text-2xl transition-colors",
-                        isOpen ? "text-amber-400" : "text-stone-200 group-hover:text-amber-300",
-                      ].join(" ")}
-                    >
-                      {faq.question}
-                    </span>
-                  </div>
-                  <div
-                    className={[
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-300",
-                      isOpen
-                        ? "border-amber-400 bg-amber-400 text-black rotate-180"
-                        : "border-white/10 text-stone-400 group-hover:border-amber-400/50 group-hover:text-stone-200",
-                    ].join(" ")}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <p className="mt-5 pl-8 sm:pl-10 text-sm sm:text-base leading-relaxed text-stone-300 max-w-3xl">
-                        {faq.answer}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 12: MANZIL
-============================================================================ */
-
-function CampusMapSection() {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const reduceMotion = useReducedMotion();
-
-  const mapScale = useTransform(smooth, [0, 1], reduceMotion ? [1, 1] : [1, 1.08]);
-  const mapGridX = useTransform(smooth, [0, 1], reduceMotion ? [0, 0] : [-20, 20]);
-  const beaconY = useTransform(smooth, [0, 1], reduceMotion ? [0, 0] : [20, -10]);
-
-  return (
-    <section
-      id="manzil"
-      ref={containerRef}
-      className="scroll-mt-20 border-b border-white/[0.08] bg-[#0a0d13] py-28 sm:py-36 overflow-hidden"
-    >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12">
-        <div className="grid lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6">
-            <ScrollFocusedHeader
-              eyebrow="09 / YAGONA RASMIY BINOMIZ"
-              title={
-                <>
-                  YANGIOBOD <br />
-                  <span className="italic text-amber-400">1-MAKTAB</span>
-                </>
-              }
-              progress={smooth}
-              align="left"
-            />
-
-            <p className="mt-6 text-base text-stone-300 leading-relaxed max-w-lg">
-              RENESSANS O'quv Markazi Yangiobod tumani markazidagi yagona asosiy
-              binoda — 1-sonli umumiy o'rta ta'lim maktabi binosida faoliyat ko'rsatadi.
-            </p>
-
-            <div className="mt-10 space-y-6">
-              <div className="flex items-start gap-4">
-                <motion.div
-                  style={{ y: beaconY }}
-                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
-                >
-                  <MapPin className="h-5 w-5" />
-                </motion.div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
-                    ASOSIY MANZIL:
-                  </div>
-                  <p className="text-base font-medium text-stone-200 mt-1">
-                    Yangiobod tumani, 1-sonli umumiy o'rta ta'lim maktabi binosi
-                  </p>
-                  <span className="text-xs font-mono text-stone-500">
-                    Yagona rasmiy o'quv kampusi
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
-                  <Clock3 className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
-                    ISH VAQTI:
-                  </div>
-                  <p className="text-sm font-medium text-stone-200 mt-1">
-                    Dushanba – Shanba: 08:00 – 19:00
-                  </p>
-                  <p className="text-xs font-mono text-emerald-400 mt-0.5">
-                    Yakshanba: Haftalik Diagnostik & Mock Testlar
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0">
-                  <Send className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold">
-                    RASMIY TELEGRAM:
-                  </div>
-                  <a
-                    href="https://t.me/D_Furqatovich"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm font-medium text-stone-200 hover:text-amber-400 transition-colors mt-1 inline-flex items-center gap-1.5"
-                  >
-                    @D_Furqatovich
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <motion.div
-            style={{ scale: mapScale }}
-            className="lg:col-span-6 rounded-3xl border border-white/[0.1] bg-[#0c1017] p-8 sm:p-12 relative overflow-hidden shadow-2xl"
-          >
-            <motion.div
-              style={{ x: mapGridX }}
-              className="absolute top-0 right-0 p-6 opacity-20 pointer-events-none"
-            >
-              <svg width="200" height="200" viewBox="0 0 100 100" fill="none">
-                <circle cx="50" cy="50" r="45" stroke="#f59e0b" strokeWidth="0.8" strokeDasharray="3 3" />
-                <rect x="25" y="25" width="50" height="50" stroke="#f59e0b" strokeWidth="1" />
-                <line x1="0" y1="50" x2="100" y2="50" stroke="#f59e0b" strokeWidth="0.5" />
-                <line x1="50" y1="0" x2="50" y2="100" stroke="#f59e0b" strokeWidth="0.5" />
-              </svg>
-            </motion.div>
-
-            <div className="font-mono text-[10px] uppercase tracking-widest text-stone-500">
-              KOORDINATA & BOG'LANISH //
-            </div>
-            <h3 className="font-serif text-3xl text-stone-100 mt-2">
-              Qo'ng'iroq Qiling
-            </h3>
-            <p className="text-sm text-stone-400 mt-2">
-              O'quv bo'limi sizga dars jadvali va bepul sinov darsi vaqtini belgilab beradi:
-            </p>
-
-            <div className="mt-8 space-y-4 relative z-10">
-              <a
-                href="tel:+998886484949"
-                className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
-                    <Phone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                      +998 (88) 648-49-49
-                    </span>
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                      Asosiy aloqa liniyasi
-                    </span>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-              </a>
-
-              <a
-                href="tel:+998992593232"
-                className="flex items-center justify-between p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:border-amber-400/40 hover:bg-amber-400/[0.04] transition-all group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400">
-                    <Phone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <span className="block font-mono text-lg font-bold text-stone-100 group-hover:text-amber-400 transition-colors">
-                      +998 (99) 259-32-32
-                    </span>
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500">
-                      Ma'muriyat & Maslahat
-                    </span>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================================
-   SECTION 13: KONSULTATSIYA
-============================================================================ */
-
-function ConsultationSceneSection({
-  formName,
-  setFormName,
-  formPhone,
-  setFormPhone,
-  formSubject,
-  setFormSubject,
-  isSubmitting,
-  isSubmitted,
-  setIsSubmitted,
-  submitError,
-  handleFormSubmit,
-}: {
-  formName: string;
-  setFormName: (v: string) => void;
-  formPhone: string;
-  setFormPhone: (v: string) => void;
-  formSubject: string;
-  setFormSubject: (v: string) => void;
-  isSubmitting: boolean;
-  isSubmitted: boolean;
-  setIsSubmitted: (v: boolean) => void;
-  submitError: string;
-  handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-}) {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
-  const reduceMotion = useReducedMotion();
-
-  const titleOpacity = useTransform(smooth, [0, 0.2, 0.7, 1], [0.35, 1, 1, 0.35]);
-  const titleY = useTransform(smooth, [0, 0.2, 0.7, 1], reduceMotion ? [0, 0, 0, 0] : [35, 0, 0, -25]);
-  const titleScale = useTransform(smooth, [0, 0.2, 0.7, 1], reduceMotion ? [1, 1, 1, 1] : [0.96, 1, 1, 0.96]);
-  const titleFilter = useTransform(
-    smooth,
-    [0, 0.2, 0.7, 1],
-    reduceMotion ? ["blur(0px)", "blur(0px)", "blur(0px)"] : ["blur(3px)", "blur(0px)", "blur(0px)"]
-  );
-
-  return (
-    <section
-      id="konsultatsiya"
-      ref={containerRef}
-      className="scroll-mt-20 bg-[#07090d] py-28 sm:py-36 relative overflow-hidden"
-    >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-8 lg:px-12 relative z-10">
-        <div className="rounded-[36px] border border-amber-400/30 bg-[#0b0f17] p-8 sm:p-14 relative overflow-hidden shadow-2xl">
-          <div className="grid lg:grid-cols-12 gap-12 items-center relative">
-            <motion.div
-              style={{ opacity: titleOpacity, y: titleY, scale: titleScale, filter: titleFilter }}
-              className="lg:col-span-6"
-            >
-              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
-                10 / RO‘YXATDAN O‘TISH
-              </span>
-
-              <div className="mt-4 flex items-center gap-3 font-mono text-xs text-stone-500 uppercase tracking-widest">
-                <span>MAQSAD</span>
-                <ArrowRight className="h-3 w-3 text-amber-400" />
-                <span>TIZIM</span>
-                <ArrowRight className="h-3 w-3 text-amber-400" />
-                <span className="text-emerald-400 font-bold">NATIJA</span>
-              </div>
-
-              <h2 className="mt-4 font-serif text-[clamp(2.4rem,4.5vw,4.4rem)] leading-[0.95] text-stone-100">
-                Bepul Sinov Darsiga
-                <br />
-                <span className="italic text-amber-400">Hoziroq Yoziling</span>
-              </h2>
-
-              <p className="mt-6 text-sm sm:text-base text-stone-300 leading-relaxed max-w-lg">
-                Ismingiz va telefon raqamingizni qoldiring. Administratorimiz siz bilan
-                bog‘lanib, diagnostik test va sinov darsi vaqtini belgilaydi.
-              </p>
-            </motion.div>
-
-            <div className="lg:col-span-6 rounded-3xl border border-white/[0.1] bg-[#07090d] p-6 sm:p-10 shadow-xl">
-              <AnimatePresence mode="wait">
-                {isSubmitted ? (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.4 }}
-                    className="text-center py-10"
-                  >
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/30">
-                      <CheckCircle2 className="h-8 w-8" />
-                    </div>
-                    <h3 className="mt-5 font-serif text-2xl sm:text-3xl text-stone-100">
-                      Arizangiz Muvaffaqiyatli Qabul Qilindi!
-                    </h3>
-                    <p className="mt-3 text-xs font-mono text-stone-400">
-                      Tez orada administratorimiz siz bilan bog'lanadi.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsSubmitted(false)}
-                      className="mt-6 rounded-full border border-white/20 px-6 py-2 text-xs font-mono uppercase text-stone-300 hover:text-white"
-                    >
-                      Boshqa ariza qoldirish
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.form
-                    key="form"
-                    onSubmit={handleFormSubmit}
-                    className="space-y-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <div>
-                      <label
-                        htmlFor="ren-name"
-                        className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                      >
-                        F.I.SH (Ismingiz)
-                      </label>
-                      <input
-                        id="ren-name"
-                        type="text"
-                        required
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        placeholder="Ismingiz va familiyangiz"
-                        className="w-full min-h-12 rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400/70 focus:bg-amber-400/[0.02] transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="ren-phone"
-                        className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                      >
-                        Telefon Raqamingiz
-                      </label>
-                      <input
-                        id="ren-phone"
-                        type="tel"
-                        required
-                        value={formPhone}
-                        onChange={(e) => setFormPhone(e.target.value)}
-                        placeholder="+998 (88) 648-49-49"
-                        className="w-full min-h-12 rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 text-sm text-stone-100 outline-none focus:border-amber-400/70 focus:bg-amber-400/[0.02] transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="ren-subject"
-                        className="block text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 mb-2"
-                      >
-                        Qiziqtirgan Yo'nalish
-                      </label>
-                      <select
-                        id="ren-subject"
-                        value={formSubject}
-                        onChange={(e) => setFormSubject(e.target.value)}
-                        className="w-full min-h-12 rounded-xl border border-white/[0.1] bg-[#0c1017] px-4 text-sm text-stone-100 outline-none focus:border-amber-400/70 transition-colors"
-                      >
-                        <option value="">Yo‘nalishni tanlang</option>
-                        <option value="Tarix • Huquq • Geografiya">
-                          Tarix • Huquq • Geografiya (DTM)
-                        </option>
-                        <option value="Matematika & Prezident Maktabi">
-                          Matematika & Prezident Maktabi
-                        </option>
-                        <option value="CEFR Ingliz Tili (B2 / C1)">
-                          CEFR Ingliz Tili (B2 / C1)
-                        </option>
-                        <option value="General & Kids English">
-                          General & Kids English (3–10 yosh)
-                        </option>
-                        <option value="Mental Arifmetika">
-                          Mental Arifmetika & Tez Hisob
-                        </option>
-                        <option value="Ona Tili va Adabiyot">
-                          Ona Tili va Adabiyot (Milliy Sertifikat)
-                        </option>
-                      </select>
-                    </div>
-
-                    {submitError && (
-                      <div className="rounded-xl border border-red-500/20 bg-red-500/[0.05] p-3 text-xs text-red-300">
-                        {submitError}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full min-h-12 rounded-xl bg-amber-400 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-amber-300 disabled:opacity-50 flex items-center justify-center gap-2 mt-2 shadow-[0_4px_20px_rgba(245,158,11,0.25)]"
-                    >
-                      {isSubmitting ? "Yuborilmoqda..." : "Bepul Sinov Darsiga Yozilish"}
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </motion.form>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 

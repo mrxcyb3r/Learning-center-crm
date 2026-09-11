@@ -32,6 +32,15 @@ interface AuthContextType {
   checkEmailVerification: () => Promise<boolean>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  // Demo login functions for demo environment
+  loginAsDemoAdmin: () => Promise<void>;
+  loginAsDemoTeacher: () => Promise<void>;
+  loginAsDemoUser: (role: UserRole) => Promise<void>;
+  setRole: (role: UserRole) => void;
+  // Backward compatibility for components using old AppDataContext
+  activeRole: UserRole;
+  setMockRole: (role: UserRole) => void;
+  resetMockRole: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -286,6 +295,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole('guest');
   };
 
+  // Demo login functions for demo environment
+  const loginAsDemoAdmin = async () => {
+    setIsLoading(true);
+    try {
+      const { signInAsDemoAdmin } = await import('../services/demoProvisioning');
+      const result = await signInAsDemoAdmin();
+      if (result.success && result.uid) {
+        // The handleUserRole will be called automatically via onAuthStateChanged
+        // but we can also trigger it manually
+        const user = auth.currentUser;
+        if (user) {
+          await handleUserRole(user);
+        }
+      }
+    } catch (err) {
+      console.error('Demo admin login failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginAsDemoTeacher = async () => {
+    setIsLoading(true);
+    try {
+      const { signInAsDemoTeacher } = await import('../services/demoProvisioning');
+      const result = await signInAsDemoTeacher();
+      if (result.success && result.uid) {
+        const user = auth.currentUser;
+        if (user) {
+          await handleUserRole(user);
+        }
+      }
+    } catch (err) {
+      console.error('Demo teacher login failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginAsDemoUser = async (role: UserRole) => {
+    if (role === 'admin') {
+      await loginAsDemoAdmin();
+    } else if (role === 'teacher') {
+      await loginAsDemoTeacher();
+    } else {
+      // For student/demo roles, just set the role locally (for backward compat)
+      setRole(role);
+    }
+  };
+
+  const setMockRole = (newRole: UserRole) => {
+    setRole(newRole);
+  };
+
+  const resetMockRole = () => {
+    // Reset to the actual role from Firestore
+    if (currentUser) {
+      handleUserRole(currentUser);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -300,7 +370,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resendVerificationEmail,
         checkEmailVerification,
         loginWithGoogle,
-        logout
+        logout,
+        loginAsDemoAdmin,
+        loginAsDemoTeacher,
+        loginAsDemoUser,
+        setRole,
+        activeRole: role,
+        setMockRole,
+        resetMockRole
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -38,8 +38,8 @@ import { WebsiteCmsView } from './WebsiteCmsView';
 import { TelegramView } from './TelegramView';
 import { SettingsView } from './SettingsView';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
-import { crmService } from '../../services/crmService';
 import { normalizeLeadStatus } from '../../utils/leads';
+import { leadsService } from '../../services/repository';
 
 type ErpTab =
   | 'dashboard'
@@ -111,9 +111,14 @@ export const CenterErpApp: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<ErpTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [leadsCount, setLeadsCount] = useState(0);
 
-  // Quick lead state
-  const leadsCount = crmService.getLeads().filter((l) => normalizeLeadStatus(l.status) === 'New').length;
+  // Fetch leads count on mount
+  useEffect(() => {
+    leadsService.getAllLeads().then((leads) => {
+      setLeadsCount(leads.filter((l) => normalizeLeadStatus(l.status) === 'New').length);
+    }).catch(() => setLeadsCount(0));
+  }, []);
 
   const renderActiveView = () => {
     switch (activeTab) {

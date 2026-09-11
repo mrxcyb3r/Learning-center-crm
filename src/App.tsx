@@ -13,7 +13,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { AppDataProvider } from './context/AppDataContext';
 import { AppBackground } from './components/AppBackground';
 import { RenessansLandingPage } from './pages/RenessansLandingPage';
 import { PublicCoursesPage } from './pages/PublicCoursesPage';
@@ -122,25 +121,23 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <AppDataProvider>
-            <BrowserRouter>
-              <SEOHead />
-              <AppBackground />
-              <MainAppRoutes />
-              <ToastContainer
-                position="bottom-right"
-                autoClose={3500}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="dark"
-              />
-            </BrowserRouter>
-          </AppDataProvider>
+          <BrowserRouter>
+            <SEOHead />
+            <AppBackground />
+            <MainAppRoutes />
+            <ToastContainer
+              position="bottom-right"
+              autoClose={3500}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+          </BrowserRouter>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

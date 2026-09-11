@@ -3,7 +3,6 @@ import { Bell, Search, Moon, Sun, LogOut, Menu, X } from 'lucide-react';
 import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { DEMO_MODE } from '../../config/demo';
 
 interface TeacherHeaderProps {
   onMenuToggle: () => void;
@@ -11,7 +10,7 @@ interface TeacherHeaderProps {
 }
 
 export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobileMenuOpen }) => {
-  const { teacherName, isDemoMode } = useTeacherPortal();
+  const { teacherName } = useTeacherPortal();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -35,12 +34,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
 
-        {isDemoMode && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">DEMO REJIM</span>
-          </div>
-        )}
+        
       </div>
 
       {/* Right: Actions */}
@@ -86,7 +80,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
         </div>
 
         {/* Logout */}
-        {!isDemoMode && currentUser && (
+        {currentUser && (
           <button
             onClick={() => logout()}
             className={`p-2.5 rounded-xl transition cursor-pointer ${

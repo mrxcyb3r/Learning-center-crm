@@ -7,7 +7,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // Security Monitoring & Performance Metrics
 let rateLimitTriggerCount = 0;
@@ -58,6 +58,9 @@ const runWatchdogCheck = () => {
 };
 
 const watchdogInterval = setInterval(runWatchdogCheck, 60000);
+if (watchdogInterval.unref) {
+  watchdogInterval.unref();
+}
 
 const runSelfHealingCycle = async () => {
   try {
@@ -75,6 +78,9 @@ const runSelfHealingCycle = async () => {
 };
 
 const selfHealingInterval = setInterval(runSelfHealingCycle, 600000); // 10-minute cycle
+if (selfHealingInterval.unref) {
+  selfHealingInterval.unref();
+}
 
 // 1. Environment & Secrets Audit
 const validateEnvironmentAndSecrets = () => {
@@ -708,17 +714,24 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('Application build not found. Please build the frontend first.');
+      }
     });
   }
 
-  const server = app.listen(PORT, 'localhost', () => {
-    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on port ${PORT} (0.0.0.0:${PORT})`);
   });
 
   // Graceful Shutdown Handler
   const handleGracefulShutdown = (signal: string) => {
     console.log(`[SHUTDOWN] Received ${signal}. Draining active connections...`);
+    clearInterval(watchdogInterval);
+    clearInterval(selfHealingInterval);
     server.close(() => {
       console.log('[SHUTDOWN] CenterFlow HTTP server cleanly closed.');
       process.exit(0);
@@ -734,4 +747,7 @@ async function startServer() {
   process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('[FATAL SERVER STARTUP ERROR]', err);
+  process.exit(1);
+});

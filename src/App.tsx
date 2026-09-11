@@ -23,6 +23,7 @@ import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { TeacherLoginPage } from './pages/teacher/TeacherLoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { ParticleBackground } from './components/UI/ParticleBackground';
 import { SEOHead } from './components/SEOHead';
 import { preloadImages } from './utils/performance';
@@ -134,6 +135,7 @@ export default function App() {
             <SEOHead />
             <AppBackground />
             <MainAppRoutes />
+            <AuthDebugPanel />
             <ToastContainer
               position="bottom-right"
               autoClose={3500}

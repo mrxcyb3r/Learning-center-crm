@@ -45,6 +45,9 @@ import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { leadsService, murojaatlarService } from '../../services/repository';
 import { ensureSeeded } from '../../services/seed';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { DEMO_MODE } from '../../config/demo';
 
 type ErpTab =
   | 'dashboard'
@@ -125,6 +128,11 @@ export const CenterErpApp: React.FC = () => {
   const [leadsCount, setLeadsCount] = useState(0);
   const [murojaatUnread, setMurojaatUnread] = useState(0);
 
+  // Whether the workspace is currently running on demo data. Defaults to the
+  // build flag; flips off once an operator clears the demo namespace and back
+  // on when it is restored for presentations.
+  const [demoActive, setDemoActive] = useState(DEMO_MODE);
+
   // Fetch counts on mount
   useEffect(() => {
     leadsService.getAllLeads().then((leads) => {
@@ -136,6 +144,20 @@ export const CenterErpApp: React.FC = () => {
     // Centralized demo-data seed — the single sanctioned invocation site.
     // Runs only inside the admin-guarded shell; safe under StrictMode.
     ensureSeeded().catch(() => {});
+    // Reflect operator-visible demo state (cleared via Settings → launch).
+    getDoc(doc(db, 'settings', 'seed_meta'))
+      .then((s) => {
+        if (s.exists() && s.data()?.cleared === true) setDemoActive(false);
+      })
+      .catch(() => {});
+    const onCleared = () => setDemoActive(false);
+    const onRestored = () => setDemoActive(DEMO_MODE);
+    window.addEventListener('centerflow-demo-cleared', onCleared);
+    window.addEventListener('centerflow-demo-restored', onRestored);
+    return () => {
+      window.removeEventListener('centerflow-demo-cleared', onCleared);
+      window.removeEventListener('centerflow-demo-restored', onRestored);
+    };
   }, []);
 
   const renderActiveView = () => {
@@ -237,12 +259,14 @@ export const CenterErpApp: React.FC = () => {
             </button>
           </div>
 
-          {/* Demo indicator */}
-          <div className="px-3.5 mb-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-            <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
-              Demo Rejimi
-            </span>
-          </div>
+          {/* Demo indicator (visible only while demo data is loaded) */}
+          {demoActive && (
+            <div className="px-3.5 mb-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+              <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                Demo Rejimi
+              </span>
+            </div>
+          )}
 
           {/* Navigation Items */}
           <nav className="space-y-5">
@@ -376,6 +400,13 @@ export const CenterErpApp: React.FC = () => {
 
         {/* View Body */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+          {demoActive && (
+            <div className="mb-4 px-4 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2 text-[11px] font-bold text-amber-700 dark:text-amber-400">
+              <Sparkles className="w-4 h-4 shrink-0" />
+              Namoyish (demo) rejimida ishlayapsiz — ko'rsatilgan ma'lumotlar namuna sifatida.
+              Haqiqiy ma'lumotlarga o'tish: Sozlamalar → Ishga tushirish.
+            </div>
+          )}
           <AdminErrorBoundary key={activeTab} sectionName={SIDEBAR_ITEMS.find((s) => s.id === activeTab)?.label}>
             {renderActiveView()}
           </AdminErrorBoundary>

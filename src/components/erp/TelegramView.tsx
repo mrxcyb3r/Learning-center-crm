@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Globe,
   Inbox,
+  LifeBuoy,
 } from 'lucide-react';
 import { telegramStatsService, TelegramStats } from '../../services/repository';
 import {
@@ -219,6 +220,34 @@ const handleSetupWebhook = async (force = false) => {
                 : webhookRegistered
                   ? '0 ta kutilayotgan yangilanish'
                   : 'Rejim: ' + (status?.mode || 'webhook')}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+            <LifeBuoy className="w-6 h-6" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Yordam (Support) Chat
+            </span>
+            <div className={`text-base font-black mt-0.5 flex items-center gap-1.5 ${
+              status?.supportChatId ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${status?.supportChatId ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              <span>
+                {status === null
+                  ? 'Tekshirilmoqda...'
+                  : status.supportChatId
+                    ? 'Sozlangan'
+                    : "Sozlanmagan (SUPPORT_TELEGRAM_CHAT_ID)"}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">
+              {status?.supportChatId
+                ? 'Foydalanuvchi so\'rovlari ushbu chatga yo\'llanadi'
+                : '"Yordam" bot so\'roqlari yuborilmaydi'}
             </p>
           </div>
         </div>

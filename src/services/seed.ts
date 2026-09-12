@@ -387,17 +387,29 @@ async function writeDemoDataset(): Promise<void> {
  * Ensure seed state. Must only be called from an admin-authenticated context
  * (settings/* and collection writes are admin-gated by Firestore rules).
  * Safe to call repeatedly and under React StrictMode.
+ *
+ * When an operator clears demo data, `settings/seed_meta` is marked with
+ * `cleared: true` and the demo namespace is NOT re-created automatically
+ * (see src/services/demoClear.ts). Demo data can be restored on demand via
+ * reseedDemoData().
  */
 export async function ensureSeeded(): Promise<void> {
   if (seedInFlight) return seedInFlight;
   seedInFlight = (async () => {
     try {
       const meta = await getDoc(SEED_META_REF());
-      if (meta.exists() && (meta.data().version ?? 0) >= SEED_VERSION) return;
+      if (meta.exists()) {
+        const data = meta.data();
+        const version = data.version ?? 0;
+        // Operator deliberately cleared demo data — honor it, never auto-reseed.
+        if (data.cleared === true) return;
+        // Already seeded at the current version.
+        if (version >= SEED_VERSION) return;
+      }
       await writeDemoDataset();
       await setDoc(
         SEED_META_REF(),
-        { version: SEED_VERSION, seededAt: new Date().toISOString() },
+        { version: SEED_VERSION, cleared: false, seededAt: new Date().toISOString() },
         { merge: true }
       );
     } catch (err) {
@@ -410,4 +422,17 @@ export async function ensureSeeded(): Promise<void> {
   } finally {
     seedInFlight = null;
   }
+}
+
+/**
+ * Explicitly restore the demo dataset after it was cleared (presentations).
+ * Clears the `cleared` marker so normal seeding semantics resume.
+ */
+export async function reseedDemoData(): Promise<void> {
+  await writeDemoDataset();
+  await setDoc(
+    SEED_META_REF(),
+    { version: SEED_VERSION, cleared: false, seededAt: new Date().toISOString() },
+    { merge: true }
+  );
 }

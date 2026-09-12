@@ -319,6 +319,17 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // INVOICE NUMBERING COUNTERS (STEP 6A/6D FINANCIAL INTEGRITY)
+    // =========================================================================
+    // Only admins may touch counter documents directly. Numeric allocation for
+    // teachers happens exclusively through the trusted server route
+    // POST /api/invoices/number (Admin SDK bypasses these rules), so a teacher
+    // can never forge or rewind the sequence.
+    match /counters/{counterId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
     // TEACHER INVITATIONS - one-time onboarding capabilities
     // =========================================================================
     // Invitation document IDs are unguessable 256-bit capabilities. Single-doc

@@ -498,10 +498,42 @@ export const studentsService = {
 };
 
 /**
- * Invoice number generator using a counter document for atomic increments.
+ * Invoice number generator.
+ *
+ * Primary path: the trusted server route POST /api/invoices/number, which is
+ * role-checked (admin/superadmin/teacher) and allocates the number inside a
+ * server-side transaction — required because Firestore rules deny client-side
+ * writes to the `counters` collection for teachers.
+ *
+ * Fallback: local read-path local transaction (admin-only via rules), so the
+ * admin ERP still works even if the API layer is unreachable (e.g. static
+ * demo hosting).
+ *
  * Format: INV-YYYY-NNNN (e.g., INV-2026-0001)
  */
 async function generateInvoiceNumber(): Promise<string> {
+  try {
+    const token = await auth.currentUser?.getIdToken(true);
+    const res = await fetch('/api/invoices/number', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.invoiceNumber === 'string' && data.invoiceNumber) {
+        return data.invoiceNumber;
+      }
+    }
+  } catch {
+    // API layer unreachable — fall through to the local admin path.
+  }
+  return generateInvoiceNumberLocal();
+}
+
+async function generateInvoiceNumberLocal(): Promise<string> {
   const year = new Date().getFullYear();
   const counterRef = doc(db, 'counters', `invoices_${year}`);
 

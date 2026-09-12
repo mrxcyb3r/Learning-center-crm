@@ -7,6 +7,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createTelegramRouter } from './server/telegramRoutes';
 import { createSupportRouter } from './server/supportRoutes';
+import { createInvoiceRouter } from './server/invoiceRoutes';
 import { verifyWebhookOnStartup } from './server/telegramService';
 
 const app = express();
@@ -240,7 +241,11 @@ const telegramRouter = createTelegramRouter({
   isValidUid,
   isValidPin,
 });
+const supportRouter = createSupportRouter({ checkRateLimit, logSecurityEvent });
+const invoiceRouter = createInvoiceRouter({ checkRateLimit, logSecurityEvent });
 app.use('/api', telegramRouter);
+app.use('/api', supportRouter);
+app.use('/api', invoiceRouter);
 app.use('/telegram/webhook', (req, res, next) => {
   req.url = '/telegram/webhook';
   telegramRouter(req, res, next);

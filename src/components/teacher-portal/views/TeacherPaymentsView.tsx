@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
@@ -73,6 +73,27 @@ export const TeacherPaymentsView: React.FC = () => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [invoiceData, setInvoiceData] = useState<{ invoiceNumber: string; amount: number; date: string; studentName: string; paymentMethod: string; teacherName: string; course: string } | null>(null);
 
+  // Real, server-allocated invoice numbers keyed by payment id. Numbers are
+  // only ever taken from the authoritative invoice documents — never derived.
+  const [invoiceLookup, setInvoiceLookup] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let active = true;
+    invoicesService
+      .getInvoicesByTeacher(teacherUid)
+      .then((list) => {
+        if (!active) return;
+        const map: Record<string, string> = {};
+        list.forEach((inv) => {
+          if (inv.paymentId) map[inv.paymentId] = inv.invoiceNumber;
+        });
+        setInvoiceLookup(map);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [teacherUid]);
+
   const selectedStudent = useMemo(
     () => myStudents.find((s) => s.id === selectedStudentId),
     [myStudents, selectedStudentId]
@@ -90,10 +111,10 @@ export const TeacherPaymentsView: React.FC = () => {
           groupId: student?.groupId || '',
           groupName: group?.name || student?.groupName || '',
           receiptNumber: p.receiptRef || `REC-${p.id.slice(0, 8).toUpperCase()}`,
-          invoiceNumber: p.invoiceId ? `INV-${p.invoiceId.slice(-8).toUpperCase()}` : null,
+          invoiceNumber: p.invoiceId ? invoiceLookup[p.id] || null : null,
         };
       });
-  }, [payments, myStudents, myGroups]);
+  }, [payments, myStudents, myGroups, invoiceLookup]);
 
   const filteredPayments = useMemo(() => {
     let result = [...studentPayments];

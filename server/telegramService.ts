@@ -875,12 +875,31 @@ Mavjud buyruqlar:
 
 Yuborgan ma'lumotlaringiz Renessans o'quv markazi administratorlariga uzatiladi.`;
 
-const CONTACT_TEXT = `📞 Biz bilan bog'lanish
+/** Rendered center identity block for bot texts (configured or defaults). */
+let cachedCenterBlock: string | null = null;
 
-Renessans O'quv Markazi
-📍 Yangiobod tumani, 1-maktab binosi
-📱 ${CENTER_PHONE}
-🧭 Dushanba — Shanba: 08:30 — 21:00
+/**
+ * Best-effort dynamic center signature. Backed by the configured
+ * `settings/center` document when available; falls back to safe defaults.
+ * Never blocks the bot on unrelated config failures.
+ */
+async function getCenterBlock(): Promise<string> {
+  if (cachedCenterBlock) return cachedCenterBlock;
+  try {
+    const { getCenterConfig } = await import('./settingsService');
+    const center = await getCenterConfig();
+    cachedCenterBlock =
+      `${center?.name || "Renessans O'quv Markazi"}\n📍 ${center?.address || 'Yangiobod tumani, 1-maktab binosi'}\n📱 ${center?.phone || CENTER_PHONE}`;
+  } catch {
+    cachedCenterBlock =
+      `${"Renessans O'quv Markazi"}\n📍 ${'Yangiobod tumani, 1-maktab binosi'}\n📱 ${CENTER_PHONE}`;
+  }
+  return cachedCenterBlock;
+}
+
+const CONTACT_TEXT_TEMPLATE = (block: string) => `📞 Biz bilan bog'lanish
+
+${block}
 
 Savol: /question
 Sinov darsi: /trial`;
@@ -894,7 +913,8 @@ async function showHelp(chatId: string | number): Promise<void> {
 }
 
 async function showContact(chatId: string | number): Promise<void> {
-  await sendKeyboard(chatId, CONTACT_TEXT, MAIN_MENU);
+  const block = await getCenterBlock();
+  await sendKeyboard(chatId, CONTACT_TEXT_TEMPLATE(block), MAIN_MENU);
 }
 
 async function startTrial(chatId: string | number): Promise<void> {
@@ -1760,4 +1780,4 @@ export async function verifyWebhookOnStartup(): Promise<void> {
   }
 }
 
-export { WELCOME_TEXT, HELP_TEXT, CONTACT_TEXT };
+export { WELCOME_TEXT, HELP_TEXT };

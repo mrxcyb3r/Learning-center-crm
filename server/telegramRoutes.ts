@@ -294,6 +294,7 @@ export function createTelegramRouter(deps: RouterDeps): Router {
         token: configured,
         webhookSecret: Boolean(getWebhookSecret()),
         adminChatId: Boolean(process.env.TELEGRAM_ADMIN_CHAT_ID),
+        supportChatId: Boolean(process.env.SUPPORT_TELEGRAM_CHAT_ID),
         publicUrl: baseUrl || null,
         expectedWebhookUrl: expectedUrl,
         firestore: fs.available,

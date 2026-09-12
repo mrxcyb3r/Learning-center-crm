@@ -184,6 +184,8 @@ export interface TelegramServerStatus {
   bot: TelegramBotInfo | null;
   webhook: TelegramWebhookInfo | null;
   serverTime?: string;
+  /** True when SUPPORT_TELEGRAM_CHAT_ID is configured server-side. */
+  supportChatId?: boolean;
 }
 
 export async function getFirebaseIdToken(): Promise<string | null> {

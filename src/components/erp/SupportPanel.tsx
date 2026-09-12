@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { SUPPORT } from '../../config/support';
 import { useAuth } from '../../context/AuthContext';
+import { SupportAdminList } from './SupportAdminList';
+
+const ADMIN_ROLES = new Set(['admin', 'superadmin']);
 
 type Priority = 'oddiy' | 'muhim' | 'shoshilinch';
 
@@ -20,7 +23,7 @@ const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
 ];
 
 export const SupportPanel: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, role } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -239,6 +242,9 @@ export const SupportPanel: React.FC = () => {
           </div>
         </form>
       )}
+
+      {/* Admin inbox — visible only to admins/superadmins */}
+      {ADMIN_ROLES.has(role) && <SupportAdminList />}
     </div>
   );
 };

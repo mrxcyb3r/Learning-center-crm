@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { settingsService, auditService, backupService, notificationsService } from '../../services/repository';
 import { TelegramConnectionCard } from './TelegramConnectionCard';
+import { DemoDataPanel } from './DemoDataPanel';
 import { AuditLogEntry } from '../../types/crm';
 
 export const SettingsView: React.FC = () => {
@@ -535,7 +536,7 @@ export const SettingsView: React.FC = () => {
                     Markazni ishga tushirish
                   </h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Hozirgi bosqich: namoyish (demo) ma'lumotlar faol.
+                    Markaz ishga tushirishdan oldin namoyish (demo) ma'lumotlarni boshqaring.
                   </p>
                 </div>
               </div>
@@ -589,6 +590,9 @@ export const SettingsView: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Demo → Real: safe demo-data management */}
+          <DemoDataPanel />
         </div>
       )}
     </div>

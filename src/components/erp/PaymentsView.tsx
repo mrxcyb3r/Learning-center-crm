@@ -15,6 +15,7 @@ import { paymentsService, invoicesService, studentsService, coursesService, sett
 import { CourseData, IncomePaymentRecord, StudentRecord, Invoice } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 import { ReceiptModal } from './ReceiptModal';
+import { InvoiceModal } from './InvoiceModal';
 import { getReceiptNumber, ReceiptCenter } from '../../utils/receipt';
 
 const UZ_MONTHS = [
@@ -575,6 +576,15 @@ export const PaymentsView: React.FC = () => {
             setViewReceipt(null);
             setReceiptSuccess(false);
           }}
+        />
+      )}
+
+      {/* Invoice Modal */}
+      {viewInvoice && (
+        <InvoiceModal
+          invoice={viewInvoice}
+          center={center}
+          onClose={() => setViewInvoice(null)}
         />
       )}
     </div>

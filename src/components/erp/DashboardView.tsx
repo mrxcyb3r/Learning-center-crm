@@ -5,9 +5,11 @@ import {
   Send,
   Phone,
   AlertCircle,
+  MessageSquare,
+  ChevronRight,
 } from 'lucide-react';
-import { leadsService, studentsService, paymentsService, expensesService, coursesService, groupsService } from '../../services/repository';
-import { Lead, GroupScheduleItem, StudentRecord, IncomePaymentRecord, ExpenseRecord, CourseData } from '../../types/crm';
+import { leadsService, studentsService, paymentsService, expensesService, coursesService, groupsService, murojaatlarService } from '../../services/repository';
+import { Lead, GroupScheduleItem, StudentRecord, IncomePaymentRecord, ExpenseRecord, CourseData, MurojaatSummary } from '../../types/crm';
 import { formatCurrencyShort, formatCompactCurrency, toSafeNumber, getStudentName } from '../../utils/format';
 import { normalizeLeadStatus } from '../../utils/leads';
 
@@ -23,6 +25,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
+  const [murojaat, setMurojaat] = useState<MurojaatSummary>({ total: 0, newCount: 0, unread: 0, telegram: 0, website: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,13 +33,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
 
     const loadData = async () => {
       try {
-        const [leadsData, scheduleData, studentsData, paymentsData, expensesData, coursesData] = await Promise.all([
+        const [leadsData, scheduleData, studentsData, paymentsData, expensesData, coursesData, murojaatData] = await Promise.all([
           leadsService.getAllLeads(),
           groupsService.getAllGroups(),
           studentsService.getAllStudents(),
           paymentsService.getAllPayments(),
           expensesService.getAllExpenses(),
-          coursesService.getAllCourses()
+          coursesService.getAllCourses(),
+          murojaatlarService.getSummary()
         ]);
 
         if (mounted) {
@@ -46,6 +50,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
           setPayments(paymentsData as unknown as IncomePaymentRecord[]);
           setExpenses(expensesData as unknown as ExpenseRecord[]);
           setCourses(coursesData as unknown as CourseData[]);
+          setMurojaat(murojaatData);
           setLoading(false);
         }
       } catch (err) {
@@ -165,11 +170,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => onNavigateTab('leads')}
+            onClick={() => onNavigateTab('murojaatlar')}
             className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-2 transition cursor-pointer"
           >
-            <PhoneCall className="w-4 h-4" />
-            <span>Murojaatlar ({recentLeads})</span>
+            <MessageSquare className="w-4 h-4" />
+            <span>Murojaatlar ({murojaat.total})</span>
           </button>
         </div>
       </div>
@@ -248,6 +253,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
           </div>
         </div>
       </div>
+
+      {/* Unified Murojaatlar summary (real data) */}
+      <button
+        onClick={() => onNavigateTab('murojaatlar')}
+        className="w-full px-5 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500/40 transition cursor-pointer flex items-center justify-between gap-4 text-left"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-black text-slate-900 dark:text-white">Murojaatlar</div>
+            <div className="flex items-center gap-3 mt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <span>{murojaat.total} jami</span>
+              <span className="text-blue-600 dark:text-blue-400">{murojaat.newCount} yangi</span>
+              <span className="text-amber-600 dark:text-amber-400">{murojaat.unread} o'qilmagan</span>
+            </div>
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+      </button>
 
       {/* Lead Pipeline Funnel */}
       <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard,
   PhoneCall,
+  MessageSquare,
   Users,
   GraduationCap,
   BookOpen,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { DashboardView } from './DashboardView';
+import { MurojaatlarView } from './MurojaatlarView';
 import { LeadsCrmView } from './LeadsCrmView';
 import { StudentsView } from './StudentsView';
 import { TeachersView } from './TeachersView';
@@ -39,11 +41,12 @@ import { TelegramView } from './TelegramView';
 import { SettingsView } from './SettingsView';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { normalizeLeadStatus } from '../../utils/leads';
-import { leadsService } from '../../services/repository';
+import { leadsService, murojaatlarService } from '../../services/repository';
 import { ensureSeeded } from '../../services/seed';
 
 type ErpTab =
   | 'dashboard'
+  | 'murojaatlar'
   | 'leads'
   | 'students'
   | 'teachers'
@@ -69,7 +72,8 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: "Qabul & O'quvchilar",
     items: [
-      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall, badge: 'YANGI' },
+      { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
+      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall },
       { id: 'students', label: 'O\'quvchilar', icon: Users },
     ],
   },
@@ -113,12 +117,16 @@ export const CenterErpApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ErpTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadsCount, setLeadsCount] = useState(0);
+  const [murojaatUnread, setMurojaatUnread] = useState(0);
 
-  // Fetch leads count on mount
+  // Fetch counts on mount
   useEffect(() => {
     leadsService.getAllLeads().then((leads) => {
       setLeadsCount(leads.filter((l) => normalizeLeadStatus(l.status) === 'New').length);
     }).catch(() => setLeadsCount(0));
+    murojaatlarService.getSummary().then((s) => {
+      setMurojaatUnread(s.unread);
+    }).catch(() => setMurojaatUnread(0));
     // Centralized demo-data seed — the single sanctioned invocation site.
     // Runs only inside the admin-guarded shell; safe under StrictMode.
     ensureSeeded().catch(() => {});
@@ -128,6 +136,8 @@ export const CenterErpApp: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardView onNavigateTab={(tab) => setActiveTab(tab as ErpTab)} />;
+      case 'murojaatlar':
+        return <MurojaatlarView onSummaryChange={(s) => setMurojaatUnread(s.unread)} />;
       case 'leads':
         return <LeadsCrmView />;
       case 'students':
@@ -255,6 +265,18 @@ export const CenterErpApp: React.FC = () => {
                           <span>{item.label}</span>
                         </div>
 
+                        {item.id === 'murojaatlar' && murojaatUnread > 0 && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                              isActive
+                                ? 'bg-slate-950 text-amber-400'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                            }`}
+                          >
+                            {murojaatUnread}
+                          </span>
+                        )}
+
                         {item.id === 'leads' && leadsCount > 0 && (
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
@@ -327,11 +349,11 @@ export const CenterErpApp: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setActiveTab('leads')}
+              onClick={() => setActiveTab('murojaatlar')}
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>{leadsCount} yangi murojaat</span>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{murojaatUnread} o'qilmagan murojaat</span>
             </button>
 
             <button

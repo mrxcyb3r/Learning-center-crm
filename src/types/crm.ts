@@ -11,7 +11,10 @@ export type LeadStatus =
   | 'Sinov darsi belgilandi'
   | 'Sinov darsi yakunlandi'
   | "O'quvchiga aylandi"
-  | "Yo'qotildi";
+  | "Yo'qotildi"
+  | 'Jarayonda'
+  | 'Yakunlandi'
+  | 'Bekor qilindi';
 
 export interface Lead {
   id: string;
@@ -25,6 +28,8 @@ export interface Lead {
   status: LeadStatus;
   archived?: boolean;
   source?: string;
+  isRead?: boolean;
+  updatedAt?: string;
   trialDateTime?: string;
   trialRoom?: string;
   trialTeacher?: string;
@@ -394,6 +399,57 @@ export interface CenterSettings {
     notifyTrials: boolean;
     notifyOverdue: boolean;
   };
+}
+
+// =========================================================================
+// Unified "Murojaatlar" inbox model
+// =========================================================================
+
+export type MurojaatKind = 'trial' | 'question';
+export type MurojaatSource = 'website' | 'telegram';
+
+export type MurojaatStatus =
+  | 'Yangi'
+  | "Bog'lanildi"
+  | 'Jarayonda'
+  | 'Yakunlandi'
+  | 'Bekor qilindi';
+
+/**
+ * A single normalized row for the unified admin inbox. This is a read-side
+ * projection over the existing `leads` and `questions` documents — it is never
+ * written back as its own collection. `origSource` preserves the raw stored
+ * source value.
+ */
+export interface Murojaat {
+  id: string;
+  kind: MurojaatKind;
+  source: MurojaatSource;
+  origSource: string;
+  name: string;
+  phone: string;
+  course: string;
+  message: string;
+  status: MurojaatStatus;
+  isRead: boolean;
+  telegramChatId?: string;
+  telegramUsername?: string;
+  telegramUserId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  assignedTo?: string;
+  preferredContact?: string;
+  trialDateTime?: string;
+  email?: string;
+}
+
+export interface MurojaatSummary {
+  total: number;
+  newCount: number;
+  unread: number;
+  telegram: number;
+  website: number;
 }
 
 export interface AuditLogEntry {

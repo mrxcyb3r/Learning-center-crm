@@ -38,6 +38,10 @@ import {
 import {
   Lead,
   LeadStatus,
+  Murojaat,
+  MurojaatKind,
+  MurojaatStatus,
+  MurojaatSummary,
   StudentRecord,
   TeacherRecord,
   CourseData,
@@ -55,6 +59,7 @@ import {
   TeacherInvitation
 } from '../types/crm';
 import { cleanData } from './firestore';
+import { isTelegramSource, normalizeMurojaatStatus, sortMurojaatNewestFirst, summarizeMurojaat, toMurojaat } from '../utils/murojaat';
 
 const USERS_COL = 'users';
 const GROUPS_COL = 'groups';
@@ -981,6 +986,16 @@ export const questionsService = {
     return docRef.id;
   },
 
+  async getAllQuestions(): Promise<Record<string, any>[]> {
+    try {
+      const snap = await getDocs(query(collection(db, QUESTIONS_COL), orderBy('createdAt', 'desc')));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch {
+      const snap = await getDocs(collection(db, QUESTIONS_COL)).catch(() => ({ docs: [] } as any));
+      return snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    }
+  },
+
   async getQuestionsBySource(source: string): Promise<any[]> {
     try {
       const snap = await getDocs(
@@ -997,7 +1012,59 @@ export const questionsService = {
         .filter((q: any) => (q.source || '').toLowerCase() === source.toLowerCase())
         .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     }
-  }
+  },
+
+  async updateQuestion(id: string, data: Partial<Record<string, any>>): Promise<void> {
+    await updateDoc(doc(db, QUESTIONS_COL, id), cleanData(data));
+  },
+};
+
+/**
+ * Unified "Murojaatlar" inbox service.
+ *
+ * Read-side projection over the existing `leads` (trial applications) and
+ * `questions` collections — nothing is duplicated or migrated. Admin mutations
+ * write back to the origin document additively (isRead / status / notes /
+ * updatedAt) and are protected by the existing admin-only rules.
+ */
+export const murojaatlarService = {
+  async getAll(): Promise<Murojaat[]> {
+    const [leadDocs, questionDocs] = await Promise.all([
+      leadsService.getAllLeads().catch(() => []),
+      questionsService.getAllQuestions().catch(() => []),
+    ]);
+    const list: Murojaat[] = [
+      ...leadDocs.map((l) => toMurojaat(l as unknown as Record<string, any>, 'trial')),
+      ...questionDocs.map((q) => toMurojaat(q, 'question')),
+    ];
+    return sortMurojaatNewestFirst(list);
+  },
+
+  async getSummary(): Promise<MurojaatSummary> {
+    return summarizeMurojaat(await murojaatlarService.getAll());
+  },
+
+  async markRead(id: string, kind: MurojaatKind, isRead: boolean): Promise<void> {
+    const patch = { isRead, updatedAt: new Date().toISOString() };
+    if (kind === 'trial') await leadsService.updateLead(id, patch);
+    else await questionsService.updateQuestion(id, patch);
+  },
+
+  async setStatus(id: string, kind: MurojaatKind, status: MurojaatStatus): Promise<void> {
+    const patch = { status, updatedAt: new Date().toISOString() };
+    if (kind === 'trial') await leadsService.updateLead(id, patch);
+    else await questionsService.updateQuestion(id, patch);
+  },
+
+  async setNotes(id: string, kind: MurojaatKind, notes: string): Promise<void> {
+    const patch = { notes, updatedAt: new Date().toISOString() };
+    if (kind === 'trial') await leadsService.updateLead(id, patch);
+    else await questionsService.updateQuestion(id, patch);
+  },
+
+  // Convenience accessor so callers can compute the unread badge in one call.
+  getNormalizedStatus: normalizeMurojaatStatus,
+  isTelegramSource,
 };
 
 export interface TelegramStats {

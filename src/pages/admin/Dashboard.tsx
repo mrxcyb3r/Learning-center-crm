@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, SUPER_ADMIN_UUID } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { getFirebaseIdToken } from '../../services/telegram';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -125,9 +126,13 @@ export const AdminDashboard: React.FC = () => {
     setIsBroadcasting(true);
     setBroadcastResult(null);
     try {
+      const token = await getFirebaseIdToken();
       const response = await fetch('/api/bot/broadcast', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           message: broadcastMessage,
           targetAudience

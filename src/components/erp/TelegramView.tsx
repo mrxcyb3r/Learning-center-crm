@@ -272,7 +272,16 @@ export const TelegramView: React.FC = () => {
                 <Inbox className="w-3.5 h-3.5" /> Firestore (Admin)
               </span>
               <span className={`font-mono font-bold ${status?.configured?.firestore ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-                {status?.configured?.firestore ? 'Mavjud' : 'Mavjud emas'}
+                {status ? (status.configured.firestore ? 'Ishlayapti' : 'Ishlamayapti') : 'Tekshirilmoqda...'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 font-semibold flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5" /> Firestore loyihasi (Admin)
+              </span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                {status?.configured?.firestoreProjectId || '—'}
               </span>
             </div>
 

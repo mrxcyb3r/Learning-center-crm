@@ -63,6 +63,7 @@ export interface TelegramServerStatus {
     adminChatId: boolean;
     publicUrl: string | null;
     firestore: boolean;
+    firestoreProjectId?: string;
   };
   bot: TelegramBotInfo | null;
   webhook: TelegramWebhookInfo | null;
@@ -72,10 +73,20 @@ export interface TelegramServerStatus {
 export async function getFirebaseIdToken(): Promise<string | null> {
   try {
     const { auth } = await import('./firebase');
+    // Ensure the initial auth state is resolved before reading the current
+    // user (on a fresh page load currentUser stays null until the
+    // onAuthStateChanged listener has fired).
+    try {
+      await auth.authStateReady();
+    } catch {
+      // Older SDKs may not expose authStateReady; currentUser is read anyway.
+    }
     const user = auth.currentUser;
     if (!user) return null;
-    return await user.getIdToken();
-  } catch {
+    // Force a fresh mint so a stale/expired token is never sent.
+    return await user.getIdToken(true);
+  } catch (err) {
+    console.warn('[telegram] Could not obtain Firebase ID token:', err);
     return null;
   }
 }
@@ -93,16 +104,22 @@ export async function getTelegramStatus(): Promise<TelegramServerStatus | null> 
 
 export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: string; description?: string; url?: string }> {
   const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, error: 'Firebase admin sessiyasi topilmadi — qayta tizimga kiring va yangi urinib ko\'ring.' };
+  }
   try {
     const response = await fetch('/api/telegram/webhook/setup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({}),
     });
     const data = await response.json().catch(() => ({}));
+    if (!response.ok && (data as any).reason) {
+      return { ok: false, error: `Ruxsat rad etildi (${(data as any).reason}). Administrator maqomiga ega ekaningizni tekshiring.` };
+    }
     return {
       ok: response.ok && Boolean(data.ok),
       error: data.error,
@@ -116,16 +133,22 @@ export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: str
 
 export async function sendAdminTelegramMessage(chatId: string | number, text: string): Promise<{ ok: boolean; error?: string }> {
   const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, error: 'Firebase admin sessiyasi topilmadi — qayta tizimga kiring va yangi urinib ko\'ring.' };
+  }
   try {
     const response = await fetch('/api/telegram/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ chatId: String(chatId), text }),
     });
     const data = await response.json().catch(() => ({}));
+    if (!response.ok && (data as any).reason) {
+      return { ok: false, error: `Ruxsat rad etildi (${(data as any).reason}). Administrator maqomiga ega ekaningizni tekshiring.` };
+    }
     return { ok: response.ok && Boolean(data.ok), error: data.error };
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Xabar yuborishda xatolik.' };
@@ -226,11 +249,15 @@ export async function sendGradeNotification(payload: NotifyGradePayload): Promis
 }
 
 export async function sendGlobalBroadcast(message: string): Promise<BroadcastResponse> {
+  const token = await getFirebaseIdToken();
   try {
     const response = await fetch('/api/bot/broadcast', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message })
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message }),
     });
     if (response.status === 429) {
       const errData = await response.json().catch(() => ({}));
@@ -250,7 +277,7 @@ export async function sendGlobalBroadcast(message: string): Promise<BroadcastRes
         totalConnected: 0,
         sentCount: 0,
         failedCount: 0,
-        error: data.error || 'Broadcast failed'
+        error: data.error || `Broadcast failed${data.reason ? ` (${data.reason})` : ''}`
       };
     }
     return {

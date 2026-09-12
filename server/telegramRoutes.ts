@@ -26,26 +26,86 @@ interface RouterDeps {
 
 const BOT_MODE = (process.env.BOT_MODE || 'webhook').toLowerCase();
 
-async function isAdminRequest(req: Request): Promise<boolean> {
+interface AdminAuthResult {
+  allowed: boolean;
+  reason:
+    | 'x-admin-secret'
+    | 'firebase_token'
+    | 'missing_access_token'
+    | 'firebase_auth_unavailable'
+    | 'firestore_unavailable'
+    | 'doc_read_error'
+    | 'role_insufficient'
+    | 'token_verification_failed';
+  uid?: string;
+}
+
+async function isAdminRequest(req: Request): Promise<AdminAuthResult> {
   const envSecret = process.env.ADMIN_API_SECRET;
   const headerSecret = req.headers['x-admin-secret'];
   if (envSecret && headerSecret && headerSecret === envSecret) {
-    return true;
+    return { allowed: true, reason: 'x-admin-secret' };
   }
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!token) return false;
-  try {
-    const auth = getAdminAuth();
-    if (!auth) return false;
-    const decoded = await auth.verifyIdToken(token);
-    const snap = await getFirestore()?.collection('users').doc(decoded.uid).get().catch(() => null);
-    const data = snap?.exists ? snap.data() : null;
-    const role: string = data?.role || (decoded as any)?.role || 'guest';
-    return role === 'admin' || role === 'superadmin';
-  } catch {
-    return false;
+  if (!token) {
+    return { allowed: false, reason: 'missing_access_token' };
   }
+
+  const auth = getAdminAuth();
+  if (!auth) {
+    return { allowed: false, reason: 'firebase_auth_unavailable' };
+  }
+
+  let decoded: { uid: string; role?: string };
+  try {
+    decoded = await auth.verifyIdToken(token);
+  } catch (err: any) {
+    console.warn('[TELEGRAM AUTH] Firebase ID token verification failed:', err?.code || err?.message || String(err));
+    return { allowed: false, reason: 'token_verification_failed' };
+  }
+
+  const db = getFirestore();
+  let userData: Record<string, any> | null = null;
+  let readError: string | null = null;
+  if (!db) {
+    readError = 'firestore_unavailable';
+  } else {
+    try {
+      const snap = await db.doc(`users/${decoded.uid}`).get();
+      userData = snap.exists ? (snap.data() as Record<string, any>) : null;
+    } catch (err: any) {
+      readError = err?.code || err?.message || 'unknown';
+    }
+  }
+
+  if (readError) {
+    console.warn(
+      `[TELEGRAM AUTH] uid ${decoded.uid}: Firestore users/{uid} read failed (${readError}); denying.`
+    );
+    return { allowed: false, reason: readError === 'firestore_unavailable' ? 'firestore_unavailable' : 'doc_read_error', uid: decoded.uid };
+  }
+
+  const role: string = userData?.role || decoded.role || 'guest';
+  if (role === 'admin' || role === 'superadmin') {
+    return { allowed: true, reason: 'firebase_token', uid: decoded.uid };
+  }
+  console.warn(`[TELEGRAM AUTH] uid ${decoded.uid}: role "${role}" is not admin/superadmin; denying.`);
+  return { allowed: false, reason: 'role_insufficient', uid: decoded.uid };
+}
+
+function adminDenied(res: Response, auth: AdminAuthResult, logSecurityEvent: (t: string, d: Record<string, any>) => void): Response {
+  logSecurityEvent('TELEGRAM_ADMIN_AUTH_FAILED', {
+    route: '/api/telegram/',
+    ip: res.req?.ip || 'unknown',
+    reason: auth.reason,
+    uid: auth.uid || undefined,
+  });
+  return json(res, 403, {
+    error: 'Forbidden: Admin huquqi talab qilinadi.',
+    reason: auth.reason,
+  });
 }
 
 function json(res: Response, status: number, body: Record<string, any>): Response {
@@ -132,7 +192,7 @@ export function createTelegramRouter(deps: RouterDeps): Router {
         };
       }
     }
-    const fs = getFirestoreStatus();
+    const fs = await getFirestoreStatus();
     return json(res, 200, {
       connected: configured && Boolean(bot),
       mode: BOT_MODE,
@@ -142,6 +202,7 @@ export function createTelegramRouter(deps: RouterDeps): Router {
         adminChatId: Boolean(process.env.TELEGRAM_ADMIN_CHAT_ID),
         publicUrl: getPublicBaseUrl() || null,
         firestore: fs.available,
+        firestoreProjectId: fs.projectId,
       },
       bot,
       webhook,
@@ -157,9 +218,9 @@ export function createTelegramRouter(deps: RouterDeps): Router {
     if (!checkRateLimit(clientKey, 5000)) {
       return json(res, 429, { error: 'Too Many Requests', message: 'Webhook sozlash uchun kuting.' });
     }
-    if (!(await isAdminRequest(req))) {
-      logSecurityEvent('TELEGRAM_ADMIN_AUTH_FAILED', { route: '/api/telegram/webhook/setup', ip: req.ip });
-      return json(res, 403, { error: 'Forbidden: Admin huquqi talab qilinadi.' });
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
     }
     if (!getBotToken()) {
       return json(res, 503, { ok: false, error: 'TELEGRAM_BOT_TOKEN sozlanmagan.' });
@@ -198,9 +259,9 @@ export function createTelegramRouter(deps: RouterDeps): Router {
       logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/send', ip: req.ip });
       return json(res, 429, { error: 'Too Many Requests', message: 'Yuborish orasida biroz kuting.' });
     }
-    if (!(await isAdminRequest(req))) {
-      logSecurityEvent('TELEGRAM_ADMIN_AUTH_FAILED', { route: '/api/telegram/send', ip: req.ip });
-      return json(res, 403, { ok: false, error: 'Forbidden: Admin huquqi talab qilinadi.' });
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
     }
     if (!getBotToken()) {
       return json(res, 503, { ok: false, error: 'Telegram bot sozlanmagan (TELEGRAM_BOT_TOKEN).' });
@@ -293,6 +354,10 @@ export function createTelegramRouter(deps: RouterDeps): Router {
         error: 'Too Many Requests',
         message: 'Broadcast rate limit hit. Please wait a few seconds between global broadcasts.',
       });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
     }
     const { message } = req.body || {};
     if (typeof message !== 'string' || message.trim().length === 0 || message.length > 4000) {

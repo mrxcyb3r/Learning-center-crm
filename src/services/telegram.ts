@@ -387,6 +387,43 @@ export async function checkBotStatus(userUid: string): Promise<BotStatusResponse
   }
 }
 
+/**
+ * Disconnects a Telegram account (Step 6C). The caller may unlink their own
+ * account (self-service) or, as an admin, any user's account. The server does
+ * the mutation and removes all Telegram connection fields, so after this
+ * returns the user no longer appears as a broadcast recipient.
+ */
+export async function unlinkTelegram(userUid?: string): Promise<{ ok: boolean; error?: string }> {
+  const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, error: 'Firebase sessiyasi topilmadi — qayta tizimga kiring.' };
+  }
+  try {
+    const response = await fetch('/api/telegram/unlink', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(userUid ? { userUid } : {}),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const reason = (data as any)?.reason;
+      const friendly =
+        reason === 'not_allowed'
+          ? 'Faqat o\'z hisobingizni uzishingiz mumkin.'
+          : reason === 'missing_access_token' || reason === 'token_verification_failed' || reason === 'role_insufficient'
+            ? 'Ruxsat yo\'q — qayta tizimga kiring.'
+            : '';
+      return { ok: false, error: (data as any)?.error || friendly || 'Uzish amali bajarilmadi.' };
+    }
+    return { ok: Boolean((data as any)?.ok) };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Uzishda xatolik yuz berdi.' };
+  }
+}
+
 export async function assignUserPin(userUid: string, pin: string): Promise<{ success: boolean; message?: string; isRateLimited?: boolean }> {
   try {
     const response = await fetch('/api/bot/assign-pin', {

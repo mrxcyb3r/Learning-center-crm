@@ -15,6 +15,7 @@ import {
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../context/AuthContext';
+import { TelegramConnectionCard } from '../../erp/TelegramConnectionCard';
 import { BusinessModel } from '../../../types/teacher';
 
 const CARD_STYLE = 'rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm';
@@ -305,6 +306,9 @@ export const TeacherSettingsView: React.FC = () => {
           </label>
         </div>
       </div>
+
+      {/* Telegram Connection (Step 6C) */}
+      <TelegramConnectionCard />
 
       {/* About */}
       <div className={CARD_STYLE}>

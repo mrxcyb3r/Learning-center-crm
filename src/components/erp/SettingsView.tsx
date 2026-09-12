@@ -16,11 +16,12 @@ import {
   Key,
 } from 'lucide-react';
 import { settingsService, auditService, backupService, notificationsService } from '../../services/repository';
+import { TelegramConnectionCard } from './TelegramConnectionCard';
 import { AuditLogEntry } from '../../types/crm';
 
 export const SettingsView: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup'>('center');
+  const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup' | 'telegram'>('center');
 
   // Center Details (single source of truth: Firestore settings)
   const [centerName, setCenterName] = useState("Renessans O'quv Markazi");
@@ -182,6 +183,7 @@ export const SettingsView: React.FC = () => {
         {([
           { id: 'center', label: "Markaz Ma'lumotlari", icon: Building },
           { id: 'staff', label: 'Xodimlar va Rollar', icon: Shield },
+          { id: 'telegram', label: 'Telegram Ulash', icon: Send },
           { id: 'audit', label: 'Tizim Jurnali', icon: History },
           { id: 'backup', label: 'Zaxira Nusxa', icon: Download },
         ] as const).map((tab) => {
@@ -455,7 +457,23 @@ export const SettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: Backup & Restore */}
+      {/* Tab: Telegram Connection (Step 6C) */}
+      {activeTab === 'telegram' && (
+        <div className="max-w-2xl">
+          <div className="mb-4">
+            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Send className="w-4 h-4 text-sky-500" />
+              <span>Shaxsiy Telegram</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Direktor hamda administratorlar o'z Telegram akkauntini CenterFlow hisobiga ulashlari mumkin.
+            </p>
+          </div>
+          <TelegramConnectionCard />
+        </div>
+      )}
+
+      {/* Tab 5: Backup & Restore */}
       {activeTab === 'backup' && (
         <div className="space-y-6">
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">

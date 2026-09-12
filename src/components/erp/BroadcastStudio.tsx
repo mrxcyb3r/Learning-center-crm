@@ -252,7 +252,9 @@ export const BroadcastStudio: React.FC = () => {
                 </span>
               ) : (
                 <span className="text-[11px] font-semibold text-slate-500">
-                  {scope === 'connected' ? 'Barcha ulangan foydalanuvchilar' : `${totalFound} ta ulangan foydalanuvchi topildi`}
+                  {scope === 'connected'
+                    ? `${totalFound} ta Telegram ulangan foydalanuvchi`
+                    : `${totalFound} ta ulangan foydalanuvchi topildi`}
                 </span>
               )}
             </div>
@@ -266,10 +268,20 @@ export const BroadcastStudio: React.FC = () => {
 
           <div className="max-h-64 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/60">
             {!loadingRecipients && recipients.length === 0 && !recepientsError && (
-              <div className="py-8 text-center text-xs text-slate-400">
-                {scope === 'selected'
-                  ? 'Qidiruv bo\'yicha hech narsa topilmadi.'
-                  : 'Hozircha Telegram hisobiga ulangan foydalanuvchilar yo\'q.'}
+              <div className="py-8 px-4 text-center text-xs text-slate-400 space-y-2">
+                {scope === 'selected' ? (
+                  <p>Qidiruv bo'yicha hech narsa topilmadi.</p>
+                ) : scope === 'connected' ? (
+                  <>
+                    <p>Hozircha Telegramga ulangan foydalanuvchilar yo'q.</p>
+                    <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed">
+                      O'quvchilar <span className="font-bold text-sky-600 dark:text-sky-400">Sozlamalar → Telegram Ulash</span>{' '}
+                      bo'limi yoki o'qituvchi panelidagi "Telegram'ni ulash" kartasi orqali ulanishadi.
+                    </p>
+                  </>
+                ) : (
+                  <p>Ushbu filtrlash bo'yicha ulangan murojaatlar topilmadi.</p>
+                )}
               </div>
             )}
             {recipients.map((r) => {

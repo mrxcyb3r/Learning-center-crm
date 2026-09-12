@@ -17,8 +17,9 @@ import {
   Calendar,
   AlertTriangle,
 } from 'lucide-react';
-import { studentsService, coursesService, groupsService, teachersService, paymentsService, assignmentService } from '../../services/repository';
+import { studentsService, coursesService, groupsService, teachersService, paymentsService, assignmentService, userService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, PaymentStatus, StudentRecord, StudentStatus } from '../../types/crm';
+import { UserProfile } from '../../types';
 import { formatCurrency, formatCurrencyShort, toSafeNumber, getStudentName, formatPercent } from '../../utils/format';
 
 const UZ_MONTHS = [
@@ -31,6 +32,15 @@ function currentMonthLabel(): string {
   return `${UZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 }
 
+function normalizePhoneKey(raw?: string | null): string {
+  if (!raw) return '';
+  return raw.replace(/\D/g, '').slice(-9);
+}
+
+function userNameKey(raw?: string | null): string {
+  return (raw || '').trim().toLowerCase();
+}
+
 export const StudentsView: React.FC = () => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
@@ -39,6 +49,9 @@ export const StudentsView: React.FC = () => {
   const [courseFilter, setCourseFilter] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+
+  // Linked Telegram users (users/{uid}.isBotConnected) for best-effort join.
+  const [linkedUsers, setLinkedUsers] = useState<UserProfile[]>([]);
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +91,9 @@ export const StudentsView: React.FC = () => {
 
   useEffect(() => {
     refreshData();
+    userService.getAllUsers()
+      .then(setLinkedUsers)
+      .catch(() => setLinkedUsers([]));
   }, []);
 
   const showNotification = (msg: string) => {
@@ -275,6 +291,21 @@ export const StudentsView: React.FC = () => {
     await refreshData();
   };
 
+  // Best-effort join: student ↔ linked Telegram user by normalized phone,
+  // then by name. Honest fallback to "not connected" when no match exists.
+  const connectedUsers = linkedUsers.filter((u) => u.isBotConnected || Boolean(u.telegramChatId));
+  const byPhone = new Map<string, UserProfile>();
+  const byName = new Map<string, UserProfile>();
+  connectedUsers.forEach((u) => {
+    const pk = normalizePhoneKey(u.phoneNumber);
+    if (pk) byPhone.set(pk, u);
+    const nk = userNameKey(u.fullName || u.displayName);
+    if (nk) byName.set(nk, u);
+  });
+  const resolveTelegram = (st: StudentRecord): UserProfile | undefined =>
+    byPhone.get(normalizePhoneKey(st.phone))
+      || byName.get(userNameKey(st.fullName || st.name));
+
   const filtered = students.filter((st) => {
     const studentName = (st.fullName || st.name || '').toLowerCase();
     const phone = st.phone || '';
@@ -430,6 +461,7 @@ export const StudentsView: React.FC = () => {
                 <th className="py-3.5 px-4">Mas'ul Ustoz</th>
                 <th className="py-3.5 px-4">To'lov & Qarzdorlik</th>
                 <th className="py-3.5 px-4">Davomat</th>
+                <th className="py-3.5 px-4">Telegram</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
@@ -437,7 +469,7 @@ export const StudentsView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                     Hozircha ma'lumot yo'q. Yangi o'quvchi qo'shish yoki filtrni o'zgartiring.
                   </td>
                 </tr>
@@ -525,6 +557,34 @@ export const StudentsView: React.FC = () => {
                           {formatPercent(st.attendanceRate)}
                         </span>
                       )}
+                    </td>
+
+                    {/* Telegram Connection */}
+                    <td className="py-3.5 px-4">
+                      {(() => {
+                        const tg = resolveTelegram(st);
+                        if (!tg) {
+                          return (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-bold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                              Ulanmagan
+                            </span>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black w-fit border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Ulangan
+                            </span>
+                            {tg.telegramUsername && (
+                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                                @{String(tg.telegramUsername).replace(/^@/, '')}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-3.5 px-4">

@@ -1240,7 +1240,9 @@ async function scanLinkedUsers(scanLimit: number): Promise<Map<string, Broadcast
         seen++;
         const data = d.data() as AnyRecord;
         const chatId = broadcastChatId(data);
-        if (!chatId) continue;
+        // A recipient must have a valid chat id AND not be explicitly
+        // disconnected. Legacy records without isBotConnected still count.
+        if (!chatId || data.isBotConnected === false) continue;
         byChat.set(chatId, {
           userUid: d.id,
           name: data.fullName || data.displayName || data.name || '',

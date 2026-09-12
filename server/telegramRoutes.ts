@@ -27,6 +27,7 @@ import {
   fetchBroadcastResults,
 } from './telegramService';
 import { getAdminApp, getFirestore, getAdminAuth, sanitizeFirebaseError } from './firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { formatInquiryNotification } from './notificationFormatter';
 
 interface RouterDeps {
@@ -115,6 +116,26 @@ async function isAdminRequest(req: Request): Promise<AdminAuthResult> {
   }
   console.warn(`[TELEGRAM AUTH] uid ${decoded.uid}: role "${role}" is not admin/superadmin; denying.`);
   return { allowed: false, reason: 'role_insufficient', uid: decoded.uid };
+}
+
+/**
+ * Verifies a Firebase ID token and returns its uid WITHOUT a role check. Used
+ * for self-service account actions (e.g. unlinking one's own Telegram account)
+ * where the signed-in user's identity, not their role, is the authority.
+ */
+async function resolveBearerUid(req: Request): Promise<string | null> {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (!token) return null;
+  const auth = getAdminAuth();
+  if (!auth) return null;
+  try {
+    const decoded = await auth.verifyIdToken(token);
+    return typeof decoded.uid === 'string' && decoded.uid ? decoded.uid : null;
+  } catch (err: any) {
+    console.warn('[TELEGRAM AUTH] bearer token verification failed:', err?.code || err?.message || String(err));
+    return null;
+  }
 }
 
 function adminDenied(res: Response, auth: AdminAuthResult, logSecurityEvent: (t: string, d: Record<string, any>) => void): Response {
@@ -925,6 +946,79 @@ export function createTelegramRouter(deps: RouterDeps): Router {
     } catch (err: any) {
       console.error('[NOTIFY] /api/notify/inquiry error:', err?.message || String(err));
       return json(res, 200, { ok: true });
+    }
+  });
+
+  /* -------------------------------------------------------------------------
+   * Unlink / disconnect a user's Telegram account (Step 6C)
+   *
+   * Server-side mutation so the client can never inject a chat id. Two
+   * authorized callers:
+   *   1. Admin/superadmin (or x-admin-secret) — may unlink any userUid.
+   *   2. The account owner — may unlink only their own (self-service).
+   * The connection fields are removed from users/{uid}, so the user drops out
+   * of "Barcha ulanganlar" and stops receiving broadcasts.
+   * ------------------------------------------------------------------------- */
+  router.post('/telegram/unlink', async (req: Request, res: Response) => {
+    const clientKey = `unlink_${req.ip}`;
+    if (!checkRateLimit(clientKey, 2000)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/unlink', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Biroz kuting va qayta urinib ko\'ring.' });
+    }
+    const db = getFirestore();
+    if (!db) {
+      return json(res, 503, { ok: false, error: 'Firestore hozircha mavjud emas.' });
+    }
+
+    const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, any>;
+    const requestedUid = typeof body.userUid === 'string' && body.userUid ? body.userUid : '';
+
+    const adminAuth = await isAdminRequest(req);
+    let targetUid: string | null = null;
+
+    if (adminAuth.allowed) {
+      // Admin (verified token or x-admin-secret). The secret carries no uid.
+      targetUid = requestedUid || adminAuth.uid || null;
+    } else {
+      // Self-service: the caller must present their own verified uid and may
+      // only unlink that account — never someone else's.
+      const bearerUid = await resolveBearerUid(req);
+      if (!bearerUid) {
+        return adminDenied(res, adminAuth, logSecurityEvent);
+      }
+      if (requestedUid && requestedUid !== bearerUid) {
+        logSecurityEvent('TELEGRAM_UNLINK_FORBIDDEN', { ip: req.ip, requestedUid, callerUid: bearerUid });
+        return json(res, 403, { ok: false, reason: 'not_allowed', error: 'Faqat o\'z hisobingizni uzishingiz mumkin.' });
+      }
+      targetUid = bearerUid;
+    }
+
+    if (!targetUid) {
+      return json(res, 400, { ok: false, error: 'Uziladigan foydalanuvchi ko\'rsatilmagan.' });
+    }
+    if (!deps.isValidUid(targetUid)) {
+      return json(res, 400, { ok: false, error: 'Noto\'g\'ri foydalanuvchi identifikatori.' });
+    }
+
+    try {
+      const userRef = db.doc(`users/${targetUid}`);
+      const snap = await userRef.get();
+      if (!snap.exists) {
+        return json(res, 404, { ok: false, error: 'Foydalanuvchi topilmadi.' });
+      }
+      await userRef.update({
+        telegramChatId: FieldValue.delete(),
+        telegramUsername: FieldValue.delete(),
+        telegramUserId: FieldValue.delete(),
+        isBotConnected: false,
+        telegramConnectedAt: FieldValue.delete(),
+        updatedAt: new Date().toISOString(),
+      });
+      logSecurityEvent('TELEGRAM_UNLINKED', { userUid: targetUid, actorUid: adminAuth.uid || null, ip: req.ip });
+      return json(res, 200, { ok: true });
+    } catch (err: any) {
+      console.error('[TELEGRAM] /api/telegram/unlink error:', err?.message || String(err));
+      return json(res, 500, { ok: false, error: 'Uzish amalini bajarishda xatolik.' });
     }
   });
 

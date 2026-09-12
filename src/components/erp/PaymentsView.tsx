@@ -4,6 +4,7 @@ import {
   Plus,
   Download,
   CheckCircle2,
+  AlertTriangle,
   Search,
   DollarSign,
   Printer,
@@ -34,9 +35,11 @@ export const PaymentsView: React.FC = () => {
   const [methodFilter, setMethodFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewReceipt, setViewReceipt] = useState<IncomePaymentRecord | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<'ok' | 'err'>('ok');
 
   // Add Form
   const [formStudentId, setFormStudentId] = useState('');
@@ -63,9 +66,10 @@ export const PaymentsView: React.FC = () => {
     refresh();
   }, []);
 
-  const showNotification = (msg: string) => {
+  const showNotification = (msg: string, tone: 'ok' | 'err' = 'ok') => {
     setNotice(msg);
-    setTimeout(() => setNotice(null), 3000);
+    setNoticeTone(tone);
+    setTimeout(() => setNotice(null), 5000);
   };
 
   const handleOpenAdd = () => {
@@ -100,24 +104,44 @@ export const PaymentsView: React.FC = () => {
   const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formStudentName.trim()) return;
+    if (isSubmitting) return;
 
-    await paymentsService.recordPayment({
-      studentId: formStudentId,
-      studentName: formStudentName.trim(),
-      course: formCourse,
-      amount: Number(formAmount),
-      paymentMethod: formMethod.toLowerCase() as 'cash' | 'card' | 'click' | 'payme',
-      date: new Date().toISOString().split('T')[0],
-      recordedBy: 'Admin',
-      status: 'paid',
-      cohortGroup: '',
-      subjectCategory: formCourse,
-      paymentPeriod: formMonth,
-    });
+    const amount = Number(formAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showNotification('To\'lov miqdori noto\'g\'ri — to\'g\'ri raqam kiriting.', 'err');
+      return;
+    }
 
-    showNotification(`To'lov (${formatCurrency(Number(formAmount))}) muvaffaqiyatli qabul qilindi!`);
-    refresh();
-    setIsAddModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      await paymentsService.recordPayment({
+        studentId: formStudentId,
+        studentName: formStudentName.trim(),
+        course: formCourse,
+        amount,
+        paymentMethod: formMethod.toLowerCase() as 'cash' | 'card' | 'click' | 'payme',
+        date: new Date().toISOString().split('T')[0],
+        recordedBy: 'Admin',
+        status: 'paid',
+        cohortGroup: '',
+        subjectCategory: formCourse,
+        paymentPeriod: formMonth,
+      });
+
+      showNotification(`To'lov (${formatCurrency(amount)}) muvaffaqiyatli qabul qilindi!`, 'ok');
+      refresh();
+      setIsAddModalOpen(false);
+    } catch (err: any) {
+      // Log the actionable technical error; never expose tokens/credentials.
+      const code = err?.code || err?.name || 'unknown';
+      console.error('[PaymentsView] To\'lovni saqlashda xatolik:', { code, message: err?.message || String(err) });
+      showNotification(
+        `To'lov saqlanmadi (${code}). Texnik tafsilot brauzer konsolida.`,
+        'err'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVoidPayment = async (id: string, name: string) => {
@@ -173,8 +197,12 @@ export const PaymentsView: React.FC = () => {
 
       {/* Notice */}
       {notice && (
-        <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
+        <div className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
+          noticeTone === 'ok'
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+            : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
+        }`}>
+          {noticeTone === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
           <span>{notice}</span>
         </div>
       )}
@@ -488,9 +516,10 @@ export const PaymentsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
-                  To'lovni Saqlash
+                  {isSubmitting ? 'Saqlanmoqda...' : "To'lovni Saqlash"}
                 </button>
               </div>
             </form>

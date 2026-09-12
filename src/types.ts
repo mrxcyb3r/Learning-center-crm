@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'guest';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'support' | 'guest';
 
 /** Canonical narrow payment status used by teacher-portal logic. */
 export type CanonicalPaymentStatus = 'paid' | 'pending' | 'overdue';
@@ -226,9 +226,12 @@ export interface Payment {
   invoiceId?: string;
   // Admin ERP (IncomePaymentRecord) aliases — same record, alternate field names.
   course?: string;
+  courseName?: string;
   method?: string;
   receiptNumber?: string;
   month?: string;
+  /** Online provider transaction/reference ID (Click/Payme), shown only when present. */
+  trxId?: string;
 }
 
 export interface Invoice {
@@ -517,7 +520,7 @@ export interface LandingPageContent {
 export interface AppNotification {
   id: string;
   recipientId?: string;
-  recipientRole?: 'all' | 'student' | 'teacher' | 'admin' | 'superadmin' | string;
+  recipientRole?: 'all' | 'student' | 'teacher' | 'admin' | 'superadmin' | 'support' | string;
   category: 'assignment_created' | 'submission_received' | 'grade_published' | 'announcement';
   title: string;
   description: string;
@@ -526,5 +529,6 @@ export interface AppNotification {
   linkId?: string;
   groupId?: string;
   senderName?: string;
+  senderId?: string;
 }
 

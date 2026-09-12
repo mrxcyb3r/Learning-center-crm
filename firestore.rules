@@ -33,6 +33,14 @@ service cloud.firestore {
       return isSignedIn() && getUserRole() == 'student';
     }
 
+    function isSupport() {
+      return isSignedIn() && getUserRole() == 'support';
+    }
+
+    function isSupportOrAdmin() {
+      return isSupport() || isAdmin() || isSuperAdmin();
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -396,12 +404,36 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // SUPPORT REQUESTS (STEP 6D)
-    // Server writes via Admin SDK; client list is admin-only.
+    // SUPPORT REQUESTS
+    // Senders (any signed-in user) may create only requests tagged with their
+    // own uid and read only their own documents. Dedicated support staff and
+    // center admins may read the whole inbox and drive the NEW→STARTED→RESOLVED
+    // workflow (status/assignment updates are a support/admin privilege).
     // =========================================================================
     match /support_requests/{requestId} {
-      allow read: if isAdminOrSuperAdmin();
-      allow write: if isAdminOrSuperAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.status == 'new';
+      allow read: if isSupportOrAdmin()
+        || (isSignedIn() && resource.data.userUid == request.auth.uid);
+      allow update: if isSupportOrAdmin();
+      allow delete: if isSupportOrAdmin();
+    }
+
+    // =========================================================================
+    // PUBLIC RECEIPT VERIFICATION MIRROR (receipt QR target)
+    // =========================================================================
+    // Contains only a sanitized summary (no trx id, no operator, no notes).
+    // Anyone can read the exact document the paying customer scanned; writes
+    // come from the client at payment-record time (admin) or from a teacher
+    // whose own student's payment is being recorded, or the trusted server.
+    match /public_receipts/{receiptId} {
+      allow read: if true;
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher()
+            && request.resource.data.paymentId is string
+            && isTeacherOfPayment(request.resource.data.paymentId));
+      allow update, delete: if isAdminOrSuperAdmin();
     }
 
     // =========================================================================

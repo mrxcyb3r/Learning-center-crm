@@ -1,13 +1,9 @@
 import React from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import type { IncomePaymentRecord } from '../../types/crm';
 import {
   ReceiptCenter,
-  getReceiptNumber,
-  formatUzsAmount,
-  formatReceiptDate,
-  extractReceiptTime,
-  methodLabel,
-  statusLabel,
+  buildReceiptLayoutData,
 } from '../../utils/receipt';
 
 interface ReceiptDocumentProps {
@@ -15,100 +11,138 @@ interface ReceiptDocumentProps {
   center: ReceiptCenter;
 }
 
-/** Clean document-style receipt preview (no dashboards, no buttons). */
+/**
+ * Clean document-style receipt preview (no dashboards, no buttons).
+ * All values come from buildReceiptLayoutData so the on-screen document,
+ * the print window and the PDF always show identical, data-conditional output.
+ */
 export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ payment, center }) => {
-  const receiptNum = getReceiptNumber(payment);
-  const dateStr = formatReceiptDate(payment.date);
-  const time = extractReceiptTime((payment as any).createdAt);
-  const status = statusLabel(payment.status || (payment as any).paymentStatus);
-  const isPaid = String(payment.status || (payment as any).paymentStatus).toLowerCase() !== 'voided';
+  const d = buildReceiptLayoutData(payment, center);
 
-  const rows: [string, string][] = [
-    ["O'quvchi", payment.studentName],
-    ['Kurs', payment.course || '—'],
-    ["To'lov davri", (payment.month || (payment as any).paymentPeriod || '').trim() || '—'],
-    ["To'lov usuli", methodLabel(payment.method || (payment as any).paymentMethod)],
-    ["To'lov sanasi", time ? `${dateStr} ${time}` : dateStr],
-    ['Holat', status],
+  const itemRows: { num: string; name: string; detail: string; amount: string }[] = [
+    { num: '1', name: 'Kurs', detail: d.course, amount: d.amountPlain },
+    { num: '2', name: "To'lov davri", detail: d.period, amount: '—' },
+    { num: '3', name: "To'lov usuli", detail: d.method, amount: '—' },
   ];
+  if (d.hasTrx) {
+    itemRows.push({ num: '4', name: 'Tranzaksiya ID', detail: d.trxId, amount: '—' });
+  }
 
   return (
     <div className="bg-white text-slate-900 rounded-t-2xl overflow-hidden">
-      {/* Document body */}
       <div className="px-6 sm:px-10 py-7 sm:py-9 border-x border-slate-200">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-          <div>
+        {/* Header — 2-column grid so the reference block can never clip */}
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-4 border-b border-slate-200 pb-5">
+          <div className="min-w-0">
             <div className="text-base sm:text-lg font-black tracking-tight text-slate-900">
               {center.name || "Renessans O'quv Markazi"}
             </div>
             <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">
               Elektron to'lov kvitansiyasi
             </div>
+            {d.credentialLines.length > 1 && (
+              <div className="mt-2.5 space-y-0.5 text-[10px] leading-relaxed text-slate-400">
+                {d.credentialLines.slice(1).map((line, i) => (
+                  <div key={i} className="truncate">{line}</div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-right shrink-0 sm:max-w-[45%]">
             <div className="text-[9px] uppercase tracking-wider text-slate-400">Kvitansiya ID</div>
-            <div className="text-sm font-black text-slate-900 mt-0.5 font-mono">
-              {receiptNum}
+            <div className="text-sm font-black text-slate-900 mt-0.5 font-mono break-all">
+              {d.receiptNum}
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              {time ? `${dateStr} / ${time}` : dateStr}
+            <div className="text-[10px] text-slate-500 mt-0.5 whitespace-nowrap">
+              {d.datetime}
             </div>
           </div>
         </div>
 
-        {/* Payment details */}
-        <div className="mt-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          To'lov ma'lumotlari
-        </div>
-        <div className="mt-1 divide-y divide-slate-100">
-          {rows.map(([label, value]) => (
-            <div key={label} className="flex items-center justify-between gap-4 py-2">
-              <span className="text-xs text-slate-500">{label}</span>
-              {label === 'Holat' ? (
-                <span
-                  className={`text-xs font-black ${
-                    isPaid ? 'text-emerald-600' : 'text-rose-600'
-                  }`}
-                >
-                  {value}
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-slate-800 text-right">
-                  {value}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Amount */}
-        <div className="mt-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          To'lov
-        </div>
-        <div className="mt-1 py-2">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-slate-500">Summa</span>
-            <span className="text-xs font-bold text-slate-800 font-mono">
-              {formatUzsAmount(payment.amount)}
-            </span>
+        {/* Itemized HISOB-KITOB */}
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Hisob-kitob
           </div>
-        </div>
-        <div className="border-t-2 border-slate-900 pt-3 flex items-center justify-between gap-4">
-          <span className="text-sm font-black text-slate-900">Jami to'landi</span>
-          <span className="text-sm font-black text-emerald-600 font-mono">
-            {formatUzsAmount(payment.amount)}
+          <span
+            className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wide ${d.status.badge}`}
+          >
+            {d.status.label}
           </span>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-500 space-y-0.5">
-          <div className="text-[11px] font-bold text-slate-800">
-            {center.name || "Renessans O'quv Markazi"}
+        <table className="mt-2 w-full border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200 text-left">
+              <th className="py-2 pr-2 text-[9px] font-black uppercase tracking-wider text-slate-400 w-8">№</th>
+              <th className="py-2 pr-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Ko'rsatkich</th>
+              <th className="py-2 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Ma'lumot</th>
+              <th className="py-2 pl-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-400">Summa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { num: '', name: "To'lovchi", detail: d.student, amount: '—' },
+              ...itemRows,
+            ].map((row, idx) => (
+              <tr key={`${idx}-${row.name}`} className="border-b border-slate-100">
+                <td className="py-2 pr-2 text-xs text-slate-400 align-top">{row.num}</td>
+                <td className="py-2 pr-2 text-xs font-bold text-slate-800 align-top">{row.name}</td>
+                <td className="py-2 px-2 text-xs text-slate-600 align-top break-words">{row.detail}</td>
+                <td
+                  className={`py-2 pl-2 text-right align-top text-xs ${
+                    row.amount === '—' ? 'text-slate-300' : 'font-black text-slate-800 font-mono'
+                  }`}
+                >
+                  {row.amount === '—' ? row.amount : `${row.amount} UZS`}
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={3} className="pt-3 pb-1 text-right text-sm font-black text-slate-900">
+                Jami to'landi
+              </td>
+              <td className="pt-3 pb-1 pl-2 text-right text-sm font-black text-emerald-600 font-mono">
+                {d.amountTotal}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Verification QR + link */}
+        <div className="mt-6 flex items-center gap-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Kvitansiyani tekshirish
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500 leading-relaxed break-all">
+              {d.verificationUrl || "Tekshiruv havolasi mavjud emas."}
+            </div>
+            <div className="mt-1 text-[10px] text-slate-400">
+              QR kodni skanerlang yoki havolani oching.
+            </div>
           </div>
-          {center.address && <div>{center.address}</div>}
-          {center.phone && <div>Tel: {center.phone}</div>}
-          <div className="pt-1.5 text-slate-400">Kvitansiya ID: {receiptNum}</div>
+          {d.verificationUrl && (
+            <div className="shrink-0 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+              <QRCodeSVG value={d.verificationUrl} size={72} level="M" fgColor="#0f172a" bgColor="#ffffff" />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 pt-4 border-t border-slate-200 text-[10px] text-slate-500 space-y-0.5">
+          {d.credentialLines.length > 0 ? (
+            d.credentialLines.map((line, i) => (
+              <div key={i} className={i === 0 ? 'text-[11px] font-bold text-slate-800' : ''}>
+                {line}
+              </div>
+            ))
+          ) : (
+            <div className="text-[11px] font-bold text-slate-800">
+              {center.name || "Renessans O'quv Markazi"}
+            </div>
+          )}
+          <div className="pt-1.5 text-slate-400">Kvitansiya ID: {d.receiptNum}</div>
         </div>
       </div>
     </div>

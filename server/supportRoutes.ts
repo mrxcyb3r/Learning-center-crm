@@ -94,6 +94,77 @@ const priority = normalizePriority(rawPriority);
     }
   });
 
+  // POST /api/support/assistant — provision the dedicated technical/support
+  // account (role 'support'). Clients cannot create users whose role is
+  // anything but 'guest' (users create rule), so this goes through the trusted
+  // Admin SDK, gated to center admins/superadmins.
+  router.post('/support/assistant', async (req: Request, res: Response) => {
+    try {
+      if (!deps.checkRateLimit(`support_assistant_${req.ip}`, 5000)) {
+        return res.status(429).json({ error: 'Juda ko\'p so\'rov. Iltimos, biroz kutib turing.' });
+      }
+
+      const db = getFirestore();
+      const auth = getAdminAuth();
+      if (!db || !auth) {
+        return res.status(503).json({ error: 'Privileged xizmat mavjud emas.' });
+      }
+
+      const caller = await resolveUserFromToken(req);
+      if (!caller) {
+        return res.status(401).json({ error: 'Iltimos, tizimga kiring.' });
+      }
+      const callerSnap = await db.doc(`users/${caller.uid}`).get();
+      const callerRole = callerSnap.data()?.role;
+      if (callerRole !== 'admin' && callerRole !== 'superadmin') {
+        deps.logSecurityEvent('SUPPORT_ASSISTANT_FORBIDDEN', { userUid: caller.uid, ip: req.ip });
+        return res.status(403).json({ error: 'Ruxsat etilmagan.' });
+      }
+
+      const { name, email: rawEmail, password } = req.body || {};
+      const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+      const displayName = typeof name === 'string' ? name.trim() : '';
+      if (!displayName || displayName.length < 2) {
+        return res.status(400).json({ error: 'Xodim ismini kiriting.' });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Haqiqiy email kiriting.' });
+      }
+      if (typeof password !== 'string' || password.length < 8) {
+        return res.status(400).json({ error: 'Vaqtinchalik parol kamida 8 ta belgi bo\'lishi kerak.' });
+      }
+
+      const created = await auth.createUser({ email, password, displayName });
+      const now = new Date().toISOString();
+      await db.doc(`users/${created.uid}`).set(
+        {
+          uid: created.uid,
+          email,
+          fullName: displayName,
+          displayName,
+          role: 'support',
+          createdAt: now,
+        },
+        { merge: true }
+      );
+
+      deps.logSecurityEvent('SUPPORT_ASSISTANT_CREATED', {
+        uid: created.uid,
+        email,
+        createdBy: caller.uid,
+        ip: req.ip,
+      });
+
+      return res.status(201).json({ ok: true, uid: created.uid, email });
+    } catch (err: any) {
+      console.error('[SUPPORT] POST /api/support/assistant error:', err?.message || String(err));
+      if (err?.code === 'auth/email-already-exists') {
+        return res.status(409).json({ error: 'Bu email tizimda allaqachon mavjud.' });
+      }
+      return res.status(500).json({ error: 'Akkaunt yaratishda xatolik yuz berdi. Keyinroq urinib ko\'ring.' });
+    }
+  });
+
   // GET /api/support — admin list of support requests (paginated, latest first)
   router.get('/support', async (req: Request, res: Response) => {
     try {

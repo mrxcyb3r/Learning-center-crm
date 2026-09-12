@@ -11,6 +11,7 @@ import {
 import { SUPPORT } from '../../config/support';
 import { useAuth } from '../../context/AuthContext';
 import { SupportAdminList } from './SupportAdminList';
+import { createSupportRequest } from '../../services/supportService';
 
 const ADMIN_ROLES = new Set(['admin', 'superadmin']);
 
@@ -23,7 +24,7 @@ const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
 ];
 
 export const SupportPanel: React.FC = () => {
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, userProfile } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -58,20 +59,17 @@ export const SupportPanel: React.FC = () => {
     setNotice(null);
 
     try {
-      const token = await currentUser?.getIdToken();
-      const res = await fetch('/api/support', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ subject: trimmedSubject, message: trimmedMessage, priority }),
+      const senderUid = currentUser?.uid || '';
+      const senderName = currentUser?.displayName || userProfile?.fullName || userProfile?.displayName || '';
+      const senderEmail = currentUser?.email || userProfile?.email || '';
+      await createSupportRequest({
+        subject: trimmedSubject,
+        message: trimmedMessage,
+        priority,
+        userUid: senderUid,
+        userName: senderName,
+        userEmail: senderEmail,
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'So\'rov yuborishda xatolik');
-      }
 
       setNotice({ type: 'ok', text: 'So\'rovingiz muvaffaqiyatli yuborildi. Tez orada javob beramiz!' });
       setTimeout(resetForm, 3000);

@@ -45,8 +45,11 @@ export const PaymentsView: React.FC = () => {
   const [noticeTone, setNoticeTone] = useState<'ok' | 'err'>('ok');
   const [center, setCenter] = useState<ReceiptCenter>({
     name: "Renessans O'quv Markazi",
-    address: 'Yangiobod tumani, 1-maktab binosi',
-    phone: '+998 (90) 862-22-26',
+    address: '',
+    phone: '',
+    stir: '',
+    telegram: '',
+    workingHours: '',
   });
 
   // Add Form
@@ -56,6 +59,7 @@ export const PaymentsView: React.FC = () => {
   const [formAmount, setFormAmount] = useState('380000');
   const [formMethod, setFormMethod] = useState<'Click' | 'Payme' | 'Cash' | 'Card'>('Click');
   const [formMonth, setFormMonth] = useState(currentMonthLabel());
+  const [formTrx, setFormTrx] = useState('');
 
   const refresh = async () => {
     const [paymentsData, studentsData, coursesData, invoicesData] = await Promise.all([
@@ -78,8 +82,13 @@ export const PaymentsView: React.FC = () => {
         if (s) {
           setCenter({
             name: s.centerName || "Renessans O'quv Markazi",
-            address: s.branches?.[0]?.address || 'Yangiobod tumani, 1-maktab binosi',
-            phone: s.hotline || '+998 (90) 862-22-26',
+            address: s.branches?.[0]?.address || '',
+            phone: s.hotline || '',
+            stir: s.stir || '',
+            telegram: s.telegramSettings?.botUsername
+              ? `@${String(s.telegramSettings.botUsername).replace(/^@/, '')}`
+              : '',
+            workingHours: s.workingHours || '',
           });
         }
       })
@@ -109,6 +118,7 @@ export const PaymentsView: React.FC = () => {
     }
     setFormMethod('Click');
     setFormMonth(currentMonthLabel());
+    setFormTrx('');
     setIsAddModalOpen(true);
   };
 
@@ -140,6 +150,7 @@ export const PaymentsView: React.FC = () => {
         studentId: formStudentId,
         studentName: formStudentName.trim(),
         course: formCourse,
+        courseName: formCourse,
         amount,
         paymentMethod: formMethod.toLowerCase() as 'cash' | 'card' | 'click' | 'payme',
         date: new Date().toISOString().split('T')[0],
@@ -148,6 +159,7 @@ export const PaymentsView: React.FC = () => {
         cohortGroup: '',
         subjectCategory: formCourse,
         paymentPeriod: formMonth,
+        trxId: formTrx.trim() || undefined,
       });
 
       showNotification(`To'lov (${formatCurrency(amount)}) muvaffaqiyatli qabul qilindi!`, 'ok');
@@ -169,6 +181,7 @@ export const PaymentsView: React.FC = () => {
         status: 'Completed',
         recordedBy: 'Admin',
         month: formMonth,
+        trxId: formTrx.trim() || undefined,
       } as IncomePaymentRecord);
     } catch (err: any) {
       // Log the actionable technical error; never expose tokens/credentials.
@@ -531,6 +544,21 @@ export const PaymentsView: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {(formMethod === 'Click' || formMethod === 'Payme') && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Tranzaksiya ID ({formMethod})
+                  </label>
+                  <input
+                    type="text"
+                    value={formTrx}
+                    onChange={(e) => setFormTrx(e.target.value)}
+                    placeholder="Kvitansiya/tr. raqami (ixtiyoriy)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">

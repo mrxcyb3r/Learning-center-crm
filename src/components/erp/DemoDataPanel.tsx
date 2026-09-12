@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Loader2, CheckCircle2, Eraser, RotateCcw, ShieldCheck } from 'lucide-react';
-import { getDemoStats, clearDemoData, DemoStat } from '../../services/demoClear';
+import { AlertTriangle, Loader2, CheckCircle2, Eraser, RotateCcw, ShieldCheck, Rocket } from 'lucide-react';
+import { getDemoStats, clearDemoData, getSeedMeta, DemoStat } from '../../services/demoClear';
 import { reseedDemoData } from '../../services/seed';
 import { auditService } from '../../services/repository';
 import { useAuth } from '../../context/AuthContext';
@@ -21,15 +21,25 @@ type PanelState =
 export const DemoDataPanel: React.FC = () => {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState<DemoStat[] | null>(null);
+  const [cleared, setCleared] = useState(false);
   const [typed, setTyped] = useState('');
   const [state, setState] = useState<PanelState>({ status: 'idle' });
 
   const refresh = async () => {
-    setStats(await getDemoStats());
+    const [s, meta] = await Promise.all([getDemoStats(), getSeedMeta()]);
+    setStats(s);
+    setCleared(meta.cleared);
   };
 
   useEffect(() => {
     refresh();
+    const onChanged = () => refresh();
+    window.addEventListener('centerflow-demo-cleared', onChanged);
+    window.addEventListener('centerflow-demo-restored', onChanged);
+    return () => {
+      window.removeEventListener('centerflow-demo-cleared', onChanged);
+      window.removeEventListener('centerflow-demo-restored', onChanged);
+    };
   }, []);
 
   const total = (stats || []).reduce((sum, s) => sum + s.count, 0);
@@ -130,6 +140,14 @@ export const DemoDataPanel: React.FC = () => {
             ))}
           </div>
         </div>
+      ) : cleared && total === 0 ? (
+        <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300">
+          <Rocket className="w-5 h-5 text-emerald-500 shrink-0" />
+          <span>
+            <b>Markaz ishga tayyor.</b> Demo ma'lumotlar sxemadan chiqarilgan (seed meta: cleared).
+            Endi haqiqiy ma'lumotlarni kiritishingiz mumkin — tozalash amali qo'llanilmaydi.
+          </span>
+        </div>
       ) : (
         <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
           <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -160,10 +178,11 @@ export const DemoDataPanel: React.FC = () => {
                 setState({ status: 'confirm-restore' });
                 setTyped('');
               }}
-              className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Faqat taqdimotlar (dev) uchun — haqiqiy ma'lumotlarga ta'sir qilmaydi"
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Demo ma'lumotlarni qaytarish
+              Demo ma'lumotlarni qaytarish <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">(dev)</span>
             </button>
           </>
         )}
@@ -212,8 +231,9 @@ export const DemoDataPanel: React.FC = () => {
             <div className="flex items-start gap-2.5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <p>
-                Demo ma'lumotlar qayta yuklanadi (taqdimotlar uchun). Ushbu amal yangi demo
-                yozuvlarni qo'shadi — haqiqiy ma'lumotlarga ta'sir qilmaydi.
+                Bu <b>dev / taqdimot operatsiyasi</b>. Demo ma'lumotlar qayta yuklanadi (faqat
+                namoyishlar uchun); real ish rejimida buni ishlatish shart emas. Yangi demo yozuvlari
+                qo'shiladi — haqiqiy ma'lumotlarga ta'sir qilmaydi.
               </p>
             </div>
             <div className="flex gap-2">

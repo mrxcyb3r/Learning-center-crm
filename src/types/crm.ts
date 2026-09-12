@@ -270,6 +270,8 @@ export interface IncomePaymentRecord {
   studentName: string;
   amount: number;
   course: string;
+  /** Explicit course name carried by this payment (takes precedence over `course`). */
+  courseName?: string;
   date: string;
   method: PaymentMethod;
   receiptNumber: string;
@@ -277,6 +279,8 @@ export interface IncomePaymentRecord {
   recordedBy?: string;
   notes?: string;
   month?: string;
+  /** Online provider transaction/reference ID (Click/Payme), shown only when present. */
+  trxId?: string;
 }
 
 export type ExpenseCategory =
@@ -385,6 +389,8 @@ export interface CenterSettings {
   currency: string;
   timezone: string;
   workingHours: string;
+  /** STIR/INN (taxpayer id) — optional, shown on documents only when set. */
+  stir?: string;
   branches: CampusBranch[];
   rooms: ClassroomRoom[];
   staff: StaffMember[];

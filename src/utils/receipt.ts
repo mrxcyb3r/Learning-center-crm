@@ -13,6 +13,11 @@ export interface ReceiptCenter {
   name?: string;
   address?: string;
   phone?: string;
+  /** STIR/INN (taxpayer id) — shown only when the center actually configured one. */
+  stir?: string;
+  /** Telegram link/username — shown only when configured. */
+  telegram?: string;
+  workingHours?: string;
 }
 
 const UZ_MONTHS = [
@@ -101,6 +106,77 @@ export function statusLabel(status: unknown): string {
   }
 }
 
+const PLACEHOLDER_COURSE = new Set([
+  '', '—', '-', 'N/A', 'n/a', 'Kurs to\'lovi', 'kurs', 'none', 'None',
+]);
+
+/** True when the string is an empty/placeholder value that should be skipped. */
+function isMeaningful(value: unknown): boolean {
+  if (value == null) return false;
+  const s = String(value).trim();
+  if (!s) return false;
+  return !PLACEHOLDER_COURSE.has(s);
+}
+
+/**
+ * Resolve the course name for a receipt, never inventing data.
+ * Order: explicit payment.courseName → payment.course → the payment's own
+ * group reference (cohortGroup/groupName) → neutral 'Kurs to'lovi' fallback.
+ */
+export function resolveCourseName(payment: {
+  courseName?: unknown;
+  course?: unknown;
+  cohortGroup?: unknown;
+  groupName?: unknown;
+}): string {
+  const candidates = [payment.courseName, payment.course, payment.cohortGroup, payment.groupName];
+  for (const c of candidates) {
+    if (isMeaningful(c)) return String(c).trim();
+  }
+  return 'Kurs to\'lovi';
+}
+
+/** Verified link a client QR points at (public verification page). */
+export function receiptVerificationUrl(payment: { id?: unknown }): string {
+  const id = typeof payment?.id === 'string' ? payment.id.trim() : '';
+  if (!id) return '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${origin}/receipt/verify/${encodeURIComponent(id)}`;
+}
+
+export type ReceiptStatusVariant = 'paid' | 'voided' | 'other';
+
+export interface ReceiptStatusSettings {
+  label: string;
+  variant: ReceiptStatusVariant;
+  /** Tailwind classes for the pill badge (paid uses the required palette). */
+  badge: string;
+  /** UG-CSS text color used by the PDF renderer (RGB). */
+  textRgb: [number, number, number];
+  bgRgb: [number, number, number];
+}
+
+/** Status → badge styling shared by the on-screen document and the PDF. */
+export function receiptStatusSettings(status: unknown): ReceiptStatusSettings {
+  const s = String(status ?? '').toLowerCase();
+  if (s === 'voided' || s === 'failed' || s === 'refunded' || s === 'pending') {
+    return {
+      label: statusLabel(status),
+      variant: 'voided',
+      badge: 'bg-[#FDE8E8] text-[#9B1C1C] border border-rose-200',
+      textRgb: [155, 28, 28],
+      bgRgb: [253, 232, 232],
+    };
+  }
+  return {
+    label: statusLabel(status),
+    variant: 'paid',
+    badge: 'bg-[#DEF7EC] text-[#03543F] border border-emerald-200',
+    textRgb: [3, 84, 63],
+    bgRgb: [222, 247, 236],
+  };
+}
+
 /** True when the payment is active (not voided / not failed). */
 export function isPaidStatus(status: unknown): boolean {
   const s = String(status ?? '').toLowerCase();
@@ -122,4 +198,92 @@ export function htmlEscape(value: unknown): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/**
+ * Single source of truth for the receipt's displayed values. Every renderer
+ * (React document, PDF, print window) consumes this so the three can never
+ * drift apart. Returns only data-conditional values — no invented defaults.
+ */
+export interface ReceiptLayoutData {
+  receiptNum: string;
+  dateStr: string;
+  time: string | null;
+  datetime: string;
+  student: string;
+  course: string;
+  period: string;
+  method: string;
+  trxId: string;
+  hasTrx: boolean;
+  status: ReceiptStatusSettings;
+  amountPlain: string;
+  amountTotal: string;
+  verificationUrl: string;
+  center: ReceiptCenter;
+  /** Credential lines from center config; empty when not configured (never faked). */
+  credentialLines: string[];
+}
+
+export function buildReceiptLayoutData(
+  payment: {
+    id?: unknown;
+    studentName?: unknown;
+    course?: unknown;
+    courseName?: unknown;
+    cohortGroup?: unknown;
+    groupName?: unknown;
+    month?: unknown;
+    paymentPeriod?: unknown;
+    method?: unknown;
+    paymentMethod?: unknown;
+    trxId?: unknown;
+    amount?: unknown;
+    status?: unknown;
+    paymentStatus?: unknown;
+    date?: unknown;
+    createdAt?: unknown;
+  },
+  center: ReceiptCenter
+): ReceiptLayoutData {
+  const receiptNum = getReceiptNumber(payment as any);
+  const dateStr = formatReceiptDate(payment.date);
+  const time = extractReceiptTime(payment.createdAt);
+  const datetime = time ? `${dateStr} ${time}` : dateStr;
+  const student = String(payment.studentName ?? '').trim() || '—';
+  const course = resolveCourseName(payment);
+  const period = String(payment.month || payment.paymentPeriod || '').trim() || '—';
+  const method = methodLabel(payment.method || payment.paymentMethod);
+  const trxId = String(payment.trxId ?? '').trim();
+  const status = receiptStatusSettings(payment.status || payment.paymentStatus);
+  const amountPlain = formatUzsPlain(payment.amount);
+  const amountTotal = formatUzsAmount(payment.amount);
+  const verificationUrl = receiptVerificationUrl(payment);
+
+  const credentialLines: string[] = [];
+  if (center.name && String(center.name).trim()) credentialLines.push(String(center.name).trim());
+  if (center.stir && String(center.stir).trim()) credentialLines.push(`STIR: ${String(center.stir).trim()}`);
+  if (center.address && String(center.address).trim()) credentialLines.push(String(center.address).trim());
+  if (center.phone && String(center.phone).trim()) credentialLines.push(`Tel: ${String(center.phone).trim()}`);
+  if (center.telegram && String(center.telegram).trim()) credentialLines.push(`Telegram: ${String(center.telegram).trim()}`);
+  if (center.workingHours && String(center.workingHours).trim()) credentialLines.push(`Ish vaqti: ${String(center.workingHours).trim()}`);
+
+  return {
+    receiptNum,
+    dateStr,
+    time,
+    datetime,
+    student,
+    course,
+    period,
+    method,
+    trxId,
+    hasTrx: Boolean(trxId),
+    status,
+    amountPlain,
+    amountTotal,
+    verificationUrl,
+    center,
+    credentialLines,
+  };
 }

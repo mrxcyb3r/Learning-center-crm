@@ -87,6 +87,28 @@ const AUDIT_LOGS_COL = 'audit_logs';
 const BRANCHES_CONFIG_COL = 'branches_config';
 const ROOMS_CONFIG_COL = 'rooms_config';
 const STAFF_CONFIG_COL = 'staff_config';
+const PUBLIC_RECEIPTS_COL = 'public_receipts';
+
+/**
+ * Sanitized per-payment verification mirror. Public read (receipt QR target),
+ * contains NO bank/electron trx data, notes or operator identity.
+ */
+async function writePublicReceiptSummary(paymentId: string, data: PaymentWriteInput): Promise<void> {
+  const { resolveCourseName } = await import('../utils/receipt');
+  const status = String(data.status ?? 'Completed');
+  const summary = {
+    paymentId,
+    receiptNumber: data.receiptNumber || data.receiptRef || `REC-${String(paymentId).replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()}`,
+    amount: Number(data.amount) || 0,
+    course: resolveCourseName(data),
+    date: data.date || '',
+    method: String(data.paymentMethod || data.method || ''),
+    status,
+    studentName: String(data.studentName || ''),
+    createdAt: new Date().toISOString(),
+  };
+  await setDoc(doc(db, PUBLIC_RECEIPTS_COL, paymentId), cleanData(summary));
+}
 const INVITATIONS_COL = 'teacher_invitations';
 const INVOICES_COL = 'invoices';
 
@@ -573,6 +595,7 @@ export const paymentsService = {
 
   async recordPayment(data: PaymentWriteInput): Promise<string> {
     const docRef = await addDoc(collection(db, PAYMENTS_COL), cleanData(data));
+    writePublicReceiptSummary(docRef.id, data).catch(() => undefined);
     return docRef.id;
   },
 
@@ -611,6 +634,8 @@ export const paymentsService = {
     batch.set(doc(db, PAYMENTS_COL, paymentId), paymentData);
     batch.set(doc(db, INVOICES_COL, invoiceId), invoiceData);
     await batch.commit();
+
+    writePublicReceiptSummary(paymentId, paymentData as PaymentWriteInput).catch(() => undefined);
 
     return { paymentId, invoiceId, invoiceNumber };
   },

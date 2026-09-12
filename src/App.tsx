@@ -16,9 +16,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppBackground } from './components/AppBackground';
 import { RenessansLandingPage } from './pages/RenessansLandingPage';
 import { PublicCoursesPage } from './pages/PublicCoursesPage';
+import { PublicReceiptVerifyPage } from './pages/PublicReceiptVerifyPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { TeacherPage } from './pages/TeacherPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
+import { SupportCenterApp } from './components/erp/SupportCenterApp';
 import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { TeacherLoginPage } from './pages/teacher/TeacherLoginPage';
@@ -79,6 +81,7 @@ function MainAppRoutes() {
       <Route path="/courses" element={<PublicCoursesPage />} />
       <Route path="/courses/:slug" element={<CourseDetailPage />} />
       <Route path="/teachers/:slug" element={<TeacherPage />} />
+      <Route path="/receipt/verify/:receiptId" element={<PublicReceiptVerifyPage />} />
 
       {/* Login Pages */}
       <Route path="/login/admin" element={<AdminLoginPage />} />
@@ -119,6 +122,16 @@ function MainAppRoutes() {
         element={
           <ProtectedRoute requiredRole="teacher" fallbackPath="/login/teacher">
             <TeacherPortalApp />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Internal Support / Technical service - Protected */}
+      <Route
+        path="/support/*"
+        element={
+          <ProtectedRoute requiredRole="support" fallbackPath="/login/admin">
+            <SupportCenterApp />
           </ProtectedRoute>
         }
       />

@@ -21,6 +21,9 @@ export const AdminLoginPage: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname || '/admin';
 
+  // A dedicated support/technical account lands in its own workspace.
+  const resolveLanding = () => (role === 'support' ? '/support' : from);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -31,7 +34,7 @@ export const AdminLoginPage: React.FC = () => {
       // Role verification happens in AuthContext via Firestore
       // Check role after login
       setTimeout(() => {
-        navigate(from, { replace: true });
+        navigate(resolveLanding(), { replace: true });
       }, 100);
     } catch (err: any) {
       setError(getErrorMessage(err));
@@ -46,7 +49,7 @@ export const AdminLoginPage: React.FC = () => {
     try {
       await loginWithGoogle();
       setTimeout(() => {
-        navigate(from, { replace: true });
+        navigate(resolveLanding(), { replace: true });
       }, 100);
     } catch (err: any) {
       setError(getErrorMessage(err));

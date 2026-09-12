@@ -112,6 +112,7 @@ export const SupportAdminList: React.FC = () => {
   }, []);
 
   const active = items.filter((i) => i.status !== 'resolved').length;
+  const fresh = items.filter((i) => i.status === 'new').length;
 
   return (
     <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -131,6 +132,15 @@ export const SupportAdminList: React.FC = () => {
             </p>
           </div>
         </div>
+        {fresh > 0 && (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-black shrink-0">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+            </span>
+            Yangi: {fresh}
+          </span>
+        )}
       </div>
 
       {error && (

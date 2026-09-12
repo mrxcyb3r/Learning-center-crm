@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Settings,
   Save,
@@ -16,13 +16,20 @@ import {
   Key,
   Rocket,
   Flag,
+  UserPlus,
+  CheckCircle2 as CircleCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { settingsService, auditService, backupService, notificationsService } from '../../services/repository';
 import { TelegramConnectionCard } from './TelegramConnectionCard';
 import { DemoDataPanel } from './DemoDataPanel';
+import { LaunchReadinessCard } from './LaunchReadinessCard';
+import { getSeedMeta, getDemoStats } from '../../services/demoClear';
 import { AuditLogEntry } from '../../types/crm';
+import { useAuth } from '../../context/AuthContext';
 
 export const SettingsView: React.FC = () => {
+  const { currentUser } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup' | 'telegram' | 'launch'>('center');
 
@@ -35,12 +42,30 @@ export const SettingsView: React.FC = () => {
   const [email, setEmail] = useState('');
   const [workingHours, setWorkingHours] = useState('08:00 - 20:00');
   const [telegramChannel, setTelegramChannel] = useState('https://t.me/renessans_lc');
+  const [stir, setStir] = useState('');
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
   // Staff members (from Firestore settings)
   const [staffList, setStaffList] = useState<any[]>([]);
+
+  // Technical support assistant provisioning
+  const [assistName, setAssistName] = useState('');
+  const [assistEmail, setAssistEmail] = useState('');
+  const [assistPass, setAssistPass] = useState('');
+  const [assistBusy, setAssistBusy] = useState(false);
+  const [assistMsg, setAssistMsg] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
+
+  // Launch-tab state: production-ready vs demo mode (derived from data).
+  const [cleared, setCleared] = useState(false);
+  const [demoTotal, setDemoTotal] = useState(0);
+
+  const refreshLaunchState = useCallback(async () => {
+    const [meta, stats] = await Promise.all([getSeedMeta(), getDemoStats()]);
+    setCleared(meta.cleared);
+    setDemoTotal(stats.reduce((sum, s) => sum + s.count, 0));
+  }, []);
 
   const refreshLogs = async () => {
     const logs = await auditService.getAuditLogs();
@@ -57,6 +82,7 @@ export const SettingsView: React.FC = () => {
       setSecondaryPhone(settings.secondaryPhone || '');
       setEmail(settings.email || '');
       setWorkingHours(settings.workingHours || '08:00 - 20:00');
+      setStir(settings.stir || '');
       setTelegramChannel(
         settings.telegramSettings?.botUsername ? `https://t.me/${String(settings.telegramSettings.botUsername).replace('@', '')}` : 'https://t.me/renessans_lc'
       );
@@ -69,7 +95,15 @@ export const SettingsView: React.FC = () => {
   useEffect(() => {
     loadSettings();
     refreshLogs();
-  }, []);
+    refreshLaunchState();
+    const onDemoChanged = () => refreshLaunchState();
+    window.addEventListener('centerflow-demo-cleared', onDemoChanged);
+    window.addEventListener('centerflow-demo-restored', onDemoChanged);
+    return () => {
+      window.removeEventListener('centerflow-demo-cleared', onDemoChanged);
+      window.removeEventListener('centerflow-demo-restored', onDemoChanged);
+    };
+  }, [refreshLaunchState]);
 
   const handleSaveCenter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +114,7 @@ export const SettingsView: React.FC = () => {
       secondaryPhone: secondaryPhone.trim(),
       email: email.trim(),
       workingHours: workingHours.trim(),
+      stir: stir.trim(),
       branches: [
         {
           id: 'br-01',
@@ -112,6 +147,58 @@ export const SettingsView: React.FC = () => {
     });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleCreateSupportAssistant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (assistBusy) return;
+    if (!currentUser) {
+      setAssistMsg({ type: 'error', text: 'Avval tizimga kirishingiz kerak.' });
+      return;
+    }
+    const name = assistName.trim();
+    const email = assistEmail.trim().toLowerCase();
+    if (name.length < 2) {
+      setAssistMsg({ type: 'error', text: 'Xodim ismini kiriting.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAssistMsg({ type: 'error', text: 'Haqiqiy email kiriting.' });
+      return;
+    }
+    if (assistPass.length < 8) {
+      setAssistMsg({ type: 'error', text: 'Vaqtinchalik parol kamida 8 ta belgi bo\'lishi kerak.' });
+      return;
+    }
+
+    setAssistBusy(true);
+    setAssistMsg(null);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch('/api/support/assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name, email, password: assistPass }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Akkaunt yaratishda xatolik yuz berdi.');
+      }
+      setAssistMsg({
+        type: 'ok',
+        text: `Texnik yordam akkaunti yaratildi: ${email}. Parolni xodimga shaxsan yetkazing.`,
+      });
+      setAssistName('');
+      setAssistEmail('');
+      setAssistPass('');
+    } catch (err: any) {
+      setAssistMsg({ type: 'error', text: err?.message || 'Akkaunt yaratishda xatolik yuz berdi.' });
+    } finally {
+      setAssistBusy(false);
+    }
   };
 
   const handleBackupExport = async () => {
@@ -241,6 +328,20 @@ export const SettingsView: React.FC = () => {
                   onChange={(e) => setLegalName(e.target.value)}
                   placeholder="MChJ 'RENESSANS EDUCATION YANGIOBOD'"
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  STIR
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={stir}
+                  onChange={(e) => setStir(e.target.value)}
+                  placeholder="Masalan: 305 123 456"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
                 />
               </div>
 
@@ -536,13 +637,21 @@ export const SettingsView: React.FC = () => {
                     Markazni ishga tushirish
                   </h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Markaz ishga tushirishdan oldin namoyish (demo) ma'lumotlarni boshqaring.
+                    {cleared && demoTotal === 0
+                      ? 'Markaz ishga tayyor. Demo ma\'lumotlar tozalangan — endi haqiqiy ma\'lumotlarni kiriting.'
+                      : 'Markaz ishga tushirishdan oldin namoyish (demo) ma\'lumotlarni boshqaring.'}
                   </p>
                 </div>
               </div>
-              <span className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider w-fit">
-                Demo rejim
-              </span>
+              {cleared && demoTotal === 0 ? (
+                <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-black uppercase tracking-wider w-fit">
+                  Ishga tayyor
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider w-fit">
+                  Demo rejim
+                </span>
+              )}
             </div>
 
             <div className="flex items-start gap-2.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
@@ -560,39 +669,91 @@ export const SettingsView: React.FC = () => {
             <h4 className="text-sm font-black text-slate-900 dark:text-white mb-4">
               Boshlashdan oldin tekshiriladigan ro'yxat
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {[
-                { title: "Markaz ma'lumotlari", desc: "Nomi, manzil, telefon, ish vaqti" },
-                { title: 'Filiallar', desc: 'Filial va asosiy manzil' },
-                { title: 'Kurslar va narxlar', desc: 'Kurslar, narxlar, to\'lov shartlari' },
-                { title: "O'qituvchilar", desc: 'O\'qituvchilar ro\'yxati va rollar' },
-                { title: 'Guruhlar va jadval', desc: 'Guruhlar, dars vaqtlari, xonalar' },
-                { title: "O'quvchilar", desc: 'O\'quvchilar ro\'yxati va guruhlarga taqsimlash' },
-                { title: 'To\'lovlar', desc: 'To\'lov tizimi va kvitansiyalar tekshiruvi' },
-                { title: 'Telegram', desc: 'O\'quvchi va xodim ulanishlari, ommaviy xabarlar' },
-                { title: 'Veb-sayt (CMS)', desc: 'Barcha kurs, o\'qituvchi, natija va FAQ matnlari' },
-                { title: 'Xodimlar va huquqlar', desc: 'Kirish rollari tasdiqi' },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <div className="text-xs font-black text-slate-900 dark:text-white">
-                      {item.title}
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      {item.desc}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <LaunchReadinessCard />
           </div>
 
           {/* Demo → Real: safe demo-data management */}
           <DemoDataPanel />
+
+          {/* Technical support assistant account (dedicated role 'support') */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-11 h-11 rounded-2xl bg-sky-500/10 flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                  Texnik yordam akkaunti
+                </h4>
+                <p className="text-[11px] text-slate-400">
+                  Alohida texnik xizmat akkaunti — oddiy admin hisobidan mustaqil kirish (role: support).
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mb-4">
+              Yaratilgach, xodim <code className="text-sky-500 font-mono">/support</code> manzili orqali kirib,
+              kiruvchi so'rovlar bilan ishlaydi.
+            </p>
+
+            <form onSubmit={handleCreateSupportAssistant} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  Ismi
+                </label>
+                <input
+                  type="text"
+                  value={assistName}
+                  onChange={(e) => setAssistName(e.target.value)}
+                  placeholder="Texnik xodim ismi"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={assistEmail}
+                  onChange={(e) => setAssistEmail(e.target.value)}
+                  placeholder="tech@centerflow.uz"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  Vaqtinchalik parol (kamida 8 belgi)
+                </label>
+                <input
+                  type="password"
+                  value={assistPass}
+                  onChange={(e) => setAssistPass(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+              <div className="md:col-span-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={assistBusy}
+                  className="px-5 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-black text-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-sky-500/20"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {assistBusy ? 'Yaratilmoqda...' : 'Yordam akkauntini yaratish'}
+                </button>
+                {assistMsg && (
+                  <span
+                    className={`flex items-center gap-1.5 text-xs font-bold ${
+                      assistMsg.type === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                  >
+                    {assistMsg.type === 'ok' ? <CircleCheck className="w-3.5 h-3.5 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
+                    {assistMsg.text}
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

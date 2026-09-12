@@ -15,6 +15,7 @@ export interface CenterConfig {
   address: string;
   phone: string;
   legalName?: string;
+  stir?: string;
 }
 
 const DEFAULTS: CenterConfig = {
@@ -46,6 +47,7 @@ export async function getCenterConfig(force = false): Promise<CenterConfig> {
       address: String(branches?.[0]?.address || data.address || DEFAULTS.address),
       phone: String(data.hotline || DEFAULTS.phone),
       legalName: data.legalName ? String(data.legalName) : undefined,
+      stir: data.stir ? String(data.stir) : undefined,
     };
     cached = { at: now, center };
     return center;

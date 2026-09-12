@@ -2,8 +2,9 @@ import React from 'react';
 import { Download, Printer, X, CheckCircle2 } from 'lucide-react';
 import type { IncomePaymentRecord } from '../../types/crm';
 import { ReceiptDocument } from './ReceiptDocument';
-import { ReceiptCenter } from '../../utils/receipt';
+import { ReceiptCenter, receiptVerificationUrl } from '../../utils/receipt';
 import { generateReceiptPdf, buildReceiptPrintHtml, receiptFileName } from '../../utils/receiptPdf';
+import { qrPngDataUrl } from '../../utils/receiptQr';
 
 interface ReceiptModalProps {
   payment: IncomePaymentRecord;
@@ -15,34 +16,52 @@ interface ReceiptModalProps {
 /** Receipt preview modal with PDF / Print / Close actions (buttons outside the document). */
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({ payment, center, success, onClose }) => {
   const [pdfError, setPdfError] = React.useState<string | null>(null);
+  const [actionBusy, setActionBusy] = React.useState(false);
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    if (actionBusy) return;
+    setActionBusy(true);
     setPdfError(null);
     try {
-      const doc = generateReceiptPdf(payment, center);
+      // Best-effort QR (rendered off-screen); PDF still valid without it.
+      const qr = await qrPngDataUrl(receiptVerificationUrl(payment));
+      const doc = generateReceiptPdf(payment, center, qr);
       doc.save(receiptFileName(payment, center.name));
     } catch (err: any) {
       console.error('[ReceiptModal] PDF yaratishda xatolik:', err?.message || String(err));
       setPdfError("PDF tayyorlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+    } finally {
+      setActionBusy(false);
     }
   };
 
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank', 'width=900,height=760');
-    if (!printWindow) {
-      setPdfError('Chop etish oynasi ochilmadi. Brauzer sozlamalarini tekshiring.');
-      return;
-    }
-    const html = buildReceiptPrintHtml(payment, center);
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.onafterprint = () => printWindow.close();
-    setTimeout(() => {
-      if (!printWindow.closed) {
-        printWindow.print();
+  const handlePrint = async () => {
+    if (actionBusy) return;
+    setActionBusy(true);
+    setPdfError(null);
+    try {
+      const qr = await qrPngDataUrl(receiptVerificationUrl(payment));
+      const printWindow = window.open('', '_blank', 'width=900,height=760');
+      if (!printWindow) {
+        setPdfError('Chop etish oynasi ochilmadi. Brauzer sozlamalarini tekshiring.');
+        return;
       }
-    }, 120);
+      const html = buildReceiptPrintHtml(payment, center, qr);
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.onafterprint = () => printWindow.close();
+      setTimeout(() => {
+        if (!printWindow.closed) {
+          printWindow.print();
+        }
+      }, 120);
+    } catch (err: any) {
+      console.error('[ReceiptModal] Chop etishda xatolik:', err?.message || String(err));
+      setPdfError("Chop etishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+    } finally {
+      setActionBusy(false);
+    }
   };
 
   return (
@@ -97,7 +116,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ payment, center, suc
           </button>
           <button
             onClick={handlePrint}
-            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            disabled={actionBusy}
+            className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             aria-label="Kvitansiyani chop etish"
           >
             <Printer className="w-3.5 h-3.5" />
@@ -105,11 +125,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ payment, center, suc
           </button>
           <button
             onClick={handleDownloadPdf}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20"
+            disabled={actionBusy}
+            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
             aria-label="PDF yuklab olish"
           >
             <Download className="w-3.5 h-3.5" />
-            PDF yuklab olish
+            {actionBusy ? 'Tayyorlanmoqda...' : 'PDF yuklab olish'}
           </button>
         </div>
       </div>

@@ -65,6 +65,23 @@ export async function getDemoStats(): Promise<DemoStat[]> {
   return total > 0 ? stats : [];
 }
 
+/** Read the seed meta mark (whether demo data was deliberately cleared). */
+export async function getSeedMeta(): Promise<{ cleared: boolean; version?: number; clearedAt?: string }> {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'seed_meta'));
+    if (!snap.exists()) return { cleared: false };
+    const data = snap.data() || {};
+    return {
+      cleared: data.cleared === true,
+      version: typeof data.version === 'number' ? data.version : undefined,
+      clearedAt: typeof data.clearedAt === 'string' ? data.clearedAt : undefined,
+    };
+  } catch (err) {
+    console.warn('[demoClear] seed_meta o\'qib bo\'lmadi:', err?.message || String(err));
+    return { cleared: false };
+  }
+}
+
 /**
  * Delete every record flagged `isDemo === true` across the demo collections,
  * then mark the seed meta so the app does not auto-reseed.

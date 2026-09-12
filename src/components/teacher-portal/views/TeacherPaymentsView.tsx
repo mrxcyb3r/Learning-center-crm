@@ -1,13 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '../../../services/firebase';
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { ReceiptView } from '../shared/ReceiptView';
 import { ReceiptData, PaymentMethod } from '../../../types/teacher';
 import { Student } from '../../../types';
+import { paymentsService, invoicesService } from '../../../services/repository';
 import {
   Plus,
   Search,
@@ -21,6 +20,8 @@ import {
   FileText,
   X,
   Lock,
+  Receipt,
+  CheckCircle2,
 } from 'lucide-react';
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
@@ -70,6 +71,7 @@ export const TeacherPaymentsView: React.FC = () => {
   const [filterDateTo, setFilterDateTo] = useState('');
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [invoiceData, setInvoiceData] = useState<{ invoiceNumber: string; amount: number; date: string; studentName: string; paymentMethod: string; teacherName: string; course: string } | null>(null);
 
   const selectedStudent = useMemo(
     () => myStudents.find((s) => s.id === selectedStudentId),
@@ -88,6 +90,7 @@ export const TeacherPaymentsView: React.FC = () => {
           groupId: student?.groupId || '',
           groupName: group?.name || student?.groupName || '',
           receiptNumber: p.receiptRef || `REC-${p.id.slice(0, 8).toUpperCase()}`,
+          invoiceNumber: p.invoiceId ? `INV-${p.invoiceId.slice(-8).toUpperCase()}` : null,
         };
       });
   }, [payments, myStudents, myGroups]);
@@ -139,7 +142,6 @@ export const TeacherPaymentsView: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}`;
       const group = myGroups.find((g) => g.id === selectedStudent.groupId);
 
       const paymentData = {
@@ -150,15 +152,23 @@ export const TeacherPaymentsView: React.FC = () => {
         date: payDate,
         recordedBy: teacherUid,
         recordedByName: teacherName,
-        status: 'paid',
+        status: 'paid' as const,
         notes: notes || null,
-        receiptRef: receiptNumber,
         cohortGroup: group?.name || selectedStudent.groupName,
+        teacherId: teacherUid,
+        teacherName,
       };
 
-      await addDoc(collection(db, 'payments'), paymentData);
+      const result = await paymentsService.recordPaymentWithInvoice(paymentData);
 
-      toast.success(`To'lov qayd etildi! Kvitansiya: ${receiptNumber}`);
+      toast.success(`To'lov muvaffaqiyatli saqlandi! Invoice: ${result.invoiceNumber}`);
+
+      // Show invoice details in a success modal/notification
+      setTimeout(() => {
+        toast.info(`Invoice: ${result.invoiceNumber}\nAmount: ${Number(amount).toLocaleString()} UZS\nStudent: ${selectedStudent.fullName}`, {
+          autoClose: 8000,
+        });
+      }, 500);
 
       setIsModalOpen(false);
       setSelectedStudentId('');
@@ -186,6 +196,50 @@ export const TeacherPaymentsView: React.FC = () => {
       paymentMethod: payment.paymentMethod,
       receiptNumber: payment.receiptNumber,
     });
+  };
+
+  const openInvoice = async (payment: typeof studentPayments[0]) => {
+    if (!payment.invoiceId) {
+      toast.error('Invoice topilmadi');
+      return;
+    }
+    try {
+      const invoice = await invoicesService.getInvoicesByPaymentId(payment.id);
+      
+      if (invoice) {
+        setInvoiceData({
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          date: dayjs(invoice.paymentDate).format('DD MMM YYYY'),
+          studentName: invoice.studentName || payment.studentName,
+          paymentMethod: invoice.paymentMethod || payment.paymentMethod,
+          teacherName: invoice.teacherName || teacherName,
+          course: payment.groupName,
+        });
+      } else {
+        // Fallback: construct from payment data
+        setInvoiceData({
+          invoiceNumber: payment.invoiceNumber || 'N/A',
+          amount: payment.amount,
+          date: dayjs(payment.date).format('DD MMM YYYY'),
+          studentName: payment.studentName,
+          paymentMethod: payment.paymentMethod,
+          teacherName,
+          course: payment.groupName,
+        });
+      }
+    } catch {
+      // Fallback
+      setInvoiceData({
+        invoiceNumber: payment.invoiceNumber || 'N/A',
+        amount: payment.amount,
+        date: dayjs(payment.date).format('DD MMM YYYY'),
+        studentName: payment.studentName,
+        paymentMethod: payment.paymentMethod,
+        teacherName,
+        course: payment.groupName,
+      });
+    }
   };
 
   if (businessModel === 'learning_center') {
@@ -290,7 +344,7 @@ export const TeacherPaymentsView: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className={`border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
-                  {['Sana', 'O\'quvchi', 'Guruh', 'Summa', 'Usul', 'Kvitansiya №', 'Amallar'].map((header) => (
+                  {['Sana', 'O\'quvchi', 'Guruh', 'Summa', 'Usul', 'Kvitansiya №', 'Invoice №', 'Amallar'].map((header) => (
                     <th
                       key={header}
                       className={`px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}
@@ -329,6 +383,9 @@ export const TeacherPaymentsView: React.FC = () => {
                       <td className={`px-4 py-3 text-xs font-mono font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                         {payment.receiptNumber}
                       </td>
+                      <td className={`px-4 py-3 text-xs font-mono font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}`}>
+                        {payment.invoiceNumber || '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => openReceipt(payment)}
@@ -337,6 +394,15 @@ export const TeacherPaymentsView: React.FC = () => {
                           <FileText className="w-3.5 h-3.5" />
                           Kvitansiya
                         </button>
+                        {payment.invoiceNumber && (
+                          <button
+                            onClick={() => openInvoice(payment)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'}`}
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                            Invoice
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -478,6 +544,64 @@ export const TeacherPaymentsView: React.FC = () => {
 
       {/* Receipt Modal */}
       {receiptData && <ReceiptView data={receiptData} onClose={() => setReceiptData(null)} />}
+
+      {/* Invoice Modal */}
+      {invoiceData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className={`flex items-center justify-between p-5 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h3 className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                Invoice
+              </h3>
+              <button
+                onClick={() => setInvoiceData(null)}
+                className={`p-2 rounded-xl transition cursor-pointer ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6 pb-4 border-b-2 border-dashed border-slate-200">
+                <div className="text-lg font-black text-amber-500">RENESANS O'QUV MARKAZI</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[3px] mt-1">Invoice</div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">Invoice №</span>
+                  <span className="text-sm font-bold text-slate-900">{invoiceData.invoiceNumber}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">Sana</span>
+                  <span className="text-sm font-bold text-slate-900">{invoiceData.date}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">O'qituvchi</span>
+                  <span className="text-sm font-bold text-slate-900">{invoiceData.teacherName}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">O'quvchi</span>
+                  <span className="text-sm font-bold text-slate-900">{invoiceData.studentName}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">Kurs</span>
+                  <span className="text-sm font-bold text-slate-900">{invoiceData.course}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400">Usul</span>
+                  <span className="text-sm font-bold text-slate-900 capitalize">{invoiceData.paymentMethod}</span>
+                </div>
+              </div>
+              <div className="mt-6 p-4 bg-emerald-50 rounded-2xl text-center">
+                <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">To'langan summa</div>
+                <div className="text-3xl font-black text-emerald-600 mt-1">{invoiceData.amount.toLocaleString()} UZS</div>
+              </div>
+              <div className="text-center mt-4 text-[10px] font-semibold text-slate-400">
+                To'lovingiz uchun rahmat!
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

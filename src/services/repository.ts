@@ -26,6 +26,7 @@ import {
   Group,
   Student,
   Payment,
+  Invoice,
   AttendanceRecord,
   Assignment,
   FeedPost,
@@ -82,6 +83,7 @@ const BRANCHES_CONFIG_COL = 'branches_config';
 const ROOMS_CONFIG_COL = 'rooms_config';
 const STAFF_CONFIG_COL = 'staff_config';
 const INVITATIONS_COL = 'teacher_invitations';
+const INVOICES_COL = 'invoices';
 
 /**
  * User Service - Canonical user management
@@ -491,6 +493,23 @@ export const studentsService = {
 };
 
 /**
+ * Invoice number generator using a counter document for atomic increments.
+ * Format: INV-YYYY-NNNN (e.g., INV-2026-0001)
+ */
+async function generateInvoiceNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const counterRef = doc(db, 'counters', `invoices_${year}`);
+
+  return runTransaction(db, async (transaction) => {
+    const counterDoc = await transaction.get(counterRef);
+    const currentCount = counterDoc.exists() ? (counterDoc.data().count || 0) : 0;
+    const nextCount = currentCount + 1;
+    transaction.set(counterRef, { count: nextCount, year, updatedAt: new Date().toISOString() });
+    return `INV-${year}-${String(nextCount).padStart(4, '0')}`;
+  });
+}
+
+/**
  * Payments Service
  */
 export const paymentsService = {
@@ -520,9 +539,75 @@ export const paymentsService = {
     return docRef.id;
   },
 
+  async recordPaymentWithInvoice(data: PaymentWriteInput & { teacherId: string; teacherName: string; studentName: string }): Promise<{ paymentId: string; invoiceId: string; invoiceNumber: string }> {
+    const invoiceNumber = await generateInvoiceNumber();
+    const paymentId = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const invoiceId = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const paymentDate = data.date || now.split('T')[0];
+
+    const paymentData = cleanData({
+      ...data,
+      id: paymentId,
+      invoiceId,
+      status: 'paid',
+      createdAt: now,
+    });
+
+    const invoiceData = cleanData({
+      id: invoiceId,
+      paymentId,
+      studentId: data.studentId,
+      teacherId: data.teacherId,
+      amount: data.amount,
+      paymentDate,
+      status: 'PAID',
+      invoiceNumber,
+      createdAt: now,
+      studentName: data.studentName,
+      teacherName: data.teacherName,
+      paymentMethod: data.paymentMethod,
+      notes: data.notes,
+    });
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, PAYMENTS_COL, paymentId), paymentData);
+    batch.set(doc(db, INVOICES_COL, invoiceId), invoiceData);
+    await batch.commit();
+
+    return { paymentId, invoiceId, invoiceNumber };
+  },
+
   async voidPayment(id: string, reason: string): Promise<void> {
     await updateDoc(doc(db, PAYMENTS_COL, id), { status: 'Voided', voidReason: reason, voidedAt: new Date().toISOString() });
   }
+};
+
+/**
+ * Invoices Service
+ */
+export const invoicesService = {
+  async getInvoiceById(invoiceId: string): Promise<Invoice | null> {
+    const snap = await getDoc(doc(db, INVOICES_COL, invoiceId));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Invoice) : null;
+  },
+
+  async getInvoicesByTeacher(teacherUid: string): Promise<Invoice[]> {
+    const q = query(collection(db, INVOICES_COL), where('teacherId', '==', teacherUid), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+  },
+
+  async getInvoicesByPaymentId(paymentId: string): Promise<Invoice | null> {
+    const q = query(collection(db, INVOICES_COL), where('paymentId', '==', paymentId), limit(1));
+    const snap = await getDocs(q);
+    return snap.empty ? null : ({ id: snap.docs[0].id, ...snap.docs[0].data() } as Invoice);
+  },
+
+  async getAllInvoices(): Promise<Invoice[]> {
+    const snap = await getDocs(query(collection(db, INVOICES_COL), orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice));
+  },
 };
 
 /**

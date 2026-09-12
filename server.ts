@@ -406,6 +406,192 @@ app.post('/api/bot/webhook', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
+// Initialize Telegram Bot
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
+
+// Bot health check - verify token is configured
+if (!TELEGRAM_BOT_TOKEN) {
+  console.warn('[TELEGRAM] TELEGRAM_BOT_TOKEN is not configured. Bot features will use fallback mode.');
+} else {
+  console.log('[TELEGRAM] Bot token configured:', TELEGRAM_BOT_TOKEN ? 'YES' : 'NO');
+}
+
+// Start Telegram bot polling if in polling mode
+let botPollingInterval: NodeJS.Timeout | null = null;
+
+async function setupTelegramBot() {
+  if (process.env.BOT_MODE !== 'webhook' && TELEGRAM_BOT_TOKEN) {
+    try {
+      // Set webhook first to receive updates
+      const setWebhookParams = new URLSearchParams({
+        url: `${process.env.PUBLIC_URL || 'http://localhost:3000'}/api/bot/webhook`,
+        secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || ''
+      });
+      
+      const webhookUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?${setWebhookParams}`;
+      const webhookFetch = await fetch(webhookUrl);
+      const webhookData = await webhookFetch.json();
+      
+      if (webhookData.ok) {
+        console.log('[TELEGRAM] Webhook set successfully');
+      } else {
+        console.warn('[TELEGRAM] Webhook setup failed, falling back to polling:', webhookData.description);
+      }
+    } catch (err) {
+      console.warn('[TELEGRAM] Webhook setup error, will use polling:', err);
+    }
+    
+    // Start polling loop
+    botPollingInterval = setInterval(async () => {
+      try {
+        const updatesResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=0&limit=10`);
+        const updatesData = await updatesResponse.json();
+        
+        if (updatesData.ok && updatesData.result && updatesData.result.length > 0) {
+          for (const update of updatesData.result) {
+            // Process updates - handle new messages, etc.
+            await processTelegramUpdate(update);
+          }
+        }
+      } catch (err) {
+        console.error('[TELEGRAM] Polling error:', err);
+      }
+    }, 30000); // Poll every 30 seconds
+  }
+}
+
+setupTelegramBot().catch(err => {
+  console.error('[TELEGRAM] Fatal setup error:', err);
+});
+
+// Process incoming Telegram update
+async function processTelegramUpdate(update: any) {
+  const message = update?.message;
+  if (!message) return;
+  
+  const { text, from, chat } = message;
+  if (!text) return;
+  
+  const chatId = String(chat?.id);
+  
+  // Handle /start command
+  if (text === '/start') {
+    // Respond with welcome message
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '👋 Assalomu alaykum!\n\nRENESANS O\'quv Markazining rasmiy botiga xush kelibsiz.\n\nNima qilmoqchisiz?\n\n[ 📚 Kurslar ]\n[ 📝 Sinov darsi ]\n[ ❓ Savol berish ]\n[ 📍 Manzil ]\n[ 📞 Bog\'lanish ]'
+      })
+    });
+    return;
+  }
+  
+  // Handle course selection
+  if (text === '📚 Kurslar') {
+    // Fetch courses from Firestore and send back
+    // For now, send static list
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: 'Mavjud kurslar:\n\n• DTM & Milliy Sertifikat\n• Matematika & Fizika\n• CEFR B2/C1\n• English Kids\n• Mental Arifmetika\n• Ona Tili'
+      })
+    });
+    return;
+  }
+  
+  // Handle trial request
+  if (text === '📝 Sinov darsi') {
+    // Prompt for user info
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '📝 Sinov darsiga yozilish\n\nIsmingizni kiriting:'
+      })
+    });
+    return;
+  }
+  
+  // Handle question flow
+  if (text === '❓ Savol berish') {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '❓ Savol berish\n\nIsmingizni kiriting:'
+      })
+    });
+    return;
+  }
+  
+  // Handle location
+  if (text === '📍 Manzil') {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '📍 Renessans filiali manzili:\n\nYangiobod tumani, 1-maktab binosi\nTel: +998 (90) 862-22-26'
+      })
+    });
+    return;
+  }
+  
+  // Handle contact
+  if (text === '📞 Bog\'lanish') {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '📞 Bog\'lanish\n\nRenessans oquv markazining rasmiy telefonlari:\n\n+998 90 123 45 67\n+998 91 234 56 78'
+      })
+    });
+    return;
+  }
+  
+  // Handle payment notification
+  if (text && text.includes('to\'lov')) {
+    // Send admin notification about new payment
+    if (TELEGRAM_ADMIN_CHAT_ID) {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_ADMIN_CHAT_ID,
+          text: `🔔 YANGI TO\'LOV\n\n👤 Mustaqil foydalanuvchi to\'lov qildi.\n📞 User ID: ${from?.id}\n💰 To\'lov miqdori: kuzatilmoqda`
+        })
+      });
+    }
+    return;
+  }
+  
+  // Echo unknown messages back with help
+  await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: 'Buyruq tushunilda. Quyidagi tugmalardan birini tanlang:\n\n[ 📚 Kurslar ]\n[ 📝 Sinov darsi ]\n[ ❓ Savol berish ]\n[ 📍 Manzil ]\n[ 📞 Bog\'lanish ]'
+    })
+  });
+}
+
+// Cleanup on shutdown
+process.on('SIGINT', () => {
+  if (botPollingInterval) {
+    clearInterval(botPollingInterval);
+  }
+  process.exit(0);
+});
+
 // 1. Universal Subject Coach Endpoint
 app.post('/api/ai/coach', async (req, res) => {
   try {

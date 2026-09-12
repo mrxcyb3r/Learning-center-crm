@@ -301,6 +301,18 @@ export interface ExpenseRecord {
 
 export type TeacherInvitationStatus = 'pending' | 'used' | 'expired' | 'revoked';
 
+export interface Invoice {
+  id: string;
+  paymentId: string;
+  studentId: string;
+  teacherId: string;
+  amount: number;
+  invoiceNumber: string;
+  paymentDate: string;
+  status: 'PAID' | 'PENDING' | 'VOID';
+  createdAt: string;
+}
+
 export interface TeacherInvitation {
   id: string;
   teacherName: string;

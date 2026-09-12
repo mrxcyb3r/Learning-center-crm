@@ -181,7 +181,18 @@ service cloud.firestore {
     // Payments
     match /payments/{paymentId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
-      allow write: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher() && request.resource.data.studentId is string
+            && isTeacherOfStudent(request.resource.data.studentId));
+      allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
+    }
+
+    // Invoices
+    match /invoices/{invoiceId} {
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfInvoice(invoiceId));
+      allow create: if isAdminOrSuperAdmin()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isAdminOrSuperAdmin();
     }
 
     // Attendance
@@ -396,6 +407,12 @@ service cloud.firestore {
     function isTeacherOfPayment(paymentId) {
       let paymentDoc = get(/databases/$(database)/documents/payments/$(paymentId));
       let studentDoc = get(/databases/$(database)/documents/students/$(paymentDoc.data.studentId));
+      return studentDoc.data.teacherId == request.auth.uid;
+    }
+
+    function isTeacherOfInvoice(invoiceId) {
+      let invoiceDoc = get(/databases/$(database)/documents/invoices/$(invoiceId));
+      let studentDoc = get(/databases/$(database)/documents/students/$(invoiceDoc.data.studentId));
       return studentDoc.data.teacherId == request.auth.uid;
     }
 

@@ -11,8 +11,8 @@ import {
   X,
   FileText,
 } from 'lucide-react';
-import { paymentsService, studentsService, coursesService } from '../../services/repository';
-import { CourseData, IncomePaymentRecord, StudentRecord } from '../../types/crm';
+import { paymentsService, invoicesService, studentsService, coursesService } from '../../services/repository';
+import { CourseData, IncomePaymentRecord, StudentRecord, Invoice } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 
 const UZ_MONTHS = [
@@ -27,6 +27,7 @@ function currentMonthLabel(): string {
 
 export const PaymentsView: React.FC = () => {
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [search, setSearch] = useState('');
@@ -34,6 +35,7 @@ export const PaymentsView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewReceipt, setViewReceipt] = useState<IncomePaymentRecord | null>(null);
+  const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   // Add Form
@@ -45,14 +47,16 @@ export const PaymentsView: React.FC = () => {
   const [formMonth, setFormMonth] = useState(currentMonthLabel());
 
   const refresh = async () => {
-    const [paymentsData, studentsData, coursesData] = await Promise.all([
+    const [paymentsData, studentsData, coursesData, invoicesData] = await Promise.all([
       paymentsService.getAllPayments(),
       studentsService.getAllStudents(),
-      coursesService.getAllCourses()
+      coursesService.getAllCourses(),
+      invoicesService.getAllInvoices()
     ]);
     setPayments(paymentsData as unknown as IncomePaymentRecord[]);
     setStudents(studentsData as unknown as StudentRecord[]);
     setCourses(coursesData as unknown as CourseData[]);
+    setInvoices(invoicesData);
   };
 
   useEffect(() => {
@@ -257,6 +261,7 @@ export const PaymentsView: React.FC = () => {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Kvitansiya #</th>
+                <th className="py-3.5 px-4">Invoice #</th>
                 <th className="py-3.5 px-4">O'quvchi</th>
                 <th className="py-3.5 px-4">Kurs & Oy</th>
                 <th className="py-3.5 px-4">To'lov Usuli</th>
@@ -275,6 +280,7 @@ export const PaymentsView: React.FC = () => {
               )}
               {filtered.map((p) => {
                 const isVoided = p.status === 'Voided';
+                const invoice = invoices.find(inv => inv.paymentId === p.id);
                 return (
                 <tr key={p.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${isVoided ? 'opacity-50' : ''}`}>
                   <td className="py-3.5 px-4 font-mono font-bold text-slate-600 dark:text-slate-400">
@@ -284,6 +290,9 @@ export const PaymentsView: React.FC = () => {
                         BEKOR QILINGAN
                       </span>
                     )}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-amber-600 dark:text-amber-400">
+                    {invoice?.invoiceNumber || '—'}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                     {p.studentName}
@@ -326,6 +335,15 @@ export const PaymentsView: React.FC = () => {
                       >
                         <Printer className="w-4 h-4" />
                       </button>
+                      {invoice && (
+                        <button
+                          onClick={() => setViewInvoice(invoice)}
+                          className="p-1.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer"
+                          title="Invoice ko'rish"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      )}
                       {!isVoided && (
                         <button
                           onClick={() => handleVoidPayment(p.id, p.studentName)}

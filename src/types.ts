@@ -221,11 +221,28 @@ export interface Payment {
   paymentPeriod?: string;
   receiptRef?: string;
   notes?: string;
+  invoiceId?: string;
   // Admin ERP (IncomePaymentRecord) aliases — same record, alternate field names.
   course?: string;
   method?: string;
   receiptNumber?: string;
   month?: string;
+}
+
+export interface Invoice {
+  id: string;
+  paymentId: string;
+  studentId: string;
+  teacherId: string;
+  amount: number;
+  paymentDate: string;
+  status: 'PAID' | 'PENDING' | 'VOID';
+  invoiceNumber: string;
+  createdAt: string;
+  studentName?: string;
+  teacherName?: string;
+  paymentMethod?: string;
+  notes?: string;
 }
 
 export interface AttendanceStudentEntry {

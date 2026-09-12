@@ -345,6 +345,16 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // TELEGRAM WEBHOOK IDEMPOTENCY
+    // =========================================================================
+    // Written by the trusted server (Firebase Admin SDK, bypasses rules).
+    // Client access is admin-only; keys are Telegram update_ids.
+    match /telegram_updates/{updateId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
     // HELPER FUNCTIONS FOR TEACHER SCOPING
     // =========================================================================
     function isTeacherOfStudent(studentId) {

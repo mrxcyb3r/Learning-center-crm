@@ -40,6 +40,98 @@ export interface BroadcastResponse {
 
 export const BOT_USERNAME = 'centerflow_bot';
 
+export interface TelegramBotInfo {
+  id: number;
+  username: string;
+  firstName: string;
+}
+
+export interface TelegramWebhookInfo {
+  url: string;
+  pendingUpdateCount: number;
+  lastError?: string | null;
+  lastErrorDate?: number | null;
+  ipAddress?: string;
+}
+
+export interface TelegramServerStatus {
+  connected: boolean;
+  mode: 'webhook' | 'polling';
+  configured: {
+    token: boolean;
+    webhookSecret: boolean;
+    adminChatId: boolean;
+    publicUrl: string | null;
+    firestore: boolean;
+  };
+  bot: TelegramBotInfo | null;
+  webhook: TelegramWebhookInfo | null;
+  serverTime?: string;
+}
+
+export async function getFirebaseIdToken(): Promise<string | null> {
+  try {
+    const { auth } = await import('./firebase');
+    const user = auth.currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
+}
+
+export async function getTelegramStatus(): Promise<TelegramServerStatus | null> {
+  try {
+    const response = await fetch('/api/telegram/status', { cache: 'no-store' });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (err) {
+    console.warn('Telegram server status check failed:', err);
+    return null;
+  }
+}
+
+export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: string; description?: string; url?: string }> {
+  const token = await getFirebaseIdToken();
+  try {
+    const response = await fetch('/api/telegram/webhook/setup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await response.json().catch(() => ({}));
+    return {
+      ok: response.ok && Boolean(data.ok),
+      error: data.error,
+      description: data.description,
+      url: data.url,
+    };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Webhook sozlashda xatolik.' };
+  }
+}
+
+export async function sendAdminTelegramMessage(chatId: string | number, text: string): Promise<{ ok: boolean; error?: string }> {
+  const token = await getFirebaseIdToken();
+  try {
+    const response = await fetch('/api/telegram/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ chatId: String(chatId), text }),
+    });
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok && Boolean(data.ok), error: data.error };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Xabar yuborishda xatolik.' };
+  }
+}
+
 export function getBotDeepLink(userUid: string): string {
   return `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(userUid)}`;
 }

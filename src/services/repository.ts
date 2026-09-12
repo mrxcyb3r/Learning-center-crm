@@ -812,6 +812,13 @@ export const leadsService = {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
   },
 
+  async getLeadsBySource(source: string): Promise<Lead[]> {
+    const snap = await getDocs(
+      query(collection(db, LEADS_COL), where('source', '==', source), orderBy('createdAt', 'desc'))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
+  },
+
   async getLeadById(id: string): Promise<Lead | null> {
     const docRef = doc(db, LEADS_COL, id);
     const snap = await getDoc(docRef);
@@ -963,6 +970,63 @@ export const questionsService = {
       createdAt: new Date().toISOString()
     }));
     return docRef.id;
+  },
+
+  async getQuestionsBySource(source: string): Promise<any[]> {
+    const snap = await getDocs(
+      query(collection(db, QUESTIONS_COL), where('source', '==', source), orderBy('createdAt', 'desc'))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+};
+
+export interface TelegramStats {
+  totalLeads: number;
+  totalQuestions: number;
+  todayLeads: number;
+  todayQuestions: number;
+  recent: Array<{
+    id: string;
+    kind: 'lead' | 'question';
+    name: string;
+    course: string;
+    phone: string;
+    createdAt: string;
+  }>;
+}
+
+export const telegramStatsService = {
+  async getStats(): Promise<TelegramStats> {
+    const [leads, questions] = await Promise.all([
+      leadsService.getLeadsBySource('telegram'),
+      questionsService.getQuestionsBySource('telegram'),
+    ]);
+    const today = new Date().toISOString().split('T')[0];
+    const recent = [
+      ...leads.slice(0, 12).map(l => ({
+        id: l.id,
+        kind: 'lead' as const,
+        name: l.name || 'Noma\'lum',
+        course: l.course || 'Kurs ko\'rsatilmagan',
+        phone: l.phone || '—',
+        createdAt: l.createdAt || '',
+      })),
+      ...questions.slice(0, 12).map(q => ({
+        id: q.id,
+        kind: 'question' as const,
+        name: q.fullName || 'Noma\'lum',
+        course: q.subject || 'Savol',
+        phone: q.phone || '—',
+        createdAt: q.createdAt || '',
+      })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
+    return {
+      totalLeads: leads.length,
+      totalQuestions: questions.length,
+      todayLeads: leads.filter(l => (l.createdAt || '').startsWith(today)).length,
+      todayQuestions: questions.filter(q => (q.createdAt || '').startsWith(today)).length,
+      recent,
+    };
   }
 };
 

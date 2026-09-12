@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Send, CheckCircle2, RefreshCw, ExternalLink, Bell, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { checkBotStatus, getBotDeepLink, BOT_USERNAME, BotStatusResponse } from '../../services/telegram';
+import { checkBotStatus, createTelegramLinkSession, BOT_USERNAME, BotStatusResponse } from '../../services/telegram';
 
 export const TelegramConnectCard: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
@@ -10,7 +10,6 @@ export const TelegramConnectCard: React.FC = () => {
   const [checking, setChecking] = useState(false);
 
   const uid = currentUser?.uid || userProfile?.uid || 'demo_student';
-  const deepLink = getBotDeepLink(uid);
 
   const verifyConnection = useCallback(async () => {
     setChecking(true);
@@ -35,7 +34,8 @@ export const TelegramConnectCard: React.FC = () => {
     return () => clearInterval(interval);
   }, [verifyConnection]);
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
+    const { deepLink } = await createTelegramLinkSession(uid);
     window.open(deepLink, '_blank');
   };
 

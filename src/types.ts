@@ -44,6 +44,8 @@ export interface UserProfile {
   createdAt?: string;
   telegramUsername?: string | null;
   telegramChatId?: string | null;
+  telegramUserId?: string | null;
+  telegramConnectedAt?: string | null;
   isBotConnected?: boolean;
   assignedPin?: string | null;
   // Canonical teacher-group assignment index (admin-maintained).

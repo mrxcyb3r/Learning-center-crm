@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Send, CheckCircle2, RefreshCw, ExternalLink, ShieldAlert, Copy, Check, Sparkles, LogOut } from 'lucide-react';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { checkBotStatus, BOT_USERNAME, getBotDeepLink } from '../../services/telegram';
+import { checkBotStatus, createTelegramLinkSession } from '../../services/telegram';
 
 export interface TelegramIntegrationCardProps {
   onDisconnect?: () => void;
@@ -47,29 +47,14 @@ export const TelegramIntegrationCard: React.FC<TelegramIntegrationCardProps> = (
     return () => unsubscribe();
   }, [userUid]);
 
-  // Initiate deep link connection via session token
+  // Initiate deep link connection via one-time session token
   const handleConnectTelegram = async () => {
     setLoading(true);
     try {
-      const sessionId = 'CF_SESSION_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-      // Write session document to telegram_sessions
-      try {
-        await setDoc(doc(db, 'telegram_sessions', sessionId), {
-          userUid,
-          createdAt: serverTimestamp(),
-          status: 'pending'
-        });
-      } catch (e) {
-        console.warn('Telegram session creation notice:', e);
-      }
-
-      const deepLink = `https://t.me/${BOT_USERNAME}?start=${sessionId}`;
+      const { deepLink } = await createTelegramLinkSession(userUid);
       window.open(deepLink, '_blank');
     } catch (error) {
       console.error('Error opening Telegram deep link:', error);
-      // Fallback direct link
-      window.open(getBotDeepLink(userUid), '_blank');
     } finally {
       setLoading(false);
     }
@@ -88,8 +73,9 @@ export const TelegramIntegrationCard: React.FC<TelegramIntegrationCardProps> = (
     setChecking(false);
   };
 
-  const handleCopyCommand = () => {
-    const cmd = `/start ${userUid}`;
+  const handleCopyCommand = async () => {
+    const { sessionId } = await createTelegramLinkSession(userUid);
+    const cmd = `/start ${sessionId}`;
     navigator.clipboard.writeText(cmd);
     setCopiedCommand(true);
     setTimeout(() => setCopiedCommand(false), 2500);

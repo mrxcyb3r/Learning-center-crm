@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Send, CheckCircle2, ShieldCheck, Sparkles, Copy, Check, ExternalLink, RefreshCw, LogOut } from 'lucide-react';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
-import { BOT_USERNAME, checkBotStatus } from '../../services/telegram';
+import { BOT_USERNAME, checkBotStatus, createTelegramLinkSession } from '../../services/telegram';
 
 interface ConnectTelegramOnboardingProps {
   onComplete?: () => void;
@@ -43,21 +43,10 @@ export const ConnectTelegramOnboarding: React.FC<ConnectTelegramOnboardingProps>
   const handleLaunch = async () => {
     setLoading(true);
     try {
-      const sessionId = 'CF_SESSION_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      try {
-        await setDoc(doc(db, 'telegram_sessions', sessionId), {
-          userUid,
-          createdAt: serverTimestamp(),
-          status: 'pending'
-        });
-      } catch (e) {
-        console.warn('Session doc write notice:', e);
-      }
-
-      window.open(`https://t.me/${BOT_USERNAME}?start=${sessionId}`, '_blank');
+      const { deepLink } = await createTelegramLinkSession(userUid);
+      window.open(deepLink, '_blank');
     } catch (err) {
       console.error('Error opening Telegram:', err);
-      window.open(`https://t.me/${BOT_USERNAME}?start=${userUid}`, '_blank');
     } finally {
       setLoading(false);
     }
@@ -77,8 +66,9 @@ export const ConnectTelegramOnboarding: React.FC<ConnectTelegramOnboardingProps>
     setLoading(false);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(`/start ${userUid}`);
+  const handleCopy = async () => {
+    const { sessionId } = await createTelegramLinkSession(userUid);
+    navigator.clipboard.writeText(`/start ${sessionId}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -315,6 +315,104 @@ function scheduleSessionCleanup(): NodeJS.Timeout | null {
 }
 
 /* ---------------------------------------------------------------------------
+ * CRM account linking via Telegram deep links (/start <session>)
+ *
+ * Flow:
+ *   client creates telegram_sessions/{CF_SESSION_*} (status 'pending',
+ *   userUid = the signed-in CRM user, createdAt = serverTimestamp)
+ *   → user taps the deep link → Telegram sends /start <session>
+ *   → webhook consumes the session atomically (one-time use)
+ *   → users/{userUid}.telegramChatId & friends are written via the Admin SDK.
+ *
+ * The CRM uid is NEVER read from the Telegram payload directly — it is only
+ * resolved through the stored session document, so an arbitrary Telegram user
+ * cannot claim another account.
+ * ------------------------------------------------------------------------- */
+
+const DEEP_LINK_SESSION_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const UID_PATTERN = /^[a-zA-Z0-9_\-]{1,128}$/;
+
+export interface TelegramLinkResult {
+  ok: boolean;
+  reason?: 'missing' | 'invalid' | 'expired' | 'used' | 'user_missing' | 'firestore_unavailable';
+}
+
+export async function consumeDeepLinkSession(
+  sessionId: string,
+  telegramUserId: string | number,
+  telegramChatId: string | number,
+  telegramUsername?: string
+): Promise<TelegramLinkResult> {
+  const db = getFirestore();
+  if (!db) return { ok: false, reason: 'firestore_unavailable' };
+  if (typeof sessionId !== 'string' || !sessionId.trim()) return { ok: false, reason: 'missing' };
+
+  const cleanId = sessionId.trim().slice(0, 128);
+  if (!/^[a-zA-Z0-9_\-]+$/.test(cleanId)) return { ok: false, reason: 'invalid' };
+
+  try {
+    // Atomic, one-time consumption (prevents reuse / double-claim races).
+    const sessionRef = db.collection('telegram_sessions').doc(cleanId);
+    let userUid: string | null = null;
+
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(sessionRef);
+      if (!snap.exists) return;
+      const data = snap.data() ?? {};
+      const status = typeof data.status === 'string' ? data.status : '';
+      if (status !== 'pending') return; // already used / closed
+
+      const rawUid = typeof data.userUid === 'string' ? data.userUid : '';
+      if (!UID_PATTERN.test(rawUid)) return;
+
+      // Optional freshness check when the client supplied a timestamp.
+      if (data.createdAt) {
+        let created = 0;
+        if (typeof (data.createdAt as any)?.toDate === 'function') {
+          created = (data.createdAt as any).toDate().getTime();
+        } else if (typeof data.createdAt === 'number') {
+          created = data.createdAt;
+        } else {
+          created = new Date(String(data.createdAt)).getTime() || 0;
+        }
+        if (created && Date.now() - created > DEEP_LINK_SESSION_TTL_MS) return; // expired
+      }
+
+      tx.update(sessionRef, {
+        status: 'used',
+        usedAt: new Date().toISOString(),
+        usedByChatId: String(telegramChatId),
+        usedByUserId: String(telegramUserId),
+      });
+      userUid = rawUid;
+    });
+
+    if (!userUid) return { ok: false, reason: 'invalid' };
+
+    // Resolve the CRM user purely from the session — never from Telegram input.
+    const userRef = db.collection('users').doc(userUid);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) return { ok: false, reason: 'user_missing' };
+
+    await userRef.update({
+      telegramChatId: String(telegramChatId),
+      telegramUsername: telegramUsername || userSnap.data()?.telegramUsername || '',
+      telegramUserId: String(telegramUserId),
+      isBotConnected: true,
+      telegramConnectedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { ok: true };
+  } catch (err: any) {
+    console.error('[TELEGRAM] Deep-link linking error:', err?.message || String(err));
+    return { ok: false, reason: 'invalid' };
+  }
+}
+
+const START_COMMAND_RE = /^\/start(\s.*)?$/;
+
+/* ---------------------------------------------------------------------------
  * Webhook idempotency
  * ------------------------------------------------------------------------- */
 
@@ -609,8 +707,25 @@ export async function handleTelegramUpdate(update: AnyRecord, source: 'webhook' 
     await showMainMenu(chatId);
     return;
   }
-  if (text === '/start') {
+  if (text === '/start' || (text && START_COMMAND_RE.test(text))) {
     await clearSession(chatId);
+    const payload = (text || '').replace(/^\/start/, '').trim();
+    if (!payload) {
+      await showMainMenu(chatId);
+      return;
+    }
+    const linkResult = await consumeDeepLinkSession(payload, userId, chatId, username);
+    if (linkResult.ok) {
+      await sendTelegramMessage(
+        chatId,
+        "✅ Telegram hisobingiz CenterFlow CRM bilan muvaffaqiyatli bog'landi!\n\nEndi siz baholar, xavfsizlik PIN-kodlari va markaz bildirishnomalarini Telegram orqali olasiz."
+      );
+    } else {
+      await sendTelegramMessage(
+        chatId,
+        "⚠️ Ushbu havola yaroqsiz, muddati o'tgan yoki allaqachon ishlatilgan.\n\nYangi havolani CenterFlow hisobingizdagi \"Telegram ulash\" tugmasi orqali oling."
+      );
+    }
     await showMainMenu(chatId);
     return;
   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Send, CheckCircle2, RefreshCw, AlertCircle, ExternalLink, ShieldCheck, Bell, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { checkBotStatus, BOT_USERNAME, BotStatusResponse } from '../services/telegram';
+import { checkBotStatus, createTelegramLinkSession, BOT_USERNAME, BotStatusResponse } from '../services/telegram';
 
 export interface TelegramSettingsCardProps {
   userUid?: string;
@@ -43,7 +43,10 @@ export const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ user
     fetchStatus();
   }, [fetchStatus]);
 
-  const deepLink = `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(targetUid)}`;
+  const handleConnect = async () => {
+    const { deepLink } = await createTelegramLinkSession(targetUid);
+    window.open(deepLink, '_blank');
+  };
 
   return (
     <div className={`p-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all ${className}`}>
@@ -131,16 +134,14 @@ export const TelegramSettingsCard: React.FC<TelegramSettingsCardProps> = ({ user
             Connect your Telegram account to instantly receive login security PINs, real-time grade results, and schedule updates.
           </p>
 
-          <a
-            href={deepLink}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={handleConnect}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg inline-flex items-center gap-2 text-xs font-semibold shadow-sm transition cursor-pointer"
           >
             <Send className="w-4 h-4" />
             <span>Connect @{BOT_USERNAME}</span>
             <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-          </a>
+          </button>
         </div>
       )}
     </div>

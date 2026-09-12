@@ -38,7 +38,12 @@ export interface BroadcastResponse {
   isRateLimited?: boolean;
 }
 
-export const BOT_USERNAME = 'centerflow_bot';
+// Client-side bot username for deep links. Set it via the Vite-exposed
+// VITE_TELEGRAM_BOT_USERNAME so it can follow the server-side deployment
+// (TELEGRAM_BOT_USERNAME); falls back only when a deployment never sets it.
+export const BOT_USERNAME: string =
+  (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined)?.replace(/^@/, '') ||
+  'centerflow_bot';
 
 export interface TelegramBotInfo {
   id: number;
@@ -191,8 +196,38 @@ export async function sendAdminTelegramMessage(chatId: string | number, text: st
   }
 }
 
-export function getBotDeepLink(userUid: string): string {
-  return `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(userUid)}`;
+export function getBotDeepLink(payload: string): string {
+  return `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent(payload)}`;
+}
+
+/**
+ * Creates a one-time Telegram linking session document and returns the deep
+ * link that opens the bot with `/start <sessionId>`. The server only consumes
+ * sessions (never raw uids), so the CRM uid must be the signed-in user — the
+ * Firestore rules enforce `userUid == request.auth.uid` on create.
+ */
+export async function createTelegramLinkSession(userUid: string): Promise<{ sessionId: string; deepLink: string }> {
+  const sessionId = generateTelegramLinkSessionId();
+  try {
+    const { db } = await import('./firebase');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    await setDoc(doc(db, 'telegram_sessions', sessionId), {
+      userUid,
+      createdAt: serverTimestamp(),
+      status: 'pending',
+    });
+  } catch (err) {
+    console.warn('[telegram] Could not persist link session; deep link may not validate.', err);
+  }
+  return { sessionId, deepLink: getBotDeepLink(sessionId) };
+}
+
+function generateTelegramLinkSessionId(): string {
+  const uuid =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID().replace(/-/g, '').toUpperCase()
+      : Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+  return `CF_SESSION_${uuid.slice(0, 16)}`;
 }
 
 export async function checkBotHealth(): Promise<BotHealthResponse> {

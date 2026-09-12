@@ -337,11 +337,18 @@ service cloud.firestore {
     // =========================================================================
     // TELEGRAM SESSIONS
     // =========================================================================
+    // Deep-link linking sessions. Field convention is `userUid` (matches the
+    // client linkers). Creation is owner-scoped to the signed-in CRM user and
+    // must start as 'pending'; the server consumes the session via the Admin
+    // SDK (bypasses rules) and marks it 'used' atomically (one-time use).
+    // update/delete are admin-only so a leaked session cannot be tampered with.
     match /telegram_sessions/{sessionId} {
-      // NOTE: create must check request.resource (resource is null on create).
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read: if isSignedIn() && (isAdminOrSuperAdmin() || resource.data.userUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.userUid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAdminOrSuperAdmin();
+      allow delete: if isSignedIn() && (isAdminOrSuperAdmin() || resource.data.userUid == request.auth.uid);
     }
 
     // =========================================================================

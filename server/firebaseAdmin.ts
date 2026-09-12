@@ -201,16 +201,21 @@ export function getFirebaseProjectId(): string {
 
 /**
  * Best-effort: the Cloud Run / GCE runtime service-account identity.
- * Only attempted on GCP (K_SERVICE is always set on Cloud Run). Returns null
- * on local/dev. The email is an identifier, not a secret — it is needed to
- * know WHICH service account must be granted Firestore access.
+ * Attempted unconditionally with a short timeout (metadata.google.internal
+ * only resolves on GCP, so on local/dev it returns null fast). Cached for the
+ * process lifetime to avoid stalling requests. The email is an identifier, not
+ * a secret — it is needed to know WHICH service account must be granted
+ * Firestore access.
  */
+let runtimeSaLastAttemptAt = 0;
 export async function getRuntimeServiceAccount(): Promise<string | null> {
-  const onGcp = Boolean(process.env.K_SERVICE || process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT);
-  if (!onGcp) return null;
-  if (runtimeServiceAccount !== null) return runtimeServiceAccount;
+  const now = Date.now();
+  if (now - runtimeSaLastAttemptAt < 5 * 60 * 1000) {
+    return runtimeServiceAccount;
+  }
+  runtimeSaLastAttemptAt = now;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 1500);
+  const timer = setTimeout(() => controller.abort(), 1200);
   try {
     const res = await fetch(
       'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
@@ -218,6 +223,8 @@ export async function getRuntimeServiceAccount(): Promise<string | null> {
     );
     if (res.ok) {
       runtimeServiceAccount = (await res.text()).trim() || null;
+    } else {
+      runtimeServiceAccount = null;
     }
   } catch {
     runtimeServiceAccount = null;

@@ -37,6 +37,7 @@ import {
   landingCmsService,
   leadsService,
 } from "../services/repository";
+import { notificationService } from "../services/notificationService";
 
 /* ============================================================================
    TYPES & CONTRACTS (STRICTLY PRESERVED)
@@ -1481,6 +1482,8 @@ export function RenessansLandingPage({
           course: subject || 'Bepul konsultatsiya',
           source: 'Bosh sahifa (Hero forma)',
         });
+        // Server-side admin Telegram notify (best-effort, never blocks the form)
+        notificationService.onTrialLessonSubmitted(name, subject || 'Bepul konsultatsiya', phone).catch(() => {});
       }
       setIsSubmitted(true);
     } catch {

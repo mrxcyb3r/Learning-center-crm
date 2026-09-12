@@ -78,7 +78,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         source,
       });
 
-      notificationService.onQuestionSubmitted(fullName.trim(), subject.trim(), course || courseName);
+      notificationService.onQuestionSubmitted(fullName.trim(), message.trim(), phone.trim(), course || courseName);
 
       toast.success('Savolingiz muvaffaqiyatli yuborildi! Tez orada javob beramiz.');
 

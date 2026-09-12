@@ -13,8 +13,10 @@ import {
   startTelegramHousekeeping,
   isTelegramConfigured,
   getFirestoreStatus,
+  notifyAdmin,
 } from './telegramService';
 import { getAdminApp, getFirestore, getAdminAuth, sanitizeFirebaseError } from './firebaseAdmin';
+import { formatInquiryNotification } from './notificationFormatter';
 
 interface RouterDeps {
   checkRateLimit: (key: string, limitMs?: number) => boolean;
@@ -588,6 +590,42 @@ export function createTelegramRouter(deps: RouterDeps): Router {
     } catch (err: any) {
       console.error('[TELEGRAM] /api/bot/assign-pin error:', err?.message || String(err));
       return json(res, 200, { success: false, message: 'PIN yuborishda xatolik.' });
+    }
+  });
+
+  /* -------------------------------------------------------------------------
+   * Public "new inquiry" notify endpoint (website forms)
+   *
+   * The browser writes the inquiry to Firestore (public create, unchanged) and
+   * then calls this endpoint as a best-effort admin notify. It formats and
+   * sends server-side so the bot token / admin chat id never reach the client.
+   * Failure must never break the already-saved inquiry, so a failure here only
+   * logs and still returns a benign 200.
+   * ------------------------------------------------------------------------- */
+  router.post('/notify/inquiry', async (req: Request, res: Response) => {
+    try {
+      const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, any>;
+      const kind = body.kind === 'question' ? ('question' as const) : body.kind === 'trial' ? ('trial' as const) : null;
+      if (!kind) {
+        return json(res, 400, { ok: false, reason: 'invalid_kind' });
+      }
+      const source = body.source === 'telegram' ? ('telegram' as const) : ('website' as const);
+      const text = formatInquiryNotification({
+        kind,
+        source,
+        name: typeof body.name === 'string' ? body.name : '',
+        phone: typeof body.phone === 'string' ? body.phone : '',
+        username: typeof body.username === 'string' ? body.username : '',
+        course: typeof body.course === 'string' ? body.course : '',
+        message: kind === 'question' && typeof body.message === 'string' ? body.message : '',
+        createdAt: new Date().toISOString(),
+      });
+      // Fire-and-forget: a Telegram outage must not fail the caller's form.
+      await notifyAdmin(text);
+      return json(res, 200, { ok: true });
+    } catch (err: any) {
+      console.error('[NOTIFY] /api/notify/inquiry error:', err?.message || String(err));
+      return json(res, 200, { ok: true });
     }
   });
 

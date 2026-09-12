@@ -1,4 +1,5 @@
 import { getFirestore, getFirebaseAdminError, probeFirestore, getRuntimeServiceAccount } from './firebaseAdmin';
+import { formatInquiryNotification } from './notificationFormatter';
 
 /**
  * Server-side Telegram integration for CenterFlow.
@@ -822,7 +823,15 @@ Sizning arizangiz qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi.
       await sendKeyboard(chatId, confirmation, MAIN_MENU);
       if (created) {
         await notifyAdmin(
-          `🔔 Yangi Telegram arizasi!\n\n👤 ${name}\n📞 ${phone}\n📚 ${course.title}\n🆔 Telegram: ${userId}${username ? ' (@' + username + ')' : ''}`
+          formatInquiryNotification({
+            kind: 'trial',
+            source: 'telegram',
+            name,
+            phone,
+            username,
+            course: course.title,
+            createdAt: new Date().toISOString(),
+          })
         );
       }
       return;
@@ -848,7 +857,14 @@ Sizning arizangiz qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi.
       await sendKeyboard(chatId, '✅ Savolingiz qabul qilindi. Tez orada administratorlarimiz javob beradi.', MAIN_MENU);
       if (created) {
         await notifyAdmin(
-          `❓ Yangi Telegram savoli\n\n👤 ${name}\n💬 ${text.slice(0, 400)}${text.length > 400 ? '…' : ''}${username ? '\n🆔 @' + username : ''}`
+          formatInquiryNotification({
+            kind: 'question',
+            source: 'telegram',
+            name,
+            username,
+            message: text,
+            createdAt: new Date().toISOString(),
+          })
         );
       }
       return;

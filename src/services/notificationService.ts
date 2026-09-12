@@ -20,41 +20,30 @@ interface ActivityData {
   userId?: string;
 }
 
-// Telegram configuration
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
-
-async function sendTelegramMessage(chatId: string, text: string): Promise<boolean> {
-  // If no bot token configured, skip Telegram sending (fallback mode)
-  if (!TELEGRAM_BOT_TOKEN) {
-    console.warn('[TELEGRAM] Bot token not configured, skipping Telegram send.');
-    return false;
-  }
-
-  if (!chatId) {
-    console.warn('[TELEGRAM] Chat ID missing, skipping Telegram send.');
-    return false;
-  }
-
-  if (!text || text.length === 0) {
-    console.warn('[TELEGRAM] Empty message text, skipping Telegram send.');
-    return false;
-  }
-
+/**
+ * Website → admin Telegram notifications are sent SERVER-SIDE only.
+ *
+ * The browser never holds the bot token or the admin chat id (dead code here
+ * was compiled to {} by Vite). Instead the site persists the inquiry to
+ * Firestore (unchanged), then best-effort calls the server endpoint which
+ * formats and dispatches via the server formatter. A notification failure can
+ * never fail the form — the Firestore write is already done.
+ */
+async function notifyServerInquiry(payload: {
+  kind: 'trial' | 'question';
+  name: string;
+  phone?: string;
+  course?: string;
+  message?: string;
+}): Promise<void> {
   try {
-    // Use global fetch (available in Node.js 18+ and Vite build for Node targets)
-    const tg = await fetch(`https://api.telegram.org/bot${encodeURIComponent(TELEGRAM_BOT_TOKEN)}/sendMessage?chat_id=${encodeURIComponent(chatId)}&text=${encodeURIComponent(text)}&disable_web_page_preview=true`, {
+    await fetch('/api/notify/inquiry', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, source: 'website' }),
     });
-    const data = await tg.json().catch(() => ({}));
-    const ok = tg.ok && data?.ok === true;
-    if (!ok) {
-      console.warn('[TELEGRAM] Failed to send message:', data?.description || 'Unknown error');
-    }
-    return ok;
-  } catch (err: any) {
-    console.error('[TELEGRAM] Error sending message:', err?.message || err);
-    return false;
+  } catch {
+    // Ignore — a Telegram outage must not fail the user's form submission.
   }
 }
 
@@ -88,30 +77,21 @@ export const notificationService = {
 
   // Convenience methods for common scenarios
 
-  // Send question notification to admin via Telegram + demo data
-  async onQuestionSubmitted(name: string, subject: string, course?: string): Promise<void> {
+  // Send question notification to admin via server-side Telegram + demo data
+  async onQuestionSubmitted(name: string, message: string, phone?: string, course?: string): Promise<void> {
     // Always save to demo data first (activity feed, etc.)
     this.notify({
       title: "Yangi savol qabul qilindi",
-      description: `${name}: ${subject}`,
+      description: `${name}: ${message}`,
       category: 'question',
       recipientRole: 'admin',
     });
 
-    // Try to send Telegram notification (won't break if unavailable)
-    if (TELEGRAM_ADMIN_CHAT_ID) {
-      const telegramText = `🔔 YANGI SAVOL\n\n👤 Ism: ${name}\n💬 Savol: ${subject}${
-        course ? `\n📚 Kurs: ${course}` : ''
-      }\n🕐 ${new Date().toLocaleString('uz-UZ')}`;
-
-      // Fire and forget - don't await, don't break the form submission
-      sendTelegramMessage(TELEGRAM_ADMIN_CHAT_ID, telegramText).catch(() => {
-        // Swallow - Telegram failure should not break the app
-      });
-    }
+    // Server-side Telegram notify (best-effort, never blocks the form)
+    await notifyServerInquiry({ kind: 'question', name, phone, course, message });
   },
 
-  // Send trial lesson notification to admin via Telegram + demo data
+  // Send trial lesson notification to admin via server-side Telegram + demo data
   async onTrialLessonSubmitted(name: string, course: string, phone: string): Promise<void> {
     // Always save to demo data first
     this.notify({
@@ -121,14 +101,8 @@ export const notificationService = {
       recipientRole: 'admin',
     });
 
-    // Try to send Telegram notification (won't break if unavailable)
-    if (TELEGRAM_ADMIN_CHAT_ID) {
-      const telegramText = `🔔 YANGI SINOV DARSI SO'ROVI\n\n👤 Ism: ${name}\n📞 Telefon: ${phone}\n📚 Kurs: ${course}\n🕐 ${new Date().toLocaleString('uz-UZ')}`;
-
-      sendTelegramMessage(TELEGRAM_ADMIN_CHAT_ID, telegramText).catch(() => {
-        // Swallow - Telegram failure should not break the app
-      });
-    }
+    // Server-side Telegram notify (best-effort, never blocks the form)
+    await notifyServerInquiry({ kind: 'trial', name, course, phone });
   },
 
   // Synchronous fallback (kept for backward compatibility)

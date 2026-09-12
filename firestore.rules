@@ -41,6 +41,14 @@ service cloud.firestore {
       return isSupport() || isAdmin() || isSuperAdmin();
     }
 
+    function isReceptionist() {
+      return isSignedIn() && getUserRole() == 'receptionist';
+    }
+
+    function isSupportOrAdminOrReceptionist() {
+      return isSupportOrAdmin() || isReceptionist();
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -162,7 +170,10 @@ service cloud.firestore {
 
     match /leads/{leadId} {
       allow create: if true;
-      allow read, update, delete: if isAdminOrSuperAdmin();
+      allow read: if isSupportOrAdminOrReceptionist()
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow update, delete: if isSupportOrAdminOrReceptionist()
+        || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
     }
 
     match /questions/{questionId} {
@@ -404,20 +415,17 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // SUPPORT REQUESTS
-    // Senders (any signed-in user) may create only requests tagged with their
-    // own uid and read only their own documents. Dedicated support staff and
-    // center admins may read the whole inbox and drive the NEW→STARTED→RESOLVED
-    // workflow (status/assignment updates are a support/admin privilege).
+    // MUROJAIATLAR (Receptionist-managed inquiries/conversations)
+    // Receptionist can read/write ownership; support/admin full access;
+    // sender own read; teacher read only assigned conversations
     // =========================================================================
-    match /support_requests/{requestId} {
-      allow create: if isSignedIn()
-        && request.resource.data.userUid == request.auth.uid
-        && request.resource.data.status == 'new';
-      allow read: if isSupportOrAdmin()
-        || (isSignedIn() && resource.data.userUid == request.auth.uid);
-      allow update: if isSupportOrAdmin();
-      allow delete: if isSupportOrAdmin();
+    match /murojaatlar/{murojaatId} {
+      allow create: if isSignedIn();
+      allow read: if isSupportOrAdminOrReceptionist()
+        || (isSignedIn() && resource.data.senderUid == request.auth.uid);
+      allow update: if isSupportOrAdminOrReceptionist()
+        || (isSignedIn() && resource.data.senderUid == request.auth.uid);
+      allow delete: if isSupportOrAdminOrReceptionist();
     }
 
     // =========================================================================

@@ -83,61 +83,14 @@ function MainAppRoutes() {
       <Route path="/teachers/:slug" element={<TeacherPage />} />
       <Route path="/receipt/verify/:receiptId" element={<PublicReceiptVerifyPage />} />
 
-      {/* Login Pages */}
-      <Route path="/login/admin" element={<AdminLoginPage />} />
-      <Route path="/login/teacher" element={<TeacherLoginPage />} />
-      {/* One-time teacher onboarding (public link, rules-enforced redemption) */}
-      <Route path="/teacher/register" element={<TeacherRegisterPage />} />
+      {/* Unified Login - single entry point */}
+      <Route path="/login" element={<AdminLoginPage />} />
 
-      {/* Admin Portal - Protected */}
-      <Route
-        path="/admin/*"
-        element={
-          <ProtectedRoute requiredRole="admin" fallbackPath="/login/admin">
-            <CenterErpApp />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/admin/*"
-        element={
-          <ProtectedRoute requiredRole="admin" fallbackPath="/login/admin">
-            <CenterErpApp />
-          </ProtectedRoute>
-        }
-      />
+      {/* Role-based workspaces under /app */}
+      <Route path="/app" element={<CenterErpApp />} />
 
-      {/* Teacher Portal - Protected */}
-      <Route
-        path="/teacher/*"
-        element={
-          <ProtectedRoute requiredRole="teacher" fallbackPath="/login/teacher">
-            <TeacherPortalApp />
-          </ProtectedRoute>
-        }
-      />
-      {/* Alias used by demo/quick-login navigation targets */}
-      <Route
-        path="/dashboard/teacher/*"
-        element={
-          <ProtectedRoute requiredRole="teacher" fallbackPath="/login/teacher">
-            <TeacherPortalApp />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Internal Support / Technical service - Protected */}
-      <Route
-        path="/support/*"
-        element={
-          <ProtectedRoute requiredRole="support" fallbackPath="/login/admin">
-            <SupportCenterApp />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Catch-All Fallback Redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-All Fallback Redirect (after login, redirect to /app) */}
+      <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>
   );
 }

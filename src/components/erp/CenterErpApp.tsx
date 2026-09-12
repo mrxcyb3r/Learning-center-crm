@@ -41,6 +41,7 @@ import { WebsiteCmsView } from './WebsiteCmsView';
 import { TelegramView } from './TelegramView';
 import { SettingsView } from './SettingsView';
 import { SupportPanel } from './SupportPanel';
+import { ReceptionistView } from './ReceptionistView';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { leadsService, murojaatlarService } from '../../services/repository';
@@ -63,7 +64,8 @@ type ErpTab =
   | 'cms'
   | 'telegram'
   | 'settings'
-  | 'support';
+  | 'support'
+  | 'receptionist';
 
 type SidebarGroup = {
   title: string;
@@ -81,6 +83,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
       { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
       { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall },
       { id: 'students', label: 'O\'quvchilar', icon: Users },
+      { id: 'receptionist', label: 'Qabulxona', icon: LifeBuoy },
     ],
   },
   {
@@ -164,11 +167,13 @@ export const CenterErpApp: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardView onNavigateTab={(tab) => setActiveTab(tab as ErpTab)} />;
-      case 'murojaatlar':
-        return <MurojaatlarView onSummaryChange={(s) => setMurojaatUnread(s.unread)} />;
-      case 'leads':
-        return <LeadsCrmView />;
-      case 'students':
+case 'murojaatlar':
+      return <MurojaatlarView onSummaryChange={(s) => setMurojaatUnread(s.unread)} />;
+    case 'leads':
+      return <LeadsCrmView />;
+    case 'receptionist':
+      return <ReceptionistView />;
+    case 'students':
         return <StudentsView />;
       case 'teachers':
         return <TeachersView />;

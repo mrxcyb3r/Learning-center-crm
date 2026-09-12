@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'support' | 'guest';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'support' | 'receptionist' | 'guest';
 
 /** Canonical narrow payment status used by teacher-portal logic. */
 export type CanonicalPaymentStatus = 'paid' | 'pending' | 'overdue';

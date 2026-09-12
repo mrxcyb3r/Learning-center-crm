@@ -385,6 +385,15 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // SUPPORT REQUESTS (STEP 6D)
+    // Server writes via Admin SDK; client list is admin-only.
+    // =========================================================================
+    match /support_requests/{requestId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
     // HELPER FUNCTIONS FOR TEACHER SCOPING
     // =========================================================================
     function isTeacherOfStudent(studentId) {

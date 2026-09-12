@@ -204,7 +204,7 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
       notificationService.onAttendanceUpdated(selectedGroupObj?.name || 'Group', teacherName);
       showToast(
         t(
-          `${selectedGroupObj?.name || 'Guruh'} uchun davomat Firestore ga saqlandi! ✅`,
+          `${selectedGroupObj?.name || 'Guruh'} uchun davomat saqlandi! ✅`,
           `Attendance record saved for ${selectedGroupObj?.name || 'Group'}! ✅`,
           `Посещаемость сохранена для ${selectedGroupObj?.name || 'Группы'}! ✅`
         )
@@ -270,9 +270,9 @@ export const AttendanceManager: React.FC<AttendanceManagerProps> = ({ initialGro
               </h1>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
                 {t(
-                  "Dars davomida o'quvchilar qatnashishini 1-Bosish bilan belgilang. Kechikish daqiqalari, sababli va izohlarni tezkor kiritish va Firestore bilan sinxronlash.",
-                  "Log physical class attendance in seconds. Features 1-tap pills, late arrival minute counters, excused status, and instant Firestore synchronization.",
-                  "Быстро отмечайте посещаемость. Поддерживает опоздания, уважительные причины и автосохранение в Firestore."
+                  "Dars davomida o'quvchilar qatnashishini 1-Bosish bilan belgilang. Kechikish daqiqalari, sababli va izohlarni tezkor kiritish va ma'lumotlar avtomatik saqlanadi.",
+                  "Log physical class attendance in seconds. Features 1-tap pills, late arrival minute counters, excused status, and instant auto-save.",
+                  "Быстро отмечайте посещаемость. Поддерживает опоздания, уважительные причины и автосохранение."
                 )}
               </p>
             </div>

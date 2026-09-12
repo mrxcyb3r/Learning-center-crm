@@ -317,7 +317,7 @@ const handleSetupWebhook = async (force = false) => {
             <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 font-semibold block">Kutilayotgan Webhook URL</span>
               <span className="font-mono text-slate-700 dark:text-slate-300 break-all text-right">
-                {status?.configured?.expectedWebhookUrl || `${status?.configured?.publicUrl || 'https://centerflow.ai.studio'}/api/telegram/webhook`}
+                {status?.configured?.expectedWebhookUrl || `${status?.configured?.publicUrl || ''}/api/telegram/webhook`}
               </span>
             </div>
 

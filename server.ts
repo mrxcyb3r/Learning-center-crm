@@ -6,6 +6,7 @@ import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createTelegramRouter } from './server/telegramRoutes';
+import { createSupportRouter } from './server/supportRoutes';
 import { verifyWebhookOnStartup } from './server/telegramService';
 
 const app = express();

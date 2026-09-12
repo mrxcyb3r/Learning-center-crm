@@ -14,6 +14,8 @@ import {
   Plus,
   Trash2,
   Key,
+  Rocket,
+  Flag,
 } from 'lucide-react';
 import { settingsService, auditService, backupService, notificationsService } from '../../services/repository';
 import { TelegramConnectionCard } from './TelegramConnectionCard';
@@ -21,7 +23,7 @@ import { AuditLogEntry } from '../../types/crm';
 
 export const SettingsView: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup' | 'telegram'>('center');
+  const [activeTab, setActiveTab] = useState<'center' | 'staff' | 'audit' | 'backup' | 'telegram' | 'launch'>('center');
 
   // Center Details (single source of truth: Firestore settings)
   const [centerName, setCenterName] = useState("Renessans O'quv Markazi");
@@ -166,7 +168,7 @@ export const SettingsView: React.FC = () => {
             Tizim Sozlamalari & Zaxira
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Markaz ma'lumotlari, xodimlar kirish rollari, audit jurnali va to'liq ma'lumotlar bazasi zaxirasi.
+            Markaz ma'lumotlari, xodimlar kirish rollari, amallar jurnali va to'liq tizim zaxirasi.
           </p>
         </div>
 
@@ -186,6 +188,7 @@ export const SettingsView: React.FC = () => {
           { id: 'telegram', label: 'Telegram Ulash', icon: Send },
           { id: 'audit', label: 'Tizim Jurnali', icon: History },
           { id: 'backup', label: 'Zaxira Nusxa', icon: Download },
+          { id: 'launch', label: 'Ishga tushirish', icon: Rocket },
         ] as const).map((tab) => {
           const Icon = tab.icon;
           return (
@@ -482,7 +485,7 @@ export const SettingsView: React.FC = () => {
                 To'liq Zaxira Nusxani Yuklab Olish
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Barcha o'quvchilar, ustozlar, guruhlar, to'lovlar, xarajatlar va CMS matnlarini JSON formatida yuklab oling.
+                Barcha o'quvchilar, ustozlar, guruhlar, to'lovlar, xarajatlar va sayt matnlarini bitta axborot fayli ko'rinishida yuklab oling.
               </p>
             </div>
             <button
@@ -501,7 +504,7 @@ export const SettingsView: React.FC = () => {
                 Zaxira Nusxadan Qayta Tiklash
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Avval eksport qilingan JSON faylni yuklang. Barcha ma'lumotlar avtomatik yangilanadi.
+                Avval zaxira faylni yuklang. Barcha ma'lumotlar avtomatik yangilanadi.
               </p>
             </div>
 
@@ -515,6 +518,76 @@ export const SettingsView: React.FC = () => {
                 className="hidden"
               />
             </label>
+          </div>
+        </div>
+      )}
+    {/* Tab 6: Demo → Real Launch Preparation (non-destructive) */}
+      {activeTab === 'launch' && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                  <Rocket className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-slate-900 dark:text-white">
+                    Markazni ishga tushirish
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Hozirgi bosqich: namoyish (demo) ma'lumotlar faol.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider w-fit">
+                Demo rejim
+              </span>
+            </div>
+
+            <div className="flex items-start gap-2.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+              <Flag className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p>
+                Ushbu bo'lim faqat tayyorgarlik uchun. Hozircha hech qanday ma'lumot
+                o'chirilmaydi. Haqiqiy ma'lumotlarga o'tish faqat tegishli kelishuvdan
+                so'ng, maxsus ko'rikdan o'tkazilgan jarayon orqali amalga oshiriladi.
+                O'chirish amali hech qachon bir bosish bilan bajarilmaydi.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <h4 className="text-sm font-black text-slate-900 dark:text-white mb-4">
+              Boshlashdan oldin tekshiriladigan ro'yxat
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {[
+                { title: "Markaz ma'lumotlari", desc: "Nomi, manzil, telefon, ish vaqti" },
+                { title: 'Filiallar', desc: 'Filial va asosiy manzil' },
+                { title: 'Kurslar va narxlar', desc: 'Kurslar, narxlar, to\'lov shartlari' },
+                { title: "O'qituvchilar", desc: 'O\'qituvchilar ro\'yxati va rollar' },
+                { title: 'Guruhlar va jadval', desc: 'Guruhlar, dars vaqtlari, xonalar' },
+                { title: "O'quvchilar", desc: 'O\'quvchilar ro\'yxati va guruhlarga taqsimlash' },
+                { title: 'To\'lovlar', desc: 'To\'lov tizimi va kvitansiyalar tekshiruvi' },
+                { title: 'Telegram', desc: 'O\'quvchi va xodim ulanishlari, ommaviy xabarlar' },
+                { title: 'Veb-sayt (CMS)', desc: 'Barcha kurs, o\'qituvchi, natija va FAQ matnlari' },
+                { title: 'Xodimlar va huquqlar', desc: 'Kirish rollari tasdiqi' },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-xs font-black text-slate-900 dark:text-white">
+                      {item.title}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {item.desc}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

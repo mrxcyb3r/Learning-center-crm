@@ -24,6 +24,7 @@ import {
   Bell,
   Sparkles,
   Search,
+  LifeBuoy,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { DashboardView } from './DashboardView';
@@ -39,6 +40,7 @@ import { ReportsView } from './ReportsView';
 import { WebsiteCmsView } from './WebsiteCmsView';
 import { TelegramView } from './TelegramView';
 import { SettingsView } from './SettingsView';
+import { SupportPanel } from './SupportPanel';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { leadsService, murojaatlarService } from '../../services/repository';
@@ -57,7 +59,8 @@ type ErpTab =
   | 'reports'
   | 'cms'
   | 'telegram'
-  | 'settings';
+  | 'settings'
+  | 'support';
 
 type SidebarGroup = {
   title: string;
@@ -105,7 +108,10 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     title: 'Tizim',
-    items: [{ id: 'settings', label: 'Sozlamalar', icon: Settings }],
+    items: [
+      { id: 'settings', label: 'Sozlamalar', icon: Settings },
+      { id: 'support', label: 'Yordam', icon: LifeBuoy },
+    ],
   },
 ];
 
@@ -160,6 +166,8 @@ export const CenterErpApp: React.FC = () => {
         return <TelegramView />;
       case 'settings':
         return <SettingsView />;
+      case 'support':
+        return <SupportPanel />;
       default:
         return <DashboardView onNavigateTab={(tab) => setActiveTab(tab as ErpTab)} />;
     }

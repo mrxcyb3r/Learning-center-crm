@@ -1,5 +1,6 @@
 import { getFirestore, getFirebaseAdminError, probeFirestore, getRuntimeServiceAccount } from './firebaseAdmin';
 import { formatInquiryNotification } from './notificationFormatter';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /**
  * Server-side Telegram integration for CenterFlow.
@@ -737,6 +738,68 @@ export async function notifyAdmin(text: string): Promise<boolean> {
 }
 
 /* ---------------------------------------------------------------------------
+ * Support requests (single destination, persisted for the owner)
+ * ------------------------------------------------------------------------- */
+
+export interface SupportRequestInput {
+  subject: string;
+  message: string;
+  priority?: 'oddiy' | 'muhim' | 'shoshilinch';
+  userName?: string;
+  userEmail?: string;
+  userUid?: string;
+  telegramChatId?: string | number;
+  telegramUsername?: string;
+  source?: 'in_app' | 'telegram';
+}
+
+export async function createSupportRequest(input: SupportRequestInput): Promise<string | null> {
+  const db = getFirestore();
+  if (!db) return null;
+  try {
+    const priority = input.priority || 'oddiy';
+    const docRef = await db.collection('support_requests').add({
+      subject: String(input.subject || '').slice(0, 200),
+      message: String(input.message || '').slice(0, 2000),
+      priority,
+      userName: input.userName || '',
+      userEmail: input.userEmail || '',
+      userUid: input.userUid || '',
+      telegramChatId: input.telegramChatId != null ? String(input.telegramChatId) : '',
+      telegramUsername: input.telegramUsername || '',
+      source: input.source || 'telegram',
+      status: 'new',
+      createdAt: FieldValue.serverTimestamp(),
+      deliveredAt: null,
+    });
+
+    // Best-effort delivery to support Telegram (server-only env, optional).
+    const supportChatId = process.env.SUPPORT_TELEGRAM_CHAT_ID;
+    if (supportChatId) {
+      const priorityLabel =
+        priority === 'shoshilinch' ? 'SHOSHILINCH' : priority === 'muhim' ? 'MUHIM' : 'Oddiy';
+      const text = [
+        '📩 *CenterFlow — Yordam so\'rovi*',
+        '',
+        `Mavzu: ${input.subject}`,
+        `Prioritet: ${priorityLabel}`,
+        `Manba: ${input.source || 'telegram'}`,
+        `Foydalanuvchi: ${input.userName || (input.telegramUsername ? '@' + input.telegramUsername : 'Noma\'lum')}`,
+        '',
+        String(input.message),
+        '',
+        `ID: ${docRef.id}`,
+      ].join('\n');
+      sendTelegramMessage(supportChatId, text).catch(() => undefined);
+    }
+    return docRef.id;
+  } catch (err: any) {
+    console.warn('[SUPPORT] createSupportRequest xatolik:', err?.message || String(err));
+    return null;
+  }
+}
+
+/* ---------------------------------------------------------------------------
  * Courses (single source of truth: Firestore `courses`)
  * ------------------------------------------------------------------------- */
 
@@ -807,6 +870,7 @@ Mavjud buyruqlar:
 /trial — Sinov darsiga yozilish
 /question — Savol yuborish
 /contact — Markaz bilan bog'lanish
+/support — Qo'llab-quvvatlashga xabar yuborish
 /cancel — Boshlangan jarayonni bekor qilish
 
 Yuborgan ma'lumotlaringiz Renessans o'quv markazi administratorlariga uzatiladi.`;
@@ -839,6 +903,13 @@ async function startTrial(chatId: string | number): Promise<void> {
 
 async function startQuestion(chatId: string | number): Promise<void> {
   await sendTelegramMessage(chatId, '❓ Savolingizni yozing. Operatorlarimiz tez orada javob beradi.');
+}
+
+async function startSupport(chatId: string | number): Promise<void> {
+  await sendTelegramMessage(
+    chatId,
+    '🛟 Yordam va qo\'llab-quvvatlash\n\nMuammoingiz yoki savolingizni yozing. U boshqaruv jamoasiga yetkaziladi.'
+  );
 }
 
 async function promptPhone(chatId: string | number): Promise<void> {
@@ -990,6 +1061,12 @@ export async function handleTelegramUpdate(update: AnyRecord, source: 'webhook' 
     await showHelp(chatId);
     return;
   }
+  if (text === '/support') {
+    await clearSession(chatId);
+    await writeSession(chatId, String(userId), username, 'support_message', {});
+    await startSupport(chatId);
+    return;
+  }
 
   // State machine
   switch (state) {
@@ -1100,6 +1177,30 @@ Sizning arizangiz qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi.
             message: text,
             createdAt: new Date().toISOString(),
           })
+        );
+      }
+      return;
+    }
+
+    case 'support_message': {
+      if (!text) {
+        await sendTelegramMessage(chatId, 'Iltimos, xabaringizni matn shaklida yozing.');
+        return;
+      }
+      const created = await createSupportRequest({
+        subject: 'Telegram orqali yuborilgan',
+        message: text,
+        priority: 'oddiy',
+        userName: username ? `@${username}` : 'Telegram foydalanuvchisi',
+        telegramChatId: chatId,
+        telegramUsername: username,
+        source: 'telegram',
+      });
+      await clearSession(chatId);
+      await sendKeyboard(chatId, '✅ Xabaringiz qabul qilindi. Boshqaruv jamoasi tez orada javob beradi.', MAIN_MENU);
+      if (created) {
+        await notifyAdmin(
+          `🛟 Telegram orqali yordam so'rovi:\n\n💬 ${text}\n${username ? `\n👤 @${username}` : ''}`
         );
       }
       return;

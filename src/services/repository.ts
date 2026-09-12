@@ -813,10 +813,19 @@ export const leadsService = {
   },
 
   async getLeadsBySource(source: string): Promise<Lead[]> {
-    const snap = await getDocs(
-      query(collection(db, LEADS_COL), where('source', '==', source), orderBy('createdAt', 'desc'))
-    );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
+    try {
+      // Query without composite index requirement, sort in memory
+      const snap = await getDocs(
+        query(collection(db, LEADS_COL), where('source', '==', source))
+      );
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Lead))
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } catch {
+      // Fallback: fetch all leads and filter in memory if composite index is required
+      const all = await leadsService.getAllLeads().catch(() => []);
+      return all.filter(l => (l.source || '').toLowerCase() === source.toLowerCase());
+    }
   },
 
   async getLeadById(id: string): Promise<Lead | null> {
@@ -973,10 +982,21 @@ export const questionsService = {
   },
 
   async getQuestionsBySource(source: string): Promise<any[]> {
-    const snap = await getDocs(
-      query(collection(db, QUESTIONS_COL), where('source', '==', source), orderBy('createdAt', 'desc'))
-    );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    try {
+      const snap = await getDocs(
+        query(collection(db, QUESTIONS_COL), where('source', '==', source))
+      );
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Record<string, any>))
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } catch {
+      // Fallback: fetch without where/orderBy filter if composite index is missing
+      const snap = await getDocs(collection(db, QUESTIONS_COL)).catch(() => ({ docs: [] } as any));
+      return snap.docs
+        .map((d: any) => ({ id: d.id, ...d.data() }))
+        .filter((q: any) => (q.source || '').toLowerCase() === source.toLowerCase())
+        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    }
   }
 };
 

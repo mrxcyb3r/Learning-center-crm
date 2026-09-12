@@ -25,11 +25,11 @@ export function getBotToken(): string {
 }
 
 export function getWebhookSecret(): string {
-  return process.env.TELEGRAM_WEBHOOK_SECRET || '';
+  return (process.env.TELEGRAM_WEBHOOK_SECRET || '').trim().replace(/^["']|["']$/g, '');
 }
 
 export function getAdminChatId(): string {
-  return process.env.TELEGRAM_ADMIN_CHAT_ID || '';
+  return (process.env.TELEGRAM_ADMIN_CHAT_ID || '').trim();
 }
 
 export function isTelegramConfigured(): boolean {
@@ -37,12 +37,13 @@ export function isTelegramConfigured(): boolean {
 }
 
 export function getPublicBaseUrl(): string {
-  return (
+  const envUrl = (
     process.env.PUBLIC_URL ||
     process.env.APP_URL ||
     process.env.WEB_PORTAL_URL ||
     ''
-  ).replace(/\/+$/, '');
+  ).trim().replace(/\/+$/, '');
+  return envUrl || 'https://centerflow.ai.studio';
 }
 
 /* ---------------------------------------------------------------------------
@@ -56,7 +57,7 @@ async function tgRequest(method: string, params: AnyRecord = {}, isForm = false)
   if (!token) {
     return { ok: false, description: 'TELEGRAM_BOT_TOKEN sozlanmagan' };
   }
-  const url = `${TG_API}/bot${encodeURIComponent(token)}/${method}`;
+  const url = `${TG_API}/bot${token}/${method}`;
   let response: globalThis.Response;
   try {
     if (isForm) {
@@ -123,20 +124,78 @@ export async function hideKeyboard(chatId: string | number): Promise<boolean> {
   return sendTelegramMessage(chatId, '✅', { reply_markup: { remove_keyboard: true } }).then(() => true).catch(() => true);
 }
 
-export async function getMe(): Promise<{ ok: boolean; bot?: { id: number; username: string; first_name: string; can_join_groups?: boolean; can_read_all_group_messages?: boolean; supports_inline_queries?: boolean }; description?: string }> {
-  return tgRequest('getMe');
+export interface TelegramBotMeResult {
+  id: number;
+  is_bot?: boolean;
+  first_name: string;
+  username?: string;
+  can_join_groups?: boolean;
+  can_read_all_group_messages?: boolean;
+  supports_inline_queries?: boolean;
 }
 
-export async function setWebhook(url: string, secretToken: string): Promise<any> {
-  return tgRequest('setWebhook', {
-    url,
-    secret_token: secretToken,
-    drop_pending_updates: false,
+export async function getMe(): Promise<{
+  ok: boolean;
+  result?: TelegramBotMeResult;
+  bot?: { id: number; username: string; first_name: string };
+  description?: string;
+  errorCode?: number;
+}> {
+  const data = await tgRequest('getMe');
+  if (data?.ok && data?.result) {
+    return {
+      ok: true,
+      result: data.result,
+      bot: {
+        id: data.result.id,
+        username: data.result.username || '',
+        first_name: data.result.first_name || '',
+      },
+    };
+  }
+  return {
+    ok: false,
+    description: data?.description || 'Telegram Bot API bilan aloqa yo\'q',
+    errorCode: data?.error_code || data?.httpStatus,
+  };
+}
+
+export async function setWebhook(
+  url: string,
+  secretToken: string,
+  dropPendingUpdates = true
+): Promise<any> {
+  const cleanSecret = (secretToken || '').trim().replace(/^["']|["']$/g, '');
+  const payload: AnyRecord = {
+    url: (url || '').trim(),
+    drop_pending_updates: dropPendingUpdates,
     max_connections: 40,
-  });
+    allowed_updates: ['message', 'callback_query', 'my_chat_member'],
+  };
+  if (cleanSecret) {
+    payload.secret_token = cleanSecret;
+  }
+  return tgRequest('setWebhook', payload);
 }
 
-export async function getWebhookInfo(): Promise<any> {
+export interface WebhookInfoResult {
+  url: string;
+  has_custom_certificate: boolean;
+  pending_update_count: number;
+  ip_address?: string;
+  last_error_date?: number;
+  last_error_message?: string;
+  last_synchronization_error_date?: number;
+  max_connections?: number;
+  allowed_updates?: string[];
+}
+
+export async function getWebhookInfo(): Promise<{
+  ok: boolean;
+  result?: WebhookInfoResult;
+  description?: string;
+  errorCode?: number;
+}> {
   return tgRequest('getWebhookInfo');
 }
 
@@ -512,21 +571,34 @@ function menuLabelPressed(text: string): boolean {
 export async function handleTelegramUpdate(update: AnyRecord, source: 'webhook' | 'polling' = 'webhook'): Promise<void> {
   if (!update) return;
 
+  const updateType = update.message
+    ? 'message'
+    : update.callback_query
+      ? 'callback_query'
+      : update.my_chat_member
+        ? 'my_chat_member'
+        : Object.keys(update).find((k) => k !== 'update_id') || 'other';
+
+  const message = update?.message || update?.callback_query?.message;
+  const chatId: string | number | undefined = message?.chat?.id;
+  const userId: string | number | undefined = update?.message?.from?.id || update?.callback_query?.from?.id;
+
+  console.log(
+    `[TELEGRAM WEBHOOK] update received: id=${update?.update_id ?? 'unknown'}, type=${updateType}, chat=${chatId ?? 'none'}, user=${userId ?? 'none'}, source=${source}`
+  );
+
   // Reject/ignore non-message updates calmly. Log bot "kicked" events only.
   if (update.my_chat_member && update.my_chat_member.new_chat_member?.status === 'kicked') {
     console.warn('[TELEGRAM] Bot foydalanuvchi/guruh tomonidan bloklandi:', update.my_chat_member.from?.id);
   }
 
-  const message = update?.message;
-  if (!message) return;
+  if (!update.message) return;
 
-  const chatId: string | number = message?.chat?.id;
-  const userId: string | number = message?.from?.id;
-  const username: string | undefined = message?.from?.username;
+  const username: string | undefined = update.message?.from?.username;
   if (chatId === undefined || chatId === null) return;
 
-  const text: string | undefined = typeof message.text === 'string' ? message.text.trim() : undefined;
-  const phoneFromContact: string | undefined = message.contact?.phone_number;
+  const text: string | undefined = typeof update.message.text === 'string' ? update.message.text.trim() : undefined;
+  const phoneFromContact: string | undefined = update.message.contact?.phone_number;
 
   let session = await readSession(chatId);
   const state = session?.state || 'idle';
@@ -736,6 +808,64 @@ export async function getFirestoreStatus(): Promise<{
   const probe = await probeFirestore();
   const runtime = await getRuntimeServiceAccount();
   return { ...probe, runtimeServiceAccount: runtime };
+}
+
+/**
+ * Server startup webhook verification (runs once on boot):
+ * → verify Telegram bot token
+ * → getWebhookInfo
+ * → if URL is correct, do nothing
+ * → if URL is empty/wrong, setWebhook
+ * → immediately call getWebhookInfo again
+ * → verify Telegram still reports the correct URL
+ * → log SAFE diagnostic
+ */
+export async function verifyWebhookOnStartup(): Promise<void> {
+  const token = getBotToken();
+  if (!token) {
+    console.log('[TELEGRAM STARTUP] Bot token not configured, skipping startup webhook verification.');
+    return;
+  }
+  const secret = getWebhookSecret();
+  if (!secret) {
+    console.warn('[TELEGRAM STARTUP] TELEGRAM_WEBHOOK_SECRET not configured, skipping startup webhook verification.');
+    return;
+  }
+  const baseUrl = getPublicBaseUrl();
+  const expectedUrl = `${baseUrl}/api/telegram/webhook`;
+
+  try {
+    const currentInfo = await getWebhookInfo();
+    const currentRegisteredUrl = currentInfo?.result?.url || '';
+
+    if (currentInfo?.ok && currentRegisteredUrl === expectedUrl) {
+      console.log(`[TELEGRAM WEBHOOK VERIFY] registeredUrl=${currentRegisteredUrl} expectedUrl=${expectedUrl} pendingUpdates=${currentInfo.result?.pending_update_count ?? 0} lastError=${currentInfo.result?.last_error_message || 'none'} lastErrorDate=${currentInfo.result?.last_error_date ? new Date(currentInfo.result.last_error_date * 1000).toISOString() : 'none'}`);
+      return;
+    }
+
+    console.log(`[TELEGRAM STARTUP] Webhook needs registration (current='${currentRegisteredUrl}', expected='${expectedUrl}'). Setting webhook...`);
+    const setResult = await setWebhook(expectedUrl, secret, false);
+    if (!setResult?.ok) {
+      console.error('[TELEGRAM STARTUP] setWebhook call failed:', setResult?.description || 'Unknown error');
+      return;
+    }
+
+    const verifiedInfo = await getWebhookInfo();
+    const verifiedUrl = verifiedInfo?.result?.url || '';
+    const pendingUpdates = verifiedInfo?.result?.pending_update_count ?? 0;
+    const lastError = verifiedInfo?.result?.last_error_message || 'none';
+    const lastErrorDate = verifiedInfo?.result?.last_error_date ? new Date(verifiedInfo.result.last_error_date * 1000).toISOString() : 'none';
+
+    console.log(`[TELEGRAM WEBHOOK VERIFY] registeredUrl=${verifiedUrl} expectedUrl=${expectedUrl} pendingUpdates=${pendingUpdates} lastError=${lastError} lastErrorDate=${lastErrorDate}`);
+
+    if (verifiedUrl !== expectedUrl) {
+      console.warn(`[TELEGRAM STARTUP WARNING] Webhook set reported success, but Telegram getWebhookInfo returned url='${verifiedUrl}'.`);
+    } else {
+      console.log(`[TELEGRAM STARTUP] Webhook successfully verified at ${verifiedUrl}`);
+    }
+  } catch (err: any) {
+    console.error('[TELEGRAM STARTUP ERROR] Webhook verification failed on startup:', err?.message || err);
+  }
 }
 
 export { WELCOME_TEXT, HELP_TEXT, CONTACT_TEXT };

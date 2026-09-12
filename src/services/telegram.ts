@@ -48,20 +48,28 @@ export interface TelegramBotInfo {
 
 export interface TelegramWebhookInfo {
   url: string;
+  expectedUrl?: string;
+  isUrlMatched?: boolean;
+  hasCustomCertificate?: boolean;
   pendingUpdateCount: number;
   lastError?: string | null;
   lastErrorDate?: number | null;
+  lastSyncErrorDate?: number | null;
+  maxConnections?: number | null;
+  allowedUpdates?: string[];
   ipAddress?: string;
 }
 
 export interface TelegramServerStatus {
   connected: boolean;
+  apiReachable?: boolean;
   mode: 'webhook' | 'polling';
   configured: {
     token: boolean;
     webhookSecret: boolean;
     adminChatId: boolean;
     publicUrl: string | null;
+    expectedWebhookUrl?: string;
     firestore: boolean;
     firestoreProjectId?: string;
     firestoreErrorCode?: string;
@@ -105,7 +113,18 @@ export async function getTelegramStatus(): Promise<TelegramServerStatus | null> 
   }
 }
 
-export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: string; description?: string; url?: string }> {
+export async function setupTelegramWebhook(options?: {
+  force?: boolean;
+  dropPendingUpdates?: boolean;
+  url?: string;
+}): Promise<{
+  ok: boolean;
+  alreadyConfigured?: boolean;
+  error?: string;
+  description?: string;
+  url?: string;
+  webhook?: TelegramWebhookInfo;
+}> {
   const token = await getFirebaseIdToken();
   if (!token) {
     return { ok: false, error: 'Firebase admin sessiyasi topilmadi — qayta tizimga kiring va yangi urinib ko\'ring.' };
@@ -117,7 +136,11 @@ export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: str
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        force: options?.force ?? false,
+        dropPendingUpdates: options?.dropPendingUpdates ?? true,
+        url: options?.url,
+      }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok && (data as any).reason) {
@@ -129,9 +152,11 @@ export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: str
     }
     return {
       ok: response.ok && Boolean(data.ok),
+      alreadyConfigured: Boolean(data.alreadyConfigured),
       error: data.error,
       description: data.description,
       url: data.url,
+      webhook: data.webhook,
     };
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Webhook sozlashda xatolik.' };

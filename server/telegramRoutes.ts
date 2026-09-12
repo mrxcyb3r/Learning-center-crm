@@ -137,16 +137,31 @@ export function createTelegramRouter(deps: RouterDeps): Router {
   /* -------------------------------------------------------------------------
    * Telegram inbound webhook (Cloud Run friendly)
    * ------------------------------------------------------------------------- */
+  router.get('/telegram/webhook', (req: Request, res: Response) => {
+    return json(res, 200, {
+      ok: true,
+      status: 'active',
+      endpoint: '/api/telegram/webhook',
+      message: 'Telegram Webhook handler is ready to receive POST updates from Telegram Bot API.',
+      serverTime: new Date().toISOString(),
+    });
+  });
+
   router.post('/telegram/webhook', async (req: Request, res: Response) => {
     const expectedSecret = getWebhookSecret();
-    const header = req.headers['x-telegram-bot-api-secret-token'] as string | string[] | undefined;
+    const rawHeader = req.headers['x-telegram-bot-api-secret-token'];
+    const header = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+    const received = (typeof header === 'string' ? header : '').trim();
 
     if (expectedSecret) {
-      const received = Array.isArray(header) ? header[0] : header;
       if (!received || received !== expectedSecret) {
+        console.warn(
+          `[TELEGRAM WEBHOOK] Secret token mismatch or missing header from IP ${req.ip} (header present: ${Boolean(header)})`
+        );
         logSecurityEvent('WEBHOOK_SPOOF_ATTEMPT', {
           route: '/api/telegram/webhook',
           ip: req.ip,
+          headerPresent: Boolean(header),
         });
         return json(res, 403, { ok: false, error: 'Forbidden: Secret token mismatch.' });
       }
@@ -154,25 +169,30 @@ export function createTelegramRouter(deps: RouterDeps): Router {
       logSecurityEvent('WEBHOOK_BYPASS_WARNING', {
         route: '/api/telegram/webhook',
         ip: req.ip,
-        message: 'TELEGRAM_WEBHOOK_SECRET is not set. Set it (and in BotFather) before production.',
+        message: 'TELEGRAM_WEBHOOK_SECRET is not set in environment.',
       });
     }
 
     const update = req.body;
     try {
       if (!update || typeof update !== 'object') {
-        return json(res, 200, { ok: true });
+        return json(res, 200, { ok: true, reason: 'empty_update' });
       }
 
       if (update.update_id !== undefined && update.update_id !== null) {
         const duplicate = await alreadyProcessed(update.update_id);
         if (duplicate) {
+          console.log(`[TELEGRAM WEBHOOK] duplicate update ignored: update_id=${update.update_id}`);
           return json(res, 200, { ok: true, duplicate: true });
         }
       }
 
       await handleTelegramUpdate(update, 'webhook');
-      return json(res, 200, { ok: true, timestamp: new Date().toISOString() });
+      return json(res, 200, {
+        ok: true,
+        update_id: update?.update_id ?? null,
+        timestamp: new Date().toISOString(),
+      });
     } catch (err: any) {
       console.error('[TELEGRAM WEBHOOK] processing error:', err?.message || String(err));
       // Telegram retries on 5xx. Returning 200 + logging keeps the bot alive
@@ -190,20 +210,43 @@ export function createTelegramRouter(deps: RouterDeps): Router {
       return json(res, 429, { error: 'Too Many Requests' });
     }
     const configured = isTelegramConfigured();
+    const baseUrl = getPublicBaseUrl();
+    const expectedUrl = `${baseUrl}/api/telegram/webhook`;
+    let apiReachable = false;
     let bot: Record<string, any> | null = null;
     let webhook: Record<string, any> | null = null;
+
     if (configured) {
       const me = await getMe();
-      if (me?.ok === true && me.bot) {
-        bot = { id: me.bot.id, username: me.bot.username, firstName: me.bot.first_name };
+      apiReachable = me?.ok === true;
+      if (me?.ok === true) {
+        const b = me.result || me.bot;
+        if (b) {
+          bot = {
+            id: b.id,
+            username: b.username || '',
+            firstName: (b as any).first_name || (b as any).firstName || '',
+          };
+        }
       }
       const info = await getWebhookInfo();
       if (info?.ok === true && info.result) {
+        const registeredUrl = info.result.url || '';
+        const isUrlMatched = Boolean(
+          registeredUrl &&
+          (registeredUrl === expectedUrl || registeredUrl.replace(/\/+$/, '') === expectedUrl)
+        );
         webhook = {
-          url: info.result.url || '',
+          url: registeredUrl,
+          expectedUrl,
+          isUrlMatched,
+          hasCustomCertificate: Boolean(info.result.has_custom_certificate),
           pendingUpdateCount: info.result.pending_update_count ?? 0,
           lastError: info.result.last_error_message || null,
           lastErrorDate: info.result.last_error_date || null,
+          lastSyncErrorDate: info.result.last_synchronization_error_date || null,
+          maxConnections: info.result.max_connections ?? 40,
+          allowedUpdates: info.result.allowed_updates || [],
           ipAddress: info.result.ip_address || '',
         };
       }
@@ -211,12 +254,14 @@ export function createTelegramRouter(deps: RouterDeps): Router {
     const fs = await getFirestoreStatus();
     return json(res, 200, {
       connected: configured && Boolean(bot),
+      apiReachable,
       mode: BOT_MODE,
       configured: {
         token: configured,
         webhookSecret: Boolean(getWebhookSecret()),
         adminChatId: Boolean(process.env.TELEGRAM_ADMIN_CHAT_ID),
-        publicUrl: getPublicBaseUrl() || null,
+        publicUrl: baseUrl || null,
+        expectedWebhookUrl: expectedUrl,
         firestore: fs.available,
         firestoreProjectId: fs.projectId,
         firestoreErrorCode: fs.available ? '' : fs.errorCode,
@@ -230,7 +275,7 @@ export function createTelegramRouter(deps: RouterDeps): Router {
   });
 
   /* -------------------------------------------------------------------------
-   * Webhook registration (admin only)
+   * Webhook registration (admin only, idempotent, verified)
    * ------------------------------------------------------------------------- */
   router.post('/telegram/webhook/setup', async (req: Request, res: Response) => {
     const clientKey = `setup_${req.ip}`;
@@ -244,29 +289,89 @@ export function createTelegramRouter(deps: RouterDeps): Router {
     if (!getBotToken()) {
       return json(res, 503, { ok: false, error: 'TELEGRAM_BOT_TOKEN sozlanmagan.' });
     }
-    if (!getWebhookSecret()) {
+    const secret = getWebhookSecret();
+    if (!secret) {
       return json(res, 400, {
         ok: false,
-        error: 'TELEGRAM_WEBHOOK_SECRET sozlanmagan. Avval secret o\'rnating va BotFather ga kiriting.',
+        error: 'TELEGRAM_WEBHOOK_SECRET sozlanmagan. Avval server muhitida secret o\'rnating.',
       });
     }
     const baseUrl = getPublicBaseUrl();
-    if (!baseUrl) {
-      return json(res, 400, {
+    const customUrl = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+    const webhookUrl = customUrl || `${baseUrl}/api/telegram/webhook`;
+
+    // 1. Check if already properly configured (idempotency check)
+    const force = req.body?.force === true;
+    if (!force) {
+      const currentInfo = await getWebhookInfo();
+      if (
+        currentInfo?.ok === true &&
+        currentInfo.result?.url === webhookUrl &&
+        !currentInfo.result?.last_error_message
+      ) {
+        console.log(`[TELEGRAM SETUP] Webhook already configured to ${webhookUrl}; skipping re-registration.`);
+        return json(res, 200, {
+          ok: true,
+          alreadyConfigured: true,
+          description: 'Webhook allaqachon to\'g\'ri sozlangan va faol.',
+          url: webhookUrl,
+          webhook: currentInfo.result,
+        });
+      }
+    }
+
+    // 2. Register webhook with Telegram API
+    // Requirement 9: For normal setup, preserve pending updates where possible.
+    const dropPending = force
+      ? req.body?.dropPendingUpdates !== false
+      : req.body?.dropPendingUpdates === true;
+
+    const result = await setWebhook(webhookUrl, secret, dropPending);
+    if (result?.ok !== true) {
+      console.error('[TELEGRAM SETUP] setWebhook call failed:', result?.description || 'Unknown error');
+      return json(res, 502, {
         ok: false,
-        error: 'PUBLIC_URL yoki APP_URL env o\'zgaruvchisi aniq emas — webhook URLi aniqlab bo\'lmadi.',
+        error: result?.description || 'Telegram Bot API setWebhook xatosi.',
       });
     }
-    const webhookUrl = `${baseUrl}/api/telegram/webhook`;
-    const result = await setWebhook(webhookUrl, getWebhookSecret());
-    if (result?.ok === true) {
-      return json(res, 200, {
-        ok: true,
-        description: result.description || 'Webhook muvaffaqiyatli o\'rnatildi.',
-        url: webhookUrl,
+
+    // 3. Immediately verify via getWebhookInfo
+    const verifiedInfo = await getWebhookInfo();
+    const registeredUrl = verifiedInfo?.result?.url || '';
+    const pendingUpdates = verifiedInfo?.result?.pending_update_count ?? 0;
+    const lastError = verifiedInfo?.result?.last_error_message || null;
+    const lastErrorDate = verifiedInfo?.result?.last_error_date || null;
+    const isVerified = verifiedInfo?.ok === true && registeredUrl === webhookUrl;
+
+    // Requirement 5: Log safe diagnostic (NEVER log token, secret, or credentials)
+    console.log(`[TELEGRAM WEBHOOK VERIFY] registeredUrl=${registeredUrl} expectedUrl=${webhookUrl} pendingUpdates=${pendingUpdates} lastError=${lastError || 'none'} lastErrorDate=${lastErrorDate || 'none'}`);
+
+    if (!isVerified) {
+      const errorMsg = !registeredUrl
+        ? "Telegram setWebhook ni muvaffaqiyatli qabul qildi, biroq getWebhookInfo da URL bo'sh ('') bo'lib qoldi. Telegram Bot API qoidalariga ko'ra, bot tokeniga ulangan boshqa faol jarayon (masalan, Cloud Run'dagi eski konteyner yoki lokal polling) webhookni bekor qilgan."
+        : `Telegram ro'yxatdan o'tkazgan URL kutilgan URL bilan mos kelmadi: '${registeredUrl}' vs '${webhookUrl}'.`;
+
+      console.error(`[TELEGRAM SETUP] Verification failed: ${errorMsg}`);
+      return json(res, 502, {
+        ok: false,
+        error: errorMsg,
+        description: errorMsg,
+        expectedUrl: webhookUrl,
+        registeredUrl,
+        lastError,
+        lastErrorDate,
+        pendingUpdates,
+        webhookInfo: verifiedInfo?.result || null,
       });
     }
-    return json(res, 502, { ok: false, error: result?.description || 'Webhook o\'rnatilmadi.' });
+
+    console.log(`[TELEGRAM SETUP] Webhook successfully verified: ${webhookUrl}`);
+    return json(res, 200, {
+      ok: true,
+      description: result.description || 'Webhook muvaffaqiyatli o\'rnatildi va tasdiqlandi.',
+      url: webhookUrl,
+      webhook: verifiedInfo?.result || null,
+    });
   });
 
   /* -------------------------------------------------------------------------

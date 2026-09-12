@@ -8,8 +8,8 @@ const firebaseConfig = {
   projectId: "centerflow-1fa34",
   storageBucket: "centerflow-1fa34.firebasestorage.app",
   messagingSenderId: "234862001625",
-  appId: "1:234862001625:web:9d058d9e2000ab2f5aedc8",
-  measurementId: "G-J4FNGZDX32"
+  appId: "1:234862001625:web:bef3847ed7b89a385aedc8",
+  measurementId: "G-ERK1SEWB0F"
 };
 
 // Initialize Firebase app safely

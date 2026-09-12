@@ -6,6 +6,7 @@ import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createTelegramRouter } from './server/telegramRoutes';
+import { verifyWebhookOnStartup } from './server/telegramService';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -232,12 +233,17 @@ const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET || 'centerflow_admin_secre
 
 // 0. Real Telegram integration — webhook, bot health, admin send, broadcasts.
 //    Server-side only; credentials stay in environment variables.
-app.use('/api', createTelegramRouter({
+const telegramRouter = createTelegramRouter({
   checkRateLimit,
   logSecurityEvent,
   isValidUid,
   isValidPin,
-}));
+});
+app.use('/api', telegramRouter);
+app.use('/telegram/webhook', (req, res, next) => {
+  req.url = '/telegram/webhook';
+  telegramRouter(req, res, next);
+});
 
 // 1. Universal Subject Coach Endpoint
 app.post('/api/ai/coach', async (req, res) => {
@@ -558,6 +564,10 @@ async function startServer() {
 
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on port ${PORT} (0.0.0.0:${PORT})`);
+    // Run startup webhook verification once
+    verifyWebhookOnStartup().catch(err => {
+      console.error('[TELEGRAM STARTUP ERROR]', err?.message || err);
+    });
   });
 
   // Graceful Shutdown Handler

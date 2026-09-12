@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   Plus,
-  Download,
   CheckCircle2,
   AlertTriangle,
   Search,
@@ -12,9 +11,11 @@ import {
   X,
   FileText,
 } from 'lucide-react';
-import { paymentsService, invoicesService, studentsService, coursesService } from '../../services/repository';
+import { paymentsService, invoicesService, studentsService, coursesService, settingsService } from '../../services/repository';
 import { CourseData, IncomePaymentRecord, StudentRecord, Invoice } from '../../types/crm';
 import { formatCurrency, formatCurrencyShort } from '../../utils/format';
+import { ReceiptModal } from './ReceiptModal';
+import { getReceiptNumber, ReceiptCenter } from '../../utils/receipt';
 
 const UZ_MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
@@ -37,9 +38,15 @@ export const PaymentsView: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewReceipt, setViewReceipt] = useState<IncomePaymentRecord | null>(null);
+  const [receiptSuccess, setReceiptSuccess] = useState(false);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [noticeTone, setNoticeTone] = useState<'ok' | 'err'>('ok');
+  const [center, setCenter] = useState<ReceiptCenter>({
+    name: "Renessans O'quv Markazi",
+    address: 'Yangiobod tumani, 1-maktab binosi',
+    phone: '+998 (90) 862-22-26',
+  });
 
   // Add Form
   const [formStudentId, setFormStudentId] = useState('');
@@ -64,6 +71,20 @@ export const PaymentsView: React.FC = () => {
 
   useEffect(() => {
     refresh();
+    settingsService
+      .getSettings()
+      .then((s) => {
+        if (s) {
+          setCenter({
+            name: s.centerName || "Renessans O'quv Markazi",
+            address: s.branches?.[0]?.address || 'Yangiobod tumani, 1-maktab binosi',
+            phone: s.hotline || '+998 (90) 862-22-26',
+          });
+        }
+      })
+      .catch(() => {
+        // Center info falls back to the defaults above.
+      });
   }, []);
 
   const showNotification = (msg: string, tone: 'ok' | 'err' = 'ok') => {
@@ -114,7 +135,7 @@ export const PaymentsView: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await paymentsService.recordPayment({
+      const createdId = await paymentsService.recordPayment({
         studentId: formStudentId,
         studentName: formStudentName.trim(),
         course: formCourse,
@@ -129,8 +150,25 @@ export const PaymentsView: React.FC = () => {
       });
 
       showNotification(`To'lov (${formatCurrency(amount)}) muvaffaqiyatli qabul qilindi!`, 'ok');
-      refresh();
+      await refresh();
       setIsAddModalOpen(false);
+
+      // Show the professional receipt for the just-created payment.
+      setReceiptSuccess(true);
+      setViewReceipt({
+        id: createdId,
+        studentId: formStudentId,
+        studentName: formStudentName.trim(),
+        course: formCourse,
+        amount,
+        method: formMethod as IncomePaymentRecord['method'],
+        date: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+        receiptNumber: '',
+        status: 'Completed',
+        recordedBy: 'Admin',
+        month: formMonth,
+      } as IncomePaymentRecord);
     } catch (err: any) {
       // Log the actionable technical error; never expose tokens/credentials.
       const code = err?.code || err?.name || 'unknown';
@@ -312,7 +350,7 @@ export const PaymentsView: React.FC = () => {
                 return (
                 <tr key={p.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${isVoided ? 'opacity-50' : ''}`}>
                   <td className="py-3.5 px-4 font-mono font-bold text-slate-600 dark:text-slate-400">
-                    #{p.id.slice(-6).toUpperCase()}
+                    {getReceiptNumber(p)}
                     {isVoided && (
                       <span className="ml-2 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black border border-rose-500/20">
                         BEKOR QILINGAN
@@ -527,79 +565,17 @@ export const PaymentsView: React.FC = () => {
         </div>
       )}
 
-      {/* Printable Receipt Modal */}
+      {/* Professional Receipt Modal */}
       {viewReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Elektron Kvitansiya
-              </span>
-              <button
-                onClick={() => setViewReceipt(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="my-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 font-mono text-xs text-slate-800 dark:text-slate-200">
-              <div className="text-center pb-3 border-b border-dashed border-slate-300 dark:border-slate-600">
-                <div className="text-base font-black tracking-tight font-sans text-slate-900 dark:text-white">
-                  RENESSANS O'QUV MARKAZI
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  Yangiobod tumani, 1-maktab binosi
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  Tel: +998 (90) 862-22-26
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-slate-400">Kvitansiya #:</span>
-                <span className="font-bold">REC-{viewReceipt.id.slice(-6).toUpperCase()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Sana:</span>
-                <span>{viewReceipt.date}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">O'quvchi:</span>
-                <span className="font-bold">{viewReceipt.studentName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Kurs:</span>
-                <span>{viewReceipt.course}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">To'lov usuli:</span>
-                <span>{viewReceipt.method}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Oy:</span>
-                <span>{viewReceipt.month}</span>
-              </div>
-
-              <div className="pt-3 border-t border-dashed border-slate-300 dark:border-slate-600 flex justify-between items-center text-sm">
-                <span className="font-bold font-sans">JAMI TO'LANDI:</span>
-                <span className="font-black text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(viewReceipt.amount)}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => window.print()}
-                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Chop etish</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReceiptModal
+          payment={viewReceipt}
+          center={center}
+          success={receiptSuccess}
+          onClose={() => {
+            setViewReceipt(null);
+            setReceiptSuccess(false);
+          }}
+        />
       )}
     </div>
   );

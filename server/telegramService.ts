@@ -1,4 +1,4 @@
-import { getFirestore, getFirebaseAdminError, probeFirestore } from './firebaseAdmin';
+import { getFirestore, getFirebaseAdminError, probeFirestore, getRuntimeServiceAccount } from './firebaseAdmin';
 
 /**
  * Server-side Telegram integration for CenterFlow.
@@ -726,8 +726,16 @@ export function startTelegramHousekeeping(): void {
   scheduleSessionCleanup();
 }
 
-export async function getFirestoreStatus(): Promise<{ available: boolean; projectId: string; error: string | null }> {
-  return probeFirestore();
+export async function getFirestoreStatus(): Promise<{
+  available: boolean;
+  projectId: string;
+  errorCode: string;
+  error: string;
+  runtimeServiceAccount: string | null;
+}> {
+  const probe = await probeFirestore();
+  const runtime = await getRuntimeServiceAccount();
+  return { ...probe, runtimeServiceAccount: runtime };
 }
 
 export { WELCOME_TEXT, HELP_TEXT, CONTACT_TEXT };

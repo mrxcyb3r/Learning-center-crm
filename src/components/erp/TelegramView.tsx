@@ -276,6 +276,24 @@ export const TelegramView: React.FC = () => {
               </span>
             </div>
 
+            {!status?.configured?.firestore && status?.configured?.firestoreErrorCode && (
+              <div className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20">
+                <span className="text-rose-500 font-mono text-[11px] block break-all">
+                  {status.configured.firestoreErrorCode}
+                </span>
+                <span className="text-slate-500 text-[11px] block mt-1 break-words">
+                  {status.configured.firestoreError}
+                </span>
+                <div className="text-[11px] mt-2 text-slate-500 leading-relaxed">
+                  Yechim: server ishlab turgan service account'ga{' '}
+                  <code className="text-slate-700 dark:text-slate-300 font-mono">roles/datastore.user</code>{' '}
+                  huquqini bering yoki{' '}
+                  <code className="text-slate-700 dark:text-slate-300 font-mono">FIREBASE_SERVICE_ACCOUNT_JSON</code>{' '}
+                  maxfiy kalitini server muhitiga sozlang.
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 font-semibold flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5" /> Firestore loyihasi (Admin)
@@ -284,6 +302,15 @@ export const TelegramView: React.FC = () => {
                 {status?.configured?.firestoreProjectId || '—'}
               </span>
             </div>
+
+            {status?.configured?.runtimeServiceAccount && (
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                <span className="text-slate-500 font-semibold block mb-1">Cloud Run service account</span>
+                <span className="font-mono text-slate-700 dark:text-slate-300 break-all">
+                  {status.configured.runtimeServiceAccount}
+                </span>
+              </div>
+            )}
 
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 font-semibold block mb-1">Webhook URL</span>

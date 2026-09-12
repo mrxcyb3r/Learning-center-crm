@@ -14,7 +14,7 @@ import {
   isTelegramConfigured,
   getFirestoreStatus,
 } from './telegramService';
-import { getAdminApp, getFirestore, getAdminAuth } from './firebaseAdmin';
+import { getAdminApp, getFirestore, getAdminAuth, sanitizeFirebaseError } from './firebaseAdmin';
 
 interface RouterDeps {
   checkRateLimit: (key: string, limitMs?: number) => boolean;
@@ -38,6 +38,7 @@ interface AdminAuthResult {
     | 'role_insufficient'
     | 'token_verification_failed';
   uid?: string;
+  errorCode?: string;
 }
 
 async function isAdminRequest(req: Request): Promise<AdminAuthResult> {
@@ -69,6 +70,7 @@ async function isAdminRequest(req: Request): Promise<AdminAuthResult> {
   const db = getFirestore();
   let userData: Record<string, any> | null = null;
   let readError: string | null = null;
+  let readErrorMessage: string | null = null;
   if (!db) {
     readError = 'firestore_unavailable';
   } else {
@@ -76,15 +78,22 @@ async function isAdminRequest(req: Request): Promise<AdminAuthResult> {
       const snap = await db.doc(`users/${decoded.uid}`).get();
       userData = snap.exists ? (snap.data() as Record<string, any>) : null;
     } catch (err: any) {
-      readError = err?.code || err?.message || 'unknown';
+      const { code, message } = sanitizeFirebaseError(err);
+      readError = `${code}`;
+      readErrorMessage = message;
     }
   }
 
   if (readError) {
     console.warn(
-      `[TELEGRAM AUTH] uid ${decoded.uid}: Firestore users/{uid} read failed (${readError}); denying.`
+      `[TELEGRAM AUTH] uid ${decoded.uid}: Firestore users/{uid} read failed (${readError}${readErrorMessage ? `: ${readErrorMessage}` : ''}); denying.`
     );
-    return { allowed: false, reason: readError === 'firestore_unavailable' ? 'firestore_unavailable' : 'doc_read_error', uid: decoded.uid };
+    return {
+      allowed: false,
+      reason: readError === 'firestore_unavailable' ? 'firestore_unavailable' : 'doc_read_error',
+      uid: decoded.uid,
+      errorCode: readError === 'firestore_unavailable' ? 'firestore_unavailable' : readError,
+    };
   }
 
   const role: string = userData?.role || decoded.role || 'guest';
@@ -100,12 +109,19 @@ function adminDenied(res: Response, auth: AdminAuthResult, logSecurityEvent: (t:
     route: '/api/telegram/',
     ip: res.req?.ip || 'unknown',
     reason: auth.reason,
+    errorCode: auth.errorCode || undefined,
     uid: auth.uid || undefined,
   });
-  return json(res, 403, {
-    error: 'Forbidden: Admin huquqi talab qilinadi.',
+  const body: Record<string, any> = {
+    error: auth.reason === 'doc_read_error'
+      ? 'Firestore Admin ulanishida xatolik — server loglarini tekshiring.'
+      : 'Forbidden: Admin huquqi talab qilinadi.',
     reason: auth.reason,
-  });
+  };
+  if (auth.errorCode && auth.reason === 'doc_read_error') {
+    body.errorCode = auth.errorCode;
+  }
+  return json(res, 403, body);
 }
 
 function json(res: Response, status: number, body: Record<string, any>): Response {
@@ -203,6 +219,9 @@ export function createTelegramRouter(deps: RouterDeps): Router {
         publicUrl: getPublicBaseUrl() || null,
         firestore: fs.available,
         firestoreProjectId: fs.projectId,
+        firestoreErrorCode: fs.available ? '' : fs.errorCode,
+        firestoreError: fs.available ? '' : fs.error,
+        runtimeServiceAccount: fs.runtimeServiceAccount,
       },
       bot,
       webhook,

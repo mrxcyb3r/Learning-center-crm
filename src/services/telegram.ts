@@ -64,6 +64,9 @@ export interface TelegramServerStatus {
     publicUrl: string | null;
     firestore: boolean;
     firestoreProjectId?: string;
+    firestoreErrorCode?: string;
+    firestoreError?: string;
+    runtimeServiceAccount?: string | null;
   };
   bot: TelegramBotInfo | null;
   webhook: TelegramWebhookInfo | null;
@@ -118,7 +121,11 @@ export async function setupTelegramWebhook(): Promise<{ ok: boolean; error?: str
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok && (data as any).reason) {
-      return { ok: false, error: `Ruxsat rad etildi (${(data as any).reason}). Administrator maqomiga ega ekaningizni tekshiring.` };
+      const r = (data as any).reason as string;
+      const friendly = r === 'doc_read_error'
+        ? 'Firestore ulanish xatosi — server loglarini tekshiring.'
+        : 'Administrator maqomiga ega ekaningizni tekshiring.';
+      return { ok: false, error: `Ruxsat rad etildi (${r}). ${friendly}` };
     }
     return {
       ok: response.ok && Boolean(data.ok),
@@ -147,7 +154,11 @@ export async function sendAdminTelegramMessage(chatId: string | number, text: st
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok && (data as any).reason) {
-      return { ok: false, error: `Ruxsat rad etildi (${(data as any).reason}). Administrator maqomiga ega ekaningizni tekshiring.` };
+      const r = (data as any).reason as string;
+      const friendly = r === 'doc_read_error'
+        ? 'Firestore ulanish xatosi — server loglarini tekshiring.'
+        : 'Administrator maqomiga ega ekaningizni tekshiring.';
+      return { ok: false, error: `Ruxsat rad etildi (${r}). ${friendly}` };
     }
     return { ok: response.ok && Boolean(data.ok), error: data.error };
   } catch (err: any) {

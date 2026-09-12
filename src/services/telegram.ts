@@ -38,6 +38,106 @@ export interface BroadcastResponse {
   isRateLimited?: boolean;
 }
 
+export interface TelegramChatMessage {
+  id: string;
+  userUid?: string;
+  chatId: string;
+  direction: 'inbound' | 'outbound';
+  text: string;
+  telegramMessageId?: string;
+  sentByName?: string;
+  createdAt: string;
+  status: 'sent' | 'failed';
+  error?: string;
+}
+
+export interface TelegramConversationResult {
+  ok: boolean;
+  messages: TelegramChatMessage[];
+  userUid?: string | null;
+  hasMore: boolean;
+  error?: string;
+}
+
+export async function getTelegramConversation(
+  chatId: string | number,
+  opts?: { limit?: number; before?: string }
+): Promise<TelegramConversationResult> {
+  const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, messages: [], userUid: null, hasMore: false, error: 'Firebase admin sessiyasi topilmadi.' };
+  }
+  try {
+    const params = new URLSearchParams({ chatId: String(chatId), limit: String(opts?.limit ?? 50) });
+    if (opts?.before) params.set('before', opts.before);
+    const response = await fetch(`/api/telegram/messages?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        ok: false,
+        messages: [],
+        userUid: null,
+        hasMore: false,
+        error: (data as any)?.error || (data as any)?.reason || 'Xabarlarni yuklab bo\'lmadi.',
+      };
+    }
+    return {
+      ok: Boolean((data as any)?.ok),
+      messages: ((data as any)?.messages as TelegramChatMessage[]) || [],
+      userUid: (data as any)?.userUid ?? null,
+      hasMore: Boolean((data as any)?.hasMore),
+      error: undefined,
+    };
+  } catch (err: any) {
+    return { ok: false, messages: [], userUid: null, hasMore: false, error: err?.message || 'Xabarlarni yuklashda xatolik.' };
+  }
+}
+
+export async function sendTelegramReply(input: {
+  userUid?: string | null;
+  chatId: string | number;
+  text: string;
+}): Promise<{ ok: boolean; record?: TelegramChatMessage; error?: string }> {
+  const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, error: 'Firebase admin sessiyasi topilmadi — qayta tizimga kiring.' };
+  }
+  try {
+    const response = await fetch('/api/telegram/reply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userUid: input.userUid || undefined,
+        chatId: String(input.chatId),
+        text: input.text,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const reason = (data as any)?.reason;
+      const friendly =
+        reason === 'doc_read_error'
+          ? 'Firestore ulanish xatosi.'
+          : reason
+            ? `Ruxsat rad etildi (${reason}).`
+            : '';
+      return { ok: false, error: (data as any)?.error || friendly || 'Xabar yuborilmadi.' };
+    }
+    if (!(data as any)?.ok) {
+      return { ok: false, error: (data as any)?.error || 'Telegram xabarni yuborolmadi.' };
+    }
+    return { ok: true, record: (data as any)?.record };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Xabar yuborishda xatolik.' };
+  }
+}
+
 // Client-side bot username for deep links. Set it via the Vite-exposed
 // VITE_TELEGRAM_BOT_USERNAME so it can follow the server-side deployment
 // (TELEGRAM_BOT_USERNAME); falls back only when a deployment never sets it.

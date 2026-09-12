@@ -362,6 +362,17 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // TELEGRAM MESSAGE HISTORY (TWO-WAY MESSAGING)
+    // =========================================================================
+    // Written by the trusted server (Firebase Admin SDK, bypasses rules) and
+    // read through the admin-only /api/telegram/messages endpoint. Clients may
+    // never read or write conversation history directly.
+    match /telegram_messages/{messageId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
+    }
+
+    // =========================================================================
     // HELPER FUNCTIONS FOR TEACHER SCOPING
     // =========================================================================
     function isTeacherOfStudent(studentId) {

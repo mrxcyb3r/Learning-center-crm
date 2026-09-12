@@ -14,6 +14,12 @@ import {
   isTelegramConfigured,
   getFirestoreStatus,
   notifyAdmin,
+  sendTelegramMessageDetailed,
+  getUserTelegramChatId,
+  findUserUidByChatId,
+  isKnownTelegramContact,
+  saveTelegramMessage,
+  fetchTelegramMessages,
 } from './telegramService';
 import { getAdminApp, getFirestore, getAdminAuth, sanitizeFirebaseError } from './firebaseAdmin';
 import { formatInquiryNotification } from './notificationFormatter';
@@ -467,6 +473,145 @@ export function createTelegramRouter(deps: RouterDeps): Router {
       console.error('[TELEGRAM] /api/bot/status error:', err?.message || String(err));
       return json(res, 200, { isConnected: false, telegramUsername: null, chatId: null, chatConnectedAt: null });
     }
+  });
+
+  /* -------------------------------------------------------------------------
+   * Two-way messaging — admin reply to a Telegram contact (Step 4)
+   *
+   * The CRM userUid is the authority: the server resolves users/{userUid}.
+   * telegramChatId and never trusts a client-supplied chat id. A chatId
+   * fallback is allowed only when it is a KNOWN CRM contact (linked user,
+   * existing inquiry or prior conversation), verified server-side. The
+   * outbound message (or its failure) is persisted to telegram_messages so the
+   * Murojaat drawer stays consistent.
+   * ------------------------------------------------------------------------- */
+  router.post('/telegram/reply', async (req: Request, res: Response) => {
+    const clientKey = `reply_${req.ip}`;
+    if (!checkRateLimit(clientKey, 1200)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/reply', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Yuborish orasida biroz kuting.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    if (!getBotToken()) {
+      return json(res, 503, { ok: false, error: 'Telegram bot sozlanmagan (TELEGRAM_BOT_TOKEN).' });
+    }
+    const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, any>;
+    const text = typeof body.text === 'string' ? body.text.trim() : '';
+    if (!text) {
+      return json(res, 400, { ok: false, error: 'Xabar matnini kiriting.' });
+    }
+    if (text.length > 4096) {
+      return json(res, 400, { ok: false, error: 'Xabar juda uzun (maksimal 4096 belgi).' });
+    }
+    const userUid = typeof body.userUid === 'string' && body.userUid ? body.userUid : null;
+    const rawChatId =
+      typeof body.chatId === 'string' || typeof body.chatId === 'number' ? String(body.chatId) : '';
+
+    const db = getFirestore();
+    if (!db) {
+      return json(res, 503, { ok: false, error: 'Firestore hozircha mavjud emas.' });
+    }
+
+    // 1) Authority: CRM user uid → server reads the chat id from Firestore.
+    let chatId: string | null = null;
+    let resolvedUid: string | null = null;
+    if (userUid) {
+      if (!deps.isValidUid(userUid)) {
+        return json(res, 400, { ok: false, error: 'Noto\'g\'ri foydalanuvchi identifikatori.' });
+      }
+      chatId = await getUserTelegramChatId(userUid);
+      if (!chatId) {
+        return json(res, 409, {
+          ok: false,
+          error: 'Foydalanuvchi Telegram hisobiga ulanmagan — xabar yuborib bo\'lmadi.',
+        });
+      }
+      resolvedUid = userUid;
+    } else if (rawChatId) {
+      // 2) Verified fallback: never trust an arbitrary client chat id.
+      if (!(await isKnownTelegramContact(rawChatId))) {
+        logSecurityEvent('TELEGRAM_REPLY_UNKNOWN_CHAT', { ip: req.ip, reason: 'unverified_chat_id' });
+        return json(res, 403, { ok: false, error: 'Noma\'lum chat — yuborish ruxsat etilmadi.' });
+      }
+      chatId = rawChatId;
+      resolvedUid = await findUserUidByChatId(chatId);
+    } else {
+      return json(res, 400, { ok: false, error: 'userUid yoki chatId ko\'rsatilishi kerak.' });
+    }
+
+    let sentByName: string | undefined;
+    if (adminAuth.uid) {
+      try {
+        const snap = await db.doc(`users/${adminAuth.uid}`).get();
+        if (snap.exists) {
+          const d = snap.data() as Record<string, any>;
+          sentByName = d?.fullName || d?.displayName || d?.name || undefined;
+        }
+      } catch {
+        // Non-fatal: name is cosmetic.
+      }
+    }
+
+    const result = await sendTelegramMessageDetailed(chatId, text);
+    const record = await saveTelegramMessage({
+      userUid: resolvedUid || undefined,
+      chatId,
+      direction: 'outbound',
+      text,
+      telegramMessageId: result.telegramMessageId,
+      sentByUid: adminAuth.uid,
+      sentByName: sentByName || 'Administrator',
+      status: result.ok ? 'sent' : 'failed',
+      error: result.ok ? undefined : result.error,
+      createdAt: new Date().toISOString(),
+    });
+    if (result.ok) {
+      console.log(`[TELEGRAM MESSAGES] outbound sent to ${chatId}: ${text.slice(0, 60)}`);
+      return json(res, 200, { ok: true, message: 'Xabar muvaffaqiyatli yuborildi.', record });
+    }
+    console.error(`[TELEGRAM MESSAGES] outbound send FAILED to ${chatId}:`, result.error);
+    return json(res, 502, { ok: false, error: result.error || 'Xabar yuborilmadi.', record });
+  });
+
+  /* -------------------------------------------------------------------------
+   * Two-way messaging — conversation history (Step 4)
+   *
+   * Admin-only. Accepts `chatId` of an inquiry (or a CRM `userUid`) and
+   * returns the newest page of messages plus the resolved CRM uid (so the
+   * client can send via the authoritative userUid). `before` is an ISO createdAt
+   * cursor for "load more"; `limit` caps the page (default 50, max 100).
+   * ------------------------------------------------------------------------- */
+  router.get('/telegram/messages', async (req: Request, res: Response) => {
+    const clientKey = `messages_${req.ip}`;
+    if (!checkRateLimit(clientKey, 1500)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/messages', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Ozginadan so\'ng qayta urinib ko\'ring.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    const chatId = typeof req.query.chatId === 'string' ? req.query.chatId.trim() : '';
+    const userUid = typeof req.query.userUid === 'string' ? req.query.userUid.trim() : '';
+    const before = typeof req.query.before === 'string' && req.query.before ? req.query.before : undefined;
+    const limit = Number(req.query.limit) || 50;
+    if (!chatId && !userUid) {
+      return json(res, 400, { error: 'chatId yoki userUid ko\'rsatilishi kerak.' });
+    }
+    if (userUid && !deps.isValidUid(userUid)) {
+      return json(res, 400, { error: 'Noto\'g\'ri userUid formati.' });
+    }
+    const { messages, hasMore } = await fetchTelegramMessages({
+      chatId: chatId || undefined,
+      userUid: userUid || undefined,
+      limit,
+      before,
+    });
+    const resolvedUid = userUid || (chatId ? await findUserUidByChatId(chatId) : null);
+    return json(res, 200, { ok: true, userUid: resolvedUid, hasMore, messages });
   });
 
   /* -------------------------------------------------------------------------

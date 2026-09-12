@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Search,
@@ -16,6 +16,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { murojaatlarService } from '../../services/repository';
+import { getTelegramConversation, sendTelegramReply, TelegramChatMessage } from '../../services/telegram';
 import { Murojaat, MurojaatStatus } from '../../types/crm';
 import { MUROJAAT_STATUSES } from '../../utils/murojaat';
 import { formatDateTime, formatPhone } from '../../utils/format';
@@ -559,6 +560,11 @@ function DetailDrawer({
             </div>
           </div>
 
+          {/* Telegram two-way conversation */}
+          {m.telegramChatId && (
+            <TelegramConversationChat key={`tg-msg-${m.id}-${m.telegramChatId}`} murojaat={m} />
+          )}
+
           {/* Status actions */}
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Holat</div>
@@ -610,6 +616,198 @@ function DetailDrawer({
         </div>
       </motion.aside>
     </>
+  );
+}
+
+function formatChatTime(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+}
+
+function TelegramConversationChat({ murojaat }: { murojaat: Murojaat }) {
+  const chatId = murojaat.telegramChatId;
+  const [messages, setMessages] = useState<TelegramChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [userUid, setUserUid] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadHistory = useCallback(
+    async (before?: string) => {
+      if (!chatId) return;
+      const r = await getTelegramConversation(chatId, { limit: 50, before });
+      if (!r.ok) {
+        if (!before) setLoadError(r.error || 'Yozishmalarni yuklab bo\'lmadi.');
+        return;
+      }
+      setLoadError('');
+      if (before) {
+        setMessages((prev) => [...r.messages, ...prev]);
+      } else {
+        setMessages(r.messages);
+      }
+      setHasMore(r.hasMore);
+      if (r.userUid) setUserUid(r.userUid);
+    },
+    [chatId]
+  );
+
+  useEffect(() => {
+    if (!chatId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError('');
+    setMessages([]);
+    setHasMore(false);
+    setUserUid(null);
+    loadHistory()
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [chatId, loadHistory]);
+
+  const loadOlder = useCallback(() => {
+    if (!messages.length) return;
+    loadHistory(messages[0].createdAt).catch(() => undefined);
+  }, [loadHistory, messages]);
+
+  const handleSend = useCallback(async () => {
+    const text = draft.trim();
+    if (!text || sending || !chatId) return;
+    if (text.length > 4096) {
+      setSendError('Xabar juda uzun (maksimal 4096 belgi).');
+      return;
+    }
+    setSending(true);
+    setSendError('');
+    const r = await sendTelegramReply({ userUid, chatId, text });
+    setSending(false);
+    if (r.ok && r.record) {
+      setDraft('');
+      setMessages((prev) => [...prev, r.record]);
+      requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }));
+    } else {
+      setSendError(r.error || 'Xabar yuborilmadi. Qayta urinib ko\'ring.');
+    }
+  }, [draft, sending, chatId, userUid]);
+
+  if (!chatId) return null;
+
+  return (
+    <div className="rounded-xl border border-sky-500/20 dark:border-sky-500/20 bg-sky-500/5 dark:bg-sky-500/5 overflow-hidden">
+      <div className="px-4 py-3 flex items-center gap-2 border-b border-sky-500/15 dark:border-sky-500/15">
+        <Send className="w-3.5 h-3.5 text-sky-500" />
+        <div>
+          <div className="text-xs font-black text-slate-900 dark:text-white">Telegram orqali javob berish</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400">Yozishmalar tarixi va javob yuborish</div>
+        </div>
+      </div>
+
+      <div ref={scrollRef} className="px-3.5 py-3 space-y-2 max-h-72 overflow-y-auto">
+        {loading && (
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 text-center py-3">Yozishmalar yuklanmoqda...</div>
+        )}
+
+        {!loading && loadError && (
+          <div className="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2.5">
+            {loadError}
+          </div>
+        )}
+
+        {!loading && !loadError && messages.length === 0 && (
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 text-center py-3">
+            Hozircha yozishmalar yo'q. Quyidagi maydonga birinchi xabarni yozing.
+          </div>
+        )}
+
+        {!loading && hasMore && (
+          <button
+            onClick={loadOlder}
+            className="w-full py-1.5 rounded-lg text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition cursor-pointer"
+          >
+            Oldingi xabarlarni ko'rsatish
+          </button>
+        )}
+
+        {messages.map((msg) => {
+          const outbound = msg.direction === 'outbound';
+          const failed = msg.status === 'failed';
+          return (
+            <div key={msg.id} className={`flex ${outbound ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-3 py-2 border text-xs shadow-sm ${
+                  outbound
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white rounded-br-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 rounded-bl-sm'
+                }`}
+              >
+                <div className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</div>
+                <div className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${outbound ? 'text-white/60 dark:text-slate-900/60' : 'text-slate-400 dark:text-slate-500'}`}>
+                  <span>{formatChatTime(msg.createdAt)}</span>
+                </div>
+                {outbound && msg.sentByName && (
+                  <div className={`mt-0.5 text-right text-[9px] ${failed ? 'text-rose-300 dark:text-rose-500' : 'text-white/50 dark:text-slate-600'}`}>
+                    {failed ? 'Yuborilmadi' : msg.sentByName}
+                  </div>
+                )}
+                {failed && msg.error && (
+                  <div className="mt-1 text-[10px] text-rose-300 dark:text-rose-500 bg-rose-500/10 rounded-md px-2 py-1">
+                    {msg.error}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="px-3.5 py-3 border-t border-sky-500/15 dark:border-sky-500/15 space-y-2">
+        {sendError && (
+          <div className="text-[10px] font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2.5 py-2 text-rose-600 dark:text-rose-400">
+            {sendError}
+          </div>
+        )}
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          rows={2}
+          maxLength={4096}
+          placeholder="Xabar yozing..."
+          className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 resize-none"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">{draft.length}/4096</span>
+          <button
+            onClick={handleSend}
+            disabled={sending || !draft.trim()}
+            className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+          >
+            {sending ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin" /> Yuborilmoqda...
+              </>
+            ) : (
+              <>
+                <Send className="w-3 h-3" /> Yuborish
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

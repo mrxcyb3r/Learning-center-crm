@@ -101,6 +101,205 @@ export async function sendTelegramMessage(
   return result?.ok === true;
 }
 
+/* ---------------------------------------------------------------------------
+ * Two-way Telegram messaging (Step 4)
+ *
+ * Conversation history lives in the `telegram_messages` collection:
+ *
+ *   id                 auto Firestore document id
+ *   userUid?           CRM user uid (users/{uid}) — the authority for sending
+ *   chatId             Telegram chat id the message belongs to
+ *   direction          "inbound" | "outbound"
+ *   text               message body (trimmed, max 4096)
+ *   telegramMessageId? Telegram message id (inbound: user's msg; outbound: sent)
+ *   telegramUserId?    Telegram numeric user id (where known)
+ *   sentByUid?         CRM uid of the admin who replied
+ *   sentByName?        display name of the admin who replied
+ *   createdAt          ISO UTC — lexicographically sortable for paging
+ *   status             "sent" | "failed" (failed only for outbound)
+ *   error?             useful error string (outbound failures only)
+ *
+ * No bot token / webhook secret is ever stored here.
+ * ------------------------------------------------------------------------- */
+
+export interface TelegramMessageRecord {
+  id?: string;
+  userUid?: string;
+  chatId: string;
+  direction: 'inbound' | 'outbound';
+  text: string;
+  telegramMessageId?: string;
+  telegramUserId?: string;
+  sentByUid?: string;
+  sentByName?: string;
+  createdAt: string;
+  status: 'sent' | 'failed';
+  error?: string;
+}
+
+const TELEGRAM_MESSAGES_COLLECTION = 'telegram_messages';
+
+export function normalizeTelegramChatId(chatId: string | number): string {
+  return String(chatId ?? '').trim();
+}
+
+export async function saveTelegramMessage(record: TelegramMessageRecord): Promise<TelegramMessageRecord | null> {
+  const db = getFirestore();
+  if (!db) return null;
+  const text = (record.text || '').trim().slice(0, 4096);
+  if (!text) return null;
+  const chatId = normalizeTelegramChatId(record.chatId);
+  if (!chatId) return null;
+  const doc: Record<string, string> = {
+    chatId,
+    direction: record.direction,
+    text,
+    status: record.status === 'failed' ? 'failed' : 'sent',
+    createdAt: record.createdAt || new Date().toISOString(),
+  };
+  if (record.userUid) doc.userUid = record.userUid;
+  if (record.telegramMessageId) doc.telegramMessageId = String(record.telegramMessageId);
+  if (record.telegramUserId) doc.telegramUserId = String(record.telegramUserId);
+  if (record.sentByUid) doc.sentByUid = record.sentByUid;
+  if (record.sentByName) doc.sentByName = record.sentByName;
+  if (record.error) doc.error = record.error;
+  try {
+    const ref = await db.collection(TELEGRAM_MESSAGES_COLLECTION).add(doc);
+    return {
+      id: ref.id,
+      chatId,
+      direction: record.direction,
+      text,
+      status: record.status === 'failed' ? 'failed' : 'sent',
+      createdAt: record.createdAt || new Date().toISOString(),
+      ...(record.userUid ? { userUid: record.userUid } : {}),
+      ...(record.telegramMessageId ? { telegramMessageId: String(record.telegramMessageId) } : {}),
+      ...(record.telegramUserId ? { telegramUserId: String(record.telegramUserId) } : {}),
+      ...(record.sentByUid ? { sentByUid: record.sentByUid } : {}),
+      ...(record.sentByName ? { sentByName: record.sentByName } : {}),
+      ...(record.error ? { error: record.error } : {}),
+    } as TelegramMessageRecord;
+  } catch (err: any) {
+    console.error('[TELEGRAM] telegram_messages saqlanmadi:', err?.message || String(err));
+    return null;
+  }
+}
+
+/** Resolve the CRM user uid whose account is linked to a given Telegram chat. */
+export async function findUserUidByChatId(chatId: string): Promise<string | null> {
+  const db = getFirestore();
+  if (!db) return null;
+  try {
+    const snap = await db
+      .collection('users')
+      .where('telegramChatId', '==', normalizeTelegramChatId(chatId))
+      .limit(1)
+      .get();
+    return snap.empty ? null : snap.docs[0].id;
+  } catch (err: any) {
+    console.error('[TELEGRAM] findUserUidByChatId xatosi:', err?.message || String(err));
+    return null;
+  }
+}
+
+/** Read the Telegram chat id linked to a CRM user (server-side authority). */
+export async function getUserTelegramChatId(userUid: string): Promise<string | null> {
+  const db = getFirestore();
+  if (!db) return null;
+  try {
+    const snap = await db.doc(`users/${userUid}`).get();
+    if (!snap.exists) return null;
+    const chatId = (snap.data() as Record<string, any>)?.telegramChatId;
+    return chatId ? normalizeTelegramChatId(chatId) : null;
+  } catch (err: any) {
+    console.error('[TELEGRAM] getUserTelegramChatId xatosi:', err?.message || String(err));
+    return null;
+  }
+}
+
+/**
+ * A chat id is only ever used as the send target when it is a KNOWN CRM
+ * contact: either a linked user, an existing inquiry (lead/question) from that
+ * chat, or a chat that already exchanged messages. Arbitrary chat ids are
+ * rejected.
+ */
+export async function isKnownTelegramContact(chatId: string): Promise<boolean> {
+  const db = getFirestore();
+  if (!db) return false;
+  const id = normalizeTelegramChatId(chatId);
+  if (await findUserUidByChatId(id)) return true;
+  const scan = async (collection: string, field: string): Promise<boolean> => {
+    try {
+      const snap = await db.collection(collection).where(field, '==', id).limit(1).get();
+      return !snap.empty;
+    } catch {
+      return false;
+    }
+  };
+  if (await scan('telegram_messages', 'chatId')) return true;
+  if (await scan('leads', 'telegramChatId')) return true;
+  if (await scan('questions', 'telegramChatId')) return true;
+  return false;
+}
+
+/**
+ * Fetch message history (newest page), newest-last. `before` is an ISO createdAt
+ * cursor used for "load more". Requires the composite indexes declared in
+ * firestore.indexes.json (chatId+createdAt, userUid+createdAt).
+ */
+export async function fetchTelegramMessages(opts: {
+  chatId?: string;
+  userUid?: string;
+  limit?: number;
+  before?: string;
+}): Promise<{ messages: TelegramMessageRecord[]; hasMore: boolean }> {
+  const db = getFirestore();
+  if (!db) return { messages: [], hasMore: false };
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  let query: any = db.collection(TELEGRAM_MESSAGES_COLLECTION);
+  if (opts.userUid) query = query.where('userUid', '==', opts.userUid);
+  else if (opts.chatId) query = query.where('chatId', '==', normalizeTelegramChatId(opts.chatId));
+  if (opts.before) query = query.where('createdAt', '<', opts.before);
+  try {
+    const snap = await query.orderBy('createdAt', 'desc').limit(limit + 1).get();
+    const docs = snap.docs;
+    const hasMore = docs.length > limit;
+    const page = (hasMore ? docs.slice(0, limit) : docs)
+      .map((d) => ({ id: d.id, ...(d.data() as object) }) as TelegramMessageRecord)
+      .reverse();
+    return { messages: page, hasMore };
+  } catch (err: any) {
+    console.error('[TELEGRAM] telegram_messages o\'qish xatosi:', err?.message || String(err));
+    return { messages: [], hasMore: false };
+  }
+}
+
+/** Low-level send that reports the delivered Telegram message id / error. */
+export async function sendTelegramMessageDetailed(
+  chatId: string | number,
+  text: string
+): Promise<{ ok: boolean; telegramMessageId?: string; error?: string }> {
+  const trimmed = (text || '').trim().slice(0, 4096);
+  if (!trimmed) return { ok: false, error: 'Xabar matni bo\'sh.' };
+  const result = await tgRequest('sendMessage', {
+    chat_id: chatId,
+    text: trimmed,
+    disable_web_page_preview: true,
+  });
+  if (result?.ok === true) {
+    const mid = (result as any)?.result?.message_id;
+    return { ok: true, telegramMessageId: mid != null ? String(mid) : undefined };
+  }
+  const description: string = (result as any)?.description || (result as any)?.error || '';
+  const blocked = (result as any)?.error_code === 403 || /forbidden|blocked by the user/i.test(description);
+  return {
+    ok: false,
+    error: blocked
+      ? 'Foydalanuvchi botni bloklagan yoki chatga yozish taqiqlangan.'
+      : description || 'Telegram API xatosi: xabar yuborilmadi.',
+  };
+}
+
 async function sendKeyboard(chatId: string | number, text: string, buttons: string[][], oneTime = false): Promise<boolean> {
   return sendTelegramMessage(chatId, text, {
     reply_markup: {
@@ -663,6 +862,39 @@ function menuLabelPressed(text: string): boolean {
   return ['📝 Sinov darsiga yozilish', '❓ Savol yuborish', "📞 Bog'lanish", 'ℹ️ Yordam'].includes(text.trim());
 }
 
+/**
+ * Two-way messaging inbound path: a plain free-text message sent by a CRM
+ * LINKED user from the idle bot state is stored in telegram_messages under the
+ * user's uid. Commands, menu buttons, contact shares and in-flight bot flows
+ * never reach this function, so the existing bot state machine is untouched.
+ * Returns true when the message was persisted.
+ */
+async function recordInboundMessage(
+  chatId: string | number,
+  text: string,
+  fromUserId: string | number,
+  username: string | undefined,
+  srcMessageId?: number
+): Promise<boolean> {
+  const normalizedChat = normalizeTelegramChatId(chatId);
+  const userUid = await findUserUidByChatId(normalizedChat);
+  if (!userUid) return false;
+  const saved = await saveTelegramMessage({
+    userUid,
+    chatId: normalizedChat,
+    direction: 'inbound',
+    text,
+    telegramMessageId: srcMessageId != null ? String(srcMessageId) : undefined,
+    telegramUserId: String(fromUserId ?? ''),
+    createdAt: new Date().toISOString(),
+    status: 'sent',
+  });
+  if (saved) {
+    console.log(`[TELEGRAM MESSAGES] inbound saved for user ${userUid} (${username ? '@' + username : normalizedChat})`);
+  }
+  return Boolean(saved);
+}
+
 /* ---------------------------------------------------------------------------
  * Webhook processing
  * ------------------------------------------------------------------------- */
@@ -876,6 +1108,13 @@ Sizning arizangiz qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi.
         await writeSession(chatId, String(userId), username, 'trial_name', {});
         await startTrial(chatId);
         return;
+      }
+      // Two-way messaging: plain free-text from a CRM-linked chat is stored as
+      // an inbound conversation message before the menu is shown. Commands and
+      // active flows are handled above, so this is never a system message and
+      // never spawns a second CRM record.
+      if (text) {
+        await recordInboundMessage(chatId, text, userId, username, update.message?.message_id);
       }
       await showMainMenu(chatId);
       return;

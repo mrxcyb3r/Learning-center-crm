@@ -20,6 +20,11 @@ import {
   isKnownTelegramContact,
   saveTelegramMessage,
   fetchTelegramMessages,
+  resolveConnectedBroadcastRecipients,
+  resolveMurojaatlarBroadcastRecipients,
+  runBroadcastToUsers,
+  fetchBroadcastHistory,
+  fetchBroadcastResults,
 } from './telegramService';
 import { getAdminApp, getFirestore, getAdminAuth, sanitizeFirebaseError } from './firebaseAdmin';
 import { formatInquiryNotification } from './notificationFormatter';
@@ -645,6 +650,155 @@ export function createTelegramRouter(deps: RouterDeps): Router {
       failedCount,
       timestamp: new Date().toISOString(),
     });
+  });
+
+  /* -------------------------------------------------------------------------
+   * Professional broadcast — recipient resolution (Step 5)
+   *
+   * Admin-only. Returns recipient candidates as CRM user uids (never chat ids).
+   * `scope=connected` → all users linked to the bot (searchable).
+   * `scope=murojaatlar` → users behind Telegram-origin Murojaatlar, with
+   *   optional type/status filters. Only users with a valid users/{uid}.
+   *   telegramChatId are returned; the server resolves chat ids at send time.
+   * ------------------------------------------------------------------------- */
+  router.get('/telegram/broadcast/recipients', async (req: Request, res: Response) => {
+    const clientKey = `broadcast_recipients_${req.ip}`;
+    if (!checkRateLimit(clientKey, 2000)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/broadcast/recipients', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Ozginadan so\'ng qayta urinib ko\'ring.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    const scope = req.query.scope === 'murojaatlar' ? 'murojaatlar' : 'connected';
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const limit = Number(req.query.limit) || 100;
+    const typeRaw = typeof req.query.type === 'string' ? req.query.type : 'all';
+    const statusRaw = typeof req.query.status === 'string' ? req.query.status : 'all';
+    const type = typeRaw === 'trial' || typeRaw === 'question' ? typeRaw : 'all';
+    const status = statusRaw === 'new' || statusRaw === 'in_progress' ? statusRaw : 'all';
+
+    if (scope === 'murojaatlar') {
+      const { recipients, total } = await resolveMurojaatlarBroadcastRecipients({ type, status, q, limit, scanLimit: 1500 });
+      return json(res, 200, { ok: true, recipients, total });
+    }
+    const { recipients, total } = await resolveConnectedBroadcastRecipients({ q, limit, scanLimit: 1500 });
+    return json(res, 200, { ok: true, recipients, total });
+  });
+
+  /* -------------------------------------------------------------------------
+   * Professional broadcast — send (Step 5)
+   *
+   * Body: { userUids: string[], message: string }. The client sends CRM user
+   * ids only; the server resolves every chat id from Firestore, validates the
+   * message, sends sequentially/bounded, records per-recipient results, writes
+   * outbound telegram_messages history and persists the broadcast summary.
+   * ------------------------------------------------------------------------- */
+  router.post('/telegram/broadcast', async (req: Request, res: Response) => {
+    const clientKey = `broadcast_send_${req.ip}`;
+    if (!checkRateLimit(clientKey, 6000)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/broadcast', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Broadcast yuborishlar orasida bir daqiqa kuting.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    if (!getBotToken()) {
+      return json(res, 503, { ok: false, error: 'Telegram bot sozlanmagan (TELEGRAM_BOT_TOKEN).' });
+    }
+    const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, any>;
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    if (!message) {
+      return json(res, 400, { ok: false, error: 'Xabar matnini kiriting.' });
+    }
+    if (message.length > 4000) {
+      return json(res, 400, { ok: false, error: 'Xabar juda uzun (maksimal 4000 belgi).' });
+    }
+    const rawUids = Array.isArray(body.userUids) ? body.userUids : [];
+    if (rawUids.length === 0) {
+      return json(res, 400, { ok: false, error: 'Kamida bitta qabul qiluvchi tanlang.' });
+    }
+    if (rawUids.length > 500) {
+      return json(res, 400, { ok: false, error: 'Bitta broadcast uchun maksimal 500 ta qabul qiluvchi.' });
+    }
+    const userUids = [...new Set(rawUids.map((u) => String(u)))];
+    for (const uid of userUids) {
+      if (!deps.isValidUid(uid)) {
+        return json(res, 400, { ok: false, error: 'Noto\'g\'ri qabul qiluvchi identifikatori topildi.' });
+      }
+    }
+
+    const db = getFirestore();
+    let createdByName: string | undefined;
+    if (adminAuth.uid && db) {
+      try {
+        const snap = await db.doc(`users/${adminAuth.uid}`).get();
+        if (snap.exists) {
+          const d = snap.data() as Record<string, any>;
+          createdByName = d?.fullName || d?.displayName || d?.name || undefined;
+        }
+      } catch {
+        // Non-fatal.
+      }
+    }
+
+    const output = await runBroadcastToUsers({
+      userUids,
+      message,
+      createdBy: adminAuth.uid,
+      createdByName: createdByName || 'Administrator',
+    });
+
+    return json(res, 200, {
+      ok: true,
+      broadcastId: output.broadcastId,
+      total: output.total,
+      sent: output.sent,
+      failed: output.failed,
+      skipped: output.skipped,
+      results: output.results,
+    });
+  });
+
+  /* -------------------------------------------------------------------------
+   * Professional broadcast — history & per-recipient results (Step 5)
+   * ------------------------------------------------------------------------- */
+  router.get('/telegram/broadcast/history', async (req: Request, res: Response) => {
+    const clientKey = `broadcast_history_${req.ip}`;
+    if (!checkRateLimit(clientKey, 2000)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/broadcast/history', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Ozginadan so\'ng qayta urinib ko\'ring.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    const limit = Number(req.query.limit) || 20;
+    const history = await fetchBroadcastHistory(limit);
+    return json(res, 200, { ok: true, history });
+  });
+
+  router.get('/telegram/broadcast/results/:id', async (req: Request, res: Response) => {
+    const clientKey = `broadcast_results_${req.ip}`;
+    if (!checkRateLimit(clientKey, 2000)) {
+      logSecurityEvent('RATE_LIMIT_TRIGGER', { route: '/api/telegram/broadcast/results', ip: req.ip });
+      return json(res, 429, { error: 'Too Many Requests', message: 'Ozginadan so\'ng qayta urinib ko\'ring.' });
+    }
+    const adminAuth = await isAdminRequest(req);
+    if (!adminAuth.allowed) {
+      return adminDenied(res, adminAuth, logSecurityEvent);
+    }
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      return json(res, 400, { error: 'Broadcast id kerak.' });
+    }
+    const { broadcast, results } = await fetchBroadcastResults(id);
+    if (!broadcast) {
+      return json(res, 404, { error: 'Broadcast topilmadi.' });
+    }
+    return json(res, 200, { ok: true, broadcast, results });
   });
 
   /* -------------------------------------------------------------------------

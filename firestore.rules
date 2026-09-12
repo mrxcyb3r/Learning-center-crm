@@ -373,6 +373,18 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // TELEGRAM BROADCASTS & PER-RECIPIENT RESULTS (STEP 5)
+    // =========================================================================
+    match /telegram_broadcasts/{broadcastId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
+      match /results/{resultId} {
+        allow read: if isAdminOrSuperAdmin();
+        allow write: if isAdminOrSuperAdmin();
+      }
+    }
+
+    // =========================================================================
     // HELPER FUNCTIONS FOR TEACHER SCOPING
     // =========================================================================
     function isTeacherOfStudent(studentId) {

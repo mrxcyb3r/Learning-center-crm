@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Send,
   CheckCircle2,
   AlertCircle,
-  Bell,
   MessageSquare,
   ShieldCheck,
   Users,
@@ -17,10 +15,9 @@ import { telegramStatsService, TelegramStats } from '../../services/repository';
 import {
   getTelegramStatus,
   setupTelegramWebhook,
-  sendGlobalBroadcast,
   TelegramServerStatus,
-  BroadcastResponse,
 } from '../../services/telegram';
+import { BroadcastStudio, BroadcastHistory } from './BroadcastStudio';
 
 interface StatusMessage {
   text: string;
@@ -30,8 +27,6 @@ interface StatusMessage {
 export const TelegramView: React.FC = () => {
   const [status, setStatus] = useState<TelegramServerStatus | null>(null);
   const [stats, setStats] = useState<TelegramStats | null>(null);
-  const [announcementText, setAnnouncementText] = useState('');
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isSettingWebhook, setIsSettingWebhook] = useState(false);
   const [statusMsg, setStatusMsg] = useState<StatusMessage | null>(null);
 
@@ -53,7 +48,7 @@ export const TelegramView: React.FC = () => {
     setTimeout(() => setStatusMsg(null), 5000);
   };
 
-  const handleSetupWebhook = async (force = false) => {
+const handleSetupWebhook = async (force = false) => {
     setIsSettingWebhook(true);
     try {
       const result = await setupTelegramWebhook({ force, dropPendingUpdates: true });
@@ -69,30 +64,6 @@ export const TelegramView: React.FC = () => {
       refresh();
     } finally {
       setIsSettingWebhook(false);
-    }
-  };
-
-  const handleSendBroadcast = async (type: 'all' | 'debt') => {
-    if (type === 'all' && !announcementText.trim()) return;
-    setIsBroadcasting(true);
-    try {
-      const message = type === 'debt'
-        ? '💳 Hurmatli ota-onalar! Iltimos, markazdagi o\'quv to\'lovi qarzini muddatida so\'ndiring. Batafsil ma\'lumot uchun mas\'ul xodimlarimiz bilan bog\'laning. — RENESANS'
-        : `📢 ${announcementText.trim()}`;
-      const result: BroadcastResponse = await sendGlobalBroadcast(message);
-      if (result.success) {
-        flash(`Xabar ${result.sentCount}/${result.totalConnected} ta ulangan chatga yetkazildi.`, true);
-      } else {
-        flash(
-          result.isRateLimited
-            ? 'Juda tez-tez yuborish — biroz kuting (rate limit).'
-            : `Xabar yetkazilmadi: ${result.error || 'Telegram orqali ulangan foydalanuvchilar topilmadi.'}`,
-          false
-        );
-      }
-      if (type === 'all') setAnnouncementText('');
-    } finally {
-      setIsBroadcasting(false);
     }
   };
 
@@ -273,47 +244,13 @@ export const TelegramView: React.FC = () => {
 
       {/* Broadcast Tools & Server Config */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Broadcast Form */}
-        <div className="lg:col-span-6 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-amber-500" />
-            <span>Ommaviy Xabarnoma Tarqatish</span>
-          </h3>
-          <p className="text-xs text-slate-500">
-            Telegram orqali markaz botiga ulangan barcha foydalanuvchilarga dars jadvali o'zgarishi, DTM sinovlari yoki bayram tabriknomasini yuboring.
-          </p>
-
-          <textarea
-            rows={4}
-            value={announcementText}
-            onChange={(e) => setAnnouncementText(e.target.value)}
-            placeholder="Hurmatli o'quvchilar va ota-onalar, ertaga soat 09:00 da navbatdagi DTM diagnostik imtihoni..."
-            className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
-
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              onClick={() => handleSendBroadcast('all')}
-              disabled={isBroadcasting || !announcementText.trim()}
-              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-2 cursor-pointer transition"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Ulangan Barchaga Yuborish</span>
-            </button>
-
-            <button
-              onClick={() => handleSendBroadcast('debt')}
-              disabled={isBroadcasting}
-              className="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border border-rose-500/20"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span>Qarzdorlik Eslatmasi Yuborish</span>
-            </button>
-          </div>
+        {/* Left: Professional Broadcast Studio */}
+        <div className="lg:col-span-7">
+          <BroadcastStudio />
         </div>
 
         {/* Right: Server Config (read-only, secrets stay server-side) */}
-        <div className="lg:col-span-6 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="lg:col-span-5 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
               <Settings className="w-4 h-4 text-sky-500" />
@@ -461,6 +398,9 @@ export const TelegramView: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Broadcast History */}
+      <BroadcastHistory />
 
       {/* Recent Telegram CRM Activity */}
       <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">

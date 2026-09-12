@@ -132,6 +132,7 @@ export interface TelegramMessageRecord {
   telegramUserId?: string;
   sentByUid?: string;
   sentByName?: string;
+  broadcastId?: string;
   createdAt: string;
   status: 'sent' | 'failed';
   error?: string;
@@ -162,6 +163,7 @@ export async function saveTelegramMessage(record: TelegramMessageRecord): Promis
   if (record.telegramUserId) doc.telegramUserId = String(record.telegramUserId);
   if (record.sentByUid) doc.sentByUid = record.sentByUid;
   if (record.sentByName) doc.sentByName = record.sentByName;
+  if (record.broadcastId) doc.broadcastId = record.broadcastId;
   if (record.error) doc.error = record.error;
   try {
     const ref = await db.collection(TELEGRAM_MESSAGES_COLLECTION).add(doc);
@@ -177,6 +179,7 @@ export async function saveTelegramMessage(record: TelegramMessageRecord): Promis
       ...(record.telegramUserId ? { telegramUserId: String(record.telegramUserId) } : {}),
       ...(record.sentByUid ? { sentByUid: record.sentByUid } : {}),
       ...(record.sentByName ? { sentByName: record.sentByName } : {}),
+      ...(record.broadcastId ? { broadcastId: record.broadcastId } : {}),
       ...(record.error ? { error: record.error } : {}),
     } as TelegramMessageRecord;
   } catch (err: any) {
@@ -1157,6 +1160,422 @@ export async function broadcastToLinkedChats(message: string, limit = 200): Prom
     else failedCount++;
   }
   return { totalConnected: unique.length, sentCount, failedCount };
+}
+
+/* ---------------------------------------------------------------------------
+ * Professional broadcasts (Step 5)
+ *
+ * Recipients are CRM user uids — the server alone resolves users/{uid}.
+ * telegramChatId, so the client can never dictate a chat id. Sending is
+ * sequential/bounded (no uncontrolled parallel requests), each recipient is
+ * handled independently, and history is persisted only for real broadcasts.
+ * ------------------------------------------------------------------------- */
+
+export interface BroadcastRecipient {
+  userUid: string;
+  name: string;
+  telegramUsername?: string;
+  phone?: string;
+  chatId: string;
+  murojaatKind?: 'trial' | 'question';
+  murojaatStatus?: string;
+  murojaatId?: string;
+}
+
+export interface BroadcastResultEntry {
+  userUid: string;
+  name: string;
+  telegramUsername?: string;
+  status: 'sent' | 'failed' | 'skipped';
+  error?: string;
+}
+
+export interface BroadcastRunOutput {
+  broadcastId: string | null;
+  total: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+  results: BroadcastResultEntry[];
+}
+
+export interface BroadcastHistoryItem {
+  id: string;
+  message: string;
+  createdAt: string;
+  createdBy?: string | null;
+  createdByName?: string;
+  recipientCount: number;
+  sentCount: number;
+  failedCount: number;
+  skippedCount: number;
+  status: 'completed';
+}
+
+const BROADCAST_COLLECTION = 'telegram_broadcasts';
+const BROADCAST_MAX_RECIPIENTS = 500;
+const BROADCAST_CONCURRENCY = 4;
+
+function broadcastChatId(data: AnyRecord): string | null {
+  const raw = data.telegramChatId || data.telegramChatID;
+  if (typeof raw !== 'string' || !raw || !/^-?\d+$/.test(raw)) return null;
+  return raw;
+}
+
+async function scanLinkedUsers(scanLimit: number): Promise<Map<string, BroadcastRecipient>> {
+  const db = getFirestore();
+  const byChat = new Map<string, BroadcastRecipient>();
+  if (!db) return byChat;
+  const pageSize = 200;
+  const softMax = Math.min(Math.max(scanLimit, 1), 2000);
+  let lastDoc: any = null;
+  let seen = 0;
+  try {
+    while (seen < softMax) {
+      let q: any = db.collection('users').orderBy('__name__').limit(pageSize);
+      if (lastDoc) q = q.startAfter(lastDoc);
+      const snap = await q.get();
+      if (snap.empty) break;
+      for (const d of snap.docs) {
+        seen++;
+        const data = d.data() as AnyRecord;
+        const chatId = broadcastChatId(data);
+        if (!chatId) continue;
+        byChat.set(chatId, {
+          userUid: d.id,
+          name: data.fullName || data.displayName || data.name || '',
+          telegramUsername: typeof data.telegramUsername === 'string' ? data.telegramUsername : undefined,
+          phone: typeof data.phone === 'string' ? data.phone : undefined,
+          chatId,
+        });
+      }
+      lastDoc = snap.docs[snap.docs.length - 1];
+    }
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] scanLinkedUsers xatosi:', err?.message || String(err));
+  }
+  return byChat;
+}
+
+function statusMatches(status: unknown, filter: string): boolean {
+  const s = String(status || '').trim().toLowerCase();
+  if (filter === 'all') return true;
+  if (filter === 'new') return s === 'yangi' || s === 'new';
+  if (filter === 'in_progress') return s === 'jarayonda' || s === "bog'lanildi" || s === 'boglanildi';
+  return true;
+}
+
+function searchMatches(search: string, values: (string | undefined)[]): boolean {
+  const needle = search.trim().toLowerCase();
+  if (!needle) return true;
+  return values.some((v) => v && v.toLowerCase().includes(needle));
+}
+
+/** All CRM users with a valid linked Telegram chat (optionally filtered). */
+export async function resolveConnectedBroadcastRecipients(
+  opts: { q?: string; limit?: number; scanLimit?: number }
+): Promise<{ recipients: BroadcastRecipient[]; total: number }> {
+  const linked = await scanLinkedUsers(opts?.scanLimit || 1000);
+  const search = (opts?.q || '').trim();
+  const limit = Math.min(Math.max(opts?.limit || 100, 1), 500);
+  const matches = [...linked.entries()]
+    .map(([, r]) => r)
+    .filter((r) => searchMatches(search, [r.name, r.telegramUsername, r.phone]))
+    .sort((a, b) => a.name.localeCompare(b.name, 'uz'));
+  return { recipients: matches.slice(0, limit), total: matches.length };
+}
+
+/** Recipients derived from Telegram-origin Murojaatlar, joined to linked users. */
+export async function resolveMurojaatlarBroadcastRecipients(
+  opts: {
+    type?: 'all' | 'trial' | 'question';
+    status?: 'all' | 'new' | 'in_progress';
+    q?: string;
+    limit?: number;
+    scanLimit?: number;
+  }
+): Promise<{ recipients: BroadcastRecipient[]; total: number }> {
+  const db = getFirestore();
+  const byChat = await scanLinkedUsers(opts?.scanLimit || 1000);
+  const empty = { recipients: [], total: 0 };
+  if (!db || byChat.size === 0) return empty;
+  const scanLimit = Math.min(Math.max(opts?.scanLimit || 1000, 1), 2000);
+  const limit = Math.min(Math.max(opts?.limit || 100, 1), 500);
+  const search = (opts?.q || '').trim();
+  const seen = new Set<string>();
+  const recipients: BroadcastRecipient[] = [];
+
+  const collect = (data: AnyRecord, docId: string, kind: 'trial' | 'question') => {
+    const chatId = broadcastChatId(data);
+    if (!chatId) return;
+    const linked = byChat.get(chatId);
+    if (!linked) return;
+    const rawStatus = data.status || (kind === 'trial' ? 'Yangi' : 'New');
+    if (!statusMatches(rawStatus, opts?.status || 'all')) return;
+    const name = linked.name || data.fullName || data.name || data.phone || '';
+    if (!searchMatches(search, [name, linked.telegramUsername, linked.phone, data.fullName, data.name])) return;
+    if (!seen.has(linked.userUid)) {
+      seen.add(linked.userUid);
+      recipients.push({
+        ...linked,
+        name,
+        murojaatKind: kind,
+        murojaatStatus: String(rawStatus),
+        murojaatId: docId,
+      });
+    }
+  };
+
+  try {
+    if (opts?.type !== 'question') {
+      const snap = await db.collection('leads').where('source', '==', 'telegram').limit(scanLimit).get();
+      snap.forEach((d) => collect(d.data() as AnyRecord, d.id, 'trial'));
+    }
+    if (opts?.type !== 'trial') {
+      const snap = await db.collection('questions').where('source', '==', 'telegram').limit(scanLimit).get();
+      snap.forEach((d) => collect(d.data() as AnyRecord, d.id, 'question'));
+    }
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] resolveMurojaatlarBroadcastRecipients xatosi:', err?.message || String(err));
+  }
+
+  recipients.sort((a, b) => a.name.localeCompare(b.name, 'uz'));
+  return { recipients: recipients.slice(0, limit), total: recipients.length };
+}
+
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(concurrency, Math.max(items.length, 1)) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/**
+ * Send one message to the given CRM user uids. Chat ids are always resolved
+ * server-side; users without a valid linked chat are marked skipped. History is
+ * persisted only when at least one user was actually attempted.
+ */
+export async function runBroadcastToUsers(input: {
+  userUids: string[];
+  message: string;
+  createdBy?: string;
+  createdByName?: string;
+}): Promise<BroadcastRunOutput> {
+  const db = getFirestore();
+  const text = (input.message || '').trim().slice(0, 4096);
+  const empty: BroadcastRunOutput = { broadcastId: null, total: 0, sent: 0, failed: 0, skipped: 0, results: [] };
+  if (!db || !text) return empty;
+
+  const uids = [...new Set(input.userUids.map(String))].slice(0, BROADCAST_MAX_RECIPIENTS);
+  const createdByName = input.createdByName || 'Administrator';
+
+  // Resolve chat ids for each requested user (batch of 10 per 'in' query).
+  const nameByUid = new Map<string, string>();
+  const usernameByUid = new Map<string, string>();
+  const targets: { userUid: string; chatId: string; name: string; username?: string }[] = [];
+  const skippedResults: BroadcastResultEntry[] = [];
+  for (let i = 0; i < uids.length; i += 10) {
+    const chunk = uids.slice(i, i + 10);
+    try {
+      const snap = await db.collection('users').where('__name__', 'in', chunk).get();
+      const found = new Set<string>();
+      snap.forEach((d) => {
+        found.add(d.id);
+        const data = d.data() as AnyRecord;
+        const name = data.fullName || data.displayName || data.name || '';
+        const username = typeof data.telegramUsername === 'string' ? data.telegramUsername : undefined;
+        const chatId = broadcastChatId(data);
+        if (chatId) {
+          targets.push({ userUid: d.id, chatId, name, username });
+        } else {
+          skippedResults.push({ userUid: d.id, name, telegramUsername: username, status: 'skipped' as const });
+        }
+      });
+      for (const uid of chunk) {
+        if (!found.has(uid)) {
+          skippedResults.push({ userUid: uid, name: '', status: 'skipped' as const });
+        }
+      }
+    } catch (err: any) {
+      console.error('[TELEGRAM BROADCAST] uid resolver xatosi:', err?.message || String(err));
+      for (const uid of chunk) skippedResults.push({ userUid: uid, name: '', status: 'skipped' as const });
+    }
+  }
+
+  if (targets.length === 0) {
+    return { broadcastId: null, total: skippedResults.length, sent: 0, failed: 0, skipped: skippedResults.length, results: skippedResults };
+  }
+
+  // Persist the broadcast record first so outbound messages can reference it.
+  const now = new Date().toISOString();
+  let broadcastId: string | null = null;
+  try {
+    const ref = await db.collection(BROADCAST_COLLECTION).add({
+      message: text,
+      createdAt: now,
+      createdBy: input.createdBy || null,
+      createdByName,
+      recipientCount: targets.length + skippedResults.length,
+      sentCount: 0,
+      failedCount: 0,
+      skippedCount: skippedResults.length,
+      status: 'in_progress',
+    });
+    broadcastId = ref.id;
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] history yaratish xatosi:', err?.message || String(err));
+  }
+
+  let sent = 0;
+  let failed = 0;
+  const sentResults: BroadcastResultEntry[] = [];
+  const failedResults: BroadcastResultEntry[] = [];
+
+  const attempt = async (target: { userUid: string; chatId: string; name: string; username?: string }) => {
+    const result = await sendTelegramMessageDetailed(target.chatId, text);
+    if (result.ok) {
+      sent++;
+      sentResults.push({
+        userUid: target.userUid,
+        name: target.name,
+        telegramUsername: target.username,
+        status: 'sent',
+      });
+      if (broadcastId) {
+        try {
+          await saveTelegramMessage({
+            userUid: target.userUid,
+            chatId: target.chatId,
+            direction: 'outbound',
+            text,
+            telegramMessageId: result.telegramMessageId,
+            sentByUid: input.createdBy,
+            sentByName: createdByName,
+            broadcastId,
+            status: 'sent',
+            createdAt: new Date().toISOString(),
+          });
+        } catch (e: any) {
+          console.error('[TELEGRAM BROADCAST] outbound tarix saqlanmadi:', e?.message || String(e));
+        }
+      }
+    } else {
+      failed++;
+      failedResults.push({
+        userUid: target.userUid,
+        name: target.name,
+        telegramUsername: target.username,
+        status: 'failed',
+        error: result.error,
+      });
+    }
+  };
+
+  try {
+    await mapWithConcurrency(targets, BROADCAST_CONCURRENCY, attempt);
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] yuborish qatlliligi:', err?.message || String(err));
+  }
+
+  const results = [...sentResults, ...failedResults, ...skippedResults];
+
+  if (broadcastId) {
+    try {
+      await db.collection(BROADCAST_COLLECTION).doc(broadcastId).update({
+        sentCount: sent,
+        failedCount: failed,
+        skippedCount: skippedResults.length,
+        status: 'completed',
+      });
+      const resultCol = db.collection(`${BROADCAST_COLLECTION}/${broadcastId}/results`);
+      await Promise.all(
+        skippedResults.map((r) => resultCol.add({ ...r, createdAt: now }))
+      );
+      await mapWithConcurrency(sentResults, 8, (r) => resultCol.add({ ...r, createdAt: now }).then(() => undefined));
+      await mapWithConcurrency(failedResults, 8, (r) => resultCol.add({ ...r, createdAt: now }).then(() => undefined));
+    } catch (err: any) {
+      console.error('[TELEGRAM BROADCAST] natijalar saqlanmadi:', err?.message || String(err));
+    }
+  }
+
+  return {
+    broadcastId,
+    total: results.length,
+    sent,
+    failed,
+    skipped: skippedResults.length,
+    results,
+  };
+}
+
+/** Broadcast history (newest first). */
+export async function fetchBroadcastHistory(limit = 20): Promise<BroadcastHistoryItem[]> {
+  const db = getFirestore();
+  if (!db) return [];
+  try {
+    const snap = await db
+      .collection(BROADCAST_COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .limit(Math.min(Math.max(limit, 1), 50))
+      .get();
+    return snap.docs.map((d) => {
+      const data = d.data() as AnyRecord;
+      return {
+        id: d.id,
+        message: data.message || '',
+        createdAt: data.createdAt || '',
+        createdBy: typeof data.createdBy === 'string' ? data.createdBy : null,
+        createdByName: data.createdByName || 'Administrator',
+        recipientCount: Number(data.recipientCount) || 0,
+        sentCount: Number(data.sentCount) || 0,
+        failedCount: Number(data.failedCount) || 0,
+        skippedCount: Number(data.skippedCount) || 0,
+        status: (data.status === 'completed' ? 'completed' : 'completed') as 'completed',
+      };
+    });
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] tarix o\'qilmadi:', err?.message || String(err));
+    return [];
+  }
+}
+
+/** Per-recipient results for one broadcast (newest first). */
+export async function fetchBroadcastResults(broadcastId: string): Promise<{ broadcast: BroadcastHistoryItem | null; results: BroadcastResultEntry[] }> {
+  const db = getFirestore();
+  if (!db) return { broadcast: null, results: [] };
+  try {
+    const docSnap = await db.collection(BROADCAST_COLLECTION).doc(broadcastId).get();
+    if (!docSnap.exists) return { broadcast: null, results: [] };
+    const data = docSnap.data() as AnyRecord;
+    const broadcast: BroadcastHistoryItem = {
+      id: broadcastId,
+      message: data.message || '',
+      createdAt: data.createdAt || '',
+      createdBy: typeof data.createdBy === 'string' ? data.createdBy : null,
+      createdByName: data.createdByName || 'Administrator',
+      recipientCount: Number(data.recipientCount) || 0,
+      sentCount: Number(data.sentCount) || 0,
+      failedCount: Number(data.failedCount) || 0,
+      skippedCount: Number(data.skippedCount) || 0,
+      status: 'completed',
+    };
+    const snap = await db
+      .collection(`${BROADCAST_COLLECTION}/${broadcastId}/results`)
+      .orderBy('createdAt', 'desc')
+      .limit(500)
+      .get();
+    const results = snap.docs.map((d) => d.data() as BroadcastResultEntry);
+    return { broadcast, results };
+  } catch (err: any) {
+    console.error('[TELEGRAM BROADCAST] natijalar o\'qilmadi:', err?.message || String(err));
+    return { broadcast: null, results: [] };
+  }
 }
 
 /* ---------------------------------------------------------------------------

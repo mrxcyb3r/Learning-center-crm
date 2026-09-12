@@ -469,3 +469,155 @@ export async function sendGlobalBroadcast(message: string): Promise<BroadcastRes
     };
   }
 }
+
+/* -------------------------------------------------------------------------
+ * Professional broadcast helpers (Step 5)
+ * ------------------------------------------------------------------------- */
+
+export interface BroadcastRecipient {
+  userUid: string;
+  name: string;
+  telegramUsername?: string;
+  phone?: string;
+  chatId: string;
+  murojaatKind?: 'trial' | 'question';
+  murojaatStatus?: string;
+  murojaatId?: string;
+}
+
+export interface BroadcastResultEntry {
+  userUid: string;
+  name: string;
+  telegramUsername?: string;
+  status: 'sent' | 'failed' | 'skipped';
+  error?: string;
+}
+
+export interface BroadcastHistoryItem {
+  id: string;
+  message: string;
+  createdAt: string;
+  createdBy?: string | null;
+  createdByName?: string;
+  recipientCount: number;
+  sentCount: number;
+  failedCount: number;
+  skippedCount: number;
+}
+
+export async function getBroadcastRecipients(
+  opts: {
+    scope?: 'connected' | 'murojaatlar';
+    type?: 'all' | 'trial' | 'question';
+    status?: 'all' | 'new' | 'in_progress';
+    q?: string;
+    limit?: number;
+  } = {}
+): Promise<{ ok: boolean; recipients: BroadcastRecipient[]; total: number; error?: string }> {
+  const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, recipients: [], total: 0, error: 'Firebase admin sessiyasi topilmadi.' };
+  }
+  try {
+    const params = new URLSearchParams();
+    params.set('scope', opts.scope || 'connected');
+    if (opts.type) params.set('type', opts.type);
+    if (opts.status) params.set('status', opts.status);
+    if (opts.q) params.set('q', opts.q);
+    if (opts.limit) params.set('limit', String(opts.limit));
+    const response = await fetch(`/api/telegram/broadcast/recipients?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { ok: false, recipients: [], total: 0, error: (data as any)?.error || 'Qabul qiluvchilarni yuklab bo\'lmadi.' };
+    }
+    return { ok: Boolean((data as any)?.ok), recipients: ((data as any)?.recipients || []) as BroadcastRecipient[], total: Number((data as any)?.total) || 0 };
+  } catch (err: any) {
+    return { ok: false, recipients: [], total: 0, error: err?.message || 'Qabul qiluvchilarni yuklashda xatolik.' };
+  }
+}
+
+export async function sendBroadcastV2(
+  userUids: string[],
+  message: string
+): Promise<{
+  ok: boolean;
+  broadcastId?: string | null;
+  total?: number;
+  sent?: number;
+  failed?: number;
+  skipped?: number;
+  results?: BroadcastResultEntry[];
+  error?: string;
+}> {
+  const token = await getFirebaseIdToken();
+  if (!token) {
+    return { ok: false, error: 'Firebase admin sessiyasi topilmadi — qayta tizimga kiring.' };
+  }
+  try {
+    const response = await fetch('/api/telegram/broadcast', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userUids, message }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !(data as any)?.ok) {
+      return { ok: false, error: (data as any)?.error || 'Broadcast yuborilmadi.' };
+    }
+    return {
+      ok: true,
+      broadcastId: (data as any)?.broadcastId ?? null,
+      total: (data as any)?.total ?? 0,
+      sent: (data as any)?.sent ?? 0,
+      failed: (data as any)?.failed ?? 0,
+      skipped: (data as any)?.skipped ?? 0,
+      results: ((data as any)?.results || []) as BroadcastResultEntry[],
+    };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Broadcast yuborishda xatolik.' };
+  }
+}
+
+export async function getBroadcastHistory(limit = 20): Promise<{ ok: boolean; history: BroadcastHistoryItem[]; error?: string }> {
+  const token = await getFirebaseIdToken();
+  if (!token) return { ok: false, history: [], error: 'Firebase admin sessiyasi topilmadi.' };
+  try {
+    const params = new URLSearchParams({ limit: String(limit) });
+    const response = await fetch(`/api/telegram/broadcast/history?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false, history: [], error: (data as any)?.error || 'Tarixni yuklab bo\'lmadi.' };
+    return { ok: Boolean((data as any)?.ok), history: ((data as any)?.history || []) as BroadcastHistoryItem[] };
+  } catch (err: any) {
+    return { ok: false, history: [], error: err?.message || 'Tarixni yuklashda xatolik.' };
+  }
+}
+
+export async function getBroadcastResults(
+  broadcastId: string
+): Promise<{ ok: boolean; broadcast?: BroadcastHistoryItem; results: BroadcastResultEntry[]; error?: string }> {
+  const token = await getFirebaseIdToken();
+  if (!token) return { ok: false, results: [], error: 'Firebase admin sessiyasi topilmadi.' };
+  try {
+    const response = await fetch(`/api/telegram/broadcast/results/${encodeURIComponent(broadcastId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false, results: [], error: (data as any)?.error || 'Natijalarni yuklab bo\'lmadi.' };
+    return {
+      ok: Boolean((data as any)?.ok),
+      broadcast: (data as any)?.broadcast as BroadcastHistoryItem,
+      results: ((data as any)?.results || []) as BroadcastResultEntry[],
+    };
+  } catch (err: any) {
+    return { ok: false, results: [], error: err?.message || 'Natijalarni yuklashda xatolik.' };
+  }
+}

@@ -77,6 +77,7 @@ export function toMurojaat(raw: Record<string, any>, kind: MurojaatKind): Muroja
     telegramUsername: raw.telegramUsername ? String(raw.telegramUsername).replace(/^@/, '') : undefined,
     telegramUserId: raw.telegramUserId ? String(raw.telegramUserId) : undefined,
     notes: raw.notes ? String(raw.notes) : undefined,
+    adminNotes: raw.adminNotes ? String(raw.adminNotes) : undefined,
     createdAt: raw.createdAt ? String(raw.createdAt) : '',
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
     assignedTo: raw.assignedTo ? String(raw.assignedTo) : undefined,

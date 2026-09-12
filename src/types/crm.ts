@@ -435,7 +435,10 @@ export interface Murojaat {
   telegramChatId?: string;
   telegramUsername?: string;
   telegramUserId?: string;
+  // Customer/booking context (e.g. "Bepul sinov darsiga yozildi.") — never
+  // overwritten by the inbox. Internal admin notes live in `adminNotes`.
   notes?: string;
+  adminNotes?: string;
   createdAt: string;
   updatedAt?: string;
   assignedTo?: string;

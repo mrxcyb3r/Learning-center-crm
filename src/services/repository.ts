@@ -1056,8 +1056,10 @@ export const murojaatlarService = {
     else await questionsService.updateQuestion(id, patch);
   },
 
-  async setNotes(id: string, kind: MurojaatKind, notes: string): Promise<void> {
-    const patch = { notes, updatedAt: new Date().toISOString() };
+  // Internal admin notes only. The customer/booking `notes` field on the
+  // origin document is deliberately left untouched (data-safety: no overwrite).
+  async setAdminNotes(id: string, kind: MurojaatKind, notes: string): Promise<void> {
+    const patch = { adminNotes: notes, updatedAt: new Date().toISOString() };
     if (kind === 'trial') await leadsService.updateLead(id, patch);
     else await questionsService.updateQuestion(id, patch);
   },

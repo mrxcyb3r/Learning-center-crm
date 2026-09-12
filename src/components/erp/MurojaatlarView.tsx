@@ -113,7 +113,7 @@ export const MurojaatlarView: React.FC<{ onSummaryChange?: (s: { total: number; 
   const openDetail = useCallback(
     (m: Murojaat) => {
       setSelected(m);
-      setNotesDraft(m.notes || '');
+      setNotesDraft(m.adminNotes || '');
       // Mark a new/unread inquiry as read once the admin views it.
       if (!m.isRead) {
         murojaatlarService
@@ -151,11 +151,11 @@ export const MurojaatlarView: React.FC<{ onSummaryChange?: (s: { total: number; 
     if (!selected) return;
     setSaving(true);
     try {
-      await murojaatlarService.setNotes(selected.id, selected.kind, notesDraft.trim());
+      await murojaatlarService.setAdminNotes(selected.id, selected.kind, notesDraft.trim());
       setItems((prev) =>
-        prev.map((x) => (x.id === selected.id ? { ...x, notes: notesDraft.trim() } : x))
+        prev.map((x) => (x.id === selected.id ? { ...x, adminNotes: notesDraft.trim() } : x))
       );
-      setSelected((prev) => (prev ? { ...prev, notes: notesDraft.trim() } : prev));
+      setSelected((prev) => (prev ? { ...prev, adminNotes: notesDraft.trim() } : prev));
     } finally {
       setSaving(false);
     }

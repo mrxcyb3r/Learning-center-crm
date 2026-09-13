@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
@@ -424,10 +423,6 @@ const DEFAULT_FAQS: FAQItem[] = [
   },
 ];
 
-/* ============================================================================
-   EDITORIAL METHODOLOGY STAGES (REWORKED)
-============================================================================ */
-
 const METHOD_STAGES = [
   {
     step: "01",
@@ -600,14 +595,14 @@ export function HeroTitleAnimated() {
   const reduceMotion = useReducedMotion();
 
   const lines = [
-    { text: "Farzandingizning", className: "block text-stone-100" },
-    { text: "kelajagini bugundan", className: "block text-stone-100" },
-    { text: "boshlang!", className: "block italic text-amber-400 drop-shadow-[0_0_35px_rgba(245,158,11,0.25)]" },
+    { text: "Farzandingizning", className: "text-stone-100" },
+    { text: "kelajagini bugundan", className: "text-stone-100" },
+    { text: "boshlang!", className: "italic text-amber-400 drop-shadow-[0_0_35px_rgba(245,158,11,0.25)]" },
   ];
 
   if (reduceMotion) {
     return (
-      <h1 className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em]">
+      <h1 className="font-serif text-[clamp(2.6rem,5.2vw,5.6rem)] font-medium leading-[1.08] tracking-tight text-left">
         <span className="block text-stone-100">Farzandingizning</span>
         <span className="block text-stone-100">kelajagini bugundan</span>
         <span className="block italic text-amber-400">boshlang!</span>
@@ -619,8 +614,8 @@ export function HeroTitleAnimated() {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.1,
+        staggerChildren: 0.1,
+        delayChildren: 0.05,
       },
     },
   };
@@ -628,17 +623,15 @@ export function HeroTitleAnimated() {
   const wordVariants = {
     hidden: {
       opacity: 0,
-      y: 28,
-      filter: "blur(12px)",
-      scale: 0.96,
+      y: 24,
+      filter: "blur(8px)",
     },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      scale: 1,
       transition: {
-        duration: 0.75,
+        duration: 0.7,
         ease: EASING_CURVE,
       },
     },
@@ -646,24 +639,26 @@ export function HeroTitleAnimated() {
 
   return (
     <motion.h1
-      className="font-serif text-[clamp(3.3rem,7.2vw,7.6rem)] font-medium leading-[0.93] tracking-[-0.03em]"
+      className="font-serif text-[clamp(2.6rem,5.2vw,5.6rem)] font-medium leading-[1.08] tracking-tight text-left"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {lines.map((line, lIdx) => (
-        <span key={lIdx} className={`${line.className} block overflow-hidden py-1`}>
-          {line.text.split(" ").map((word, wIdx) => (
-            <motion.span
-              key={`${word}-${wIdx}`}
-              variants={wordVariants}
-              className="inline-block mr-[0.24em] last:mr-0 transform-gpu"
-            >
-              {word}
-            </motion.span>
-          ))}
-        </span>
-      ))}
+      {lines.map((line, lIdx) => {
+        const words = line.text.split(" ");
+        return (
+          <span key={lIdx} className={`${line.className} block py-0.5`}>
+            {words.map((word, wIdx) => (
+              <React.Fragment key={`${word}-${wIdx}`}>
+                <motion.span variants={wordVariants} className="inline-block">
+                  {word}
+                </motion.span>
+                {wIdx < words.length - 1 && " "}
+              </React.Fragment>
+            ))}
+          </span>
+        );
+      })}
     </motion.h1>
   );
 }
@@ -790,41 +785,6 @@ export function TeacherAvatar({
       className={`${className} object-cover object-center group-hover:scale-105 transition-transform duration-500`}
       loading="lazy"
     />
-  );
-}
-
-export function HeroLogoBadge({ logoSrc }: { logoSrc?: string }) {
-  return (
-    <div className="mb-6 inline-flex items-center gap-4 p-2.5 pr-5 rounded-2xl bg-[#0c1017]/80 border border-amber-400/25 backdrop-blur-md shadow-[0_0_25px_rgba(245,158,11,0.08)] hover:border-amber-400/40 transition-all duration-300">
-      <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px]">
-        <div className="w-full h-full bg-[#090d14] rounded-[11px] flex items-center justify-center relative overflow-hidden">
-          {logoSrc ? (
-            <img src={logoSrc} alt="Renessans Logo" className="w-8 h-8 object-contain" />
-          ) : (
-            <>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.25)_0%,transparent_70%)]" />
-              <span className="font-serif text-xl font-black text-amber-400 tracking-tighter">
-                R
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="font-serif text-sm font-bold tracking-wider text-stone-100">
-            RENESSANS
-          </span>
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-        </div>
-        <p className="font-mono text-[10px] text-stone-400 tracking-tight uppercase mt-0.5">
-          O'quv Markazi • Yangiobod
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -1035,7 +995,7 @@ function SeamlessMarqueeTicker() {
 }
 
 /* ============================================================================
-   REWORKED EDITORIAL METODIKA & BOSQICHLAR ENGINE
+   METODIKA & BOSQICHLAR ENGINE
 ============================================================================ */
 
 function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
@@ -1072,7 +1032,6 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
     >
       <div className="relative lg:sticky lg:top-0 lg:h-screen lg:flex lg:flex-col lg:justify-center overflow-hidden px-6 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[1400px] w-full">
-          {/* Section Intro */}
           <div className="mb-10 flex items-end justify-between border-b border-white/[0.08] pb-6">
             <SectionHeader
               eyebrow="02 / METODIKA & BOSQICHLAR"
@@ -1088,7 +1047,6 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Step Content Area */}
             <div className="lg:col-span-7 relative w-full lg:h-[380px] space-y-6 lg:space-y-0">
               {stages.map((stage, index) => {
                 const stepStart = index / stages.length;
@@ -1168,9 +1126,7 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
               })}
             </div>
 
-            {/* Editorial Timeline & Progression Visual Panel */}
             <div className="hidden lg:flex lg:col-span-5 h-[380px] rounded-3xl border border-white/[0.08] bg-[#0c1017]/90 p-8 backdrop-blur-2xl flex-col justify-between relative overflow-hidden">
-              {/* Subtle large background number of active step */}
               <div className="absolute right-4 -top-6 font-serif text-[160px] font-bold text-white/[0.03] select-none pointer-events-none transition-all duration-700">
                 {stages[activeStep].step}
               </div>
@@ -1185,11 +1141,8 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                   </span>
                 </div>
 
-                {/* Vertical connected timeline */}
                 <div className="relative pl-6 space-y-4">
-                  {/* Background vertical track */}
                   <div className="absolute left-[11px] top-2 bottom-2 w-px bg-white/[0.08]" />
-                  {/* Animated progression line */}
                   <motion.div
                     className="absolute left-[11px] top-2 w-px bg-gradient-to-b from-amber-400 to-amber-300 origin-top"
                     animate={{
@@ -1208,7 +1161,6 @@ function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
                         className="relative flex items-center justify-between transition-all duration-300"
                       >
                         <div className="flex items-center gap-3.5">
-                          {/* Dot / Number indicator */}
                           <div
                             className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full font-mono text-[10px] transition-all duration-300 ${
                               isActive
@@ -1280,6 +1232,18 @@ export function RenessansLandingPage({
   const [liveTeachers, setLiveTeachers] = useState<TeacherRecord[] | null>(null);
   const [liveResults, setLiveResults] = useState<StudentResult[] | null>(null);
   const [liveFaqs, setLiveFaqs] = useState<FAQItem[] | null>(null);
+
+  /* Sticky & Scroll-Aware State Listener */
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (propsCourses && propsCourses.length > 0) return;
@@ -1431,12 +1395,6 @@ export function RenessansLandingPage({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const navBackground = useTransform(
-    scrollY,
-    [0, 80],
-    ["rgba(7,9,13,0.65)", "rgba(7,9,13,0.92)"]
-  );
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sectionIds = [
@@ -1580,17 +1538,24 @@ export function RenessansLandingPage({
       <BackgroundGridMesh />
 
       {/* ====================================================================
-          1. NAVBAR
+          1. NAVBAR (STICKY & SCROLL-AWARE TRANSITION)
       ==================================================================== */}
-      <header className="fixed inset-x-0 top-0 z-[100] px-4 sm:px-8 py-3.5 transition-all duration-300">
-        <motion.div
-          style={{ backgroundColor: navBackground }}
-          className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border border-white/[0.08] px-5 py-2.5 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
+      <header
+        className={`fixed inset-x-0 top-0 z-[100] transition-all duration-300 ease-in-out ${
+          isScrolled ? "py-2.5 px-4 sm:px-8" : "py-5 px-4 sm:px-8"
+        }`}
+      >
+        <div
+          className={`mx-auto flex max-w-[1400px] items-center justify-between rounded-full transition-all duration-300 ease-in-out ${
+            isScrolled
+              ? "border border-white/10 bg-[#07090d]/85 px-5 py-2.5 backdrop-blur-md shadow-2xl"
+              : "border border-transparent bg-transparent px-5 py-2"
+          }`}
         >
           <button
             type="button"
             onClick={() => scrollTo("top")}
-            className="group flex items-center gap-3 text-left focus:outline-none"
+            className="group flex items-center gap-3 text-left focus:outline-none flex-shrink-0"
             aria-label="Renessans Asosiy Sahifa"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 font-serif text-base font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.45)] transition-transform group-hover:scale-105">
@@ -1632,19 +1597,20 @@ export function RenessansLandingPage({
             })}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Phone link with guaranteed non-wrapping styles */}
             <a
               href="tel:+998886484949"
-              className="hidden sm:flex items-center gap-2 font-mono text-xs text-stone-300 hover:text-amber-400 transition-colors min-h-[44px] px-2"
+              className="hidden sm:inline-flex items-center gap-2 whitespace-nowrap flex-shrink-0 font-mono text-xs text-stone-300 hover:text-amber-400 transition-colors min-h-[44px] px-2.5 rounded-full hover:bg-white/[0.04]"
             >
-              <Phone className="h-3.5 w-3.5 text-amber-400" />
-              <span>+998 (88) 648-49-49</span>
+              <Phone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap tabular-nums">+998 (88) 648-49-49</span>
             </a>
 
             <button
               type="button"
               onClick={() => scrollTo("konsultatsiya")}
-              className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-6 py-2.5 min-h-[44px] text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.45)]"
+              className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-6 py-2.5 min-h-[44px] text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.45)] whitespace-nowrap flex-shrink-0"
             >
               <span>Sinov Darsi</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
@@ -1653,13 +1619,13 @@ export function RenessansLandingPage({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-stone-300 xl:hidden hover:text-amber-400 transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-stone-300 xl:hidden hover:text-amber-400 transition-colors flex-shrink-0"
               aria-label="Menyu"
             >
               <Menu className="h-5 w-5" />
             </button>
           </div>
-        </motion.div>
+        </div>
       </header>
 
       {/* MOBILE DRAWER */}
@@ -1711,10 +1677,10 @@ export function RenessansLandingPage({
             <div className="pt-6 border-t border-white/[0.08] space-y-4">
               <a
                 href="tel:+998886484949"
-                className="flex items-center gap-3 font-mono text-sm text-stone-300 min-h-[44px]"
+                className="flex items-center gap-3 font-mono text-sm text-stone-300 min-h-[44px] whitespace-nowrap"
               >
-                <Phone className="h-4 w-4 text-amber-400" />
-                +998 (88) 648-49-49
+                <Phone className="h-4 w-4 text-amber-400 shrink-0" />
+                <span className="whitespace-nowrap">+998 (88) 648-49-49</span>
               </a>
               <button
                 type="button"
@@ -1730,20 +1696,22 @@ export function RenessansLandingPage({
       </AnimatePresence>
 
       {/* ====================================================================
-          2. HERO SECTION
+          2. HERO SECTION (SPLIT-ROW TYPOGRAPHY & INTERACTIVE BRAND BADGE CARD)
       ==================================================================== */}
       <section
         id="top"
-        className="relative min-h-[95svh] flex flex-col justify-between border-b border-white/[0.08] pt-36 pb-16 overflow-hidden"
+        className="relative min-h-[95svh] flex flex-col justify-between border-b border-white/[0.08] pt-32 sm:pt-36 pb-16 overflow-hidden"
       >
         <div className="relative mx-auto w-full max-w-[1400px] px-6 sm:px-8 lg:px-12">
-          <div className="grid gap-12 lg:grid-cols-12 lg:items-end">
-            <div className="lg:col-span-7">
-              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-400/[0.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400 backdrop-blur-md">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+          <div className="grid gap-10 lg:gap-12 lg:grid-cols-12 lg:items-center">
+            {/* Left Side: Headline & Specialization Ticker */}
+            <div className="lg:col-span-7 flex flex-col justify-center">
+              <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-400/[0.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400 backdrop-blur-md self-start">
+                <Sparkles className="h-3.5 w-3.5 animate-pulse text-amber-400" />
                 Yangioboddagi Yetakchi Ta'lim Kampusi
               </div>
 
+              {/* Main Headline without word-collision or clipping */}
               <HeroTitleAnimated />
 
               <div className="mt-8 flex flex-wrap items-center gap-3 text-sm sm:text-base text-stone-300">
@@ -1754,36 +1722,80 @@ export function RenessansLandingPage({
               </div>
             </div>
 
-            <div className="lg:col-span-5 lg:pb-3 flex flex-col justify-center">
-              <HeroLogoBadge />
+            {/* Right Side: Embedded Interactive Brand Badge Card */}
+            <div className="lg:col-span-5">
+              <SpotlightCard
+                className="w-full shadow-2xl border-white/10 hover:border-amber-400/40"
+                glowColor="rgba(245, 158, 11, 0.2)"
+              >
+                <div className="p-6 sm:p-8 flex flex-col justify-between h-full space-y-6">
+                  {/* Card Brand Header */}
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-5">
+                    <div className="flex items-center gap-3.5">
+                      <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px] shadow-[0_0_20px_rgba(245,158,11,0.25)] shrink-0">
+                        <div className="w-full h-full bg-[#090d14] rounded-[11px] flex items-center justify-center">
+                          <span className="font-serif text-xl font-black text-amber-400 tracking-tighter">
+                            R
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-serif text-base font-bold tracking-wider text-stone-100">
+                            RENESSANS
+                          </span>
+                          <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                        </div>
+                        <p className="font-mono text-[9px] text-stone-400 tracking-widest uppercase mt-0.5">
+                          O'quv Markazi • Yangiobod
+                        </p>
+                      </div>
+                    </div>
 
-              <div className="text-base leading-relaxed text-stone-300 sm:text-lg">
-                <WordFadeText
-                  text="Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov. Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani."
-                  delay={0.25}
-                  stagger={0.035}
-                />
-              </div>
+                    <span className="rounded-full bg-amber-400/10 border border-amber-400/30 px-2.5 py-1 font-mono text-[9px] font-bold text-amber-400 uppercase tracking-widest">
+                      2026 Qabul
+                    </span>
+                  </div>
 
-              <div className="mt-8 flex flex-col gap-3.5 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => scrollTo("konsultatsiya")}
-                  className="group inline-flex min-h-[48px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-8 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_16px_50px_rgba(245,158,11,0.4)]"
-                >
-                  Bepul Sinov Darsi
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </button>
+                  {/* Brief Descriptive Copy */}
+                  <div className="text-sm sm:text-base leading-relaxed text-stone-300 font-sans">
+                    Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov. Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani.
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => scrollTo("kurslar")}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-200 transition-all hover:border-amber-400/50 hover:bg-white/[0.08]"
-                >
-                  Kurslarni Ko‘rish
-                  <ChevronDown className="h-4 w-4 text-amber-400" />
-                </button>
-              </div>
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => scrollTo("konsultatsiya")}
+                      className="group flex-1 inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 px-5 text-xs font-bold uppercase tracking-wider text-black transition-all hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] whitespace-nowrap"
+                    >
+                      <span>Bepul Sinov Darsi</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => scrollTo("kurslar")}
+                      className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] px-5 text-xs font-bold uppercase tracking-wider text-stone-200 transition-all hover:border-amber-400/40 hover:bg-white/[0.08] whitespace-nowrap"
+                    >
+                      <span>Kurslarni Ko‘rish</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-amber-400" />
+                    </button>
+                  </div>
+
+                  {/* Trust Signal Footer */}
+                  <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-stone-400">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      100% Rasmiy Litsenziya
+                    </span>
+                    <span className="text-amber-400 font-bold">1-Maktab Binosi</span>
+                  </div>
+                </div>
+              </SpotlightCard>
             </div>
           </div>
         </div>
@@ -1916,7 +1928,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          5. METODIKA — REWORKED EDITORIAL ENGINE
+          5. METODIKA — STICKY SCROLL ENGINE
       ==================================================================== */}
       <StickyMetodikaSection stages={METHOD_STAGES} />
 
@@ -2271,7 +2283,7 @@ export function RenessansLandingPage({
                         className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-black hover:bg-amber-300 min-h-[44px]"
                       >
                         Yozilish
-                        <ArrowRight className="h-3 w-3" />
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -2731,7 +2743,7 @@ export function RenessansLandingPage({
           </div>
 
           <div className="flex items-center gap-6 text-stone-500">
-            <a href="tel:+998886484949" className="hover:text-amber-400 transition-colors">
+            <a href="tel:+998886484949" className="hover:text-amber-400 transition-colors whitespace-nowrap">
               +998 (88) 648-49-49
             </a>
             <span>•</span>
@@ -2747,7 +2759,7 @@ export function RenessansLandingPage({
         </div>
       </footer>
 
-      {/* AI Receptionist — answers verified CenterFlow FAQ, escalates the rest */}
+      {/* AI Receptionist */}
       <AiReceptionistWidget />
     </main>
   );

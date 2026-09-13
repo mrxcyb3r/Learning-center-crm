@@ -9,6 +9,7 @@ import { createTelegramRouter } from './server/telegramRoutes';
 import { createSupportRouter } from './server/supportRoutes';
 import { createInvoiceRouter } from './server/invoiceRoutes';
 import { verifyWebhookOnStartup } from './server/telegramService';
+import aiReceptionistRouter from './server/aiReceptionistRoutes';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -246,6 +247,7 @@ const invoiceRouter = createInvoiceRouter({ checkRateLimit, logSecurityEvent });
 app.use('/api', telegramRouter);
 app.use('/api', supportRouter);
 app.use('/api', invoiceRouter);
+app.use('/api', aiReceptionistRouter);
 app.use('/telegram/webhook', (req, res, next) => {
   req.url = '/telegram/webhook';
   telegramRouter(req, res, next);

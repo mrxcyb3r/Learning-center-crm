@@ -6,10 +6,11 @@ import {
   BusinessModel,
   TeacherDashboardStats,
 } from '../types/teacher';
-import { Group, Student, Payment, AttendanceRecord, Assignment } from '../types';
+import { Group, Student, Payment, AttendanceRecord, Assignment, normalizeStudentPaymentStatus } from '../types';
 import { groupsService, studentsService, paymentsService, attendanceService, homeworkService, userService } from '../services/repository';
 import { DEMO_MODE } from '../config/demo';
 import { DEMO_TEACHER_UID } from '../services/seed';
+import { normalizePaymentCollection, groupMeetsToday } from '../utils/dashboard';
 
 // Deterministic demo group IDs (see seed.ts). Used ONLY as a fallback when
 // the teacher's assignment index is empty in demo mode — e.g. the users/{uid}
@@ -44,21 +45,25 @@ interface TeacherPortalContextType {
   stats: TeacherDashboardStats;
   isLoading: boolean;
   error: string | null;
+  /**
+   * False when the teacher-scoped payment query was denied/unavailable, so
+   * income figures are unknown (NOT zero). Views must render an honest
+   * empty state instead of "0 UZS" in that case.
+   */
+  incomeAvailable: boolean;
 
   refresh: () => void;
 }
 
 const TeacherPortalContext = createContext<TeacherPortalContextType | undefined>(undefined);
 
-// ── Today's day-of-week filter (Uzbek) ──
+// ── Today's day-of-week filter ──
+// Shared helper (utils/dashboard): splits the free-form Uzbek `days` value
+// into parts so "Dushanba" never collides with the Saturday token.
 
-const UZBEK_DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
-
-function isGroupScheduledToday(daysField: string | undefined | null): boolean {
-  if (!daysField) return false;
-  const todayIdx = new Date().getDay(); // 0=Sun, 1=Mon, ...
-  const todayAbbr = UZBEK_DAYS[todayIdx];
-  return daysField.toUpperCase().includes(todayAbbr.toUpperCase());
+function isGroupScheduledToday(g: Group): boolean {
+  const daysField = (g as Group & { days?: string }).days || g.scheduleTime || g.name;
+  return groupMeetsToday(daysField);
 }
 
 // ── Stats computation ──
@@ -69,18 +74,23 @@ function computeStats(
   payments: Payment[],
   attendance: AttendanceRecord[],
 ): TeacherDashboardStats {
-  const todayClasses = myGroups.filter((g) => isGroupScheduledToday(g.scheduleTime || g.name)).length;
+  const todayClasses = myGroups.filter((g) => isGroupScheduledToday(g)).length;
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   const myStudentIds = new Set(myStudents.map((s) => s.id));
 
+  // Only collected payments count toward income — pending/voided never count.
   const monthPayments = payments.filter(
-    (p) => p.date?.startsWith(currentMonth) && myStudentIds.has(p.studentId)
+    (p) =>
+      typeof p.date === 'string' &&
+      p.date.startsWith(currentMonth) &&
+      myStudentIds.has(p.studentId) &&
+      normalizePaymentCollection((p as Payment & { status?: string }).status) === 'collected'
   );
 
-  const paidCount = myStudents.filter((s) => s.paymentStatus === 'paid').length;
+  const paidCount = myStudents.filter((s) => normalizeStudentPaymentStatus(s.paymentStatus) === 'paid').length;
   const unpaidCount = myStudents.length - paidCount;
 
   const todayStr = now.toISOString().split('T')[0];
@@ -105,7 +115,7 @@ function computeStats(
     monthlyIncome: monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
     expectedIncome: myStudents.reduce((sum, s) => sum + (s.tuitionFee || 0), 0),
     outstandingBalance: myStudents
-      .filter((s) => s.paymentStatus !== 'paid')
+      .filter((s) => normalizeStudentPaymentStatus(s.paymentStatus) !== 'paid')
       .reduce((sum, s) => sum + (s.tuitionFee || 0), 0),
     paidStudentsCount: paidCount,
     unpaidStudentsCount: unpaidCount,
@@ -131,6 +141,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [homework, setHomework] = useState<Assignment[]>([]);
+  const [incomeAvailable, setIncomeAvailable] = useState(true);
 
   // Teacher identity is the stable Firebase UID. Email strings are never used
   // for data matching — all scoping goes through `teacherId == uid`.
@@ -206,12 +217,17 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // 6. Payments have no per-teacher index; attempt the scoped query and
         // degrade to empty on denial (never mock data, never broad reads).
+        // incomeAvailable tracks whether the figure is known at all.
         try {
           const teacherPayments = await paymentsService.getPaymentsByTeacher(teacherUid);
           if (!mounted) return;
           setPayments(teacherPayments);
+          setIncomeAvailable(true);
         } catch {
-          if (mounted) setPayments([]);
+          if (mounted) {
+            setPayments([]);
+            setIncomeAvailable(false);
+          }
         }
 
         // Realtime listeners on known authorized IDs only.
@@ -219,7 +235,16 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
           if (mounted) setGroups(newGroups);
         });
         const unsubStudents = studentsService.subscribeToStudentsByIds(studentIds, (newStudents) => {
-          if (mounted) setStudents(newStudents);
+          // Same casing canonicalization as the initial load: raw Firestore
+          // writes use 'Paid'/'Due'/'Overdue' while readers compare lowercase.
+          if (mounted) {
+            setStudents(
+              newStudents.map((s: any) => ({
+                ...s,
+                paymentStatus: String(s.paymentStatus || 'pending').toLowerCase(),
+              }))
+            );
+          }
         });
 
         return () => {
@@ -298,8 +323,10 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       try {
         setPayments(await paymentsService.getPaymentsByTeacher(teacherUid));
+        setIncomeAvailable(true);
       } catch {
         setPayments([]);
+        setIncomeAvailable(false);
       }
       setError(null);
     } catch (err: any) {
@@ -328,6 +355,7 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
         stats,
         isLoading,
         error,
+        incomeAvailable,
         refresh,
       }}
     >

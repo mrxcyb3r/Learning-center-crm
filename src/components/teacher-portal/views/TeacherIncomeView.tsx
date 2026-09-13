@@ -4,10 +4,32 @@ import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { StatCard } from '../shared/StatCard';
 import { DollarSign, Users, AlertTriangle, Layers } from 'lucide-react';
+import { normalizePaymentCollection } from '../../../utils/dashboard';
 
 export const TeacherIncomeView: React.FC = () => {
-  const { myStudents, payments, myGroups, businessModel } = useTeacherPortal();
+  const { myStudents, payments, myGroups, businessModel, incomeAvailable } = useTeacherPortal();
   const { theme } = useTheme();
+
+  // No reliable income model is available to this teacher (scoped payment
+  // query denied or unmodeled) — show an honest empty state, never zeros
+  // dressed up as calculated income.
+  if (!incomeAvailable) {
+    return (
+      <div className={`rounded-2xl p-8 border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+        <div className="flex flex-col items-center justify-center text-center py-12">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+            <DollarSign className={`w-8 h-8 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+          </div>
+          <h3 className={`text-lg font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            Daromad hisoboti hali mavjud emas
+          </h3>
+          <p className={`text-sm max-w-md ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+            Sizning hisobingiz uchun daromad ma‘lumotlari hali shakllantirilmagan. Tafsilotlar uchun markaz ma‘muriyatiga murojaat qiling.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const now = dayjs();
   const currentMonthStr = now.format('YYYY-MM');
@@ -17,11 +39,13 @@ export const TeacherIncomeView: React.FC = () => {
     [payments, currentMonthStr]
   );
 
-  const incomeThisMonth = currentMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-
-  const paidStudentIds = new Set(
-    currentMonthPayments.filter((p) => p.status === 'paid').map((p) => p.studentId)
+  // Only collected payments count — pending/voided never count as income.
+  const collectedThisMonth = currentMonthPayments.filter(
+    (p) => normalizePaymentCollection((p as { status?: string }).status) === 'collected'
   );
+  const incomeThisMonth = collectedThisMonth.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  const paidStudentIds = new Set(collectedThisMonth.map((p) => p.studentId));
   const studentsPaid = myStudents.filter((s) => paidStudentIds.has(s.id)).length;
 
   const outstanding = myStudents
@@ -44,10 +68,12 @@ export const TeacherIncomeView: React.FC = () => {
       const monthDate = now.subtract(i, 'month');
       const key = monthDate.format('YYYY-MM');
       const label = monthDate.format('MMM');
-      const monthPayments = payments.filter((p) => p.date?.startsWith(key));
+      const monthPayments = payments.filter(
+        (p) => p.date?.startsWith(key) && normalizePaymentCollection((p as { status?: string }).status) === 'collected'
+      );
       const collected = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
       const expected = myStudents.reduce((sum, s) => sum + (s.tuitionFee || 0), 0);
-      const paidIds = new Set(monthPayments.filter((p) => p.status === 'paid').map((p) => p.studentId));
+      const paidIds = new Set(monthPayments.map((p) => p.studentId));
       const paidCount = myStudents.filter((s) => paidIds.has(s.id)).length;
 
       months.push({ key, label, collected, expected, paidCount, totalStudents: myStudents.length });

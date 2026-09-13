@@ -50,14 +50,9 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
         </button>
 
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-extrabold tracking-tight truncate" style={{ color: theme === 'dark' ? '#fff' : '#0f172a' }}>
-              O'qituvchi paneli
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30 shrink-0">
-              O'QITUVCHI
-            </span>
-          </div>
+          <span className="text-sm font-extrabold tracking-tight truncate block" style={{ color: theme === 'dark' ? '#fff' : '#0f172a' }}>
+            O'qituvchi paneli
+          </span>
           <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate">
             CenterFlow • Renessans Learning Center
           </p>
@@ -102,14 +97,14 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
               : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
           }`}
           title="Bildirishnomalar"
+          aria-label="Bildirishnomalar"
         >
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500" />
         </button>
 
         {/* Teacher Avatar + profile */}
         <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200 dark:border-slate-800">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
             {displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
           </div>
           <div className="hidden sm:block leading-none">
@@ -118,7 +113,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
             }`}>
               {displayName}
             </span>
-            <span className="text-[10px] font-semibold text-blue-500">O'qituvchi</span>
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">O'qituvchi</span>
           </div>
         </div>
 

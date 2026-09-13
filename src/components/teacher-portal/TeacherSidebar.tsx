@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTeacherPortal } from '../../context/TeacherPortalContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { TeacherTab } from '../../types/teacher';
 
 interface TeacherSidebarProps {
@@ -26,29 +27,33 @@ interface TeacherSidebarProps {
   onToggle: () => void;
 }
 
-const NAV_ITEMS: { tab: TeacherTab; icon: React.ReactNode; labelUz: string; labelEn: string; group: string }[] = [
-  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, labelUz: 'Boshqaruv', labelEn: 'Dashboard', group: 'Boshqaruv' },
-  { tab: 'groups', icon: <Users className="w-5 h-5" />, labelUz: 'Guruhlarim', labelEn: 'My Groups', group: "Ta'lim" },
-  { tab: 'students', icon: <UserCog className="w-5 h-5" />, labelUz: "O'quvchilarim", labelEn: 'My Students', group: "Ta'lim" },
-  { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, labelUz: 'Dars Jadvali', labelEn: 'Timetable', group: "Ta'lim" },
-  { tab: 'attendance', icon: <CheckSquare className="w-5 h-5" />, labelUz: 'Davomat', labelEn: 'Attendance', group: 'Faoliyat' },
-  { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, labelUz: "To'lovlar", labelEn: 'Payments', group: 'Faoliyat' },
-  { tab: 'income', icon: <TrendingUp className="w-5 h-5" />, labelUz: 'Daromad', labelEn: 'Income', group: 'Faoliyat' },
-  { tab: 'announcements', icon: <Bell className="w-5 h-5" />, labelUz: "E'lonlar", labelEn: 'Announcements', group: 'Aloqa' },
-  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" />, labelUz: 'Vazifalar', labelEn: 'Tasks', group: 'Yordamchi' },
-  { tab: 'documents', icon: <FileText className="w-5 h-5" />, labelUz: 'Hujjatlar', labelEn: 'Documents', group: 'Yordamchi' },
-  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" />, labelUz: 'Tahlil', labelEn: 'Analytics', group: 'Yordamchi' },
-  { tab: 'profile', icon: <User className="w-5 h-5" />, labelUz: 'Profil', labelEn: 'Profile', group: 'Yordamchi' },
-  { tab: 'settings', icon: <Settings className="w-5 h-5" />, labelUz: 'Sozlamalar', labelEn: 'Settings', group: 'Yordamchi' },
+const NAV_ITEMS: { tab: TeacherTab; icon: React.ReactNode; labelUz: string; labelEn: string; labelRu: string; groupUz: string; groupEn: string; groupRu: string }[] = [
+  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, labelUz: 'Boshqaruv', labelEn: 'Dashboard', labelRu: 'Главная', groupUz: 'Boshqaruv', groupEn: 'Manage', groupRu: 'Управление' },
+  { tab: 'groups', icon: <Users className="w-5 h-5" />, labelUz: 'Guruhlarim', labelEn: 'My Groups', labelRu: 'Мои группы', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'students', icon: <UserCog className="w-5 h-5" />, labelUz: "O'quvchilarim", labelEn: 'My Students', labelRu: 'Мои ученики', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, labelUz: 'Dars jadvali', labelEn: 'Timetable', labelRu: 'Расписание', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'attendance', icon: <CheckSquare className="w-5 h-5" />, labelUz: 'Davomat', labelEn: 'Attendance', labelRu: 'Посещаемость', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
+  { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, labelUz: "To'lovlar", labelEn: 'Payments', labelRu: 'Оплаты', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
+  { tab: 'income', icon: <TrendingUp className="w-5 h-5" />, labelUz: 'Daromad', labelEn: 'Income', labelRu: 'Доход', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
+  { tab: 'announcements', icon: <Bell className="w-5 h-5" />, labelUz: "E'lonlar", labelEn: 'Announcements', labelRu: 'Объявления', groupUz: 'Aloqa', groupEn: 'Comms', groupRu: 'Связь' },
+  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" />, labelUz: 'Vazifalar', labelEn: 'Tasks', labelRu: 'Задачи', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'documents', icon: <FileText className="w-5 h-5" />, labelUz: 'Hujjatlar', labelEn: 'Documents', labelRu: 'Документы', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" />, labelUz: 'Tahlil', labelEn: 'Analytics', labelRu: 'Аналитика', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'profile', icon: <User className="w-5 h-5" />, labelUz: 'Profil', labelEn: 'Profile', labelRu: 'Профиль', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'settings', icon: <Settings className="w-5 h-5" />, labelUz: 'Sozlamalar', labelEn: 'Settings', labelRu: 'Настройки', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
 ];
 
 export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onToggle }) => {
   const { activeTab, setActiveTab } = useTeacherPortal();
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const label = (item: (typeof NAV_ITEMS)[number]) => (language === 'EN' ? item.labelEn : language === 'RU' ? item.labelRu : item.labelUz);
+  const groupName = (item: (typeof NAV_ITEMS)[number]) => (language === 'EN' ? item.groupEn : language === 'RU' ? item.groupRu : item.groupUz);
 
   const groups = NAV_ITEMS.reduce<Record<string, typeof NAV_ITEMS>>((acc, item) => {
-    if (!acc[item.group]) acc[item.group] = [];
-    acc[item.group].push(item);
+    const key = groupName(item);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
     return acc;
   }, {});
 
@@ -102,16 +107,16 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
                   collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
                 } ${
                   activeTab === item.tab
-                    ? 'bg-blue-500/10 text-blue-500 shadow-sm'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm'
                     : theme === 'dark'
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
-                title={collapsed ? item.labelUz : undefined}
+                title={collapsed ? label(item) : undefined}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
                 {!collapsed && (
-                  <span className="text-sm font-semibold truncate">{item.labelUz}</span>
+                  <span className="text-sm font-semibold truncate">{label(item)}</span>
                 )}
               </button>
             ))}

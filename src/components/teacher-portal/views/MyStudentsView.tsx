@@ -19,6 +19,7 @@ import {
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { Student, AttendanceRecord } from '../../../types';
+import { normalizePaymentCollection } from '../../../utils/dashboard';
 
 function computeAttendanceRate(
   studentId: string,
@@ -301,12 +302,18 @@ const StudentDetailPanel: React.FC<{
                     </div>
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        payment.status === 'paid'
+                        normalizePaymentCollection((payment as { status?: string }).status) === 'collected'
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          : normalizePaymentCollection((payment as { status?: string }).status) === 'voided'
+                            ? 'bg-slate-500/10 text-slate-500'
+                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                       }`}
                     >
-                      {payment.status || 'paid'}
+                      {normalizePaymentCollection((payment as { status?: string }).status) === 'collected'
+                        ? "To'langan"
+                        : normalizePaymentCollection((payment as { status?: string }).status) === 'voided'
+                          ? 'Bekor qilingan'
+                          : 'Kutilmoqda'}
                     </span>
                   </div>
                 ))

@@ -30,6 +30,7 @@ export const CoursesView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [editingCourse, setEditingCourse] = useState<CourseData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Form
@@ -50,6 +51,21 @@ export const CoursesView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const [slugTouched, setSlugTouched] = useState(false);
   const [formImageUrl, setFormImageUrl] = useState('');
   const [formFeatured, setFormFeatured] = useState(false);
+
+  // Global search deep-link: highlight the course card and scroll it into view.
+  useEffect(() => {
+    const onOpenRecord = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { kind?: string; id?: string } | undefined;
+      if (!detail || detail.kind !== 'course' || !detail.id) return;
+      setHighlightId(detail.id);
+      window.setTimeout(() => {
+        document.getElementById(`course-card-${detail.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+      window.setTimeout(() => setHighlightId(null), 4000);
+    };
+    window.addEventListener('centerflow-open-record', onOpenRecord);
+    return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
+  }, []);
 
   const refreshData = async () => {
     const [coursesData, teachersData, scheduleData, studentsData] = await Promise.all([
@@ -227,8 +243,13 @@ export const CoursesView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
         {courses.map((c) => (
           <div
             key={c.id}
+            id={`course-card-${c.id}`}
             className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border shadow-sm flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition ${
-              !c.isActive ? 'opacity-60 border-slate-300' : 'border-slate-200 dark:border-slate-800'
+              highlightId === c.id
+                ? 'border-emerald-500 ring-2 ring-emerald-500/40'
+                : !c.isActive
+                  ? 'opacity-60 border-slate-300'
+                  : 'border-slate-200 dark:border-slate-800'
             }`}
           >
             <div>

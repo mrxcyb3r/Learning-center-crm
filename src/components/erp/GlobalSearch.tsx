@@ -175,22 +175,39 @@ export const GlobalSearch: React.FC<Props> = ({ open, onClose, scope, onNavigate
               Qidiruv uchun kamida 2 ta belgi kiriting. Masalan: ism, telefon raqam yoki kurs nomi.
             </div>
           )}
-          {results.map((r) => (
-            <button
-              key={r.kind + ':' + r.id}
-              onClick={() => {
-                onNavigate(r.tab, { kind: r.kind, id: r.id });
-                onClose();
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-left"
-            >
-              <span className="shrink-0">{iconFor(r.kind)}</span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-900 dark:text-white truncate">{r.title}</span>
-                <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">{r.subtitle}</span>
-              </span>
-            </button>
-          ))}
+          {(['lead', 'student', 'course', 'group', 'teacher'] as const).map((kind) => {
+            const group = results.filter((r) => r.kind === kind);
+            if (group.length === 0) return null;
+            const heading =
+              kind === 'lead' ? 'Lidlar'
+              : kind === 'student' ? "O'quvchilar"
+              : kind === 'course' ? 'Kurslar'
+              : kind === 'group' ? 'Guruhlar'
+              : "O'qituvchilar";
+            return (
+              <div key={kind}>
+                <div className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {heading} ({group.length})
+                </div>
+                {group.map((r) => (
+                  <button
+                    key={r.kind + ':' + r.id}
+                    onClick={() => {
+                      onNavigate(r.tab, { kind: r.kind, id: r.id });
+                      onClose();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-left"
+                  >
+                    <span className="shrink-0">{iconFor(r.kind)}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-slate-900 dark:text-white truncate">{r.title}</span>
+                      <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">{r.subtitle}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

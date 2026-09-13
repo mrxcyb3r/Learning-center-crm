@@ -35,6 +35,7 @@ export const ScheduleView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
   const [formMaxCapacity, setFormMaxCapacity] = useState('16');
   const [formType, setFormType] = useState<GroupType>('Regular');
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const refresh = async () => {
     const [scheduleData, coursesData, teachersData] = await Promise.all([
@@ -49,6 +50,23 @@ export const ScheduleView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
 
   useEffect(() => {
     refresh();
+  }, []);
+
+  // Global search deep-link: reset the day filter, highlight the group card
+  // and scroll it into view.
+  useEffect(() => {
+    const onOpenRecord = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { kind?: string; id?: string } | undefined;
+      if (!detail || detail.kind !== 'group' || !detail.id) return;
+      setActiveDayFilter('All');
+      setHighlightId(detail.id);
+      window.setTimeout(() => {
+        document.getElementById(`group-card-${detail.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+      window.setTimeout(() => setHighlightId(null), 4000);
+    };
+    window.addEventListener('centerflow-open-record', onOpenRecord);
+    return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
   }, []);
 
   const showNotification = (msg: string) => {
@@ -335,10 +353,13 @@ export const ScheduleView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
           return (
             <div
               key={item.id}
+              id={`group-card-${item.id}`}
               className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border shadow-sm flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition ${
-                item.type === 'Trial Lesson'
-                  ? 'border-amber-500/60 bg-amber-500/5'
-                  : 'border-slate-200 dark:border-slate-800'
+                highlightId === item.id
+                  ? 'border-emerald-500 ring-2 ring-emerald-500/40'
+                  : item.type === 'Trial Lesson'
+                    ? 'border-amber-500/60 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-slate-800'
               }`}
             >
               <div>

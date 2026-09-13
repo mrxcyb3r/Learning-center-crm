@@ -111,6 +111,18 @@ export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
     return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
   }, []);
 
+  // Front-desk quick action: open the existing "new student" modal directly.
+  useEffect(() => {
+    const onQuickAdd = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { form?: string } | undefined;
+      if (!detail || detail.form !== 'student') return;
+      handleOpenAdd();
+    };
+    window.addEventListener('centerflow-quick-add', onQuickAdd);
+    return () => window.removeEventListener('centerflow-quick-add', onQuickAdd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses, schedule]);
+
   const showNotification = (msg: string) => {
     setNotice(msg);
     setTimeout(() => setNotice(null), 3000);

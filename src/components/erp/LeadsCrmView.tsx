@@ -152,6 +152,17 @@ export const LeadsCrmView: React.FC = () => {
     return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
   }, []);
 
+  // Front-desk quick action: open the existing "new lead" modal directly.
+  useEffect(() => {
+    const onQuickAdd = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { form?: string } | undefined;
+      if (!detail || detail.form !== 'lead') return;
+      setIsAddModalOpen(true);
+    };
+    window.addEventListener('centerflow-quick-add', onQuickAdd);
+    return () => window.removeEventListener('centerflow-quick-add', onQuickAdd);
+  }, []);
+
   const showNotice = (type: 'success' | 'error', text: string) => {
     setNotice({ type, text });
     setTimeout(() => setNotice(null), 4000);

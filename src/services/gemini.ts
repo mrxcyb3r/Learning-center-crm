@@ -1,4 +1,17 @@
 import { GoogleGenAI } from '@google/genai';
+import { auth } from './firebase';
+
+/** Attach the Firebase ID token so the server AI proxy can authenticate the caller. */
+async function aiAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  } catch {
+    // Anonymous caller — the server returns 401 and callers fall back safely.
+  }
+  return headers;
+}
 
 export type UserLanguage = 'uz' | 'en' | 'ru';
 export type UserRole = 'student' | 'teacher' | 'admin' | 'superadmin' | 'support' | 'receptionist' | 'guest';
@@ -86,7 +99,7 @@ export async function generateInsaneAIResponse({
   try {
     const res = await fetch('/api/ai/coach', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await aiAuthHeaders(),
       body: JSON.stringify({
         prompt,
         contextHistory: history,
@@ -239,7 +252,7 @@ export async function analyzeStudyDocument(
   try {
     const res = await fetch('/api/ai/analyze-doc', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await aiAuthHeaders(),
       body: JSON.stringify({ imageBase64, mimeType, questionPrompt, userLanguage }),
     });
 
@@ -294,7 +307,7 @@ export async function evaluateSpeakingAudio(
   try {
     const res = await fetch('/api/ai/evaluate-speaking', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await aiAuthHeaders(),
       body: JSON.stringify({ audioBase64, mimeType, partNumber, userLanguage }),
     });
 
@@ -356,7 +369,7 @@ export async function gradeIELTSEssay(
   try {
     const res = await fetch('/api/ai/grade-essay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await aiAuthHeaders(),
       body: JSON.stringify({ essayText, taskType, rubricPrompt, userLanguage }),
     });
 

@@ -12,6 +12,7 @@ import { createSupportRouter } from './server/supportRoutes';
 import { createInvoiceRouter } from './server/invoiceRoutes';
 import { verifyWebhookOnStartup } from './server/telegramService';
 import { aiReceptionistRouter } from './server/aiReceptionistRoutes';
+import { getAdminAuth } from './server/firebaseAdmin';
 
 const app = express();
 const RAW_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -248,7 +249,32 @@ TONE: Encouraging, patient, structured, and supportive.
 
 // --- API ROUTES ---
 
-const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET || 'centerflow_admin_secret_2026';
+/**
+ * AI proxy guard: the /api/ai/* endpoints spend the owner's Gemini quota,
+ * so they require a valid Firebase ID token (any signed-in user). Anonymous
+ * callers get 401 instead of a free LLM proxy. Client helpers attach the
+ * token automatically; unauthenticated use falls back to the optional
+ * client-side SDK key or a clean error.
+ */
+async function requireAiAuth(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+  try {
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    if (!token) {
+      res.status(401).json({ error: 'Authentication required.' });
+      return;
+    }
+    const auth = getAdminAuth();
+    if (!auth) {
+      res.status(503).json({ error: 'Authentication service unavailable.' });
+      return;
+    }
+    await auth.verifyIdToken(token);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+  }
+}
 
 // 0. Real Telegram integration — webhook, bot health, admin send, broadcasts.
 //    Server-side only; credentials stay in environment variables.
@@ -275,7 +301,7 @@ app.use('/telegram/webhook', (req, res, next) => {
 });
 
 // 1. Universal Subject Coach Endpoint
-app.post('/api/ai/coach', async (req, res) => {
+app.post('/api/ai/coach', requireAiAuth, async (req, res) => {
   try {
     const {
       prompt,
@@ -355,7 +381,7 @@ app.post('/api/ai/coach', async (req, res) => {
 });
 
 // 2. Study Document OCR & Analysis
-app.post('/api/ai/analyze-doc', async (req, res) => {
+app.post('/api/ai/analyze-doc', requireAiAuth, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg', questionPrompt = '', userLanguage = 'uz' } = req.body;
 
@@ -401,7 +427,7 @@ Perform OCR and analysis:
 });
 
 // 3. IELTS Speaking Audio Evaluator
-app.post('/api/ai/evaluate-speaking', async (req, res) => {
+app.post('/api/ai/evaluate-speaking', requireAiAuth, async (req, res) => {
   try {
     const { audioBase64, mimeType = 'audio/webm', partNumber = 1, userLanguage = 'uz' } = req.body;
 
@@ -456,7 +482,7 @@ Format the response cleanly with Markdown headers and bullet points.
 });
 
 // 4. Teacher IELTS Essay Grader
-app.post('/api/ai/grade-essay', async (req, res) => {
+app.post('/api/ai/grade-essay', requireAiAuth, async (req, res) => {
   try {
     const { essayText, taskType = 'task2', rubricPrompt = '', userLanguage = 'uz' } = req.body;
 

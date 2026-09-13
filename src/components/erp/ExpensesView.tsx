@@ -34,7 +34,7 @@ export const ExpensesView: React.FC = () => {
   const refresh = async () => {
     const [expensesData, teachersData] = await Promise.all([
       expensesService.getAllExpenses(),
-      teachersService.getAllTeachers()
+      teachersService.getAllTeachersWithComp()
     ]);
     setExpenses(expensesData);
     setTeachers(teachersData.filter((t) => t.status === 'Active') as unknown as TeacherRecord[]);

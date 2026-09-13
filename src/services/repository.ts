@@ -17,7 +17,8 @@ import {
   arrayRemove,
   runTransaction,
   Timestamp,
-  limit
+  limit,
+  deleteField
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import {
@@ -228,10 +229,52 @@ export const coursesService = {
 /**
  * Teachers Service - Shared between Landing, Admin, Teacher
  */
+/**
+ * Compensation fields live in the admin-only `teachers/{id}/private/comp`
+ * subcollection — NEVER on the public teacher document (the `teachers`
+ * collection is publicly readable for the landing page, so salary data
+ * there would be visible to anonymous visitors).
+ */
+const TEACHER_COMP_FIELDS = ['monthlySalary', 'salary', 'salaryStatus'] as const;
+
+function splitTeacherComp(data: any): { publicPart: any; compPart: Record<string, unknown> } {
+  const publicPart: any = { ...(data || {}) };
+  const compPart: Record<string, unknown> = {};
+  for (const f of TEACHER_COMP_FIELDS) {
+    if (publicPart[f] !== undefined) {
+      compPart[f] = publicPart[f];
+      delete publicPart[f];
+    }
+  }
+  return { publicPart, compPart };
+}
+
 export const teachersService = {
   async getAllTeachers(): Promise<any[]> {
     const snap = await getDocs(query(collection(db, TEACHERS_COL), orderBy('displayOrder', 'asc')));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  /** Admin-only: all teachers with private compensation merged in. */
+  async getAllTeachersWithComp(): Promise<any[]> {
+    const teachers = await teachersService.getAllTeachers();
+    const merged = await Promise.all(
+      teachers.map(async (t) => {
+        try {
+          const comp = await teachersService.getTeacherComp(t.id);
+          return { ...comp, ...t };
+        } catch {
+          return t;
+        }
+      })
+    );
+    return merged;
+  },
+
+  /** Admin-only: private compensation record for one teacher. */
+  async getTeacherComp(id: string): Promise<Record<string, unknown>> {
+    const snap = await getDoc(doc(db, TEACHERS_COL, id, 'private', 'comp'));
+    return snap.exists() ? (snap.data() as Record<string, unknown>) : {};
   },
 
   async getPublicTeachers(): Promise<any[]> {
@@ -242,12 +285,27 @@ export const teachersService = {
   },
 
   async createTeacher(data: any): Promise<string> {
-    const docRef = await addDoc(collection(db, TEACHERS_COL), cleanData(data));
+    const { publicPart, compPart } = splitTeacherComp(data);
+    const docRef = await addDoc(collection(db, TEACHERS_COL), cleanData(publicPart));
+    if (Object.keys(compPart).length > 0) {
+      await setDoc(doc(db, TEACHERS_COL, docRef.id, 'private', 'comp'), cleanData(compPart));
+    }
     return docRef.id;
   },
 
   async updateTeacher(id: string, data: any): Promise<void> {
-    await updateDoc(doc(db, TEACHERS_COL, id), cleanData(data));
+    const { publicPart, compPart } = splitTeacherComp(data);
+    // deleteField sentinels must bypass cleanData (it would strip them).
+    // They remove legacy compensation fields from older public documents.
+    await updateDoc(doc(db, TEACHERS_COL, id), {
+      ...cleanData(publicPart),
+      monthlySalary: deleteField(),
+      salary: deleteField(),
+      salaryStatus: deleteField(),
+    });
+    if (Object.keys(compPart).length > 0) {
+      await setDoc(doc(db, TEACHERS_COL, id, 'private', 'comp'), cleanData(compPart), { merge: true });
+    }
   },
 
   subscribeToTeachers(callback: (teachers: any[]) => void) {

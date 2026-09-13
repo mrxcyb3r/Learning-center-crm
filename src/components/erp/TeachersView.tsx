@@ -50,7 +50,8 @@ export const TeachersView: React.FC = () => {
   const [formAchievements, setFormAchievements] = useState('');
 
   const refreshTeachers = async () => {
-    const data = await teachersService.getAllTeachers();
+    // Admin-only merged fetch: public profile + private compensation.
+    const data = await teachersService.getAllTeachersWithComp();
     setTeachers(data as unknown as TeacherRecord[]);
   };
 

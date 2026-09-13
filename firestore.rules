@@ -99,9 +99,13 @@ service cloud.firestore {
       //    admin-maintained; owners can read it but never modify it).
       allow update: if isSignedIn() && (
         (isSuperAdmin()) ||
+        // Admins manage staff/student profiles but can never touch an
+        // admin/superadmin account (neither its current nor its new role).
         (isAdmin()
           && request.resource.data.role != 'admin'
           && request.resource.data.role != 'superadmin'
+          && resource.data.role != 'admin'
+          && resource.data.role != 'superadmin'
           && request.resource.data.uid == resource.data.uid
           && request.resource.data.email == resource.data.email
         ) ||
@@ -136,8 +140,16 @@ service cloud.firestore {
     }
 
     match /teachers/{teacherId} {
+      // Public profile fields only (name, photo, subject, experience...).
+      // Compensation fields (monthlySalary/salary/salaryStatus) must NEVER
+      // live on this document — they belong in the admin-only private
+      // subcollection below, because this collection is publicly readable
+      // for the landing page.
       allow read: if true;
       allow write: if isAdminOrSuperAdmin();
+      match /private/{docId} {
+        allow read, write: if isAdminOrSuperAdmin();
+      }
     }
 
     match /results/{resultId} {
@@ -262,10 +274,13 @@ service cloud.firestore {
     }
 
     match /homework_submissions/{submissionId} {
-      allow read: if isAdminOrSuperAdmin() 
+      allow read: if isAdminOrSuperAdmin()
         || (isTeacher() && isTeacherOfSubmission(submissionId))
         || (isStudent() && isOwnSubmission(submissionId));
-      allow create: if isSignedIn(); // Students can submit
+      // Any authenticated non-guest role may submit (students submit;
+      // teachers/staff may file on behalf). Guests (unverified signups)
+      // cannot write here.
+      allow create: if isSignedIn() && getUserRole() != 'guest';
       allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfSubmission(submissionId));
     }
 

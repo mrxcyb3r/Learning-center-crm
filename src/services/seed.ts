@@ -196,7 +196,18 @@ async function writeDemoDataset(): Promise<void> {
     await setDoc(doc(db, 'courses', c.id), { ...c, isActive: true, isPublic: true, isDemo: true }, { merge: true });
   }
   for (const t of DEMO_TEACHERS) {
-    await setDoc(doc(db, 'teachers', t.id), { ...t, gender: 'male', isDemo: true }, { merge: true });
+    // Compensation stays out of the publicly readable teacher document —
+    // it lives in the admin-only private subcollection (see teachersService).
+    const { monthlySalary, salaryStatus, ...publicTeacher } = t as Record<string, unknown>;
+    await setDoc(doc(db, 'teachers', t.id), { ...publicTeacher, gender: 'male', isDemo: true }, { merge: true });
+    await setDoc(doc(db, 'teachers', t.id, 'private', 'comp'), { monthlySalary, salaryStatus, isDemo: true }, { merge: true });
+    // One-time cleanup of legacy compensation fields on older public docs.
+    const { deleteField } = await import('firebase/firestore');
+    await updateDoc(doc(db, 'teachers', t.id), {
+      monthlySalary: deleteField(),
+      salary: deleteField(),
+      salaryStatus: deleteField(),
+    }).catch(() => undefined);
   }
   for (const r of DEMO_RESULTS) {
     await setDoc(doc(db, 'results', r.id), { ...r, published: true, date: today, isDemo: true }, { merge: true });

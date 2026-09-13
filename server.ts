@@ -244,10 +244,12 @@ const telegramRouter = createTelegramRouter({
 });
 const supportRouter = createSupportRouter({ checkRateLimit, logSecurityEvent });
 const invoiceRouter = createInvoiceRouter({ checkRateLimit, logSecurityEvent });
+const receptionistRouter = aiReceptionistRouter();
 app.use('/api', telegramRouter);
 app.use('/api', supportRouter);
 app.use('/api', invoiceRouter);
-app.use('/api', aiReceptionistRouter);
+app.use('/api', receptionistRouter);
+app.use('/api/ai/receptionist', receptionistRouter);
 app.use('/telegram/webhook', (req, res, next) => {
   req.url = '/telegram/webhook';
   telegramRouter(req, res, next);

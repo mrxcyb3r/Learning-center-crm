@@ -1,13 +1,27 @@
 import { Router, Request, Response } from 'express';
-import { getFirestore, getAdminAuth } from './firebaseAdmin';
+import fs from 'fs';
+import path from 'path';
 import { GoogleGenAI } from '@google/genai';
-import { LOCAL_GEMINI_API_KEY } from './geminiKey.local';
 
-/** Env first, gitignored local key file as fallback. Never hardcode elsewhere. */
+/** Env first, optional gitignored local key file as fallback if present. Never crash if absent. */
 function getReceptionistApiKey(): string {
-  const fromEnv = (process.env.GEMINI_API_KEY || '').trim();
+  const fromEnv = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
   if (fromEnv) return fromEnv;
-  return (LOCAL_GEMINI_API_KEY || '').trim();
+
+  try {
+    const localKeyPath = path.join(process.cwd(), 'server', 'geminiKey.local.ts');
+    if (fs.existsSync(localKeyPath)) {
+      const content = fs.readFileSync(localKeyPath, 'utf8');
+      const match = content.match(/LOCAL_GEMINI_API_KEY\s*=\s*['"`]([^'"`]+)['"`]/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+  } catch {
+    // Ignore local read errors safely
+  }
+
+  return '';
 }
 
 const VALID_INTENTS = ['course_price', 'course_description', 'branch_address', 'working_hours', 'trial_lesson', 'faq', 'contact_info', 'teacher_info'] as const;
@@ -53,9 +67,7 @@ You will be provided with "Verified CenterFlow Data" below. Use ONLY that inform
 export function aiReceptionistRouter() {
   const router = Router();
 
-  // POST /api/ai/receptionist
-  // Handles AI receptionist queries with verified data context
-  router.post('/', async (req: Request, res: Response) => {
+  const handleReceptionist = async (req: Request, res: Response) => {
     try {
       const { question, context, intent } = req.body || {};
 
@@ -81,7 +93,14 @@ export function aiReceptionistRouter() {
         });
       }
 
-      const ai = new GoogleGenAI({ apiKey: apiKey });
+      const ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build-centerflow',
+          },
+        },
+      });
 
       const prompt = `
 ${SYSTEM_INSTRUCTION}
@@ -98,7 +117,7 @@ Answer:
 `;
 
       const result = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           temperature: 0.2,
@@ -134,7 +153,10 @@ Answer:
         source: 'error_fallback'
       });
     }
-  });
+  };
+
+  router.post('/', handleReceptionist);
+  router.post('/ai/receptionist', handleReceptionist);
 
   return router;
 }

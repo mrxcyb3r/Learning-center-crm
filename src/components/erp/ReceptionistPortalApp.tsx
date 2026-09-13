@@ -8,7 +8,6 @@ import {
   BookOpen,
   Calendar,
   CreditCard,
-  Sparkles,
   Globe,
   ExternalLink,
   Sun,
@@ -17,7 +16,6 @@ import {
   X,
   Search,
   LogOut,
-  LifeBuoy,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -29,8 +27,6 @@ import { StudentsView } from './StudentsView';
 import { ScheduleView } from './ScheduleView';
 import { CoursesView } from './CoursesView';
 import { PaymentsView } from './PaymentsView';
-import { ReceptionistView } from './ReceptionistView';
-import { ReceptionAssistant } from './ReceptionAssistant';
 import { GlobalSearch } from './GlobalSearch';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { leadsService, murojaatlarService } from '../../services/repository';
@@ -41,12 +37,10 @@ type ReceptionTab =
   | 'dashboard'
   | 'murojaatlar'
   | 'leads'
-  | 'qabulxona'
   | 'students'
   | 'groups'
   | 'courses'
-  | 'payments'
-  | 'ai';
+  | 'payments';
 
 type SidebarGroup = {
   title: string;
@@ -66,7 +60,6 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
       { id: 'leads', label: 'Lidlar', icon: PhoneCall },
-      { id: 'qabulxona', label: 'AI navbat', icon: LifeBuoy },
     ],
   },
   {
@@ -80,10 +73,6 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: 'Moliya',
     items: [{ id: 'payments', label: "To'lovlar", icon: CreditCard }],
-  },
-  {
-    title: 'Yordamchi',
-    items: [{ id: 'ai', label: 'AI Yordamchi', icon: Sparkles }],
   },
 ];
 
@@ -139,8 +128,6 @@ export const ReceptionistPortalApp: React.FC = () => {
         return <MurojaatlarView onSummaryChange={(s) => setMurojaatUnread(s.unread)} />;
       case 'leads':
         return <LeadsCrmView />;
-      case 'qabulxona':
-        return <ReceptionistView />;
       case 'students':
         return <StudentsView readOnly />;
       case 'groups':
@@ -151,8 +138,6 @@ export const ReceptionistPortalApp: React.FC = () => {
         // Front-desk may record new payments (narrow Firestore create rule:
         // existing student + positive amount). Void/edit stays admin-only.
         return <PaymentsView readOnly allowCreate />;
-      case 'ai':
-        return <ReceptionAssistant />;
       default:
         return <ReceptionistDashboard onNavigateTab={(t) => setActiveTab(t as ReceptionTab)} />;
     }
@@ -324,7 +309,7 @@ export const ReceptionistPortalApp: React.FC = () => {
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
           {demoActive && (
             <div className="mb-4 px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-              <Sparkles className="w-4 h-4 shrink-0" />
+              <MessageSquare className="w-4 h-4 shrink-0" />
               Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.
             </div>
           )}

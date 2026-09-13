@@ -11,7 +11,9 @@ import {
   Unlink,
   X,
   Loader2,
+  QrCode,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
 import { checkBotStatus, createTelegramLinkSession, BOT_USERNAME, unlinkTelegram } from '../../services/telegram';
 
@@ -49,6 +51,7 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
   const [checking, setChecking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingLink, setPendingLink] = useState(false);
+  const [deepLink, setDeepLink] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [confirmingUnlink, setConfirmingUnlink] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'err'; msg: string } | null>(null);
@@ -69,7 +72,10 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
         telegramUsername: res.telegramUsername || null,
         chatConnectedAt: res.chatConnectedAt || null,
       });
-      if (res.isConnected) setPendingLink(false);
+      if (res.isConnected) {
+        setPendingLink(false);
+        setDeepLink(null);
+      }
     }
     setChecking(false);
     setLoading(false);
@@ -85,8 +91,9 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
     setNotice(null);
     setRateLimited(false);
     try {
-      const { deepLink } = await createTelegramLinkSession(targetUid);
-      window.open(deepLink, '_blank', 'noopener');
+      const { deepLink: link } = await createTelegramLinkSession(targetUid);
+      setDeepLink(link);
+      window.open(link, '_blank', 'noopener');
       setPendingLink(true);
     } catch (err: any) {
       setNotice({ tone: 'err', msg: err?.message || 'Havola yaratishda xatolik.' });
@@ -103,6 +110,7 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
     if (res.ok) {
       setStatus({ isConnected: false, telegramUsername: null, chatConnectedAt: null });
       setPendingLink(false);
+      setDeepLink(null);
       setConfirmingUnlink(false);
       setNotice({ tone: 'ok', msg: 'Telegram hisobingiz uzildi.' });
     } else {
@@ -194,13 +202,13 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
           </div>
 
           {connected ? (
-            /* Connected state */
+            /* Connected state — spec §16/21: Telegram ulangan ✓ */
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div className="min-w-0">
                   <span className="text-sm font-bold text-emerald-900 dark:text-emerald-200 block truncate">
-                    {username || 'Telegram ulangan'}
+                    ✓ Telegram ulangan{username ? ` — ${username}` : ''}
                   </span>
                   {connectedDate && (
                     <span className="text-xs text-emerald-700 dark:text-emerald-400">Ulangan sana: {connectedDate}</span>
@@ -209,12 +217,21 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
               </div>
             </div>
           ) : (
-            /* Disconnected state */
+            /* Disconnected state — spec §16/21: Telegram bilan bog'lash */
             <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/60 space-y-3">
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Telegram akkauntingizni CenterFlow bilan ulang. Ulanganida yuqoridagi imkoniyatlardan
-                foydalanishingiz mumkin.
-              </p>
+              <div>
+                <p className="text-sm font-black text-slate-900 dark:text-white">Telegram bilan bog‘lash</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
+                  Telegram orqali:
+                </p>
+                <ul className="text-xs text-slate-600 dark:text-slate-300 list-disc list-inside mt-1 space-y-0.5">
+                  <li>dars eslatmalarini</li>
+                  <li>davomat xabarlarini</li>
+                  <li>to‘lov eslatmalarini</li>
+                  <li>markaz e’lonlarini</li>
+                </ul>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">olishingiz mumkin.</p>
+              </div>
 
               <button
                 onClick={handleConnect}
@@ -222,17 +239,45 @@ export const TelegramConnectionCard: React.FC<TelegramConnectionCardProps> = ({ 
                 className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white px-4 py-2.5 rounded-xl inline-flex items-center justify-center gap-2 text-xs font-bold shadow-sm transition cursor-pointer"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span>Telegram'ni ulash</span>
+                <span>Telegramda ulash</span>
                 <ExternalLink className="w-3.5 h-3.5 opacity-80" />
               </button>
+
+              {deepLink && pendingLink && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                    <span>yoki</span>
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                  </div>
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900 flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
+                      <QrCode className="w-4 h-4 text-sky-600" />
+                      <span>QR kodni skanerlash</span>
+                    </div>
+                    <div className="p-2 bg-white rounded-xl border border-slate-200">
+                      <QRCodeSVG value={deepLink} size={160} level="M" />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+                      Telefon kamerasi orqali QR kodni skanerlang — bot ochiladi.
+                    </p>
+                    <button
+                      onClick={() => window.open(deepLink, '_blank', 'noopener')}
+                      className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline"
+                    >
+                      Havolani ochish: @{BOT_USERNAME}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {pendingLink && (
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900 text-xs space-y-2">
                   <p className="text-slate-700 dark:text-slate-300 font-semibold flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
                     <span>
-                      Telegram ochildi. Botda <span className="font-black text-sky-600 dark:text-sky-400">Start</span> tugmasini
-                      bosing va qaytib kelgach, holatni yangilang.
+                      Telegram ochildi. Botda <span className="font-black text-sky-600 dark:text-sky-400">Start</span>{' '}
+                      tugmasini bosing va qaytib kelgach, holatni yangilang.
                     </span>
                   </p>
                   <button

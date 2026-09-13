@@ -77,7 +77,13 @@ function paymentAmountDisplay(p: IncomePaymentRecord): string | null {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) => {
   const { language } = useLanguage();
+  // NOTE: `t` is intentionally NOT a useCallback dependency of loadData —
+  // it is re-created every render, which used to retrigger the load effect
+  // endlessly (fetch storm / never-settling UI). loadData depends on
+  // `language` directly instead.
   const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
+  const tRef = React.useRef(t);
+  tRef.current = t;
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
@@ -108,12 +114,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       setMurojaat(murojaatData);
     } catch (err) {
       console.error('Dashboard data load error:', err);
-      setLoadError(t("Ma'lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
+      setLoadError(tRef.current("Ma'lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [language]);
 
   useEffect(() => {
     setLoading(true);
@@ -588,7 +594,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                     className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/40 transition cursor-pointer flex items-center justify-between gap-3 text-left"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="px-2 py-1 rounded-lg bg-emerald-600 text-white text-xs font-black font-mono shrink-0">{g.time.split('-')[0]?.trim() || g.time}</span>
+                      <span className="px-2 py-1 rounded-lg bg-emerald-600 text-white text-xs font-black font-mono shrink-0">{g.time?.split('-')[0]?.trim() || g.time || '—'}</span>
                       <div className="min-w-0">
                         <span className="font-bold text-slate-900 dark:text-white text-sm block truncate">{g.groupName}</span>
                         <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">

@@ -40,7 +40,11 @@ function leadLabel(status: string): string {
  */
 export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
   const { language } = useLanguage();
+  // See DashboardView: keep the load effect keyed on `language`, not on the
+  // per-render `t` closure, to avoid an endless refetch loop.
   const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
+  const tRef = React.useRef(t);
+  tRef.current = t;
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -66,12 +70,12 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
       setGroups(groupsData as unknown as GroupScheduleItem[]);
     } catch (err) {
       console.error('Receptionist dashboard load error:', err);
-      setLoadError(t("Ma'lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
+      setLoadError(tRef.current("Ma'lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [language]);
 
   useEffect(() => {
     setLoading(true);

@@ -25,24 +25,42 @@ export function formatCompactCurrency(value: unknown): string {
   return num.toLocaleString('uz-UZ');
 }
 
-/** Format a date string safely. Returns '-' for invalid dates. */
+/** Format a date string safely. Returns '-' for invalid dates. Handles ISO strings, Date, Firestore Timestamp. */
 export function formatDate(value: unknown): string {
-  if (!value || typeof value !== 'string') return '-';
+  if (!value) return '-';
   try {
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return '-';
+    let d: Date | null = null;
+    if (value instanceof Date) d = value;
+    else if (typeof value === 'object' && value !== null) {
+      const ts = value as { toDate?: () => Date; seconds?: number };
+      if (typeof ts.toDate === 'function') d = ts.toDate();
+      else if (typeof ts.seconds === 'number') d = new Date(ts.seconds * 1000);
+      else d = null;
+    } else if (typeof value === 'string' || typeof value === 'number') {
+      d = new Date(value as string);
+    }
+    if (!d || isNaN(d.getTime())) return '-';
     return d.toLocaleDateString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit' });
   } catch {
     return '-';
   }
 }
 
-/** Format a datetime string safely. */
+/** Format a datetime string safely. Handles ISO strings, Date, Firestore Timestamp. */
 export function formatDateTime(value: unknown): string {
-  if (!value || typeof value !== 'string') return '-';
+  if (!value) return '-';
   try {
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return '-';
+    let d: Date | null = null;
+    if (value instanceof Date) d = value;
+    else if (typeof value === 'object' && value !== null) {
+      const ts = value as { toDate?: () => Date; seconds?: number };
+      if (typeof ts.toDate === 'function') d = ts.toDate();
+      else if (typeof ts.seconds === 'number') d = new Date(ts.seconds * 1000);
+      else d = null;
+    } else if (typeof value === 'string' || typeof value === 'number') {
+      d = new Date(value as string);
+    }
+    if (!d || isNaN(d.getTime())) return '-';
     return d.toLocaleString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   } catch {
     return '-';

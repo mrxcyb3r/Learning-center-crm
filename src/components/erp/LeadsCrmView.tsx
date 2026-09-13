@@ -1357,9 +1357,9 @@ const handleDeleteLead = async (id: string, name: string) => {
                     onChange={(e) => setConvertPaymentStatus(e.target.value as PaymentStatus)}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
                   >
-                    <option value="Paid">To'langan</option>
-                    <option value="Due">Qarzdor</option>
-                    <option value="Overdue">Muddati o'tgan</option>
+                    <option value="Paid">To‘langan</option>
+                    <option value="Due">Kutilmoqda</option>
+                    <option value="Overdue">Muddati o‘tgan</option>
                   </select>
                 </div>
                 <div>

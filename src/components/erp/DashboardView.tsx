@@ -114,7 +114,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       setMurojaat(murojaatData);
     } catch (err) {
       console.error('Dashboard data load error:', err);
-      setLoadError(tRef.current("Ma'lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
+      setLoadError(tRef.current("Ma’lumotlarni yuklashda xatolik yuz berdi.", 'Failed to load data.', 'Ошибка при загрузке данных.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -258,8 +258,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
         title: t(`${studentStats.debtors.length} ta qarzdor`, `${studentStats.debtors.length} debtors`, `${studentStats.debtors.length} должников`),
         detail:
           studentStats.outstanding > 0
-            ? t(`${formatCurrencyShort(studentStats.outstanding)} so'm to'lov kutilmoqda`, `${formatCurrencyShort(studentStats.outstanding)} UZS outstanding`, `Ожидается ${formatCurrencyShort(studentStats.outstanding)} сум`)
-            : t("To'lov holatini tekshiring", 'Check payment status', 'Проверьте статус оплаты'),
+            ? t(`${formatCurrencyShort(studentStats.outstanding)} so‘m qarzdorlik`, `${formatCurrencyShort(studentStats.outstanding)} UZS outstanding`, `Ожидается ${formatCurrencyShort(studentStats.outstanding)} сум`)
+            : t("To‘lov holatini tekshiring", 'Check payment status', 'Проверьте статус оплаты'),
         tab: 'payments',
         tone: 'red',
       });
@@ -268,7 +268,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       items.push({
         id: 'leads',
         title: t(`${leadStats.fresh.length} ta yangi lid`, `${leadStats.fresh.length} new leads`, `${leadStats.fresh.length} новых лидов`),
-        detail: t('follow-up kerak', 'need follow-up', 'нужен follow-up'),
+        detail: t('qayta bog‘lanish kerak', 'need follow-up', 'нужен follow-up'),
         tab: 'leads',
         tone: 'blue',
       });
@@ -276,7 +276,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (leadStats.trialsToday.length > 0) {
       items.push({
         id: 'trials',
-        title: t(`${leadStats.trialsToday.length} ta sinov darsi — bugun`, `${leadStats.trialsToday.length} trial lessons today`, `${leadStats.trialsToday.length} пробных уроков сегодня`),
+        title: t(`${leadStats.trialsToday.length} ta bugungi sinov darsi`, `${leadStats.trialsToday.length} trial lessons today`, `${leadStats.trialsToday.length} пробных уроков сегодня`),
         detail: leadStats.trialsToday
           .slice(0, 2)
           .map((l) => l.name)
@@ -297,8 +297,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (revenue.pendingCount > 0) {
       items.push({
         id: 'pending',
-        title: t(`${revenue.pendingCount} ta kutilayotgan to'lov`, `${revenue.pendingCount} pending payments`, `${revenue.pendingCount} ожидающих платежей`),
-        detail: t(`${formatCurrencyShort(revenue.pendingSum)} so'm tasdiqlanmagan`, `${formatCurrencyShort(revenue.pendingSum)} UZS unconfirmed`, `${formatCurrencyShort(revenue.pendingSum)} сум не подтверждено`),
+        title: t(`${revenue.pendingCount} ta kutilayotgan to‘lov`, `${revenue.pendingCount} pending payments`, `${revenue.pendingCount} ожидающих платежей`),
+        detail: t(`${formatCurrencyShort(revenue.pendingSum)} so‘m tasdiqlanmagan`, `${formatCurrencyShort(revenue.pendingSum)} UZS unconfirmed`, `${formatCurrencyShort(revenue.pendingSum)} сум не подтверждено`),
         tab: 'payments',
         tone: 'amber',
       });
@@ -357,17 +357,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     {
       id: 'revenue',
       icon: Wallet,
-      label: t('Bu oy tushumi', 'Revenue this month', 'Доход за месяц'),
+      label: t('Bu oydagi tushum', 'Revenue this month', 'Доход за месяц'),
       value: `${formatCompactCurrency(revenue.monthCollected)}`,
-      suffix: t("so'm", 'UZS', 'сум'),
-      sub: t(`Jami yig'ilgan • ${revenue.monthCollectedCount} ta to'lov`, `Collected • ${revenue.monthCollectedCount} payments`, `Собрано • ${revenue.monthCollectedCount} платежей`),
+      suffix: t("so‘m", 'UZS', 'сум'),
+      sub: t(`Yig‘ilgan • ${revenue.monthCollectedCount} ta to‘lov`, `Collected • ${revenue.monthCollectedCount} payments`, `Собрано • ${revenue.monthCollectedCount} платежей`),
       tab: 'payments',
       accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
     },
     {
       id: 'students',
       icon: GraduationCap,
-      label: t("Faol o'quvchilar", 'Active students', 'Активные ученики'),
+      label: t('Faol o‘quvchilar', 'Active students', 'Активные ученики'),
       value: `${studentStats.activeCount}`,
       suffix: '',
       sub: t(`${studentStats.total} jami`, `${studentStats.total} total`, `Всего ${studentStats.total}`),
@@ -392,7 +392,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       suffix: '',
       sub:
         studentStats.outstanding > 0
-          ? t(`${formatCompactCurrency(studentStats.outstanding)} so'm`, `${formatCompactCurrency(studentStats.outstanding)} UZS`, `${formatCompactCurrency(studentStats.outstanding)} сум`)
+          ? t(`${formatCompactCurrency(studentStats.outstanding)} so‘m`, `${formatCompactCurrency(studentStats.outstanding)} UZS`, `${formatCompactCurrency(studentStats.outstanding)} сум`)
           : t('Qarzdorlik yo‘q', 'No outstanding debt', 'Нет задолженности'),
       tab: 'payments',
       accent: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
@@ -403,7 +403,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       label: t('Faol guruhlar', 'Active groups', 'Активные группы'),
       value: `${groupStats.activeCount}`,
       suffix: '',
-      sub: t(`${groupStats.seatsTaken} o'quvchi joylashgan`, `${groupStats.seatsTaken} students seated`, `Учатся ${groupStats.seatsTaken}`),
+      sub: t(`${groupStats.seatsTaken} o‘quvchi biriktirilgan`, `${groupStats.seatsTaken} students seated`, `Учатся ${groupStats.seatsTaken}`),
       tab: 'schedule',
       accent: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
     },
@@ -415,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       suffix: '',
       sub:
         groupStats.todayClasses.length > 0
-          ? t(`Keyingi: ${groupStats.todayClasses[0].time}`, `Next: ${groupStats.todayClasses[0].time}`, `След.: ${groupStats.todayClasses[0].time}`)
+          ? t(`Keyingi: ${groupStats.todayClasses[0].time || '—'}`, `Next: ${groupStats.todayClasses[0].time || '—'}`, `След.: ${groupStats.todayClasses[0].time || '—'}`)
           : t('Rejalashtirilmagan', 'None scheduled', 'Не запланировано'),
       tab: 'schedule',
       accent: 'text-teal-600 dark:text-teal-400 bg-teal-500/10',
@@ -423,9 +423,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
   ];
 
   const quickActions = [
-    { id: 'qa-student', icon: UserPlus, label: t("O'quvchi qo'shish", 'Add student', 'Добавить ученика'), tab: 'students' },
-    { id: 'qa-lead', icon: Phone, label: t("Lid qo'shish", 'Add lead', 'Добавить лид'), tab: 'leads' },
-    { id: 'qa-payment', icon: CreditCard, label: t("To'lov kiritish", 'Record payment', 'Внести оплату'), tab: 'payments' },
+    { id: 'qa-student', icon: UserPlus, label: t('O‘quvchi qo‘shish', 'Add student', 'Добавить ученика'), tab: 'students' },
+    { id: 'qa-lead', icon: Phone, label: t('Lid qo‘shish', 'Add lead', 'Добавить лид'), tab: 'leads' },
+    { id: 'qa-payment', icon: CreditCard, label: t('To‘lovni qayd etish', 'Record payment', 'Внести оплату'), tab: 'payments' },
     { id: 'qa-group', icon: CalendarDays, label: t('Guruh yaratish', 'Create group', 'Создать группу'), tab: 'schedule' },
     { id: 'qa-trial', icon: ClipboardList, label: t('Sinov darsi', 'Trial lesson', 'Пробный урок'), tab: 'leads' },
     { id: 'qa-reports', icon: BarChart3, label: t('Hisobotlar', 'Reports', 'Отчёты'), tab: 'reports' },
@@ -447,7 +447,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
             {greetingText} 👋
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {dateText} • {t("Markaz faoliyati bo'yicha bugungi umumiy ko'rinish", "Today's overview of the center", 'Сегодняшний обзор центра')}
+            {dateText} • {t('Markazning bugungi umumiy holati', "Today's overview of the center", 'Сегодняшний обзор центра')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -503,13 +503,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
             <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="w-4 h-4" />
             </span>
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Tushum va yig‘uvchanlik', 'Revenue & collection', 'Доход и сборы')}</h2>
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Tushum va yig‘imlar', 'Revenue & collection', 'Доход и сборы')}</h2>
           </div>
           <button
             onClick={() => onNavigateTab('payments')}
             className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
           >
-            <span>{t("Batafsil to'lovlar", 'All payments', 'Все платежи')}</span>
+            <span>{t('Barcha to‘lovlar', 'All payments', 'Все платежи')}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -544,7 +544,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                 <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v: number) => formatCompactCurrency(v)} tickLine={false} width={56} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#f8fafc', fontSize: '12px' }}
-                  formatter={(value: unknown) => [`${formatCurrencyShort(value)} so'm`, '']}
+                  formatter={(value: unknown) => [`${formatCurrencyShort(value)} so‘m`, '']}
                 />
                 <Bar dataKey="collected" name={t('Yig‘ilgan', 'Collected', 'Собрано')} fill="#10b981" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="pending" name={t('Kutilayotgan', 'Pending', 'Ожидается')} fill="#f59e0b" radius={[6, 6, 0, 0]} />
@@ -555,12 +555,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           <div className="py-10 text-center">
             <Wallet className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
             <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">{t('Hozircha grafik uchun ma’lumot yetarli emas', 'Not enough data for a chart yet', 'Пока недостаточно данных для графика')}</p>
-            <p className="text-xs text-slate-400 mt-1">{t("To'lovlar kiritilgach, oylik dinamika shu yerda ko'rinadi", 'Monthly dynamics will appear here once payments are recorded', 'Месячная динамика появится после внесения платежей')}</p>
+            <p className="text-xs text-slate-400 mt-1">{t("To‘lovlar kiritilgach, oylik dinamika shu yerda ko‘rinadi", 'Monthly dynamics will appear here once payments are recorded', 'Месячная динамика появится после внесения платежей')}</p>
             <button
               onClick={() => onNavigateTab('payments')}
               className="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer"
             >
-              {t("To'lov kiritish", 'Record payment', 'Внести оплату')}
+              {t("To‘lovni qayd etish", 'Record payment', 'Внести оплату')}
             </button>
           </div>
         )}
@@ -605,7 +605,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                               {g.room}
                             </span>
                           )}
-                          {toSafeNumber(g.studentsCount) > 0 && <span> • {toSafeNumber(g.studentsCount)} {t("o'quvchi", 'students', 'уч.')}</span>}
+                          {toSafeNumber(g.studentsCount) > 0 && <span> • {toSafeNumber(g.studentsCount)} {t('o‘quvchi', 'students', 'уч.')}</span>}
                         </span>
                       </div>
                     </div>
@@ -625,10 +625,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           )}
         </section>
 
-        <section aria-label={t("Diqqat talab qiladi", 'Needs attention', 'Требует внимания')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
+        <section aria-label={t("E’tibor talab qiladi", 'Needs attention', 'Требует внимания')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
             <AlertCircle className="w-4 h-4 text-amber-500" />
-            {t("Diqqat talab qiladi", 'Needs attention', 'Требует внимания')}
+            {t("E’tibor talab qiladi", 'Needs attention', 'Требует внимания')}
           </h2>
           {attention.length > 0 ? (
             <ul className="space-y-2.5">
@@ -659,16 +659,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
 
       {/* 6 + 7 — Recent leads & Recent payments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        <section aria-label={t("So'nggi murojaatlar", 'Recent leads', 'Последние лиды')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
+        <section aria-label={t("So‘nggi lidlar", 'Recent leads', 'Последние лиды')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t("So'nggi murojaatlar", 'Recent leads', 'Последние лиды')}</h2>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t("So‘nggi lidlar", 'Recent leads', 'Последние лиды')}</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {t(`Konversiya: ${leadStats.conversion}%`, `Conversion: ${leadStats.conversion}%`, `Конверсия: ${leadStats.conversion}%`)}
               </p>
             </div>
             <button onClick={() => onNavigateTab('leads')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer shrink-0">
-              {t('Barchasi →', 'View all →', 'Все →')}
+              {t('Barchasini ko‘rish', 'View all →', 'Все →')}
             </button>
           </div>
           {leadStats.recent.length > 0 ? (
@@ -698,9 +698,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           ) : (
             <div className="py-8 text-center">
               <UserPlus className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
-              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t("Hozircha murojaatlar yo'q", 'No leads yet', 'Пока нет обращений')}</p>
+              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t("Hozircha murojaatlar yo‘q", 'No leads yet', 'Пока нет обращений')}</p>
               <button onClick={() => onNavigateTab('leads')} className="mt-3 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer">
-                {t("Lid qo'shish", 'Add lead', 'Добавить лид')}
+                {t("Lid qo‘shish", 'Add lead', 'Добавить лид')}
               </button>
             </div>
           )}
@@ -714,11 +714,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           )}
         </section>
 
-        <section aria-label={t("So'nggi to'lovlar", 'Recent payments', 'Последние платежи')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
+        <section aria-label={t("So‘nggi to‘lovlar", 'Recent payments', 'Последние платежи')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t("So'nggi to'lovlar", 'Recent payments', 'Последние платежи')}</h2>
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t("So‘nggi to‘lovlar", 'Recent payments', 'Последние платежи')}</h2>
             <button onClick={() => onNavigateTab('payments')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer shrink-0">
-              {t('Barchasi →', 'View all →', 'Все →')}
+              {t('Barchasini ko‘rish', 'View all →', 'Все →')}
             </button>
           </div>
           {recentPayments.length > 0 ? (
@@ -742,11 +742,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                       return (
                         <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                           <td className="py-2.5 pr-2 font-bold text-slate-900 dark:text-white">
-                            {p.studentName || t("Noma'lum", 'Unknown', 'Неизвестно')}
+                            {p.studentName || t("Noma’lum", 'Unknown', 'Неизвестно')}
                             {paymentCourse(p) && <span className="block font-normal text-slate-400 text-[11px] truncate max-w-32">{paymentCourse(p)}</span>}
                           </td>
                           <td className="py-2.5 pr-2 font-mono font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
-                            {amount ? `${amount} ${t("so'm", 'UZS', 'сум')}` : '—'}
+                            {amount ? `${amount} ${t("so‘m", 'UZS', 'сум')}` : '—'}
                           </td>
                           <td className="py-2.5 pr-2 text-slate-500 dark:text-slate-400">{paymentMethod(p) || '—'}</td>
                           <td className="py-2.5 pr-2">
@@ -759,7 +759,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                                     : 'bg-slate-200 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
                               }`}
                             >
-                              {state === 'collected' ? t("To'langan", 'Paid', 'Оплачено') : state === 'pending' ? t('Kutilmoqda', 'Pending', 'Ожидается') : t('Bekor qilingan', 'Voided', 'Аннулировано')}
+                              {state === 'collected' ? t("To‘langan", 'Paid', 'Оплачено') : state === 'pending' ? t('Kutilmoqda', 'Pending', 'Ожидается') : t('Bekor qilingan', 'Voided', 'Аннулировано')}
                             </span>
                           </td>
                           <td className="py-2.5 text-right font-mono text-slate-400 text-[11px] whitespace-nowrap">{formatDate(p.date)}</td>
@@ -777,7 +777,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                   return (
                     <li key={p.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-slate-900 dark:text-white text-sm truncate">{p.studentName || t("Noma'lum", 'Unknown', 'Неизвестно')}</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm truncate">{p.studentName || t("Noma’lum", 'Unknown', 'Неизвестно')}</span>
                         <span className="font-mono font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">
                           {amount ? `${amount}` : '—'}
                         </span>
@@ -795,7 +795,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
                           }`}
                         >
-                          {state === 'collected' ? t("To'langan", 'Paid', 'Оплачено') : state === 'pending' ? t('Kutilmoqda', 'Pending', 'Ожидается') : t('Bekor qilingan', 'Voided', 'Аннулировано')}
+                          {state === 'collected' ? t("To‘langan", 'Paid', 'Оплачено') : state === 'pending' ? t('Kutilmoqda', 'Pending', 'Ожидается') : t('Bekor qilingan', 'Voided', 'Аннулировано')}
                         </span>
                       </div>
                     </li>
@@ -806,9 +806,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           ) : (
             <div className="py-8 text-center">
               <CreditCard className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
-              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t("Hozircha to'lovlar yo'q", 'No payments yet', 'Пока нет платежей')}</p>
+              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t("Hozircha to‘lovlar yo‘q", 'No payments yet', 'Пока нет платежей')}</p>
               <button onClick={() => onNavigateTab('payments')} className="mt-3 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer">
-                {t("To'lov kiritish", 'Record payment', 'Внести оплату')}
+                {t("To‘lovni qayd etish", 'Record payment', 'Внести оплату')}
               </button>
             </div>
           )}
@@ -820,7 +820,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <h3 className="text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-emerald-500" />
-            {t("Kurslar bo'yicha o'quvchilar", 'Students by course', 'Ученики по курсам')}
+            {t("Kurslar bo‘yicha o‘quvchilar", 'Students by course', 'Ученики по курсам')}
           </h3>
           {courses.filter((c) => students.filter((s) => s.course === c.title).length > 0).length > 0 ? (
             <ul className="space-y-2.5">
@@ -836,18 +836,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               })}
             </ul>
           ) : (
-            <p className="py-3 text-center text-xs text-slate-400">{t("Hozircha kurslarga o'quvchilar biriktirilmagan", 'No students assigned to courses yet', 'Ученики пока не распределены по курсам')}</p>
+            <p className="py-3 text-center text-xs text-slate-400">{t("Hozircha kurslarga o‘quvchilar biriktirilmagan", 'No students assigned to courses yet', 'Ученики пока не распределены по курсам')}</p>
           )}
         </div>
 
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <h3 className="text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
             <Wallet className="w-3.5 h-3.5 text-amber-500" />
-            {t("To'lov holati", 'Payment status', 'Статус оплаты')}
+            {t("To‘lov holati", 'Payment status', 'Статус оплаты')}
           </h3>
           <div className="grid grid-cols-3 gap-2.5 text-center">
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 block">{t("To'lagan", 'Paid', 'Оплатили')}</span>
+              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 block">{t("To‘langan", 'Paid', 'Оплатили')}</span>
               <span className="text-xl font-black text-emerald-700 dark:text-emerald-300 block mt-0.5">{studentStats.paid}</span>
             </div>
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -865,7 +865,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               className="w-full mt-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-600 dark:text-rose-400 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
             >
               <Clock className="w-3.5 h-3.5" />
-              {t(`${studentStats.debtors.length} ta qarzdorlikni ko‘rish`, `Review ${studentStats.debtors.length} debtors`, `Проверить ${studentStats.debtors.length} должников`)}
+              {t(`${studentStats.debtors.length} ta qarzdorni ko‘rib chiqish`, `Review ${studentStats.debtors.length} debtors`, `Проверить ${studentStats.debtors.length} должников`)}
             </button>
           )}
         </div>
@@ -897,9 +897,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       {leadStats.fresh.length + leadStats.overdueFollowUps.length > 0 && (
         <section aria-label={t('Kuzatuv ro‘yxati', 'Follow-up list', 'Список follow-up')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Kuzatuv talab qiladi', 'Needs follow-up', 'Требует follow-up')}</h2>
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Qayta bog‘lanish kerak', 'Needs follow-up', 'Требует follow-up')}</h2>
             <button onClick={() => onNavigateTab('leads')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer">
-              <span>{t('CRM ni ochish', 'Open CRM', 'Открыть CRM')}</span>
+              <span>{t('CRMda ochish', 'Open CRM', 'Открыть CRM')}</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -940,7 +940,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                     onClick={() => onNavigateTab('leads')}
                     className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition cursor-pointer"
                   >
-                    {t('CRM da ochish', 'Open in CRM', 'Открыть в CRM')}
+                    {t('CRMda ochish', 'Open in CRM', 'Открыть в CRM')}
                   </button>
                 </div>
               </li>

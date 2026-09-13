@@ -51,7 +51,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
 
         <div className="min-w-0">
           <span className="text-sm font-extrabold tracking-tight truncate block" style={{ color: theme === 'dark' ? '#fff' : '#0f172a' }}>
-            O'qituvchi paneli
+            O‘qituvchi paneli
           </span>
           <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate">
             CenterFlow • Renessans Learning Center
@@ -113,7 +113,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
             }`}>
               {displayName}
             </span>
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">O'qituvchi</span>
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">O‘qituvchi</span>
           </div>
         </div>
 

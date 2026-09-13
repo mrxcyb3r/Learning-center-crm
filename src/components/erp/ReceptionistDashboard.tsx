@@ -197,42 +197,42 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
     },
     {
       id: 'trials', icon: CalendarClock, label: t('Bugungi sinov darslari', "Today's trials", 'Пробные сегодня'),
-      value: `${stats.trialsToday.length}`, sub: t(`Qatnashgan: ${stats.attendedToday.length} ta`, `Attended: ${stats.attendedToday.length}`, `Посетили: ${stats.attendedToday.length}`),
+      value: `${stats.trialsToday.length}`, sub: t(`Qatnashdi: ${stats.attendedToday.length} ta`, `Attended: ${stats.attendedToday.length}`, `Посетили: ${stats.attendedToday.length}`),
       tab: 'leads', accent: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
     },
     {
-      id: 'follow', icon: AlertCircle, label: t('Kuzatuv kerak', 'Follow-up needed', 'Нужен follow-up'),
-      value: `${stats.followUps.length}`, sub: t(`Kechikkan: ${stats.overdueFollowUps.length} ta`, `Overdue: ${stats.overdueFollowUps.length}`, `Просрочено: ${stats.overdueFollowUps.length}`),
+      id: 'follow', icon: AlertCircle, label: t('Qayta bog‘lanish kerak', 'Follow-up needed', 'Нужен follow-up'),
+      value: `${stats.followUps.length}`, sub: t(`Muddati o‘tgan: ${stats.overdueFollowUps.length} ta`, `Overdue: ${stats.overdueFollowUps.length}`, `Просрочено: ${stats.overdueFollowUps.length}`),
       tab: 'leads', accent: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
     },
     {
-      id: 'enrolled', icon: UserPlus, label: t("Bugun o'quvchiga aylandi", 'Enrolled today', 'Стали учениками'),
+      id: 'enrolled', icon: UserPlus, label: t('Bugun qabul qilingan', 'Enrolled today', 'Стали учениками'),
       value: `${stats.enrolledToday.length}`, sub: t("Konversiya natijasi", 'Conversion result', 'Результат конверсии'),
       tab: 'students', accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
     },
     {
-      id: 'dues', icon: Wallet, label: t("Kutilayotgan to'lovlar", 'Pending payments', 'Ожидающие платежи'),
-      value: `${stats.dues.length}`, sub: t('Eslatma uchun', 'For reminders', 'Для напоминаний'),
+      id: 'dues', icon: Wallet, label: t('Kutilayotgan to‘lovlar', 'Pending payments', 'Ожидающие платежи'),
+      value: `${stats.dues.length}`, sub: t('Eslatma yuborish kerak', 'For reminders', 'Для напоминаний'),
       tab: 'payments', accent: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
     },
   ];
 
   const quickActions = [
     { id: 'qa-lead', icon: PhoneCall, label: t('Yangi murojaat', 'New inquiry', 'Новое обращение'), action: () => quickAdd('lead') },
-    { id: 'qa-student', icon: UserPlus, label: t("O'quvchi qo'shish", 'Add student', 'Добавить ученика'), action: () => quickAdd('student') },
+    { id: 'qa-student', icon: UserPlus, label: t('O‘quvchi qo‘shish', 'Add student', 'Добавить ученика'), action: () => quickAdd('student') },
     { id: 'qa-trial', icon: ClipboardList, label: t('Sinov darsi belgilash', 'Schedule trial', 'Назначить пробный'), action: () => go('leads') },
-    { id: 'qa-payment', icon: CreditCard, label: t("To'lovlar", 'Payments', 'Платежи'), sub: t('Qarzdorlikni ko‘rish', 'View dues', 'Смотреть долги'), action: () => go('payments') },
+    { id: 'qa-payment', icon: CreditCard, label: t('To‘lovlar', 'Payments', 'Платежи'), sub: t('Qarzdorlikni ko‘rish', 'View dues', 'Смотреть долги'), action: () => go('payments') },
     { id: 'qa-group', icon: Users, label: t('Guruhga biriktirish', 'Assign to group', 'В группу'), action: () => go('students') },
     { id: 'qa-courses', icon: BookOpen, label: t('Kurslar', 'Courses', 'Курсы'), action: () => go('courses') },
   ];
 
   const pipeline: Array<{ key: string; label: string; count: number; tone: string }> = [
     { key: 'New', label: t('Yangi', 'New', 'Новые'), count: stats.byStatus('New').length, tone: 'bg-blue-500/10 border-blue-500/25 text-blue-700 dark:text-blue-400' },
-    { key: 'Contacted', label: t("Bog'lanildi", 'Contacted', 'Связались'), count: stats.byStatus('Contacted').length, tone: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400' },
-    { key: 'Trial Scheduled', label: t('Sinov', 'Trial', 'Пробный'), count: stats.byStatus('Trial Scheduled').length, tone: 'bg-violet-500/10 border-violet-500/25 text-violet-700 dark:text-violet-400' },
+    { key: 'Contacted', label: t('Bog‘lanildi', 'Contacted', 'Связались'), count: stats.byStatus('Contacted').length, tone: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400' },
+    { key: 'Trial Scheduled', label: t('Sinov darsi', 'Trial', 'Пробный'), count: stats.byStatus('Trial Scheduled').length, tone: 'bg-violet-500/10 border-violet-500/25 text-violet-700 dark:text-violet-400' },
     { key: 'Trial Completed', label: t('Qatnashdi', 'Attended', 'Посетили'), count: stats.byStatus('Trial Completed').length, tone: 'bg-teal-500/10 border-teal-500/25 text-teal-700 dark:text-teal-400' },
-    { key: 'Enrolled', label: t("O'quvchi", 'Enrolled', 'Ученики'), count: stats.byStatus('Enrolled').length, tone: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400' },
-    { key: 'Lost', label: t("Yo'qotildi", 'Lost', 'Потеряны'), count: stats.byStatus('Lost').length, tone: 'bg-slate-500/10 border-slate-500/25 text-slate-500' },
+    { key: 'Enrolled', label: t('O‘quvchi', 'Enrolled', 'Ученики'), count: stats.byStatus('Enrolled').length, tone: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400' },
+    { key: 'Lost', label: t('Yo‘qotilgan', 'Lost', 'Потеряны'), count: stats.byStatus('Lost').length, tone: 'bg-slate-500/10 border-slate-500/25 text-slate-500' },
   ];
 
   const priorityTone: Record<string, string> = {
@@ -257,7 +257,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
             {t('Xush kelibsiz, Qabulxona', 'Welcome, Front desk', 'Добро пожаловать, Ресепшн')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 capitalize">
-            {dateText} • {t('Kunlik front-desk holati', 'Daily front-desk status', 'Дневной статус ресепшн')}
+            {dateText} • {t('Bugungi qabulxona holati', 'Daily front-desk status', 'Дневной статус ресепшн')}
           </p>
         </div>
         <button
@@ -314,9 +314,9 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
       </section>
 
       {/* Lead pipeline */}
-      <section aria-label={t('Lidlar voronkasi', 'Lead pipeline', 'Воронка лидов')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-5">
+      <section aria-label={t('Lidlar bosqichlari', 'Lead pipeline', 'Воронка лидов')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">{t('Lidlar voronkasi', 'Lead pipeline', 'Воронка лидов')}</h2>
+          <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">{t('Lidlar bosqichlari', 'Lead pipeline', 'Воронка лидов')}</h2>
           <button onClick={() => go('leads')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
             CRM →
           </button>
@@ -361,7 +361,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-2">
                     <span className="text-[11px] text-slate-400 truncate">
-                      {l.followUpDate ? `${t('Kuzatuv:', 'Follow-up:', 'Follow-up:')} ${formatDate(l.followUpDate)}` : t('Kuzatuv sanasi belgilanmagan', 'No follow-up date', 'Дата не назначена')}
+                      {l.followUpDate ? `${t('Qayta bog‘lanish:', 'Follow-up:', 'Follow-up:')} ${formatDate(l.followUpDate)}` : t('Qayta bog‘lanish sanasi yo‘q', 'No follow-up date', 'Дата не назначена')}
                       {l.lastContactedAt ? ` • ${t('oxirgi:', 'last:', 'посл.:')} ${formatDate(l.lastContactedAt)}` : ''}
                     </span>
                     <span className="flex items-center gap-1.5 shrink-0">
@@ -386,7 +386,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
           ) : (
             <div className="py-8 text-center">
               <CircleCheck className="w-8 h-8 text-emerald-500 mx-auto" />
-              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t('Kuzatuv kutilayotgan murojaat yo‘q', 'No pending follow-ups', 'Нет ожидающих follow-up')}</p>
+              <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">{t('Qayta bog‘lanish kutilayotgan murojaat yo‘q', 'No pending follow-ups', 'Нет ожидающих follow-up')}</p>
             </div>
           )}
         </section>
@@ -418,7 +418,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                           {trialTime ? trialTime.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${l.trialAttended ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'}`}>
-                          {l.trialAttended ? t('Keldi', 'Attended', 'Пришёл') : t('Kutilmoqda', 'Expected', 'Ожидается')}
+                          {l.trialAttended ? t('Qatnashdi', 'Attended', 'Пришёл') : t('Kutilmoqda', 'Expected', 'Ожидается')}
                         </span>
                       </span>
                     </div>
@@ -466,8 +466,8 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
 
       {/* Student lookup + courses lookup */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        <section aria-label={t("O'quvchini topish", 'Find a student', 'Найти ученика')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-          <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-3">{t("O'quvchini topish", 'Find a student', 'Найти ученика')}</h2>
+        <section aria-label={t('O‘quvchi qidirish', 'Find a student', 'Найти ученика')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-3">{t('O‘quvchi qidirish', 'Find a student', 'Найти ученика')}</h2>
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
@@ -490,7 +490,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                         </span>
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 ${paymentTone(s.paymentStatus)}`}>
-                        {s.paymentStatus === 'Paid' ? t("To'langan", 'Paid', 'Оплачено') : s.paymentStatus === 'Due' ? t('Kutilmoqda', 'Due', 'Ожидается') : t('Qarzdor', 'Overdue', 'Должник')}
+                        {s.paymentStatus === 'Paid' ? t('To‘langan', 'Paid', 'Оплачено') : s.paymentStatus === 'Due' ? t('Kutilmoqda', 'Due', 'Ожидается') : t('Muddati o‘tgan', 'Overdue', 'Должник')}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -501,7 +501,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                         {t('Guruh', 'Group', 'Группа')}
                       </button>
                       <button onClick={() => go('payments')} className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold hover:border-emerald-500/40 transition cursor-pointer">
-                        {t("To'lov", 'Payment', 'Оплата')}
+                        {t('To‘lov', 'Payment', 'Оплата')}
                       </button>
                       <a href={`tel:${s.phone}`} aria-label={t("Qo'ng'iroq qilish", 'Call', 'Позвонить')} className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
                         <Phone className="w-3.5 h-3.5" />
@@ -514,7 +514,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
               <p className="py-6 text-center text-xs text-slate-400">{t('Hech kim topilmadi', 'No one found', 'Никого не найдено')}</p>
             )
           ) : (
-            <p className="py-6 text-center text-xs text-slate-400">{t('Qidirish uchun kamida 2 ta belgi kiriting', 'Type at least 2 characters', 'Введите минимум 2 символа')}</p>
+            <p className="py-6 text-center text-xs text-slate-400">{t('Kamida 2 ta belgi kiriting', 'Type at least 2 characters', 'Введите минимум 2 символа')}</p>
           )}
         </section>
 
@@ -549,7 +549,7 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                         ? hasCapacity
                           ? t(`${courseGroups.length} ta guruh • ${filled}/${capacity} joy band`, `${courseGroups.length} groups • ${filled}/${capacity} seats taken`, `${courseGroups.length} групп • ${filled}/${capacity} мест занято`)
                           : t(`${courseGroups.length} ta guruh`, `${courseGroups.length} groups`, `${courseGroups.length} групп`)
-                        : t('Hozircha ochiq guruh yo‘q', 'No open groups', 'Открытых групп нет')}
+                        : t('Bo‘sh guruh yo‘q', 'No open groups', 'Открытых групп нет')}
                     </div>
                   </li>
                 );
@@ -570,11 +570,11 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
           {[
             { label: t('Yangi', 'New', 'Новые'), value: stats.todayNew.length },
-            { label: t("Bog'langan", 'Contacted', 'Связались'), value: stats.byStatus('Contacted').length },
-            { label: t('Sinov', 'Trials', 'Пробные'), value: stats.trialsToday.length },
-            { label: t('Qatnashgan', 'Attended', 'Посетили'), value: stats.attendedToday.length },
-            { label: t("O'quvchi bo'ldi", 'Enrolled', 'Ученики'), value: stats.enrolledToday.length },
-            { label: t("Kutilayotgan to'lov", 'Dues', 'Долги'), value: stats.dues.length },
+            { label: t('Bog‘lanildi', 'Contacted', 'Связались'), value: stats.byStatus('Contacted').length },
+            { label: t('Sinov darsi', 'Trials', 'Пробные'), value: stats.trialsToday.length },
+            { label: t('Qatnashdi', 'Attended', 'Посетили'), value: stats.attendedToday.length },
+            { label: t('O‘quvchi bo‘ldi', 'Enrolled', 'Ученики'), value: stats.enrolledToday.length },
+            { label: t('Kutilayotgan to‘lov', 'Dues', 'Долги'), value: stats.dues.length },
           ].map((s) => (
             <div key={s.label} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
               <span className="text-xl font-black text-slate-900 dark:text-white block">{s.value}</span>
@@ -585,14 +585,14 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
       </section>
 
       {/* Recent dues for reminders */}
-      <section aria-label={t("To'lov eslatmalari", 'Payment reminders', 'Напоминания об оплате')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+      <section aria-label={t('To‘lov eslatmalari', 'Payment reminders', 'Напоминания об оплате')} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <Wallet className="w-4 h-4 text-amber-500" />
-            {t("To'lov eslatmalari", 'Payment reminders', 'Напоминания об оплате')}
+            {t('To‘lov eslatmalari', 'Payment reminders', 'Напоминания об оплате')}
           </h2>
           <button onClick={() => go('payments')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1 shrink-0">
-            {t("To'lovlar", 'Payments', 'Платежи')} <ArrowUpRight className="w-3.5 h-3.5" />
+            {t('To‘lovlar', 'Payments', 'Платежи')} <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
         {stats.dues.length > 0 ? (

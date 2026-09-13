@@ -28,19 +28,19 @@ interface TeacherSidebarProps {
 }
 
 const NAV_ITEMS: { tab: TeacherTab; icon: React.ReactNode; labelUz: string; labelEn: string; labelRu: string; groupUz: string; groupEn: string; groupRu: string }[] = [
-  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, labelUz: 'Boshqaruv', labelEn: 'Dashboard', labelRu: 'Главная', groupUz: 'Boshqaruv', groupEn: 'Manage', groupRu: 'Управление' },
-  { tab: 'groups', icon: <Users className="w-5 h-5" />, labelUz: 'Guruhlarim', labelEn: 'My Groups', labelRu: 'Мои группы', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
-  { tab: 'students', icon: <UserCog className="w-5 h-5" />, labelUz: "O'quvchilarim", labelEn: 'My Students', labelRu: 'Мои ученики', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
-  { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, labelUz: 'Dars jadvali', labelEn: 'Timetable', labelRu: 'Расписание', groupUz: "Ta'lim", groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, labelUz: 'Bosh sahifa', labelEn: 'Dashboard', labelRu: 'Главная', groupUz: 'Boshqaruv', groupEn: 'Manage', groupRu: 'Управление' },
+  { tab: 'groups', icon: <Users className="w-5 h-5" />, labelUz: 'Guruhlarim', labelEn: 'My Groups', labelRu: 'Мои группы', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'students', icon: <UserCog className="w-5 h-5" />, labelUz: 'O‘quvchilarim', labelEn: 'My Students', labelRu: 'Мои ученики', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, labelUz: 'Dars jadvali', labelEn: 'Timetable', labelRu: 'Расписание', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
   { tab: 'attendance', icon: <CheckSquare className="w-5 h-5" />, labelUz: 'Davomat', labelEn: 'Attendance', labelRu: 'Посещаемость', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
-  { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, labelUz: "To'lovlar", labelEn: 'Payments', labelRu: 'Оплаты', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
+  { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, labelUz: 'To‘lovlar', labelEn: 'Payments', labelRu: 'Оплаты', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
   { tab: 'income', icon: <TrendingUp className="w-5 h-5" />, labelUz: 'Daromad', labelEn: 'Income', labelRu: 'Доход', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
-  { tab: 'announcements', icon: <Bell className="w-5 h-5" />, labelUz: "E'lonlar", labelEn: 'Announcements', labelRu: 'Объявления', groupUz: 'Aloqa', groupEn: 'Comms', groupRu: 'Связь' },
-  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" />, labelUz: 'Vazifalar', labelEn: 'Tasks', labelRu: 'Задачи', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'documents', icon: <FileText className="w-5 h-5" />, labelUz: 'Hujjatlar', labelEn: 'Documents', labelRu: 'Документы', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" />, labelUz: 'Tahlil', labelEn: 'Analytics', labelRu: 'Аналитика', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'profile', icon: <User className="w-5 h-5" />, labelUz: 'Profil', labelEn: 'Profile', labelRu: 'Профиль', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'settings', icon: <Settings className="w-5 h-5" />, labelUz: 'Sozlamalar', labelEn: 'Settings', labelRu: 'Настройки', groupUz: 'Yordamchi', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'announcements', icon: <Bell className="w-5 h-5" />, labelUz: 'E’lonlar', labelEn: 'Announcements', labelRu: 'Объявления', groupUz: 'Aloqa', groupEn: 'Comms', groupRu: 'Связь' },
+  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" />, labelUz: 'Vazifalar', labelEn: 'Tasks', labelRu: 'Задачи', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'documents', icon: <FileText className="w-5 h-5" />, labelUz: 'Hujjatlar', labelEn: 'Documents', labelRu: 'Документы', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" />, labelUz: 'Tahlil', labelEn: 'Analytics', labelRu: 'Аналитика', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'profile', icon: <User className="w-5 h-5" />, labelUz: 'Profil', labelEn: 'Profile', labelRu: 'Профиль', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'settings', icon: <Settings className="w-5 h-5" />, labelUz: 'Sozlamalar', labelEn: 'Settings', labelRu: 'Настройки', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
 ];
 
 export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onToggle }) => {
@@ -82,7 +82,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
               RENESSANS
             </span>
             <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
-              O'qituvchi
+              O‘qituvchi
             </span>
           </div>
         )}

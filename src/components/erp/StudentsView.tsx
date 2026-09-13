@@ -455,9 +455,9 @@ export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
             className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
             <option value="All">Barcha To'lov Holatlari</option>
-            <option value="Paid">To'langan</option>
-            <option value="Due">Muddati kelgan</option>
-            <option value="Overdue">Qarzdor</option>
+            <option value="Paid">To‘langan</option>
+            <option value="Due">Kutilmoqda</option>
+            <option value="Overdue">Muddati o‘tgan</option>
           </select>
 
           {/* Student Status Filter */}
@@ -486,7 +486,7 @@ export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
                 <th className="py-3.5 px-4">O'quvchi & Kontakt</th>
                 <th className="py-3.5 px-4">Kurs va Guruhi</th>
                 <th className="py-3.5 px-4">Mas'ul Ustoz</th>
-                <th className="py-3.5 px-4">To'lov & Qarzdorlik</th>
+                <th className="py-3.5 px-4">To‘lov & qarzdorlik</th>
                 <th className="py-3.5 px-4">Davomat</th>
                 <th className="py-3.5 px-4">Telegram</th>
                 <th className="py-3.5 px-4">Status</th>
@@ -555,7 +555,7 @@ export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
                               : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                           }`}
                         >
-                          {st.paymentStatus === 'Paid' ? "To'langan" : st.paymentStatus === 'Due' ? 'Kutilmoqda' : 'Qarzdor'}
+                          {st.paymentStatus === 'Paid' ? "To‘langan" : st.paymentStatus === 'Due' ? 'Kutilmoqda' : 'Muddati o‘tgan'}
                         </span>
                       </div>
                       <div className="text-xs font-mono font-bold mt-1 text-slate-900 dark:text-white">
@@ -841,15 +841,15 @@ export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
                     onChange={(e) => setFormPaymentStatus(e.target.value as PaymentStatus)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                   >
-                    <option value="Paid">To'langan</option>
-                    <option value="Due">Muddati kelgan</option>
-                    <option value="Overdue">Qarzdor</option>
+                    <option value="Paid">To‘langan</option>
+                    <option value="Due">Kutilmoqda</option>
+                    <option value="Overdue">Muddati o‘tgan</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                    Qarzdorlik Summasi (UZS)
+                    Qarzdorlik summasi (UZS)
                   </label>
                   <input
                     type="number"

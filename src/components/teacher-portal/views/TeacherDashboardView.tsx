@@ -127,7 +127,7 @@ export const TeacherDashboardView: React.FC = () => {
           id: s.id,
           name: s.fullName,
           group: s.groupName,
-          reason: t(`So'nggi ${m.total} darsdan ${m.absent} tasida qatnashmadi`, `Missed ${m.absent} of last ${m.total} classes`, `Пропустил ${m.absent} из последних ${m.total} занятий`),
+            reason: t(`So‘nggi ${m.total} darsdan ${m.absent} tasida qatnashmagan`, `Missed ${m.absent} of last ${m.total} classes`, `Пропустил ${m.absent} из последних ${m.total} занятий`),
           absent: m.absent,
           total: m.total,
         });
@@ -163,14 +163,14 @@ export const TeacherDashboardView: React.FC = () => {
 
   const quickActions: { tab: TeacherTab; icon: React.ReactNode; label: string }[] = [
     { tab: 'timetable', icon: <CalendarDays className="w-5 h-5" />, label: t('Dars jadvali', 'Timetable', 'Расписание') },
-    { tab: 'students', icon: <Users className="w-5 h-5" />, label: t("O'quvchilar", 'Students', 'Ученики') },
+    { tab: 'students', icon: <Users className="w-5 h-5" />, label: t('O‘quvchilar', 'Students', 'Ученики') },
     { tab: 'attendance', icon: <ClipboardCheck className="w-5 h-5" />, label: t('Davomat', 'Attendance', 'Посещаемость') },
     { tab: 'groups', icon: <Calendar className="w-5 h-5" />, label: t('Guruhlarim', 'My groups', 'Мои группы') },
-    { tab: 'payments', icon: <Wallet className="w-5 h-5" />, label: t("To'lovlar", 'Payments', 'Оплаты') },
-    { tab: 'announcements', icon: <Bell className="w-5 h-5" />, label: t("E'lonlar", 'Notices', 'Объявления') },
+    { tab: 'payments', icon: <Wallet className="w-5 h-5" />, label: t('To‘lovlar', 'Payments', 'Оплаты') },
+    { tab: 'announcements', icon: <Bell className="w-5 h-5" />, label: t('E’lonlar', 'Notices', 'Объявления') },
   ];
 
-  const firstName = (teacherName || '').split(' ')[0] || t("O'qituvchi", 'Teacher', 'Учитель');
+  const firstName = (teacherName || '').split(' ')[0] || t('O‘qituvchi', 'Teacher', 'Учитель');
   const dateText = now.toLocaleDateString(language === 'RU' ? 'ru-RU' : language === 'EN' ? 'en-GB' : 'uz-UZ', {
     weekday: 'long',
     day: 'numeric',
@@ -212,7 +212,7 @@ export const TeacherDashboardView: React.FC = () => {
             {t('Xush kelibsiz', 'Welcome', 'Добро пожаловать')}, {firstName}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 capitalize">
-            {dateText} • <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t("O'qituvchi", 'Teacher', 'Учитель')}</span>
+            {dateText} • <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t('O‘qituvchi', 'Teacher', 'Учитель')}</span>
           </p>
         </div>
       </div>
@@ -232,7 +232,7 @@ export const TeacherDashboardView: React.FC = () => {
 
         <button onClick={() => setActiveTab('students')} className={`${card} text-left hover:border-emerald-500/40 cursor-pointer`}>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{t("Faol o'quvchilar", 'Active students', 'Активные ученики')}</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{t('Faol o‘quvchilar', 'Active students', 'Активные ученики')}</span>
             <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0"><Users className="w-4 h-4" /></span>
           </div>
           <div className={`text-2xl font-black mt-1.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.activeStudentCount}</div>
@@ -258,12 +258,12 @@ export const TeacherDashboardView: React.FC = () => {
 
         <button onClick={() => setActiveTab('students')} className={`${card} text-left hover:border-amber-500/40 cursor-pointer`}>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{t('Kuzatuv kerak', 'Needs attention', 'Нуждаются во внимании')}</span>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{t("E'tibor talab qiladiganlar", 'Needs attention', 'Нуждаются во внимании')}</span>
             <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 shrink-0"><AlertCircle className="w-4 h-4" /></span>
           </div>
           <div className={`text-2xl font-black mt-1.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{atRisk.length}</div>
           <div className="text-[11px] text-slate-400 mt-0.5 truncate">
-            {atRisk.length > 0 ? t("E'tibor talab qiladigan o'quvchilar", 'Students needing attention', 'Ученики, требующие внимания') : t('Hammasi joyida', 'All clear', 'Всё в порядке')}
+            {atRisk.length > 0 ? t("E'tibor talab qiladigan o‘quvchilar", 'Students needing attention', 'Ученики, требующие внимания') : t('Hammasi joyida', 'All clear', 'Всё в порядке')}
           </div>
         </button>
 
@@ -285,7 +285,7 @@ export const TeacherDashboardView: React.FC = () => {
               <span className="p-1.5 rounded-lg bg-slate-500/10 text-slate-400 shrink-0"><Wallet className="w-4 h-4" /></span>
             </div>
             <div className={`text-sm font-bold mt-1.5 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-              {t("Hali hisoblangan daromad yo'q", 'No income calculated yet', 'Доход пока не рассчитан')}
+              {t('Hali hisoblangan daromad yo‘q', 'No income calculated yet', 'Доход пока не рассчитан')}
             </div>
           </div>
         )}
@@ -351,7 +351,7 @@ export const TeacherDashboardView: React.FC = () => {
                         <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
                           <span className="inline-flex items-center gap-1 font-mono font-bold"><Clock className="w-3 h-3" />{time || '—'}</span>
                           {g.room && <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{g.room}</span>}
-                          <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" />{count} {t("o'quvchi", 'students', 'уч.')}</span>
+                          <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" />{count} {t('o‘quvchi', 'students', 'уч.')}</span>
                         </span>
                       </div>
                       <span className="flex flex-col items-end gap-1 shrink-0">
@@ -388,7 +388,7 @@ export const TeacherDashboardView: React.FC = () => {
                           theme === 'dark' ? 'border-slate-700 hover:border-emerald-500/40' : 'border-slate-200 hover:border-emerald-500/40'
                         }`}
                       >
-                        {t("Guruhni ko'rish", 'View group', 'Группу')}
+                        {t('Guruhni ko‘rish', 'View group', 'Группу')}
                       </button>
                     </div>
                   </li>
@@ -401,7 +401,7 @@ export const TeacherDashboardView: React.FC = () => {
         {/* At-risk students */}
         <div className={card}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className={heading}>{t("E'tibor talab qiladigan o'quvchilar", 'Students needing attention', 'Требующие внимания')}</h3>
+            <h3 className={heading}>{t("E'tibor talab qiladigan o‘quvchilar", 'Students needing attention', 'Требующие внимания')}</h3>
             <button onClick={() => setActiveTab('students')} className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
               {t('Barchasi', 'All', 'Все')} <ArrowRight className="w-3 h-3" />
             </button>
@@ -409,7 +409,7 @@ export const TeacherDashboardView: React.FC = () => {
           {atRisk.length === 0 ? (
             <div className="text-center py-8 text-slate-400">
               <CheckCircle className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-              <p className="text-xs font-semibold">{t("Hozircha e'tibor talab qiladigan o'quvchi yo'q.", 'No students need attention right now.', 'Пока никто не требует внимания.')}</p>
+              <p className="text-xs font-semibold">{t("Hozircha e'tibor talab qiladigan o‘quvchi yo‘q.", 'No students need attention right now.', 'Пока никто не требует внимания.')}</p>
             </div>
           ) : (
             <ul className="space-y-2.5">
@@ -438,7 +438,7 @@ export const TeacherDashboardView: React.FC = () => {
         <div className={card}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className={heading}>{t("O'quvchilar to'lov holati", 'Student payment status', 'Статус оплаты учеников')}</h3>
+              <h3 className={heading}>{t('O‘quvchilarning to‘lov holati', 'Student payment status', 'Статус оплаты учеников')}</h3>
               {dues.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
                   {dues.length}
@@ -452,7 +452,7 @@ export const TeacherDashboardView: React.FC = () => {
           {dues.length === 0 ? (
             <div className="text-center py-8 text-slate-400">
               <CheckCircle className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-              <p className="text-xs font-semibold">{t("Barcha to'lovlar joyida", 'All payments are settled', 'Все оплаты в порядке')}</p>
+              <p className="text-xs font-semibold">{t('Barcha to‘lovlar joyida', 'All payments are settled', 'Все оплаты в порядке')}</p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -470,7 +470,7 @@ export const TeacherDashboardView: React.FC = () => {
                       </div>
                     </div>
                     <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${st === 'overdue' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
-                      {st === 'overdue' ? t('Qarzdor', 'Overdue', 'Должник') : t('Kutilmoqda', 'Due', 'Ожидается')}
+                      {st === 'overdue' ? t('Muddati o‘tgan', 'Overdue', 'Должник') : t('Kutilmoqda', 'Due', 'Ожидается')}
                     </span>
                   </li>
                 );
@@ -481,7 +481,7 @@ export const TeacherDashboardView: React.FC = () => {
 
         <div className={card}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className={heading}>{t("So'nggi bildirishnomalar", 'Recent notifications', 'Последние уведомления')}</h3>
+            <h3 className={heading}>{t('So‘nggi bildirishnomalar', 'Recent notifications', 'Последние уведомления')}</h3>
             <button onClick={() => setActiveTab('announcements')} className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
               {t('Barchasi', 'All', 'Все')} <ArrowRight className="w-3 h-3" />
             </button>
@@ -489,7 +489,7 @@ export const TeacherDashboardView: React.FC = () => {
           {visibleNotifications.length === 0 ? (
             <div className="text-center py-8 text-slate-400">
               <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-semibold">{t("Hozircha bildirishnomalar yo'q", 'No notifications yet', 'Пока нет уведомлений')}</p>
+              <p className="text-xs font-semibold">{t('Hozircha bildirishnomalar yo‘q', 'No notifications yet', 'Пока нет уведомлений')}</p>
             </div>
           ) : (
             <ul className="space-y-2">

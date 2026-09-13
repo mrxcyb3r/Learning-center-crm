@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard,
   PhoneCall,
@@ -79,41 +78,41 @@ type SidebarGroup = {
 const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: 'Boshqaruv',
-    items: [{ id: 'dashboard', label: 'Boshqaruv', icon: LayoutDashboard }],
+    items: [{ id: 'dashboard', label: 'Bosh sahifa', icon: LayoutDashboard }],
   },
   {
-    title: "Qabul & O'quvchilar",
+    title: 'Qabul va o‘quvchilar',
     items: [
       { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
-      { id: 'leads', label: 'Murojaatlar CRM', icon: PhoneCall },
-      { id: 'students', label: 'O\'quvchilar', icon: Users },
+      { id: 'leads', label: 'Lidlar CRM', icon: PhoneCall },
+      { id: 'students', label: 'O‘quvchilar', icon: Users },
       { id: 'receptionist', label: 'Qabulxona', icon: LifeBuoy },
     ],
   },
   {
-    title: "Ta'lim",
+    title: 'Ta’lim',
     items: [
-      { id: 'teachers', label: "O'qituvchilar", icon: GraduationCap },
-      { id: 'courses', label: 'Kurslar va To\'lovlar', icon: BookOpen },
-      { id: 'schedule', label: 'Guruhlar va Dars Jadvali', icon: Calendar },
+      { id: 'teachers', label: 'O‘qituvchilar', icon: GraduationCap },
+      { id: 'courses', label: 'Kurslar va to‘lovlar', icon: BookOpen },
+      { id: 'schedule', label: 'Guruhlar va dars jadvali', icon: Calendar },
     ],
   },
   {
     title: 'Moliya',
     items: [
-      { id: 'payments', label: "To'lovlar", icon: CreditCard },
-      { id: 'expenses', label: 'Xarajatlar va Maoshlar', icon: DollarSign },
+      { id: 'payments', label: 'To‘lovlar', icon: CreditCard },
+      { id: 'expenses', label: 'Xarajatlar va ish haqlari', icon: DollarSign },
     ],
   },
   {
     title: 'Tahlil',
-    items: [{ id: 'reports', label: 'Hisobotlar va Tahlil', icon: BarChart3 }],
+    items: [{ id: 'reports', label: 'Hisobotlar va tahlil', icon: BarChart3 }],
   },
   {
     title: 'Marketing',
     items: [
-      { id: 'cms', label: 'Veb-sayt (CMS)', icon: Globe },
-      { id: 'telegram', label: 'Telegram Bot', icon: Send },
+      { id: 'cms', label: 'Veb-sayt', icon: Globe },
+      { id: 'telegram', label: 'Telegram bot', icon: Send },
     ],
   },
   {
@@ -427,7 +426,7 @@ case 'murojaatlar':
                 onClick={() => setSearchOpen(true)}
                 className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer"
               >
-                Lid, o‘quvchi, kurs qidirish...
+                Lid, o‘quvchi yoki kurs qidirish...
               </button>
             </div>
           </div>
@@ -438,7 +437,7 @@ case 'murojaatlar':
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              <span>{murojaatUnread} o'qilmagan murojaat</span>
+              <span>{murojaatUnread} o‘qilmagan murojaat</span>
             </button>
 
             <button

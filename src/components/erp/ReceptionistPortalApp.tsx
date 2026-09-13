@@ -152,8 +152,10 @@ export const ReceptionistPortalApp: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">
             Q
           </div>
-          <span className="font-black text-sm tracking-tight">QABULXONA</span>
-          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded-md px-1.5 py-0.5">Qabulxona</span>
+          <span className="font-black text-sm tracking-tight">Qabulxona</span>
+          <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Onlayn
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setSearchOpen(true)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800" aria-label="Qidirish">
@@ -174,8 +176,7 @@ export const ReceptionistPortalApp: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white font-black flex items-center justify-center text-base shadow-md">Q</div>
               <div>
-                <span className="font-black text-base tracking-tight block leading-none">QABULXONA</span>
-                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block mt-0.5">Qabulxona</span>
+                <span className="font-black text-base tracking-tight block leading-none">Qabulxona</span>
                 <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1 mt-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Onlayn
                 </span>
@@ -270,7 +271,7 @@ export const ReceptionistPortalApp: React.FC = () => {
         <header className="hidden lg:flex items-center justify-between gap-4 px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 shrink-0">
-              QABULXONA
+              Qabulxona
             </span>
             <button
               onClick={() => setSearchOpen(true)}
@@ -296,7 +297,7 @@ export const ReceptionistPortalApp: React.FC = () => {
         </header>
 
         <div className="lg:hidden flex items-center justify-between gap-2 px-4 py-2 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">QABULXONA</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">Qabulxona</span>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30"

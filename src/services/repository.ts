@@ -1121,6 +1121,39 @@ export const murojaatlarService = {
     else await questionsService.updateQuestion(id, patch);
   },
 
+  // AI Receptionist result persistence. Additive only — writes the AI answer
+  // and routing metadata back to the origin document without touching
+  // customer/booking fields. Escalated conversations stay unread so the
+  // receptionist inbox surfaces them as needing a human response.
+  async saveAiResult(
+    id: string,
+    kind: MurojaatKind,
+    result: {
+      answer: string | null;
+      intent: string | null;
+      sources: string[];
+      escalated: boolean;
+      escalationReason: string | null;
+      escalatedTo: 'receptionist' | 'teacher' | 'admin' | null;
+    }
+  ): Promise<void> {
+    const patch: Record<string, unknown> = {
+      aiAnswered: result.answer !== null && !result.escalated,
+      aiEscalated: result.escalated,
+      updatedAt: new Date().toISOString(),
+    };
+    if (result.answer !== null) patch.aiAnswer = result.answer;
+    if (result.intent) patch.aiIntent = result.intent;
+    if (result.sources.length > 0) patch.aiSources = result.sources;
+    if (result.escalationReason) patch.escalationReason = result.escalationReason;
+    if (result.escalatedTo) {
+      patch.escalatedTo = result.escalatedTo;
+      patch.isRead = false;
+    }
+    if (kind === 'trial') await leadsService.updateLead(id, patch);
+    else await questionsService.updateQuestion(id, patch);
+  },
+
   // Convenience accessor so callers can compute the unread badge in one call.
   getNormalizedStatus: normalizeMurojaatStatus,
   isTelegramSource,

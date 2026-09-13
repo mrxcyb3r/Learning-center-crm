@@ -38,6 +38,7 @@ import {
   leadsService,
 } from "../services/repository";
 import { notificationService } from "../services/notificationService";
+import { AiReceptionistWidget } from "../components/public/AiReceptionistWidget";
 
 /* ============================================================================
    TYPES & CONTRACTS (STRICTLY PRESERVED)
@@ -2688,6 +2689,9 @@ export function RenessansLandingPage({
           </div>
         </div>
       </footer>
+
+      {/* AI Receptionist — answers verified CenterFlow FAQ, escalates the rest */}
+      <AiReceptionistWidget />
     </main>
   );
 }

@@ -178,7 +178,7 @@ service cloud.firestore {
 
     match /questions/{questionId} {
       allow create: if true;
-      allow read, update, delete: if isAdminOrSuperAdmin();
+      allow read, update, delete: if isSupportOrAdminOrReceptionist();
     }
 
     // =========================================================================

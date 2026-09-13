@@ -451,6 +451,16 @@ export interface Murojaat {
   preferredContact?: string;
   trialDateTime?: string;
   email?: string;
+  // AI Receptionist metadata (written additively by the chatbot, same pattern
+  // as `isRead` / `adminNotes` — never overwrites customer/booking fields).
+  // `aiAnswered` marks conversations the AI auto-answered from verified data.
+  aiAnswered?: boolean;
+  aiAnswer?: string;
+  aiIntent?: string;
+  aiSources?: string[];
+  aiEscalated?: boolean;
+  escalationReason?: string;
+  escalatedTo?: 'receptionist' | 'teacher' | 'admin';
 }
 
 export interface MurojaatSummary {

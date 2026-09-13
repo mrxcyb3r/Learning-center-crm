@@ -84,6 +84,16 @@ export function toMurojaat(raw: Record<string, any>, kind: MurojaatKind): Muroja
     preferredContact: raw.preferredContact ? String(raw.preferredContact) : undefined,
     trialDateTime: raw.trialDateTime ? String(raw.trialDateTime) : undefined,
     email: raw.email ? String(raw.email) : undefined,
+    // AI Receptionist metadata (additive fields written by the chatbot).
+    aiAnswered: raw.aiAnswered === true,
+    aiAnswer: raw.aiAnswer ? String(raw.aiAnswer) : undefined,
+    aiIntent: raw.aiIntent ? String(raw.aiIntent) : undefined,
+    aiSources: Array.isArray(raw.aiSources) ? raw.aiSources.map(String) : undefined,
+    aiEscalated: raw.aiEscalated === true,
+    escalationReason: raw.escalationReason ? String(raw.escalationReason) : undefined,
+    escalatedTo: ['receptionist', 'teacher', 'admin'].includes(raw.escalatedTo)
+      ? raw.escalatedTo
+      : undefined,
   };
 }
 

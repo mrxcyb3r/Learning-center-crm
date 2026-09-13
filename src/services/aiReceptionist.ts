@@ -1,10 +1,9 @@
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import {
+import type {
   CourseData,
   CampusBranch,
   TeacherRecord,
-  FaqRecord,
   CenterSettings,
   Murojaat,
   MurojaatKind,
@@ -16,31 +15,52 @@ import { coursesService } from './repository';
 import { landingCmsService } from './repository';
 import { normalizeMurojaatSource } from '../utils/murojaat';
 
+/**
+ * Normalize Uzbek text for keyword matching: lowercase + strip apostrophes
+ * (o', g', ', ', `) so "to'lov" and "tolov" match the same keyword.
+ * Uses split/join chains — no regex literals.
+ */
+function normalizeText(raw: string): string {
+  let s = (raw || '').trim().toLowerCase();
+  if (!s) return '';
+  s = s.split("'").join('');
+  s = s.split('’').join('');
+  s = s.split('`').join('');
+  s = s.split('ʻ').join('');
+  return s;
+}
+
+// Whole-word keywords matched against normalized text. Deliberately no
+// fragments ('ko', 'ring', 'ta', ...) — those caused false positives
+// (e.g. "qaytaring" matching a branch keyword).
 const COURSE_PRICE_KEYWORDS = [
-  'narx', 'qancha', 'pul', 'summ', 'fee', 'cost', 'price', 'how much',
-  'toldir', 'kerak',
+  'narx', 'qancha', 'nech pul', 'nechpul', 'summ', 'fee', 'cost', 'price',
+  'how much', 'skolko', 'stoimost', 'tsena',
 ];
 const COURSE_DESC_KEYWORDS = [
-  'haqida', 'tavsif', 'detail', 'maqsad', 'what is', 'about',
-  ' haqida', 'tavsif', 'malumot',
+  'haqida', 'tavsif', 'tarkib', 'dastur', 'programma', 'detail', 'maqsad',
+  'what is', 'about', 'malumot', 'nimani orgatadi', 'qanday kurs',
 ];
 const BRANCH_ADDR_KEYWORDS = [
-  'manzil', 'joy', 'qayer', 'address', 'ko', 'ring', 'qayerga',
-  'joylashuvi',
+  'manzil', 'filial', 'qayerda', 'qayer', 'address', 'koring', 'qayerga',
+  'joylashuv', 'adres', 'gde nahoditsya',
 ];
 const WORKING_HOURS_KEYWORDS = [
-  'vaqt', 'soat', 'ish vaqti', 'time', 'work',
+  'ish vaqti', 'ish soat', 'ochilish', 'yopilish', 'nechigacha', 'nechidan',
+  'opening', 'closing', 'grafik', 'rejim',
 ];
 const TRIAL_KEYWORDS = [
-  'sinov', 'ta', 'minlash', 'o', 'rnatish', 'trial', 'free lesson',
-  'sinov darsi', 'tasdiqlash', 'jo', 'nali',
+  'sinov', 'bepul dars', 'trial', 'free lesson', 'probniy', 'tekshiruv darsi',
 ];
 const FAQ_KEYWORDS = [
-  'savol-jawob', 'yaylanoq', 'bilish', 'frequently',
-  'savol', 'javob', 'faq',
+  'savol-javob', 'kop soraladigan', 'faq', 'frequently',
 ];
 const CONTACT_KEYWORDS = [
-  'bog', 'lanish', 'telefon', 'telegram', 'email', 'connect', 'contact',
+  'boglanish', 'telefon', 'telegram', 'email', 'aloqa', 'nomer',
+  'connect', 'contact', 'kontakt',
+];
+const TEACHER_KEYWORDS = [
+  'oqituvchi', 'ustoz', 'muallim', 'teacher', 'kim dars', 'prepodavatel',
 ];
 
 type SupportedIntent =
@@ -50,20 +70,90 @@ type SupportedIntent =
   | 'working_hours'
   | 'trial_lesson'
   | 'faq'
-  | 'contact_info';
+  | 'contact_info'
+  | 'teacher_info';
 
-function detectIntent(question: string): SupportedIntent | null {
-  if (!question) return null;
-  const lower = question.trim().toLowerCase();
-  if (!lower) return null;
+type EscalationTarget = 'receptionist' | 'teacher' | 'admin';
 
-  const check = (keywords: string[]) => keywords.some((kw) => lower.includes(kw));
+interface EscalationRule {
+  keys: string[];
+  reason: string;
+  to: EscalationTarget;
+}
+
+// Explicit escalation rules — checked BEFORE intent detection so risky
+// requests (refund, complaint, salary...) can never be auto-answered,
+// even if they happen to contain a safe-looking keyword.
+const ESCALATION_RULES: EscalationRule[] = [
+  {
+    keys: ['qaytar', 'refund', 'vozvrat', 'vernut', 'pulimni'],
+    reason: "To'lovni qaytarish bo'yicha so'rov — moliyaviy qaror talab qiladi, AI qaror qabul qilmaydi.",
+    to: 'admin',
+  },
+  {
+    keys: ['tolov', 'tulov', 'payment', 'oplata', 'oplati', 'qarzdorlik', 'qarz'],
+    reason: "To'lov bo'yicha savol — moliyaviy masala, operator/Admin ko'rib chiqadi.",
+    to: 'admin',
+  },
+  {
+    keys: ['chegirma', 'skidka', 'discount', 'arzonlashtir'],
+    reason: "Chegirma so'rovi — biznes qaror talab qiladi, operator/Admin ko'rib chiqadi.",
+    to: 'admin',
+  },
+  {
+    keys: ['shikoyat', 'noroziman', 'norozilik', 'jaloba', 'yomon xizmat', 'yomon oqit'],
+    reason: "Shikoyat — inson ko'rib chiqishi shart.",
+    to: 'admin',
+  },
+  {
+    keys: ['maosh', 'oylik', 'ish haqi', 'zarplata'],
+    reason: "Maosh/xodimlar masalasi — ichki ma'lumot, faqat Admin ko'radi.",
+    to: 'admin',
+  },
+  {
+    keys: ['daraja', 'ball', 'baholash', 'placement', 'test natija', 'qaysi guruhga mos', 'guruhga mos'],
+    reason: "O'quvchining darajasini baholash kerak — o'qituvchi ekspertizasi talab qilinadi.",
+    to: 'teacher',
+  },
+];
+
+// Level-placement signals: only meaningful together with 'guruh'.
+// ("Qaysi guruhga yozilsam?" alone stays with Receptionist per spec §9;
+// "6.0 oldi, qaysi guruhga?" needs a teacher per spec §11.)
+const GROUP_WORD = 'guruh';
+const LEVEL_SIGNALS = [
+  'daraja', 'ball', 'baholash', 'placement', 'mos', 'oldi', 'topshir',
+  'ielts', 'cefr', 'bosqich', 'test',
+];
+
+function detectEscalation(normalized: string): EscalationRule | null {
+  for (const rule of ESCALATION_RULES) {
+    if (rule.keys.some((k) => normalized.includes(k))) return rule;
+  }
+  if (
+    normalized.includes(GROUP_WORD) &&
+    LEVEL_SIGNALS.some((s) => normalized.includes(s))
+  ) {
+    return {
+      keys: [],
+      reason: "O'quvchining darajasini baholash kerak — o'qituvchi ekspertizasi talab qilinadi.",
+      to: 'teacher',
+    };
+  }
+  return null;
+}
+
+function detectIntent(normalized: string): SupportedIntent | null {
+  if (!normalized) return null;
+
+  const check = (keywords: string[]) => keywords.some((kw) => normalized.includes(kw));
 
   if (check(COURSE_PRICE_KEYWORDS)) return 'course_price';
   if (check(COURSE_DESC_KEYWORDS)) return 'course_description';
   if (check(BRANCH_ADDR_KEYWORDS)) return 'branch_address';
   if (check(WORKING_HOURS_KEYWORDS)) return 'working_hours';
   if (check(TRIAL_KEYWORDS)) return 'trial_lesson';
+  if (check(TEACHER_KEYWORDS)) return 'teacher_info';
   if (check(FAQ_KEYWORDS)) return 'faq';
   if (check(CONTACT_KEYWORDS)) return 'contact_info';
   return null;
@@ -145,6 +235,21 @@ async function getKnowledgeForIntent(
         }
         return null;
       }
+      case 'teacher_info': {
+        const { teachersService } = await import('./repository');
+        const teachers = await teachersService.getPublicTeachers();
+        if (teachers.length > 0) {
+          const names = teachers
+            .slice(0, 5)
+            .map((t: any) => t.name + (t.subject || t.specialization ? ' (' + (t.subject || t.specialization) + ')' : ''))
+            .join(', ');
+          return {
+            text: "Markaz o'qituvchilari: " + names + '.',
+            source: "O'qituvchilar ro'yxati",
+          };
+        }
+        return null;
+      }
       case 'faq': {
         const faqs = await faqsService.getAllFaqs();
         if (faqs.length > 0) {
@@ -195,23 +300,41 @@ function buildContext(knowledge: Array<{ text: string; source: string }>): strin
   return '\n--- Verified CenterFlow Data ---\n' + lines.join('\n') + '\n-----------------------\n';
 }
 
+export interface AiProcessResult {
+  answer: string | null;
+  shouldEscalate: boolean;
+  escalationReason: string | null;
+  intent: SupportedIntent | null;
+  escalatedTo: EscalationTarget | null;
+  knowledgeSources: Array<{ text: string; source: string }>;
+}
+
 class AIReceptionist {
-  async processQuestion(
-    question: string
-  ): Promise<{
-    answer: string | null;
-    shouldEscalate: boolean;
-    escalationReason: string | null;
-    intent: SupportedIntent | null;
-    knowledgeSources: Array<{ text: string; source: string }>;
-  }> {
-    const intent = detectIntent(question);
+  async processQuestion(question: string): Promise<AiProcessResult> {
+    const normalized = normalizeText(question);
+
+    // Gate 0 — explicit escalation rules win over everything. A refund or
+    // complaint mentioning a "price" must still go to a human.
+    const forced = detectEscalation(normalized);
+    if (forced) {
+      return {
+        answer: null,
+        shouldEscalate: true,
+        escalationReason: forced.reason,
+        intent: null,
+        escalatedTo: forced.to,
+        knowledgeSources: [],
+      };
+    }
+
+    const intent = detectIntent(normalized);
     if (!intent) {
       return {
         answer: null,
         shouldEscalate: true,
-        escalationReason: 'Nazorati aniq emas — boshqacha savol.',
+        escalationReason: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
         intent: null,
+        escalatedTo: 'receptionist',
         knowledgeSources: [],
       };
     }
@@ -224,6 +347,7 @@ class AIReceptionist {
         escalationReason:
           'Bu savol bo\'yicha markazdagi aniq ma\'lumotlar mavjud emas. Murojaatingizni operatorimizga yuboraman.',
         intent,
+        escalatedTo: 'receptionist',
         knowledgeSources: [],
       };
     }
@@ -238,6 +362,7 @@ class AIReceptionist {
         escalationReason:
           'AI javobi shakllantirib bo\'lmadi. Murojaatingiz operatorga yo\'natilmoqda.',
         intent,
+        escalatedTo: 'receptionist',
         knowledgeSources: [knowledge],
       };
     }
@@ -250,6 +375,7 @@ class AIReceptionist {
         shouldEscalate: true,
         escalationReason: 'AI javobi tasdiqlanmadi — axborot haqqida xato.',
         intent,
+        escalatedTo: 'receptionist',
         knowledgeSources: [knowledge],
       };
     }
@@ -259,6 +385,7 @@ class AIReceptionist {
       shouldEscalate: false,
       escalationReason: null,
       intent,
+      escalatedTo: null,
       knowledgeSources: [knowledge],
     };
   }
@@ -290,14 +417,12 @@ class AIReceptionist {
     if (!answer || answer.trim().length === 0) return false;
     const lower = answer.toLowerCase();
 
-    for (const k of knowledge) {
-      const kLower = k.text.toLowerCase();
-      const knownWords = kLower.split(' ').filter((w: string) => w.length > 3);
-      const answerWords = lower.split(' ').filter((w: string) => w.length > 3);
-      const overlap = answerWords.filter((w: string) => knownWords.includes(w));
-      const overlapRatio = overlap.length / Math.max(1, answerWords.length);
-      if (overlapRatio < 0.1) return false;
-    }
+    const kLower = knowledge.text.toLowerCase();
+    const knownWords = kLower.split(' ').filter((w: string) => w.length > 3);
+    const answerWords = lower.split(' ').filter((w: string) => w.length > 3);
+    const overlap = answerWords.filter((w: string) => knownWords.includes(w));
+    const overlapRatio = overlap.length / Math.max(1, answerWords.length);
+    if (overlapRatio < 0.1) return false;
 
     return true;
   }

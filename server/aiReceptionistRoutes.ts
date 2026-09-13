@@ -99,19 +99,21 @@ Answer:
         },
       });
 
-      const text = result.text || '';
+      const text = (result.text || '').trim();
 
-      // Safety check: if the answer looks like it hallucinated or didn't use the fallback
-      const fallback = 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.';
-
-      let responseText = text;
-      if (!text.toLowerCase().includes('aiyo') && !text.toLowerCase().includes('yo\'q') && !text.includes('Murojaatingiz')) {
-        // If the AI didn't use the proper fallback, force it
-        responseText = fallback;
+      // Empty model output is the only server-side rejection case — the
+      // client runs the overlap-against-verified-facts gate
+      // (validateAIAnswer) before anything is shown to the customer.
+      if (!text) {
+        return res.json({
+          text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
+          fallback: true,
+          source: 'empty_model_output'
+        });
       }
 
       res.json({
-        text: responseText,
+        text,
         fallback: false,
         source: 'gemini'
       });
@@ -119,7 +121,7 @@ Answer:
       console.error('[AI RECEPTIONIST] Error:', err?.message || String(err));
       // Graceful fallback on any error
       res.json({
-        text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboriman.',
+        text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
         fallback: true,
         source: 'error_fallback'
       });

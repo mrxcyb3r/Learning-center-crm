@@ -24,7 +24,7 @@ function getReceptionistApiKey(): string {
   return '';
 }
 
-const VALID_INTENTS = ['course_price', 'course_description', 'branch_address', 'working_hours', 'trial_lesson', 'faq', 'contact_info', 'teacher_info'] as const;
+const VALID_INTENTS = ['course_price', 'course_description', 'course_schedule', 'course_duration', 'course_teacher', 'course_availability', 'branch_address', 'working_hours', 'trial_lesson', 'faq', 'contact_info', 'teacher_info', 'admission', 'level_placement'] as const;
 
 function normalizeIntent(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;

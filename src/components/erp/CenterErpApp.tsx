@@ -25,8 +25,11 @@ import {
   Sparkles,
   Search,
   LifeBuoy,
+  LogOut,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { DashboardView } from './DashboardView';
 import { MurojaatlarView } from './MurojaatlarView';
 import { LeadsCrmView } from './LeadsCrmView';
@@ -126,10 +129,25 @@ const SIDEBAR_ITEMS = SIDEBAR_GROUPS.flatMap((g) => g.items);
 export const CenterErpApp: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { currentUser, userProfile, activeRole, logout } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<ErpTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadsCount, setLeadsCount] = useState(0);
   const [murojaatUnread, setMurojaatUnread] = useState(0);
+
+  const displayName =
+    userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Direktor';
+  const roleLabel =
+    activeRole === 'superadmin' ? 'SuperAdmin' : activeRole === 'admin' ? 'ADMIN' : activeRole === 'receptionist' ? 'RECEPTIONIST' : activeRole === 'teacher' ? "O'QITUVCHI" : activeRole;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
+  };
 
   // Whether the workspace is currently running on demo data. Defaults to the
   // build flag; flips off once an operator clears the demo namespace and back
@@ -346,45 +364,69 @@ case 'murojaatlar':
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </button>
 
-          {/* User profile brief */}
-          <div className="flex items-center justify-between px-1 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-xs">
-                D
+          {/* User profile brief — real authenticated user */}
+          <div className="flex items-center justify-between px-1 text-xs gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center font-bold text-slate-950 text-xs shrink-0">
+                {displayName.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <span className="font-bold text-slate-900 dark:text-white block text-[11px] leading-tight">
-                  Direktor / Egasi
+              <div className="min-w-0">
+                <span className="font-bold text-slate-900 dark:text-white block text-[11px] leading-tight truncate">
+                  {displayName}
                 </span>
-                <span className="text-[10px] text-emerald-500 font-semibold">Onlayn</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">{roleLabel}</span>
               </div>
             </div>
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 cursor-pointer shrink-0"
               title="Mavzuni almashtirish"
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
           </div>
+
+          {/* Logout — real Firebase logout, always accessible */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>{t.nav.logout}</span>
+          </button>
         </div>
       </aside>
 
       {/* Main Workspace View */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Workspace Topbar */}
-        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+        {/* Workspace Topbar — unified shell: workspace, search slot, profile, logout */}
+        <header className="hidden lg:flex items-center justify-between gap-4 px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
               <span>Kampus:</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
                 Faol • 08:30 – 21:00
               </span>
             </div>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30 shrink-0">
+              {roleLabel}
+            </span>
+            <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                placeholder="Qidiruv..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    window.dispatchEvent(new CustomEvent('centerflow-header-search', { detail: (e.target as HTMLInputElement).value.trim() }));
+                  }
+                }}
+                className="w-36 bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setActiveTab('murojaatlar')}
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
@@ -400,8 +442,37 @@ case 'murojaatlar':
               <Globe className="w-3.5 h-3.5 text-amber-500" />
               <span>Bosh sahifa</span>
             </button>
+
+            <span className="hidden 2xl:block text-[11px] font-bold text-slate-600 dark:text-slate-300 max-w-28 truncate" title={displayName}>
+              {displayName}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/30 transition cursor-pointer"
+              title="Chiqish"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{t.nav.logout}</span>
+            </button>
           </div>
         </header>
+
+        {/* Mobile topbar logout row — keeps logout reachable on small screens */}
+        <div className="lg:hidden flex items-center justify-between gap-2 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
+            {roleLabel}
+          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-32">{displayName}</span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30 shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{t.nav.logout}</span>
+            </button>
+          </div>
+        </div>
 
         {/* View Body */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">

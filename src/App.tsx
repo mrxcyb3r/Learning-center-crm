@@ -86,8 +86,15 @@ function MainAppRoutes() {
       {/* Unified Login - single entry point */}
       <Route path="/login" element={<AdminLoginPage />} />
 
-      {/* Role-based workspaces under /app */}
-      <Route path="/app" element={<CenterErpApp />} />
+      {/* Role-based workspaces under /app — protected: guests go to /login */}
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute requiredRole="any" fallbackPath="/login">
+            <CenterErpApp />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch-All Fallback Redirect (after login, redirect to /app) */}
       <Route path="*" element={<Navigate to="/app" replace />} />

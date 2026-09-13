@@ -139,142 +139,192 @@ export const AdminLoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-8 sm:py-12 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="w-full max-w-md"
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="w-16 h-16 rounded-2xl bg-amber-500 mx-auto mb-4 flex items-center justify-center shadow-lg shadow-amber-500/20">
             <ShieldCheck className="w-8 h-8 text-slate-950" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {selectedRole ? `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Kirish` : 'CenterFlow'}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">
-            {selectedRole ? 'Ro\'yxatdan o\'tish uchun tizimga kiriting' : 'CenterFlow tizimiga kirish'}
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+            {selectedRole ? "Tizimga kirish uchun ma'lumotlaringizni kiriting" : 'CenterFlow tizimiga kirish'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-8 shadow-xl overflow-hidden">
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-200 dark:border-red-800 flex items-center gap-3 text-red-700 dark:text-red-300 text-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>{error}</span>
+            <div className="mb-5 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3 text-red-700 dark:text-red-300 text-sm break-words">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span className="min-w-0">{error}</span>
             </div>
           )}
 
-          {/* Role Selection Form */}
-          {selectedRole === null && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleRoleSelect('admin');
-            }} className="space-y-5 mb-8">
-              <h3 className="text-sm font-black text-slate-900 dark:text-white mb-3 uppercase tracking-wider">Qanday rolda kirish kerak?</h3>
-              <div>
+          {/* Role hint — visual only, never grants privileges */}
+          <div className="mb-5">
+            <h3 className="text-xs font-black text-slate-700 dark:text-slate-300 mb-2.5 uppercase tracking-wider">Qanday rolda kirish kerak?</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {(['admin', 'teacher', 'receptionist'] as const).map((r) => (
                 <button
+                  key={r}
                   type="button"
-                  onClick={() => handleRoleSelect('admin')}
-                  className={`w-full py-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-slate-900 dark:text-slate-200 border border-amber-200 dark:border-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedRole === 'admin'
-                      ? 'bg-amber-100 text-amber-800 border-amber-400'
-                      : ''}`}
+                  onClick={() => handleRoleSelect(r)}
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold border transition cursor-pointer truncate ${
+                    selectedRole === r
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'
+                  }`}
                 >
-                  <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
-                  <span>Admin / Direktor</span>
+                  {r === 'admin' ? 'Admin' : r === 'teacher' ? "O'qituvchi" : 'Resepshn'}
                 </button>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelect('teacher')}
-                  className={`w-full py-3 rounded-xl bg-sky-50 hover:bg-sky-100 text-slate-900 dark:text-slate-200 border border-sky-200 dark:border-sky-400 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedRole === 'teacher'
-                      ? 'bg-sky-100 text-sky-800 border-sky-400'
-                      : ''}`}
-                >
-                  <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0" />
-                  <span>O'qituvchi</span>
-                </button>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSelect('receptionist')}
-                  className={`w-full py-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-slate-900 dark:text-slate-200 border border-rose-200 dark:border-rose-400 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                    selectedRole === 'receptionist'
-                      ? 'bg-rose-100 text-rose-800 border-rose-400'
-                      : ''}`}
-                >
-                  <div className="w-3 h-3 rounded-full bg-rose-500 shrink-0" />
-                  <span>Resepshn</span>
-                </button>
-              </div>
-            </form>
-          )}
+              ))}
+            </div>
+          </div>
 
-          {/* Demo Login Section */}
+          {/* Normal login — email/password */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h3 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Kirish</h3>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1.5">Email</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@markaz.uz"
+                  autoComplete="email"
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1.5">Parol</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                  className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  aria-label={showPassword ? 'Parolni yashirish' : "Parolni ko'rsatish"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !email.trim() || !password}
+              className="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-amber-500 hover:opacity-90 text-white dark:text-slate-950 font-bold text-sm shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Kirilmoqda...
+                </span>
+              ) : (
+                'Kirish'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading || isLoading}
+              className="w-full py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer disabled:opacity-50"
+            >
+              {isGoogleLoading ? 'Google orqali kirilmoqda...' : 'Google orqali kirish'}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Demo sifatida kirish</span>
+            <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+          </div>
+
+          {/* Demo Login Section — high-contrast, always visible, responsive */}
           <div>
             <h3 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">Demo hisoblari</h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div className="min-w-0">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Admin</label>
                 <input
                   type="text"
                   value={DEMO_ADMIN_EMAIL}
                   readOnly
-                  className="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  tabIndex={-1}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Parol</label>
                 <input
                   type="text"
                   value={DEMO_ADMIN_PASSWORD}
                   readOnly
-                  className="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  tabIndex={-1}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">O'qituvchi</label>
                 <input
                   type="text"
                   value={DEMO_TEACHER_EMAIL}
                   readOnly
-                  className="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  tabIndex={-1}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Parol</label>
                 <input
                   type="text"
                   value={DEMO_TEACHER_PASSWORD}
                   readOnly
-                  className="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  tabIndex={-1}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
                 />
               </div>
             </div>
+            {/* Demo Admin — solid amber, dark text: always visible */}
             <button
               type="button"
-              onClick={() => handleDemoAdminLogin()}
-              className="w-full py-2.5 rounded-xl bg-amber-50 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleDemoAdminLogin}
+              disabled={isLoading}
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Admin sifatida kirish
+              {isLoading ? 'Kirilmoqda...' : 'Login with Demo Admin'}
             </button>
+            {/* Demo Teacher — solid sky-600, white text: fixed contrast bug (was sky-50 + white text) */}
             <button
               type="button"
-              onClick={() => handleDemoTeacherLogin()}
-              className="w-full py-2.5 rounded-xl bg-sky-50 hover:bg-sky-400 text-white font-black text-xs shadow-md shadow-sky-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              onClick={handleDemoTeacherLogin}
+              disabled={isLoading}
+              className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm shadow-md shadow-sky-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               O'qituvchi sifatida kirish
             </button>
           </div>
 
           {/* Guest access notice */}
-          <p className="mt-6 text-xs text-slate-500 dark:text-slate-400 text-center">
-            Yoki <a href="/app" className="text-amber-600 dark:text-amber-400 hover:text-amber-500 transition">Bosh sahifaga o'ting</a> — avval ro\'yxatdan o\'tgan foydalanuvchilar uchun.
+          <p className="mt-6 text-xs text-slate-500 dark:text-slate-400 text-center break-words">
+            Yoki <a href="/app" className="text-amber-600 dark:text-amber-400 hover:text-amber-500 transition font-bold">Bosh sahifaga o'ting</a> — tizimga kirgan foydalanuvchilar uchun.
           </p>
         </div>
       </motion.div>

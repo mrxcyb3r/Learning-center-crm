@@ -10,6 +10,7 @@ import {
 import { murojaatlarService } from '../../services/repository';
 import { Murojaat, MurojaatStatus } from '../../types/crm';
 import { formatDateTime, formatPhone } from '../../utils/format';
+import { AiKnowledgeHealth } from './AiKnowledgeHealth';
 
 type StatusFilter = 'Barchasi' | MurojaatStatus;
 type SourceFilter = 'Barchasi' | 'website' | 'telegram';
@@ -273,6 +274,8 @@ export const ReceptionistView: React.FC = () => {
             <AiChip label="O'qituvchiga" value={aiSummary.teacher} accent="text-purple-600 dark:text-purple-400" />
             <AiChip label="Adminga" value={aiSummary.admin} accent="text-rose-600 dark:text-rose-400" />
           </div>
+
+          <AiKnowledgeHealth />
 
           <div className="flex flex-wrap items-center gap-2">
             {(Object.keys(AI_FILTER_LABELS) as AiFilter[]).map((f) => (

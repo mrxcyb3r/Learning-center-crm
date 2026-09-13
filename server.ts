@@ -1,18 +1,22 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import helmet from 'helmet';
 import cors from 'cors';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createTelegramRouter } from './server/telegramRoutes';
 import { createSupportRouter } from './server/supportRoutes';
 import { createInvoiceRouter } from './server/invoiceRoutes';
 import { verifyWebhookOnStartup } from './server/telegramService';
-import aiReceptionistRouter from './server/aiReceptionistRoutes';
+import { aiReceptionistRouter } from './server/aiReceptionistRoutes';
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const RAW_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = Number.isFinite(RAW_PORT) && RAW_PORT > 0 && RAW_PORT < 65536 ? RAW_PORT : 3000;
+const HOST = '0.0.0.0';
 
 // Security Monitoring & Performance Metrics
 let rateLimitTriggerCount = 0;
@@ -169,25 +173,37 @@ const isValidPin = (pin: string): boolean => {
   return typeof pin === 'string' && /^\d{4}$/.test(pin);
 };
 
-// Lazy/Safe Gemini initialization
+// Lazy/Safe Gemini initialization — never throws at startup.
+// Missing key → null client; endpoints return safe fallback instead of crashing.
 const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+  const apiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
   if (!apiKey) {
-    console.warn('[SECURITY NOTICE] GEMINI_API_KEY is not configured in environment.');
+    console.warn('[GEMINI] GEMINI_API_KEY is not configured — AI endpoints will return safe fallback.');
+    return null;
   }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build-centerflow',
+  try {
+    return new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build-centerflow',
+        },
       },
-    },
-  });
+    });
+  } catch (err: any) {
+    console.warn('[GEMINI] Failed to initialize client:', err?.message || String(err));
+    return null;
+  }
 };
 
 // Exponential backoff retry helper with 429 rate limit handling
 async function generateContentWithRetry(params: any, retries = 3, initialDelay = 1000) {
   const ai = getGeminiClient();
+  if (!ai) {
+    const err: any = new Error('GEMINI_API_KEY is not configured.');
+    err.code = 'GEMINI_NOT_CONFIGURED';
+    throw err;
+  }
   for (let i = 0; i < retries; i++) {
     try {
       const response = await ai.models.generateContent(params);
@@ -248,8 +264,11 @@ const receptionistRouter = aiReceptionistRouter();
 app.use('/api', telegramRouter);
 app.use('/api', supportRouter);
 app.use('/api', invoiceRouter);
+// AI Receptionist: single instance mounted at /api. The router handles both
+// POST '/' and POST '/ai/receptionist', so this covers '/api/' (legacy) and
+// the canonical '/api/ai/receptionist'. One mount only — double-mounting the
+// same instance would run the handler twice per request.
 app.use('/api', receptionistRouter);
-app.use('/api/ai/receptionist', receptionistRouter);
 app.use('/telegram/webhook', (req, res, next) => {
   req.url = '/telegram/webhook';
   telegramRouter(req, res, next);
@@ -327,7 +346,10 @@ app.post('/api/ai/coach', async (req, res) => {
       groundingChunks
     });
   } catch (err: any) {
-    console.error('API Error /api/ai/coach:', err);
+    console.error('API Error /api/ai/coach:', err?.message || err);
+    if (err?.code === 'GEMINI_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'AI service is not configured. Please try again later.' });
+    }
     res.status(500).json({ error: 'Gemini service processing error' });
   }
 });
@@ -370,7 +392,10 @@ Perform OCR and analysis:
 
     res.json({ text: response.text });
   } catch (err: any) {
-    console.error('API Error /api/ai/analyze-doc:', err);
+    console.error('API Error /api/ai/analyze-doc:', err?.message || err);
+    if (err?.code === 'GEMINI_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'AI service is not configured. Please try again later.' });
+    }
     res.status(500).json({ error: 'Document analysis failed' });
   }
 });
@@ -422,7 +447,10 @@ Format the response cleanly with Markdown headers and bullet points.
 
     res.json({ text: response.text });
   } catch (err: any) {
-    console.error('API Error /api/ai/evaluate-speaking:', err);
+    console.error('API Error /api/ai/evaluate-speaking:', err?.message || err);
+    if (err?.code === 'GEMINI_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'AI service is not configured. Please try again later.' });
+    }
     res.status(500).json({ error: 'Speaking evaluation failed' });
   }
 });
@@ -472,27 +500,30 @@ Evaluation requirements:
 
     res.json({ text: response.text });
   } catch (err: any) {
-    console.error('API Error /api/ai/grade-essay:', err);
+    console.error('API Error /api/ai/grade-essay:', err?.message || err);
+    if (err?.code === 'GEMINI_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'AI service is not configured. Please try again later.' });
+    }
     res.status(500).json({ error: 'Essay grading failed' });
   }
 });
 
 // 5. Operational Health System Endpoint (Developer metrics protected)
-app.get('/api/health', (req, res) => {
+const buildHealthPayload = (req: express.Request) => {
   const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
   const isDevMode = process.env.DEV_MODE === 'true' || req.query.dev === 'true';
 
   if (!isDevMode) {
-    return res.json({
+    return {
       status: 'ok',
       service: 'Renessans Learning Center API',
       uptimeSeconds,
       serverTime: new Date().toISOString()
-    });
+    };
   }
 
   const memoryUsage = process.memoryUsage();
-  res.json({
+  return {
     status: 'ok',
     service: 'Renessans Learning Center API (Developer Mode)',
     uptimeSeconds,
@@ -518,7 +549,16 @@ app.get('/api/health', (req, res) => {
     },
     recentSecurityEvents: securityAuditBuffer.slice(0, 15),
     serverTime: new Date().toISOString()
-  });
+  };
+};
+
+app.get('/api/health', (req, res) => {
+  res.json(buildHealthPayload(req));
+});
+
+// Canonical status alias expected by deployment probes / AI Studio checks.
+app.get('/api/status', (req, res) => {
+  res.json(buildHealthPayload(req));
 });
 
 app.get('/health', (req, res) => {
@@ -552,8 +592,11 @@ process.on('unhandledRejection', (reason: any) => {
 });
 
 // Vite Middleware Integration & Server Startup
+// DEV: express + Vite middleware (HMR). PROD: serve dist/ static + SPA fallback.
+// Vite is dynamically imported so production bundles never require('vite').
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -562,7 +605,11 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    // SPA fallback — must never swallow /api/* (those return JSON 404).
+    app.get(/.*/, (req, res, next) => {
+      if (req.path.startsWith('/api/') || req.path === '/api') {
+        return res.status(404).json({ error: 'API endpoint not found.' });
+      }
       const indexPath = path.join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
@@ -572,9 +619,9 @@ async function startServer() {
     });
   }
 
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SECURITY HARDENED] CenterFlow Full-Stack Server running on port ${PORT} (0.0.0.0:${PORT})`);
-    // Run startup webhook verification once
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`[STARTUP] CenterFlow Full-Stack Server listening on ${HOST}:${PORT} (NODE_ENV=${process.env.NODE_ENV || 'development'})`);
+    // Run startup webhook verification once — never blocks listening.
     verifyWebhookOnStartup().catch(err => {
       console.error('[TELEGRAM STARTUP ERROR]', err?.message || err);
     });

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence,
@@ -423,56 +424,55 @@ const DEFAULT_FAQS: FAQItem[] = [
   },
 ];
 
+/* ============================================================================
+   EDITORIAL METHODOLOGY STAGES (REWORKED)
+============================================================================ */
+
 const METHOD_STAGES = [
   {
     step: "01",
-    title: "Diagnostika va tahlil",
-    subtitle: "Boshlang‘ich nuqtani aniq ko‘rish",
+    badge: "01 / DIAGNOSTIKA",
+    title: "Boshlang‘ich darajani aniqlash",
+    lead: "Avval o‘quvchining qayerda ekanini aniq bilamiz.",
     description:
-      "Tayyorgarlik taxmin bilan emas, o‘quvchining hozirgi bilim darajasini chuqur diagnostika qilishdan boshlanadi. Kuchli va rivojlantirilishi kerak bo‘lgan mavzular aniqlanadi.",
-    badge: "DIAGNOSTIKA",
-    visualType: "radar",
-    percent: 20,
+      "Darslar taxmin bilan emas, diagnostika bilan boshlanadi. O‘quvchining kuchli tomonlari, bo‘shliqlari va rivojlantirilishi kerak bo‘lgan mavzular aniqlanadi.",
+    footer: "Boshlang‘ich nuqta",
   },
   {
     step: "02",
-    title: "Aniq maqsad va target",
-    subtitle: "Maqsadni o‘lchanadigan rejaga aylantirish",
+    badge: "02 / MAQSAD",
+    title: "Aniq maqsadni belgilash",
+    lead: "Maqsad aniq bo‘lsa, unga olib boradigan yo‘l ham aniq bo‘ladi.",
     description:
-      "OTM yo‘nalishi, grant bali yoki sertifikat formati hisobga olinib, o‘quvchi bilan birgalikda aniq maqsadli target va dars rejasi tuziladi.",
-    badge: "TARGET REJA",
-    visualType: "target",
-    percent: 40,
+      "OTM yo‘nalishi, imtihon turi, grant yoki sertifikat maqsadiga qarab o‘quvchi uchun real va o‘lchanadigan natija belgilanadi.",
+    footer: "Aniq yo‘nalish",
   },
   {
     step: "03",
+    badge: "03 / TA’LIM",
     title: "Tizimli darslar",
-    subtitle: "Tushunish → Amaliyot → Mustahkamlash",
+    lead: "Bilim tushuniladi, mashq qilinadi va mustahkamlanadi.",
     description:
-      "Nazariya amaliy masalalar bilan birga olib boriladi. Murakkab mavzular bosqichma-bosqich yechiladi va o‘quvchi bilimni amalda qo‘llash ko'nikmasiga ega bo'ladi.",
-    badge: "METODOLOGIYA",
-    visualType: "system",
-    percent: 60,
+      "Har bir mavzu nazariya va amaliyot uyg‘unligida o‘rganiladi. Murakkab mavzular bosqichma-bosqich o‘zlashtirilib, bilimni mustaqil qo‘llash ko‘nikmasi shakllantiriladi.",
+    footer: "Tushunish → Amaliyot → Mustahkamlash",
   },
   {
     step: "04",
-    title: "Nazorat va monitoring",
-    subtitle: "O‘sishni ko‘rish va xatolarni tahlil qilish",
+    badge: "04 / NAZORAT",
+    title: "Natijani kuzatish",
+    lead: "O‘sish muntazam nazorat va tahlil orqali ko‘rinadi.",
     description:
-      "Har haftalik yakshanba testlari o‘quvchining qayerda ekanini ko‘rsatadi. Xatolar maxsus tahlil qilinib, keyingi darslarning ustuvor vazifasiga aylanadi.",
-    badge: "MONITORING",
-    visualType: "analytics",
-    percent: 80,
+      "Muntazam testlar va topshiriqlar orqali o‘quvchining rivojlanishi kuzatiladi. Xatolar tahlil qilinib, keyingi darslarda aynan kerakli mavzularga e’tibor qaratiladi.",
+    footer: "Test → Tahlil → Tuzatish",
   },
   {
     step: "05",
-    title: "Imtihonga tayyorgarlik",
-    subtitle: "Bilimni real imtihon sharoitiga olib chiqish",
+    badge: "05 / NATIJA",
+    title: "Imtihonga tayyor holat",
+    lead: "Bilimni real imtihon sharoitida qo‘llashga tayyorlaymiz.",
     description:
-      "Yakuniy bosqichda vaqtni boshqarish, psixologik tayyorgarlik va imtihon strategiyasi mustahkamlanadi. Bilimdan Natijaga yetiladi.",
-    badge: "YAKUNIY BOSQICH",
-    visualType: "award",
-    percent: 100,
+      "Yakuniy bosqichda vaqtni boshqarish, test strategiyasi va imtihon tajribasi mustahkamlanadi. Maqsad — o‘quvchini imtihonga bilim va ishonch bilan olib chiqish.",
+    footer: "Bilimdan natijaga",
   },
 ] as const;
 
@@ -1035,200 +1035,222 @@ function SeamlessMarqueeTicker() {
 }
 
 /* ============================================================================
-   STICKY SEQUENTIAL SCROLL-FOCUS METODIKA ENGINE
+   REWORKED EDITORIAL METODIKA & BOSQICHLAR ENGINE
 ============================================================================ */
 
 function StickyMetodikaSection({ stages }: { stages: typeof METHOD_STAGES }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      const step = Math.min(stages.length - 1, Math.max(0, Math.floor(latest * stages.length)));
+      setActiveStep(step);
+    });
+    return () => unsubscribe();
+  }, [scrollYProgress, stages.length]);
+
   return (
-    <section ref={containerRef} id="metodika" className="relative h-[400vh] bg-[#070a0f]">
-      <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden px-6 sm:px-8 lg:px-12">
+    <section
+      ref={containerRef}
+      id="metodika"
+      className="relative bg-[#070a0f] border-b border-white/[0.08] py-20 lg:py-0 lg:h-[320vh]"
+    >
+      <div className="relative lg:sticky lg:top-0 lg:h-screen lg:flex lg:flex-col lg:justify-center overflow-hidden px-6 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[1400px] w-full">
-          <div className="mb-8 flex items-end justify-between border-b border-white/[0.08] pb-6">
+          {/* Section Intro */}
+          <div className="mb-10 flex items-end justify-between border-b border-white/[0.08] pb-6">
             <SectionHeader
               eyebrow="02 / METODIKA & BOSQICHLAR"
-              title="Bosqichma-Bosqich Tizim"
-              subtitle="Har bir o'quvchi diagnostikadan boshlab yakuniy 100% natijagacha yagona zanjirda harakat qiladi."
+              title="Bosqichma-bosqich tizim"
+              subtitle="Har bir o‘quvchi o‘zining bugungi darajasidan boshlab, aniq maqsad va izchil reja asosida natijaga tomon harakat qiladi."
               align="left"
             />
-            <div className="hidden sm:flex items-center gap-2 font-mono text-xs text-amber-400 font-bold uppercase tracking-widest">
-              <span>SKROLL BILAN BOSQICHMA-BOSQICH</span>
-              <span className="text-stone-600">•</span>
-              <span className="text-stone-400">01 — 05</span>
+            <div className="hidden lg:flex items-center font-mono text-xs text-stone-500 font-semibold tracking-widest">
+              <span className="text-amber-400">{stages[activeStep].step}</span>
+              <span className="mx-1 text-stone-600">/</span>
+              <span>05</span>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-6 relative h-[360px] sm:h-[340px] w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Step Content Area */}
+            <div className="lg:col-span-7 relative w-full lg:h-[380px] space-y-6 lg:space-y-0">
               {stages.map((stage, index) => {
                 const stepStart = index / stages.length;
                 const stepEnd = (index + 1) / stages.length;
+                const isFirst = index === 0;
+                const isLast = index === stages.length - 1;
 
                 const opacity = useTransform(
                   scrollYProgress,
-                  index === 0
-                    ? [0, stepEnd - 0.06, stepEnd]
-                    : index === stages.length - 1
-                    ? [stepStart - 0.06, stepStart, 1]
-                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
-                  index === 0 ? [1, 1, 0] : index === stages.length - 1 ? [0, 1, 1] : [0, 1, 1, 0]
+                  isFirst
+                    ? [0, stepEnd - 0.05, stepEnd]
+                    : isLast
+                    ? [stepStart - 0.05, stepStart, 1]
+                    : [stepStart - 0.05, stepStart, stepEnd - 0.05, stepEnd],
+                  isFirst ? [1, 1, 0] : isLast ? [0, 1, 1] : [0, 1, 1, 0]
                 );
 
                 const y = useTransform(
                   scrollYProgress,
-                  index === 0
-                    ? [0, stepEnd - 0.06, stepEnd]
-                    : index === stages.length - 1
-                    ? [stepStart - 0.06, stepStart, 1]
-                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
-                  index === 0 ? [0, 0, -35] : index === stages.length - 1 ? [35, 0, 0] : [35, 0, 0, -35]
+                  isFirst
+                    ? [0, stepEnd - 0.05, stepEnd]
+                    : isLast
+                    ? [stepStart - 0.05, stepStart, 1]
+                    : [stepStart - 0.05, stepStart, stepEnd - 0.05, stepEnd],
+                  isFirst ? [0, 0, -24] : isLast ? [24, 0, 0] : [24, 0, 0, -24]
                 );
 
                 const scale = useTransform(
                   scrollYProgress,
-                  index === 0
-                    ? [0, stepEnd - 0.06, stepEnd]
-                    : index === stages.length - 1
-                    ? [stepStart - 0.06, stepStart, 1]
-                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
-                  index === 0 ? [1, 1, 0.95] : index === stages.length - 1 ? [0.95, 1, 1] : [0.95, 1, 1, 0.95]
-                );
-
-                const filter = useTransform(
-                  scrollYProgress,
-                  index === 0
-                    ? [0, stepEnd - 0.06, stepEnd]
-                    : index === stages.length - 1
-                    ? [stepStart - 0.06, stepStart, 1]
-                    : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
-                  index === 0
-                    ? ["blur(0px)", "blur(0px)", "blur(4px)"]
-                    : index === stages.length - 1
-                    ? ["blur(4px)", "blur(0px)", "blur(0px)"]
-                    : ["blur(4px)", "blur(0px)", "blur(0px)", "blur(4px)"]
+                  isFirst
+                    ? [0, stepEnd - 0.05, stepEnd]
+                    : isLast
+                    ? [stepStart - 0.05, stepStart, 1]
+                    : [stepStart - 0.05, stepStart, stepEnd - 0.05, stepEnd],
+                  isFirst ? [1, 1, 0.98] : isLast ? [0.98, 1, 1] : [0.98, 1, 1, 0.98]
                 );
 
                 return (
                   <motion.div
                     key={stage.step}
-                    style={{ opacity, y, scale, filter }}
-                    className="absolute inset-0 p-8 rounded-3xl border border-amber-400/35 bg-[#0c1017]/95 backdrop-blur-3xl shadow-2xl flex flex-col justify-between"
+                    style={isDesktop ? { opacity, y, scale } : undefined}
+                    className={`
+                      relative rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0c1017]/95 p-6 sm:p-8 lg:p-10
+                      backdrop-blur-2xl transition-colors duration-300
+                      ${isDesktop ? "lg:absolute lg:inset-0 lg:flex lg:flex-col lg:justify-between" : "flex flex-col justify-between"}
+                    `}
                   >
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold text-amber-400 tracking-wider">
-                          BOSQICH 0{index + 1} // {stage.badge}
+                      <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-4">
+                        <span className="text-xs font-mono font-semibold text-amber-400 tracking-wider">
+                          {stage.badge}
                         </span>
-                        <span className="text-xs font-mono text-stone-500 font-semibold">
-                          {stage.percent}% TAYYORGARLIK
+                        <span className="text-xs font-mono text-stone-500 font-medium">
+                          {stage.step} / 05
                         </span>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-3">
+
+                      <h3 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-medium text-stone-100 tracking-tight">
                         {stage.title}
                       </h3>
-                      <p className="text-amber-400/90 font-mono text-xs uppercase mt-1">
-                        {stage.subtitle}
+
+                      <p className="text-sm sm:text-base font-serif italic text-amber-300/90 mt-2">
+                        {stage.lead}
                       </p>
-                      <p className="text-stone-300 text-sm sm:text-base mt-3 leading-relaxed">
+
+                      <p className="text-stone-300 text-sm sm:text-base mt-4 leading-relaxed max-w-xl font-sans">
                         {stage.description}
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-mono text-stone-400">
-                      <span>Metodika zanjiri:</span>
-                      <span className="text-amber-400 font-bold">RENESSANS STANDARTI</span>
+                    <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
+                      <span className="text-stone-500">Bosqich maqsadi:</span>
+                      <span className="text-stone-300 font-medium">{stage.footer}</span>
                     </div>
                   </motion.div>
                 );
               })}
             </div>
 
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="w-full h-[360px] sm:h-[340px] rounded-3xl border border-amber-400/30 bg-[#0c1017]/95 backdrop-blur-3xl p-8 flex items-center justify-center relative shadow-2xl overflow-hidden">
-                {stages.map((stage, index) => {
-                  const stepStart = index / stages.length;
-                  const stepEnd = (index + 1) / stages.length;
+            {/* Editorial Timeline & Progression Visual Panel */}
+            <div className="hidden lg:flex lg:col-span-5 h-[380px] rounded-3xl border border-white/[0.08] bg-[#0c1017]/90 p-8 backdrop-blur-2xl flex-col justify-between relative overflow-hidden">
+              {/* Subtle large background number of active step */}
+              <div className="absolute right-4 -top-6 font-serif text-[160px] font-bold text-white/[0.03] select-none pointer-events-none transition-all duration-700">
+                {stages[activeStep].step}
+              </div>
 
-                  const visOpacity = useTransform(
-                    scrollYProgress,
-                    index === 0
-                      ? [0, stepEnd - 0.06, stepEnd]
-                      : index === stages.length - 1
-                      ? [stepStart - 0.06, stepStart, 1]
-                      : [stepStart - 0.06, stepStart, stepEnd - 0.06, stepEnd],
-                    index === 0 ? [1, 1, 0] : index === stages.length - 1 ? [0, 1, 1] : [0, 1, 1, 0]
-                  );
+              <div>
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-4 mb-6">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                    METODIKA XARITASI
+                  </span>
+                  <span className="font-mono text-xs font-bold text-amber-400">
+                    {stages[activeStep].step} / 05
+                  </span>
+                </div>
 
-                  return (
-                    <motion.div
-                      key={stage.step}
-                      style={{ opacity: visOpacity }}
-                      className="absolute inset-0 flex items-center justify-center p-8 pointer-events-none"
-                    >
-                      {stage.visualType === "radar" && (
-                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
-                          <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="opacity-30 animate-spin" style={{ animationDuration: "35s" }} />
-                          <circle cx="100" cy="100" r="55" fill="none" stroke="currentColor" strokeWidth="1" className="opacity-50" />
-                          <circle cx="100" cy="100" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-80" />
-                          <circle cx="100" cy="100" r="6" fill="currentColor" className="opacity-90" />
-                          <line x1="15" y1="100" x2="185" y2="100" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
-                          <line x1="100" y1="15" x2="100" y2="185" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 3" className="opacity-40" />
-                          <path d="M 100 100 L 180 100 A 80 80 0 0 0 100 20 Z" fill="rgba(245, 158, 11, 0.35)" />
-                        </svg>
-                      )}
-                      {stage.visualType === "target" && (
-                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
-                          <circle cx="100" cy="100" r="76" fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="6 4" className="opacity-40" />
-                          <circle cx="100" cy="100" r="48" fill="none" stroke="currentColor" strokeWidth="1.8" className="opacity-75" />
-                          <circle cx="100" cy="100" r="22" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" />
-                          <circle cx="100" cy="100" r="4" fill="#f59e0b" />
-                          <path d="M 60 40 L 40 40 L 40 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                          <path d="M 140 40 L 160 40 L 160 60" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                          <path d="M 40 140 L 40 160 L 60 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                          <path d="M 160 140 L 160 160 L 140 160" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                          <text x="100" y="104" textAnchor="middle" fill="#f59e0b" fontSize="10" fontFamily="monospace" fontWeight="bold">LOCK A+</text>
-                        </svg>
-                      )}
-                      {stage.visualType === "system" && (
-                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-emerald-400">
-                          <path d="M 60 52 L 140 52 L 140 102 M 140 102 L 60 102 L 60 152 M 60 152 L 140 152" fill="none" stroke="#f59e0b" strokeWidth="2.5" />
-                          <rect x="25" y="32" width="70" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
-                          <text x="60" y="55" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">01 NAZARIYA</text>
-                          <rect x="105" y="82" width="72" height="36" rx="8" fill="#090d14" stroke="#f59e0b" strokeWidth="1.5" />
-                          <text x="141" y="105" textAnchor="middle" fill="#f59e0b" fontSize="9" fontFamily="monospace" fontWeight="bold">02 AMALIYOT</text>
-                          <rect x="25" y="132" width="80" height="36" rx="8" fill="#090d14" stroke="#10b981" strokeWidth="1.5" />
-                          <text x="65" y="155" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">03 MUSTAHKAM</text>
-                        </svg>
-                      )}
-                      {stage.visualType === "analytics" && (
-                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-amber-400">
-                          <line x1="25" y1="165" x2="180" y2="165" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                          <rect x="35" y="115" width="20" height="50" rx="4" fill="rgba(245,158,11,0.25)" />
-                          <rect x="68" y="90" width="20" height="75" rx="4" fill="rgba(245,158,11,0.45)" />
-                          <rect x="101" y="65" width="20" height="100" rx="4" fill="rgba(245,158,11,0.7)" />
-                          <rect x="134" y="35" width="20" height="130" rx="4" fill="#f59e0b" />
-                          <path d="M 45 110 Q 90 75, 144 32" fill="none" stroke="#10b981" strokeWidth="2.5" />
-                          <circle cx="144" cy="32" r="5" fill="#10b981" />
-                          <text x="144" y="20" textAnchor="middle" fill="#10b981" fontSize="8" fontFamily="monospace" fontWeight="bold">+42.5%</text>
-                        </svg>
-                      )}
-                      {stage.visualType === "award" && (
-                        <svg viewBox="0 0 200 200" className="w-56 h-56 text-emerald-400">
-                          <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" strokeDasharray="4 4" />
-                          <polygon points="100,20 122,68 174,74 135,110 148,162 100,136 52,162 65,110 26,74 78,68" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="2" />
-                          <circle cx="100" cy="98" r="32" fill="#080b10" stroke="#f59e0b" strokeWidth="2.5" />
-                          <text x="100" y="103" textAnchor="middle" fill="#f59e0b" fontSize="13" fontFamily="monospace" fontWeight="bold">100%</text>
-                          <text x="100" y="116" textAnchor="middle" fill="#10b981" fontSize="7" fontFamily="monospace" letterSpacing="1">GRANT</text>
-                        </svg>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                {/* Vertical connected timeline */}
+                <div className="relative pl-6 space-y-4">
+                  {/* Background vertical track */}
+                  <div className="absolute left-[11px] top-2 bottom-2 w-px bg-white/[0.08]" />
+                  {/* Animated progression line */}
+                  <motion.div
+                    className="absolute left-[11px] top-2 w-px bg-gradient-to-b from-amber-400 to-amber-300 origin-top"
+                    animate={{
+                      height: `${(activeStep / (stages.length - 1)) * 100}%`,
+                    }}
+                    transition={{ duration: 0.4, ease: EASING_CURVE }}
+                  />
+
+                  {stages.map((st, idx) => {
+                    const isActive = activeStep === idx;
+                    const isCompleted = activeStep > idx;
+
+                    return (
+                      <div
+                        key={st.step}
+                        className="relative flex items-center justify-between transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          {/* Dot / Number indicator */}
+                          <div
+                            className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full font-mono text-[10px] transition-all duration-300 ${
+                              isActive
+                                ? "bg-amber-400 text-black font-bold shadow-[0_0_12px_rgba(245,158,11,0.4)] scale-110"
+                                : isCompleted
+                                ? "border border-amber-400/40 bg-[#0c1017] text-amber-400"
+                                : "border border-white/10 bg-[#0c1017] text-stone-600"
+                            }`}
+                          >
+                            {st.step}
+                          </div>
+                          <span
+                            className={`font-mono text-xs uppercase tracking-wider transition-colors duration-300 ${
+                              isActive
+                                ? "text-stone-100 font-semibold"
+                                : isCompleted
+                                ? "text-stone-400"
+                                : "text-stone-600"
+                            }`}
+                          >
+                            {st.badge.replace(/^0\d\s*\/\s*/, "")}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`text-xs transition-colors duration-300 font-serif ${
+                            isActive ? "text-amber-300/90 italic" : "text-stone-600"
+                          }`}
+                        >
+                          {isActive ? st.title : ""}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-stone-500">
+                <span className="uppercase tracking-widest">Izchil ta'lim zanjiri</span>
+                <span className="text-amber-400/80 font-semibold uppercase tracking-wider">
+                  {stages[activeStep].footer}
+                </span>
               </div>
             </div>
           </div>
@@ -1262,17 +1284,18 @@ export function RenessansLandingPage({
   useEffect(() => {
     if (propsCourses && propsCourses.length > 0) return;
     let cancelled = false;
-    coursesService.getPublicCourses()
+    coursesService
+      .getPublicCourses()
       .then((docs) => {
         if (cancelled || !docs || docs.length === 0) return;
         const mapped: CoursePath[] = docs.map((c: any) => ({
           id: c.id,
           slug: c.slug || c.id,
           title: c.title,
-          category: c.category || 'Umumiy',
-          duration: c.duration || '',
-          level: c.lessonsPerWeek || '',
-          description: c.description || '',
+          category: c.category || "Umumiy",
+          duration: c.duration || "",
+          level: c.lessonsPerWeek || "",
+          description: c.description || "",
           isFeatured: c.featured,
           highlights: c.features || [],
           teacherName: c.teacherName,
@@ -1281,19 +1304,22 @@ export function RenessansLandingPage({
         if (!cancelled) setLiveCourses(mapped);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [propsCourses]);
 
   useEffect(() => {
     if (propsTeachers && propsTeachers.length > 0) return;
     let cancelled = false;
-    teachersService.getPublicTeachers()
+    teachersService
+      .getPublicTeachers()
       .then((docs) => {
         if (cancelled || !docs || docs.length === 0) return;
         const mapped: TeacherRecord[] = docs.map((t: any) => ({
           id: t.id,
           name: t.name,
-          subject: t.subject || t.specialization || '',
+          subject: t.subject || t.specialization || "",
           experienceYears: t.experience,
           photo: t.photo,
           bio: t.description,
@@ -1303,20 +1329,23 @@ export function RenessansLandingPage({
         if (!cancelled) setLiveTeachers(mapped);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [propsTeachers]);
 
   useEffect(() => {
     if (propsResults && propsResults.length > 0) return;
     let cancelled = false;
-    resultsService.getPublishedResults()
+    resultsService
+      .getPublishedResults()
       .then((docs) => {
         if (cancelled || !docs || docs.length === 0) return;
         const mapped: StudentResult[] = docs.map((r: any) => ({
           id: r.id,
-          name: r.studentName || r.name || '',
+          name: r.studentName || r.name || "",
           score: r.score,
-          examType: r.category || 'DTM',
+          examType: r.category || "DTM",
           university: r.university,
           year: r.year,
           certificateUrl: r.certificateImage,
@@ -1325,13 +1354,16 @@ export function RenessansLandingPage({
         if (!cancelled) setLiveResults(mapped);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [propsResults]);
 
   useEffect(() => {
     if (propsFaqs && propsFaqs.length > 0) return;
     let cancelled = false;
-    landingCmsService.getFaqs()
+    landingCmsService
+      .getFaqs()
       .then((docs) => {
         if (cancelled || !docs || docs.length === 0) return;
         const mapped: FAQItem[] = docs.map((f: any) => ({
@@ -1342,23 +1374,45 @@ export function RenessansLandingPage({
         if (!cancelled) setLiveFaqs(mapped);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [propsFaqs]);
 
   const results = useMemo(
-    () => (propsResults && propsResults.length > 0 ? propsResults : liveResults && liveResults.length > 0 ? liveResults : DEFAULT_RESULTS),
+    () =>
+      propsResults && propsResults.length > 0
+        ? propsResults
+        : liveResults && liveResults.length > 0
+        ? liveResults
+        : DEFAULT_RESULTS,
     [propsResults, liveResults]
   );
   const teachers = useMemo(
-    () => (propsTeachers && propsTeachers.length > 0 ? propsTeachers : liveTeachers && liveTeachers.length > 0 ? liveTeachers : DEFAULT_TEACHERS),
+    () =>
+      propsTeachers && propsTeachers.length > 0
+        ? propsTeachers
+        : liveTeachers && liveTeachers.length > 0
+        ? liveTeachers
+        : DEFAULT_TEACHERS,
     [propsTeachers, liveTeachers]
   );
   const courses = useMemo(
-    () => (propsCourses && propsCourses.length > 0 ? propsCourses : liveCourses && liveCourses.length > 0 ? liveCourses : DEFAULT_COURSES),
+    () =>
+      propsCourses && propsCourses.length > 0
+        ? propsCourses
+        : liveCourses && liveCourses.length > 0
+        ? liveCourses
+        : DEFAULT_COURSES,
     [propsCourses, liveCourses]
   );
   const faqs = useMemo(
-    () => (propsFaqs && propsFaqs.length > 0 ? propsFaqs : liveFaqs && liveFaqs.length > 0 ? liveFaqs : DEFAULT_FAQS),
+    () =>
+      propsFaqs && propsFaqs.length > 0
+        ? propsFaqs
+        : liveFaqs && liveFaqs.length > 0
+        ? liveFaqs
+        : DEFAULT_FAQS,
     [propsFaqs, liveFaqs]
   );
 
@@ -1480,11 +1534,12 @@ export function RenessansLandingPage({
         await leadsService.createLead({
           name,
           phone,
-          course: subject || 'Bepul konsultatsiya',
-          source: 'Bosh sahifa (Hero forma)',
+          course: subject || "Bepul konsultatsiya",
+          source: "Bosh sahifa (Hero forma)",
         });
-        // Server-side admin Telegram notify (best-effort, never blocks the form)
-        notificationService.onTrialLessonSubmitted(name, subject || 'Bepul konsultatsiya', phone).catch(() => {});
+        notificationService
+          .onTrialLessonSubmitted(name, subject || "Bepul konsultatsiya", phone)
+          .catch(() => {});
       }
       setIsSubmitted(true);
     } catch {
@@ -1675,7 +1730,7 @@ export function RenessansLandingPage({
       </AnimatePresence>
 
       {/* ====================================================================
-          2. HERO SECTION — WITH STAGGERED WORD-BY-WORD HERO TITLE ANIMATION
+          2. HERO SECTION
       ==================================================================== */}
       <section
         id="top"
@@ -1689,7 +1744,6 @@ export function RenessansLandingPage({
                 Yangioboddagi Yetakchi Ta'lim Kampusi
               </div>
 
-              {/* ANIMATED HERO HEADING */}
               <HeroTitleAnimated />
 
               <div className="mt-8 flex flex-wrap items-center gap-3 text-sm sm:text-base text-stone-300">
@@ -1701,10 +1755,8 @@ export function RenessansLandingPage({
             </div>
 
             <div className="lg:col-span-5 lg:pb-3 flex flex-col justify-center">
-              {/* BRAND EMBLEM / LOGO BADGE */}
               <HeroLogoBadge />
 
-              {/* WORD-BY-WORD ANIMATED PARAGRAPH */}
               <div className="text-base leading-relaxed text-stone-300 sm:text-lg">
                 <WordFadeText
                   text="Milliy sertifikat, DTM, CEFR va Prezident maktabiga tayyorlov. Yangiobod tumanidagi yagona 100% OTM qamrovi natijasiga ega tizimli ta'lim maskani."
@@ -1864,7 +1916,7 @@ export function RenessansLandingPage({
       </section>
 
       {/* ====================================================================
-          5. METODIKA — STICKY SCROLL ENGINE
+          5. METODIKA — REWORKED EDITORIAL ENGINE
       ==================================================================== */}
       <StickyMetodikaSection stages={METHOD_STAGES} />
 
@@ -2102,7 +2154,7 @@ export function RenessansLandingPage({
                           className="w-full h-full"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                        
+
                         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                           <span className="rounded-full bg-black/60 px-3 py-1 font-mono text-[10px] font-bold text-amber-400 backdrop-blur-md border border-amber-400/30">
                             {t.experienceYears} Tajriba
@@ -2683,7 +2735,12 @@ export function RenessansLandingPage({
               +998 (88) 648-49-49
             </a>
             <span>•</span>
-            <a href="https://t.me/D_Furqatovich" target="_blank" rel="noreferrer" className="hover:text-amber-400 transition-colors">
+            <a
+              href="https://t.me/D_Furqatovich"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-amber-400 transition-colors"
+            >
               Telegram
             </a>
           </div>

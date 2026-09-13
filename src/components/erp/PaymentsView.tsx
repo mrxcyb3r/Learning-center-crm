@@ -28,7 +28,7 @@ function currentMonthLabel(): string {
   return `${UZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 }
 
-export const PaymentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
+export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean }> = ({ readOnly = false, allowCreate = false }) => {
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -241,7 +241,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = fals
           </p>
         </div>
 
-        {!readOnly && (
+        {(!readOnly || allowCreate) && (
         <button
           onClick={handleOpenAdd}
           className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"

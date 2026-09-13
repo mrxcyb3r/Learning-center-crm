@@ -17,7 +17,7 @@ import { db } from './firebase';
  * - StrictMode-safe via module-level single-flight guard.
  */
 
-export const SEED_VERSION = 7;
+export const SEED_VERSION = 8;
 
 // Verified live Firebase Auth UIDs for the project demo accounts.
 export const DEMO_ADMIN_UID = '8QEu4s0IW4QtYYDhxTigjCkRe4e2';
@@ -296,12 +296,16 @@ async function writeDemoDataset(): Promise<void> {
 
   // Payments: 4 installments per student, concentrated in the current month
   // so the dashboard's monthly revenue reflects the demo cohort size.
+  // Each payment also gets a sanitized public_receipts mirror (same shape
+  // as writePublicReceiptSummary) so QR verification works on demo data.
   let payIdx = 0;
   for (const s of DEMO_STUDENTS) {
     const g = DEMO_GROUPS.find((x) => x.id === s.groupId)!;
     for (let m = 0; m < 4; m++) {
       const id = `demo-payment-${String(++payIdx).padStart(3, '0')}`;
       const method = PAY_METHODS[(payIdx + m) % PAY_METHODS.length];
+      const payStatus = s.payment === 'Paid' || m < 3 ? 'Completed' : 'Pending';
+      const payDate = isoDay(m * 6 + (payIdx % 4));
       await setDoc(doc(db, 'payments', id), {
         studentId: s.id,
         studentName: s.fullName,
@@ -310,13 +314,26 @@ async function writeDemoDataset(): Promise<void> {
         subjectCategory: g.course,
         paymentMethod: method,
         method: method.charAt(0).toUpperCase() + method.slice(1),
-        date: isoDay(m * 6 + (payIdx % 4)),
+        date: payDate,
         recordedBy: 'Admin',
-        status: s.payment === 'Paid' || m < 3 ? 'Completed' : 'Pending',
+        status: payStatus,
         cohortGroup: g.groupName,
         paymentPeriod: isoDay(m * 28).slice(0, 7),
         receiptNumber: `CHK-${id.toUpperCase()}`,
         receiptRef: `CHK-${id.toUpperCase()}`,
+        isDemo: true,
+      }, { merge: true });
+      await setDoc(doc(db, 'public_receipts', id), {
+        paymentId: id,
+        receiptNumber: `CHK-${id.toUpperCase()}`,
+        amount: g.monthlyFee,
+        course: g.course,
+        date: payDate,
+        method: method.charAt(0).toUpperCase() + method.slice(1),
+        status: payStatus,
+        studentName: s.fullName,
+        studentId: s.id,
+        createdAt: nowIso,
         isDemo: true,
       }, { merge: true });
     }

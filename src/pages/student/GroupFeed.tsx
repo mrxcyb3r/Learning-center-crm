@@ -30,6 +30,7 @@ import {
   notifyTeacherNewSubmission
 } from '../../services/firestore';
 import { FeedPost, Assignment, SubmissionAttachment } from '../../types';
+import { sanitizeEssayInput } from '../../utils/security';
 import { WPSEditor } from '../../components/UI/WPSEditor';
 import { SubmissionUploader } from '../../components/student/SubmissionUploader';
 
@@ -462,7 +463,7 @@ export const GroupFeed: React.FC = () => {
                     {item.content?.includes('<') ? (
                       <div
                         className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed prose dark:prose-invert max-w-none font-sans overflow-x-auto"
-                        dangerouslySetInnerHTML={{ __html: item.content }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeEssayInput(item.content || '') }}
                       />
                     ) : (
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">

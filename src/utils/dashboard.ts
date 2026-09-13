@@ -34,6 +34,24 @@ export function isCollectedPayment(status: unknown): boolean {
   return normalizePaymentCollection(status) === 'collected';
 }
 
+export type CanonicalPaymentRecordStatus = 'Completed' | 'Pending' | 'Voided';
+
+/**
+ * Single canonical payment-status representation for writes.
+ * - collected (paid/Paid/Completed/Sent/Delivered) → 'Completed'
+ * - voided (Voided/refunded/Failed) → 'Voided' (never counts as revenue)
+ * - everything else → 'Pending'
+ * Applied at the service boundary (recordPayment/recordPaymentWithInvoice/
+ * updatePaymentStatus); reads keep accepting legacy variants so existing
+ * seeded data renders unchanged.
+ */
+export function canonicalPaymentStatus(status: unknown): CanonicalPaymentRecordStatus {
+  const c = normalizePaymentCollection(status);
+  if (c === 'collected') return 'Completed';
+  if (c === 'voided') return 'Voided';
+  return 'Pending';
+}
+
 /**
  * Safely parse a record date. Accepts ISO strings, `YYYY-MM-DD` strings,
  * JS Dates and Firestore Timestamps. Returns null when unparseable —

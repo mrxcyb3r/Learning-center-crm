@@ -528,16 +528,9 @@ export const GradingModal: React.FC<GradingModalProps> = ({
               </div>
 
               {submission.solutionText ? (
-                submission.solutionText.includes('<') ? (
-                  <div
-                    className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 prose dark:prose-invert max-w-none font-sans leading-relaxed pt-1 max-h-48 overflow-y-auto"
-                    dangerouslySetInnerHTML={{ __html: submission.solutionText }}
-                  />
-                ) : (
-                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed pt-1 font-sans max-h-48 overflow-y-auto">
-                    {submission.solutionText}
-                  </div>
-                )
+                <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed pt-1 font-sans max-h-48 overflow-y-auto">
+                  {submission.solutionText}
+                </div>
               ) : (
                 <div className="p-4 text-center text-slate-400 italic text-xs">
                   No text response included in this submission.

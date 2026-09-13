@@ -207,13 +207,21 @@ service cloud.firestore {
     }
 
     // Payments
-    // Receptionist: read-only (front-desk visibility into dues). All writes
-    // stay admin/teacher-scoped as before.
+    // Receptionist: read (front-desk visibility into dues) + narrow CREATE
+    // (record a new payment for an existing student with a positive amount).
+    // No update/delete: history, payroll, expenses and settings stay
+    // admin/teacher-scoped. The exists() check ties the write to a real
+    // student without opening broad collection access.
     match /payments/{paymentId} {
       allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId)) || isReceptionist();
       allow create: if isAdminOrSuperAdmin()
         || (isTeacher() && request.resource.data.studentId is string
-            && isTeacherOfStudent(request.resource.data.studentId));
+            && isTeacherOfStudent(request.resource.data.studentId))
+        || (isReceptionist()
+            && request.resource.data.studentId is string
+            && exists(/databases/$(database)/documents/students/$(request.resource.data.studentId))
+            && request.resource.data.amount is number
+            && request.resource.data.amount > 0);
       allow update, delete: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
     }
 
@@ -460,10 +468,17 @@ service cloud.firestore {
     // whose own student's payment is being recorded, or the trusted server.
     match /public_receipts/{receiptId} {
       allow read: if true;
+      // The old teacher branch called isTeacherOfPayment() on a document
+      // that does not exist yet during create, so it always denied. Scope
+      // mirror writes through the mirror's own studentId instead, and allow
+      // the same narrow front-desk create as /payments.
       allow create: if isAdminOrSuperAdmin()
         || (isTeacher()
-            && request.resource.data.paymentId is string
-            && isTeacherOfPayment(request.resource.data.paymentId));
+            && request.resource.data.studentId is string
+            && isTeacherOfStudent(request.resource.data.studentId))
+        || (isReceptionist()
+            && request.resource.data.studentId is string
+            && exists(/databases/$(database)/documents/students/$(request.resource.data.studentId)));
       allow update, delete: if isAdminOrSuperAdmin();
     }
 

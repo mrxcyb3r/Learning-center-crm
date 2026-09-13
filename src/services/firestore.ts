@@ -291,9 +291,10 @@ export async function recordPaymentAndSetPaid(
   }
 }
 
-export async function updatePaymentStatus(paymentId: string, status: 'paid' | 'pending' | 'refunded') {
+export async function updatePaymentStatus(paymentId: string, status: 'paid' | 'pending' | 'refunded' | string) {
   try {
-    await updateDoc(doc(db, PAYMENTS_COL, paymentId), { status });
+    const { canonicalPaymentStatus } = await import('../utils/dashboard');
+    await updateDoc(doc(db, PAYMENTS_COL, paymentId), { status: canonicalPaymentStatus(status) });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${PAYMENTS_COL}/${paymentId}`);
   }

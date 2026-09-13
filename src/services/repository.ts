@@ -95,7 +95,7 @@ const PUBLIC_RECEIPTS_COL = 'public_receipts';
  */
 async function writePublicReceiptSummary(paymentId: string, data: PaymentWriteInput): Promise<void> {
   const { resolveCourseName } = await import('../utils/receipt');
-  const status = String(data.status ?? 'Completed');
+  const { canonicalPaymentStatus } = await import('../utils/dashboard');
   const summary = {
     paymentId,
     receiptNumber: data.receiptNumber || data.receiptRef || `REC-${String(paymentId).replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()}`,
@@ -103,8 +103,11 @@ async function writePublicReceiptSummary(paymentId: string, data: PaymentWriteIn
     course: resolveCourseName(data),
     date: data.date || '',
     method: String(data.paymentMethod || data.method || ''),
-    status,
+    status: canonicalPaymentStatus(data.status ?? 'Completed'),
     studentName: String(data.studentName || ''),
+    // Carries the owning student so security rules can scope mirror writes
+    // (teacher/receptionist of that student) without opening broad access.
+    studentId: String((data as { studentId?: unknown }).studentId || ''),
     createdAt: new Date().toISOString(),
   };
   await setDoc(doc(db, PUBLIC_RECEIPTS_COL, paymentId), cleanData(summary));
@@ -555,17 +558,14 @@ async function generateInvoiceNumber(): Promise<string> {
   return generateInvoiceNumberLocal();
 }
 
-async function generateInvoiceNumberLocal(): Promise<string> {
+export async function generateInvoiceNumberLocal(): Promise<string> {
+  // Pure client-side fallback — MUST NOT touch Firestore. The `counters`
+  // collection is admin-only, so a transactional counter here made every
+  // teacher/receptionist payment creation fail with permission-denied.
+  // Timestamp + randomness keeps numbers unique without a shared counter.
   const year = new Date().getFullYear();
-  const counterRef = doc(db, 'counters', `invoices_${year}`);
-
-  return runTransaction(db, async (transaction) => {
-    const counterDoc = await transaction.get(counterRef);
-    const currentCount = counterDoc.exists() ? (counterDoc.data().count || 0) : 0;
-    const nextCount = currentCount + 1;
-    transaction.set(counterRef, { count: nextCount, year, updatedAt: new Date().toISOString() });
-    return `INV-${year}-${String(nextCount).padStart(4, '0')}`;
-  });
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `INV-${year}-${Date.now().toString(36).toUpperCase()}-${rand}`;
 }
 
 /**
@@ -594,8 +594,10 @@ export const paymentsService = {
   },
 
   async recordPayment(data: PaymentWriteInput): Promise<string> {
-    const docRef = await addDoc(collection(db, PAYMENTS_COL), cleanData(data));
-    writePublicReceiptSummary(docRef.id, data).catch(() => undefined);
+    const { canonicalPaymentStatus } = await import('../utils/dashboard');
+    const normalized = { ...data, status: canonicalPaymentStatus(data.status ?? 'Completed') };
+    const docRef = await addDoc(collection(db, PAYMENTS_COL), cleanData(normalized));
+    writePublicReceiptSummary(docRef.id, normalized).catch(() => undefined);
     return docRef.id;
   },
 
@@ -606,11 +608,12 @@ export const paymentsService = {
     const now = new Date().toISOString();
     const paymentDate = data.date || now.split('T')[0];
 
+    const { canonicalPaymentStatus } = await import('../utils/dashboard');
     const paymentData = cleanData({
       ...data,
       id: paymentId,
       invoiceId,
-      status: 'paid',
+      status: canonicalPaymentStatus((data as { status?: unknown }).status ?? 'Completed'),
       createdAt: now,
     });
 

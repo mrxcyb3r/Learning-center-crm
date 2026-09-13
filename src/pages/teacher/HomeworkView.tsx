@@ -594,16 +594,9 @@ export const HomeworkView: React.FC = () => {
                       </div>
 
                       {sub.solutionText && (
-                        sub.solutionText.includes('<') ? (
-                          <div
-                            className="text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 prose dark:prose-invert max-w-none font-sans overflow-x-auto"
-                            dangerouslySetInnerHTML={{ __html: sub.solutionText }}
-                          />
-                        ) : (
-                          <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                            {sub.solutionText}
-                          </p>
-                        )
+                        <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                          {sub.solutionText}
+                        </p>
                       )}
 
                       {sub.attachments && sub.attachments.length > 0 ? (

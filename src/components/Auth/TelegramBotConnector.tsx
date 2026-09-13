@@ -35,7 +35,9 @@ export const TelegramBotConnector: React.FC<TelegramBotConnectorProps> = ({
   const [copied, setCopied] = useState(false);
 
   const botUsername = 'centerflow_bot';
-  const botToken = '8917596387:AAGBV81AxJa-jzfRexK3l75bEAmdzjOvgxw';
+  // SECURITY: bot tokens must never live in client bundles. All Telegram API
+  // calls go through the authenticated server routes; the client only needs
+  // the public bot username for the deep link.
   const telegramDeepLink = `https://t.me/${botUsername}?start=${userUid}`;
 
   useEffect(() => {
@@ -73,20 +75,10 @@ export const TelegramBotConnector: React.FC<TelegramBotConnectorProps> = ({
     setIsPolling(true);
   };
 
+  // Manual check re-triggers the real server-side status poll — connection
+  // is only marked when /api/bot/status confirms it. Never self-attest.
   const handleManualCheck = () => {
     setIsPolling(true);
-    setTimeout(() => {
-      const handle = currentTelegramHandle || '@user_' + userUid.slice(0, 6);
-      setIsConnected(true);
-      setConnectedHandle(handle);
-      setIsPolling(false);
-      if (onConnectionSuccess) {
-        onConnectionSuccess({
-          telegramUsername: handle,
-          chatId: userUid
-        });
-      }
-    }, 1500);
   };
 
   const handleCopyLink = () => {

@@ -55,31 +55,36 @@ export function generateReceiptPdf(
   let y = 0;
 
   // ---- Header (2-column grid equivalent) ----
+  // Left column is width-capped and wrapped so a long center name can never
+  // collide with the right reference block.
+  const RIGHT_COL_W = 62;
+  const LEFT_COL_W = COL_W - RIGHT_COL_W - 8;
   y = MARGIN;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...dark);
-  doc.text(toPdfPlain(d.center.name) || "Renessans O'quv Markazi", MARGIN, y);
+  const nameLines = doc.splitTextToSize(toPdfPlain(d.center.name) || "Renessans O'quv Markazi", LEFT_COL_W);
+  doc.text(nameLines.slice(0, 3), MARGIN, y);
+  y += nameLines.slice(0, 3).length * 6;
 
-  y += 5;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(148, 163, 184);
-  doc.setCharSpace(1.5);
-  doc.text('E L E K T R O N   T O` L O V   K V I T A N S I Y A S I', MARGIN, y);
-  doc.setCharSpace(0);
+  const docNameLines = doc.splitTextToSize('ELEKTRON TO`LOV KVITANSIYASI', LEFT_COL_W);
+  doc.text(docNameLines, MARGIN, y);
+  y += docNameLines.length * 3.6 + 1.2;
 
   // Credentials under the center name (only configured ones — never faked).
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...gray);
-  let credY = y + 5.2;
   for (const line of d.credentialLines.slice(1)) {
-    doc.text(toPdfPlain(line), MARGIN, credY);
-    credY += 3.6;
+    const wrapped = doc.splitTextToSize(toPdfPlain(line), LEFT_COL_W);
+    doc.text(wrapped.slice(0, 2), MARGIN, y);
+    y += wrapped.slice(0, 2).length * 3.6;
   }
 
-  // Right block: receipt id + datetime.
+  // Right block: receipt id + datetime (wrapped, right-aligned).
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...labelColor);
@@ -87,13 +92,14 @@ export function generateReceiptPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...dark);
-  doc.text(toPdfPlain(d.receiptNum), A4_W - MARGIN, MARGIN + 5.5, { align: 'right' });
+  const refLines = doc.splitTextToSize(toPdfPlain(d.receiptNum), RIGHT_COL_W);
+  doc.text(refLines.slice(0, 2), A4_W - MARGIN, MARGIN + 5.5, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...gray);
-  doc.text(toPdfPlain(d.datetime), A4_W - MARGIN, MARGIN + 11, { align: 'right' });
+  doc.text(toPdfPlain(d.datetime), A4_W - MARGIN, MARGIN + 5.5 + refLines.slice(0, 2).length * 4.4, { align: 'right' });
 
-  y = Math.max(credY + 2, MARGIN + 18);
+  y = Math.max(y + 2, MARGIN + 20);
   drawHr(doc, MARGIN, y, COL_W);
 
   // ---- HISOB-KITOB heading + status pill ----
@@ -144,6 +150,11 @@ export function generateReceiptPdf(
   doc.setFontSize(9);
   for (const item of items) {
     y += 6;
+    // Page-break inside long tables so rows are never clipped.
+    if (y > A4_H - MARGIN - 30) {
+      doc.addPage();
+      y = MARGIN + 6;
+    }
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184);
     if (item.num) doc.text(item.num, MARGIN, y);
@@ -152,15 +163,19 @@ export function generateReceiptPdf(
     doc.text(item.name, colNameX, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
+    let rowLines = 1;
     if (item.detail) {
       const detailLines = doc.splitTextToSize(item.detail, amountRight - colDetailX - 6);
-      doc.text(detailLines.slice(0, 2), colDetailX, y);
+      doc.text(detailLines, colDetailX, y);
+      rowLines = Math.max(rowLines, detailLines.length);
     }
     if (item.amount) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...dark);
       doc.text(item.amount, amountRight, y, { align: 'right' });
     }
+    // Long course/student names wrap onto more lines — the row grows.
+    if (rowLines > 1) y += (rowLines - 1) * 4.2;
   }
 
   y += 3;
@@ -174,8 +189,16 @@ export function generateReceiptPdf(
   doc.text(toPdfPlain(d.amountTotal), A4_W - MARGIN, y, { align: 'right' });
 
   // ---- Verification QR + link ----
+  // Flow-positioned (never fixed): long item tables push this block down,
+  // and a new page is added when it would overflow — nothing is clipped.
   const qrSize = 26;
-  const qrTop = A4_H - MARGIN - qrSize - 12;
+  const qrBlockH = (qrDataUrl ? qrSize + 6 : 12) + 10;
+  const footerH = 8 + d.credentialLines.length * 4 + 8;
+  if (y + qrBlockH + footerH > A4_H - MARGIN) {
+    doc.addPage();
+    y = MARGIN;
+  }
+  const qrTop = y + 8;
   drawHr(doc, MARGIN, qrTop - 6, COL_W);
   if (qrDataUrl) {
     try {
@@ -186,41 +209,48 @@ export function generateReceiptPdf(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(148, 163, 184);
-    doc.text('KVITANSIYANI TEKSHIRISH', A4_W - MARGIN - qrSize, qrTop - 1, { align: 'center' });
+    const qrLabel = 'KVITANSIYANI TEKSHIRISH';
+    doc.text(qrLabel, A4_W - MARGIN - qrSize / 2, qrTop - 1, { align: 'center' });
   }
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text(
-    toPdfPlain(d.verificationUrl) || '',
-    MARGIN,
-    qrTop + 3,
-    { align: 'left', maxWidth: A4_W - MARGIN * 2 - (qrDataUrl ? qrSize + 4 : 0) }
-  );
+  if (d.verificationUrl) {
+    const linkLines = doc.splitTextToSize(
+      toPdfPlain(d.verificationUrl),
+      COL_W - (qrDataUrl ? qrSize + 6 : 0)
+    );
+    doc.text(linkLines.slice(0, 3), MARGIN, qrTop + 3);
+  }
+  y = qrTop + Math.max(qrDataUrl ? qrSize : 0, 8) + 6;
 
-  // ---- Footer ----
-  const footerY = A4_H - MARGIN - 1;
+  // ---- Footer (flows after content, same page when it fits) ----
+  if (y + footerH > A4_H - MARGIN) {
+    doc.addPage();
+    y = MARGIN;
+  }
+  drawHr(doc, MARGIN, y, COL_W);
+  y += 6;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...dark);
-  let fy = footerY - 10;
-  doc.text('Kvitansiya ID: ' + toPdfPlain(d.receiptNum), MARGIN, fy - 3, { align: 'right', maxWidth: COL_W });
-  fy = footerY - 6;
-  for (const line of d.credentialLines) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...dark);
-    doc.text(toPdfPlain(line), MARGIN, fy);
-    fy += 4;
-    break; // name line only in this pass
+  if (d.credentialLines.length > 0) {
+    const nameLines = doc.splitTextToSize(toPdfPlain(d.credentialLines[0]), COL_W);
+    doc.text(nameLines.slice(0, 2), MARGIN, y);
+    y += nameLines.slice(0, 2).length * 4;
   }
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
   for (const line of d.credentialLines.slice(1)) {
-    doc.text(toPdfPlain(line), MARGIN, fy);
-    fy += 3.8;
+    const wrapped = doc.splitTextToSize(toPdfPlain(line), COL_W);
+    doc.text(wrapped.slice(0, 2), MARGIN, y);
+    y += wrapped.slice(0, 2).length * 3.8;
   }
+  y += 2;
+  doc.setFontSize(7.5);
+  const idLine = 'Kvitansiya ID: ' + toPdfPlain(d.receiptNum);
+  doc.text(doc.splitTextToSize(idLine, COL_W).slice(0, 2), MARGIN, y);
 
   return doc;
 }
@@ -276,7 +306,8 @@ export function buildReceiptPrintHtml(
 <style>
   @page { size: A4; margin: 16mm; }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #0f172a; }
+  body { margin: 0; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #0f172a; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .pill, .total-line .amt, .verify, .qr-wrap { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .doc { max-width: 178mm; margin: 0 auto; }
   .muted { color: #7a828e; }
   .hdr { border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }

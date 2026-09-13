@@ -148,7 +148,9 @@ export const ReceptionistPortalApp: React.FC = () => {
       case 'courses':
         return <CoursesView readOnly />;
       case 'payments':
-        return <PaymentsView readOnly />;
+        // Front-desk may record new payments (narrow Firestore create rule:
+        // existing student + positive amount). Void/edit stays admin-only.
+        return <PaymentsView readOnly allowCreate />;
       case 'ai':
         return <ReceptionAssistant />;
       default:

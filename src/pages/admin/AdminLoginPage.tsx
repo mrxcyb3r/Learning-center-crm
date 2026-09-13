@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, DEMO_TEACHER_EMAIL, DEMO_TEACHER_PASSWORD } from '../../services/demoProvisioning';
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, DEMO_TEACHER_EMAIL, DEMO_TEACHER_PASSWORD, DEMO_RECEPTIONIST_EMAIL, DEMO_RECEPTIONIST_PASSWORD } from '../../services/demoProvisioning';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +35,9 @@ export const AdminLoginPage: React.FC = () => {
   const handleRoleSelect = (role: 'admin' | 'teacher' | 'receptionist') => {
     setSelectedRole(role);
   };
+
+  const roleLabel = (r: 'admin' | 'teacher' | 'receptionist') =>
+    r === 'admin' ? 'Admin' : r === 'teacher' ? 'O‘qituvchi' : 'Qabulxona';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,19 +78,20 @@ export const AdminLoginPage: React.FC = () => {
   const getErrorMessage = (err: any): string => {
     switch (err.code) {
       case 'auth/user-not-found':
-        return 'No account found with this email address.';
+        return 'Bu email manzil bilan hisob topilmadi.';
       case 'auth/wrong-password':
-        return 'Incorrect password. Please try again.';
+      case 'auth/invalid-credential':
+        return 'Email yoki parol noto‘g‘ri. Qayta urinib ko‘ring.';
       case 'auth/invalid-email':
-        return 'Invalid email address format.';
+        return 'Email manzili formati noto‘g‘ri.';
       case 'auth/user-disabled':
-        return 'This account has been disabled. Contact support.';
+        return 'Bu hisob o‘chirilgan. Administrator bilan bog‘laning.';
       case 'auth/too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
+        return 'Juda ko‘p urinish. Birozdan keyin qayta urinib ko‘ring.';
       case 'auth/network-request-failed':
-        return 'Network error. Please check your connection.';
+        return 'Tarmoq xatosi. Internet aloqasini tekshiring.';
       default:
-        return err.message || 'Login failed. Please try again.';
+        return err.message || 'Kirishda xatolik yuz berdi. Qayta urinib ko‘ring.';
     }
   };
 
@@ -113,6 +117,22 @@ export const AdminLoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await loginWithEmail(DEMO_TEACHER_EMAIL, DEMO_TEACHER_PASSWORD);
+      setTimeout(async () => {
+        await refreshUserRole();
+        navigate(resolveLanding(), { replace: true });
+      }, 200);
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoReceptionistLogin = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await loginWithEmail(DEMO_RECEPTIONIST_EMAIL, DEMO_RECEPTIONIST_PASSWORD);
       setTimeout(async () => {
         await refreshUserRole();
         navigate(resolveLanding(), { replace: true });
@@ -151,7 +171,7 @@ export const AdminLoginPage: React.FC = () => {
             <ShieldCheck className="w-8 h-8 text-slate-950" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {selectedRole ? `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Kirish` : 'CenterFlow'}
+            {selectedRole ? `${roleLabel(selectedRole)} — Kirish` : 'CenterFlow'}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
             {selectedRole ? "Tizimga kirish uchun ma'lumotlaringizni kiriting" : 'CenterFlow tizimiga kirish'}
@@ -181,7 +201,7 @@ export const AdminLoginPage: React.FC = () => {
                       : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'
                   }`}
                 >
-                  {r === 'admin' ? 'Admin' : r === 'teacher' ? "O'qituvchi" : 'Resepshn'}
+                  {r === 'admin' ? 'Admin' : r === 'teacher' ? "O'qituvchi" : 'Qabulxona'}
                 </button>
               ))}
             </div>
@@ -260,66 +280,44 @@ export const AdminLoginPage: React.FC = () => {
           {/* Demo Login Section — high-contrast, always visible, responsive */}
           <div>
             <h3 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">Demo hisoblari</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <div className="min-w-0">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Admin</label>
-                <input
-                  type="text"
-                  value={DEMO_ADMIN_EMAIL}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
-                />
+            <div className="space-y-2">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div className="text-xs font-black text-slate-900 dark:text-white">Admin</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Administrator demo hisobi • {DEMO_ADMIN_EMAIL}</div>
+                <button
+                  type="button"
+                  onClick={handleDemoAdminLogin}
+                  disabled={isLoading}
+                  className="mt-2 w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Kirilmoqda...' : 'Admin sifatida kirish'}
+                </button>
               </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Parol</label>
-                <input
-                  type="text"
-                  value={DEMO_ADMIN_PASSWORD}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
-                />
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div className="text-xs font-black text-slate-900 dark:text-white">Qabulxona</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Receptionist demo hisobi • {DEMO_RECEPTIONIST_EMAIL}</div>
+                <button
+                  type="button"
+                  onClick={handleDemoReceptionistLogin}
+                  disabled={isLoading}
+                  className="mt-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-md shadow-emerald-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Qabulxona sifatida kirish
+                </button>
               </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">O'qituvchi</label>
-                <input
-                  type="text"
-                  value={DEMO_TEACHER_EMAIL}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Parol</label>
-                <input
-                  type="text"
-                  value={DEMO_TEACHER_PASSWORD}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs truncate focus:outline-none"
-                />
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div className="text-xs font-black text-slate-900 dark:text-white">O‘qituvchi</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Jasur Alimov • {DEMO_TEACHER_EMAIL}</div>
+                <button
+                  type="button"
+                  onClick={handleDemoTeacherLogin}
+                  disabled={isLoading}
+                  className="mt-2 w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm shadow-md shadow-sky-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  O‘qituvchi sifatida kirish
+                </button>
               </div>
             </div>
-            {/* Demo Admin — solid amber, dark text: always visible */}
-            <button
-              type="button"
-              onClick={handleDemoAdminLogin}
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Kirilmoqda...' : 'Login with Demo Admin'}
-            </button>
-            {/* Demo Teacher — solid sky-600, white text: fixed contrast bug (was sky-50 + white text) */}
-            <button
-              type="button"
-              onClick={handleDemoTeacherLogin}
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm shadow-md shadow-sky-500/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-            >
-              O'qituvchi sifatida kirish
-            </button>
           </div>
 
           {/* Guest access notice */}

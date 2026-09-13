@@ -15,7 +15,7 @@ import {
 import { groupsService, coursesService, teachersService, assignmentService } from '../../services/repository';
 import { CourseData, GroupScheduleItem, GroupType, TeacherRecord } from '../../types/crm';
 
-export const ScheduleView: React.FC = () => {
+export const ScheduleView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
@@ -273,6 +273,7 @@ export const ScheduleView: React.FC = () => {
           </p>
         </div>
 
+        {!readOnly && (
         <button
           onClick={handleOpenAdd}
           className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
@@ -280,6 +281,7 @@ export const ScheduleView: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>Yangi Guruh Ochish</span>
         </button>
+        )}
       </div>
 
       {/* Notice */}
@@ -410,6 +412,7 @@ export const ScheduleView: React.FC = () => {
                   )}
                 </span>
 
+                {!readOnly && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenEdit(item)}
@@ -426,6 +429,7 @@ export const ScheduleView: React.FC = () => {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+                )}
               </div>
             </div>
           );

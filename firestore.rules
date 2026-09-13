@@ -186,20 +186,31 @@ service cloud.firestore {
     // =========================================================================
 
     // Students
+    // Receptionist: read + create + update (lead conversion, basic
+    // registration, front-desk edits). No delete — admin-only.
     match /students/{studentId} {
-      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfStudent(studentId));
-      allow write: if isAdminOrSuperAdmin();
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfStudent(studentId)) || isReceptionist();
+      allow create: if isAdminOrSuperAdmin() || isReceptionist();
+      allow update: if isAdminOrSuperAdmin() || isReceptionist();
+      allow delete: if isAdminOrSuperAdmin();
     }
 
     // Groups
+    // Receptionist: read (scheduling info for trials/admissions) + membership
+    // index maintenance on lead conversion (studentIds only). All other
+    // group writes stay admin-only.
     match /groups/{groupId} {
-      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfGroup(groupId));
-      allow write: if isAdminOrSuperAdmin();
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfGroup(groupId)) || isReceptionist();
+      allow create: if isAdminOrSuperAdmin();
+      allow update: if isAdminOrSuperAdmin() || (isReceptionist() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentIds']));
+      allow delete: if isAdminOrSuperAdmin();
     }
 
     // Payments
+    // Receptionist: read-only (front-desk visibility into dues). All writes
+    // stay admin/teacher-scoped as before.
     match /payments/{paymentId} {
-      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId));
+      allow read: if isAdminOrSuperAdmin() || (isTeacher() && isTeacherOfPayment(paymentId)) || isReceptionist();
       allow create: if isAdminOrSuperAdmin()
         || (isTeacher() && request.resource.data.studentId is string
             && isTeacherOfStudent(request.resource.data.studentId));
@@ -412,6 +423,18 @@ service cloud.firestore {
         allow read: if isAdminOrSuperAdmin();
         allow write: if isAdminOrSuperAdmin();
       }
+    }
+
+    // =========================================================================
+    // LEAD ACTIVITY TIMELINE (front-desk CRM audit trail)
+    // =========================================================================
+    // Append-only per-lead event log: created / called / note / status /
+    // trial / converted / lost. Receptionist + admin/support may read and
+    // append; updates/deletes are admin-only so history stays tamper-evident.
+    match /lead_timeline/{eventId} {
+      allow read: if isSupportOrAdminOrReceptionist();
+      allow create: if isSupportOrAdminOrReceptionist();
+      allow update, delete: if isAdminOrSuperAdmin();
     }
 
     // =========================================================================

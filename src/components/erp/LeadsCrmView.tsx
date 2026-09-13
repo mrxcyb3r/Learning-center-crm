@@ -18,7 +18,8 @@ import {
   ChevronRight,
   FilterX,
 } from 'lucide-react';
-import { leadsService, coursesService, groupsService, teachersService } from '../../services/repository';
+import { leadsService, coursesService, groupsService, teachersService, leadTimelineService } from '../../services/repository';
+import { auth } from '../../services/firebase';
 import { notificationService } from '../../services/notificationService';
 import { CourseData, GroupScheduleItem, Lead, LeadStatus, PaymentStatus, TeacherRecord } from '../../types/crm';
 import { formatDate, formatDateTime } from '../../utils/format';
@@ -136,6 +137,21 @@ export const LeadsCrmView: React.FC = () => {
     refreshLeads();
   }, []);
 
+  // Global search deep-link: open the matching lead detail.
+  useEffect(() => {
+    const onOpenRecord = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { kind?: string; id?: string } | undefined;
+      if (!detail || detail.kind !== 'lead' || !detail.id) return;
+      setLeads((current) => {
+        const found = current.find((l) => l.id === detail.id);
+        if (found) handleOpenDetail(found);
+        return current;
+      });
+    };
+    window.addEventListener('centerflow-open-record', onOpenRecord);
+    return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
+  }, []);
+
   const showNotice = (type: 'success' | 'error', text: string) => {
     setNotice({ type, text });
     setTimeout(() => setNotice(null), 4000);
@@ -167,6 +183,10 @@ export const LeadsCrmView: React.FC = () => {
         l.trialDateTime === editTrialDate &&
         (editTrialRoom === '' || l.trialRoom === editTrialRoom)
     );
+
+  const timelineActor = () =>
+    auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Xodim';
+  const timelineUid = () => auth.currentUser?.uid || '';
 
   const handleSaveDetail = async () => {
     if (!detailLead) return;
@@ -200,7 +220,17 @@ export const LeadsCrmView: React.FC = () => {
     };
     if (!isConverting) updates.status = editStatus;
 
-    await leadsService.updateLead(detailLead.id, updates);
+    try {
+      await leadsService.updateLead(detailLead.id, updates);
+    } catch (err: any) {
+      const denied = /permission-denied|PERMISSION_DENIED|insufficient/i.test(String(err?.code || '') + ' ' + (err?.message || ''));
+      setDetailError(
+        denied
+          ? 'Ruxsat etilmagan: bu amalni bajarish huquqingiz yo‘q.'
+          : 'Saqlashda xatolik yuz berdi. Qayta urinib ko‘ring.'
+      );
+      return;
+    }
 
     if (editStatus !== detailLead.status) {
       notificationService.logActivity({
@@ -209,6 +239,22 @@ export const LeadsCrmView: React.FC = () => {
         icon: 'RefreshCw',
         color: 'blue',
       });
+      leadTimelineService.log(
+        detailLead.id,
+        editStatus === "Yo'qotildi" ? 'lost' : 'status_changed',
+        `Holat o‘zgardi: ${detailLead.status} → ${editStatus}${editStatus === "Yo'qotildi" && editLostReason ? ` (sabap: ${editLostReason})` : ''}`,
+        timelineActor(),
+        timelineUid()
+      );
+    }
+    if (editTrialDate && editTrialDate !== detailLead.trialDateTime) {
+      leadTimelineService.log(
+        detailLead.id,
+        'trial_scheduled',
+        `Sinov darsi belgilandi: ${editTrialDate}${editTrialRoom ? `, ${editTrialRoom}` : ''}${editTrialTeacher ? `, ${editTrialTeacher}` : ''}`,
+        timelineActor(),
+        timelineUid()
+      );
     }
 
     if (isConverting) {
@@ -272,19 +318,37 @@ export const LeadsCrmView: React.FC = () => {
     const fee = Number(convertMonthlyFee) || 0;
     const discount = Math.min(Math.max(Number(convertDiscount) || 0, 0), fee);
 
-    const result = await leadsService.convertLeadToStudent(convertLead.id, {
-      course: convertCourse,
-      groupName: convertGroup,
-      teacher: convertTeacher,
-      monthlyFee: fee,
-      discount,
-      paymentStatus: convertPaymentStatus,
-      parentName: convertParentName.trim(),
-      parentPhone: convertParentPhone.trim(),
-    });
+    let result;
+    try {
+      result = await leadsService.convertLeadToStudent(convertLead.id, {
+        course: convertCourse,
+        groupName: convertGroup,
+        teacher: convertTeacher,
+        monthlyFee: fee,
+        discount,
+        paymentStatus: convertPaymentStatus,
+        parentName: convertParentName.trim(),
+        parentPhone: convertParentPhone.trim(),
+      });
+    } catch (err: any) {
+      const denied = /permission-denied|PERMISSION_DENIED|insufficient/i.test(String(err?.code || '') + ' ' + (err?.message || ''));
+      setConvertError(
+        denied
+          ? 'Ruxsat etilmagan: o‘quvchi yaratish huquqingiz yo‘q. Administrator bilan bog‘laning.'
+          : 'O‘quvchi yaratishda xatolik yuz berdi. Qayta urinib ko‘ring.'
+      );
+      return;
+    }
 
     if (result.created && result.student) {
       showNotice('success', `O'quvchi yaratildi: ${result.student.fullName} (${convertCourse})`);
+      leadTimelineService.log(
+        convertLead.id,
+        'converted',
+        `O‘quvchiga aylantirildi: ${result.student.fullName} (${convertCourse}${convertGroup ? `, ${convertGroup}` : ''})`,
+        timelineActor(),
+        timelineUid()
+      );
     } else if (!result.created) {
       showNotice('error', result.message);
     }
@@ -319,15 +383,22 @@ const handleDeleteLead = async (id: string, name: string) => {
       return;
     }
 
-    await leadsService.createLead({
-      name: newName.trim(),
-      phone: newPhone.trim(),
-      course: newCourse,
-      notes: newNotes.trim(),
-      source: newSource,
-      assignedTo: newAssigned.trim() || 'Qabulxona',
-      ...(newTrialDate ? { trialDateTime: newTrialDate } : {}),
-    });
+    let newId = '';
+    try {
+      newId = await leadsService.createLead({
+        name: newName.trim(),
+        phone: newPhone.trim(),
+        course: newCourse,
+        notes: newNotes.trim(),
+        source: newSource,
+        assignedTo: newAssigned.trim() || 'Qabulxona',
+        ...(newTrialDate ? { trialDateTime: newTrialDate } : {}),
+      });
+    } catch (err: any) {
+      setNewError('Ariza saqlanmadi. Ma’lumotlarni tekshirib, qayta urinib ko‘ring.');
+      return;
+    }
+    leadTimelineService.log(newId, 'created', `Murojaat yaratildi: ${newName.trim()} (${newCourse})`, timelineActor(), timelineUid());
 
     setIsAddModalOpen(false);
     setNewName('');
@@ -342,7 +413,13 @@ const handleDeleteLead = async (id: string, name: string) => {
   const handleMarkContacted = async (lead: Lead) => {
     const updates: Partial<Lead> = { lastContactedAt: new Date().toISOString() };
     if (lead.status === 'Yangi') updates.status = "Bog'lanildi";
-    await leadsService.updateLead(lead.id, updates);
+    try {
+      await leadsService.updateLead(lead.id, updates);
+    } catch {
+      showNotice('error', 'Amalni bajarib bo‘lmadi. Qayta urinib ko‘ring.');
+      return;
+    }
+    leadTimelineService.log(lead.id, 'called', 'Qo‘ng‘iroq qilindi', timelineActor(), timelineUid());
     refreshLeads();
     showNotice('success', `"${lead.name}" uchun murojaat vaqti yangilandi.`);
     setDetailLead(null);
@@ -697,16 +774,18 @@ const handleDeleteLead = async (id: string, name: string) => {
                           <Phone className="w-3 h-3" />
                           {lead.phone}
                         </a>
-                        <a
-                          href={`https://t.me/+${lead.phone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:text-sky-500"
-                          title="Telegramda ochish"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Send className="w-3 h-3" />
-                        </a>
+                        {lead.telegramUsername && (
+                          <a
+                            href={`https://t.me/${lead.telegramUsername.replace(/^@/, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:text-sky-500"
+                            title="Telegramda ochish"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Send className="w-3 h-3" />
+                          </a>
+                        )}
                       </div>
                       {lead.trialDateTime && (
                         <div className="flex items-center gap-1 text-[10px] font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
@@ -844,15 +923,25 @@ const handleDeleteLead = async (id: string, name: string) => {
                 <Phone className="w-4 h-4" />
                 <span>Qo'ng'iroq</span>
               </a>
-              <a
-                href={`https://t.me/+${detailLead.phone.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
-              >
-                <Send className="w-4 h-4" />
-                <span>Telegram</span>
-              </a>
+              {detailLead.telegramUsername ? (
+                <a
+                  href={`https://t.me/${detailLead.telegramUsername.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Telegram</span>
+                </a>
+              ) : (
+                <div
+                  className="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center gap-2"
+                  title="Telegram username kiritilmagan"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Telegram yo‘q</span>
+                </div>
+              )}
               <button
                 onClick={() => handleMarkContacted(detailLead)}
                 disabled={detailLead.status === "Yo'qotildi"}
@@ -1087,6 +1176,7 @@ const handleDeleteLead = async (id: string, name: string) => {
                       </div>
                     ));
                   })()}
+                  <LeadTimelineHistory leadId={detailLead.id} />
                 </div>
               </section>
 
@@ -1461,6 +1551,32 @@ const handleDeleteLead = async (id: string, name: string) => {
           </motion.div>
         </div>
       )}
+    </div>
+  );
+};
+
+/** Persisted per-lead event history (append-only, best-effort). */
+const LeadTimelineHistory: React.FC<{ leadId: string }> = ({ leadId }) => {
+  const [events, setEvents] = useState<Array<{ id: string; type: string; message: string; actor?: string; createdAt: string }>>([]);
+  useEffect(() => {
+    const unsub = leadTimelineService.subscribeToLead(leadId, setEvents);
+    return () => unsub();
+  }, [leadId]);
+  if (events.length === 0) return null;
+  return (
+    <div className="pt-3 mt-1 border-t border-slate-200/70 dark:border-slate-700/60 space-y-3">
+      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Qayd etilgan harakatlar</div>
+      {events.map((ev) => (
+        <div key={ev.id} className="flex items-start gap-3">
+          <div className="w-2 h-2 rounded-full bg-sky-500 mt-1.5 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 break-words">{ev.message}</div>
+            <div className="text-[10px] text-slate-400">
+              {formatDateTime(ev.createdAt)}{ev.actor ? ` • ${ev.actor}` : ''}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

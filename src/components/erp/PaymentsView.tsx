@@ -28,7 +28,7 @@ function currentMonthLabel(): string {
   return `${UZ_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 }
 
-export const PaymentsView: React.FC = () => {
+export const PaymentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -187,8 +187,11 @@ export const PaymentsView: React.FC = () => {
       // Log the actionable technical error; never expose tokens/credentials.
       const code = err?.code || err?.name || 'unknown';
       console.error('[PaymentsView] To\'lovni saqlashda xatolik:', { code, message: err?.message || String(err) });
+      const denied = /permission-denied|PERMISSION_DENIED|Missing or insufficient/i.test(String(code) + ' ' + (err?.message || ''));
       showNotification(
-        `To'lov saqlanmadi (${code}). Texnik tafsilot brauzer konsolida.`,
+        denied
+          ? 'Ruxsat etilmagan: to‘lov yozish huquqingiz yo‘q. Administrator bilan bog‘laning.'
+          : `To'lov saqlanmadi (${code}). Ma'lumotlarni tekshirib, qayta urinib ko'ring.`,
         'err'
       );
     } finally {
@@ -238,6 +241,7 @@ export const PaymentsView: React.FC = () => {
           </p>
         </div>
 
+        {!readOnly && (
         <button
           onClick={handleOpenAdd}
           className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
@@ -245,6 +249,7 @@ export const PaymentsView: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>Yangi To'lov Qabul Qilish</span>
         </button>
+        )}
       </div>
 
       {/* Notice */}
@@ -424,7 +429,7 @@ export const PaymentsView: React.FC = () => {
                           <FileText className="w-4 h-4" />
                         </button>
                       )}
-                      {!isVoided && (
+                      {!isVoided && !readOnly && (
                         <button
                           onClick={() => handleVoidPayment(p.id, p.studentName)}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"

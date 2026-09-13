@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2, ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
 
-type RequiredRole = 'admin' | 'teacher' | 'superadmin' | 'support' | 'any';
+type RequiredRole = 'admin' | 'teacher' | 'receptionist' | 'superadmin' | 'support' | 'any';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,6 +37,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return role === 'admin' || role === 'superadmin';
       case 'teacher':
         return role === 'teacher';
+      case 'receptionist':
+        return role === 'receptionist';
       case 'superadmin':
         return role === 'superadmin';
       case 'support':

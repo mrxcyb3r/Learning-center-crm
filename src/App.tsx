@@ -22,6 +22,7 @@ import { TeacherPage } from './pages/TeacherPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
 import { SupportCenterApp } from './components/erp/SupportCenterApp';
 import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
+import { ReceptionistPortalApp } from './components/erp/ReceptionistPortalApp';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { TeacherLoginPage } from './pages/teacher/TeacherLoginPage';
 import { TeacherRegisterPage } from './pages/teacher/TeacherRegisterPage';
@@ -36,6 +37,16 @@ import { ShieldCheck, Loader2 } from 'lucide-react';
 // ---------------------------------------------------------------------------
 // Main Application Component with Router
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Role workspace switch
+// ---------------------------------------------------------------------------
+function RoleWorkspace() {
+  const { role } = useAuth();
+  if (role === 'teacher') return <TeacherPortalApp />;
+  if (role === 'receptionist') return <ReceptionistPortalApp />;
+  return <CenterErpApp />;
+}
+
 function MainAppRoutes() {
   const { isLoading, role } = useAuth();
 
@@ -86,12 +97,15 @@ function MainAppRoutes() {
       {/* Unified Login - single entry point */}
       <Route path="/login" element={<AdminLoginPage />} />
 
-      {/* Role-based workspaces under /app — protected: guests go to /login */}
+      {/* Role-based workspaces under /app — protected: guests go to /login.
+          Each role gets its own portal so dashboards only issue Firestore
+          reads that role is authorized for (otherwise lists fail closed
+          and render as misleading zeros). */}
       <Route
         path="/app"
         element={
           <ProtectedRoute requiredRole="any" fallbackPath="/login">
-            <CenterErpApp />
+            <RoleWorkspace />
           </ProtectedRoute>
         }
       />

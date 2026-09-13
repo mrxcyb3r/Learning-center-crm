@@ -20,23 +20,48 @@ export interface Lead {
   id: string;
   name: string;
   phone: string;
+  // Personal (front-desk reception workflow)
+  secondaryPhone?: string;
+  age?: number;
+  gender?: string;
+  parentName?: string;
+  parentPhone?: string;
+  preferredContact?: 'phone' | 'telegram' | 'sms' | 'email';
+  telegramUsername?: string;
   course: string;
   courseId?: string;
+  // Interest
+  branch?: string;
+  preferredSchedule?: string;
   createdAt: string;
   assignedTo?: string;
   notes?: string;
+  tags?: string[];
   status: LeadStatus;
+  priority?: 'oddiy' | 'muhim' | 'shoshilinch';
   archived?: boolean;
   source?: string;
+  ownerUid?: string;
   isRead?: boolean;
   updatedAt?: string;
+  // Trial
   trialDateTime?: string;
   trialRoom?: string;
   trialTeacher?: string;
   trialResult?: string;
+  trialAttended?: boolean;
+  // Follow-up
   followUpDate?: string;
+  followUpTime?: string;
+  followUpNote?: string;
+  contactAttempts?: number;
   lastContactedAt?: string;
+  // Conversion
+  convertedStudentId?: string;
+  conversionDate?: string;
+  // Lost
   lostReason?: string;
+  lostDate?: string;
   nextAction?: string;
   enrollmentDate?: string;
 }

@@ -8,6 +8,20 @@ import {
 } from '../types/teacher';
 import { Group, Student, Payment, AttendanceRecord, Assignment } from '../types';
 import { groupsService, studentsService, paymentsService, attendanceService, homeworkService, userService } from '../services/repository';
+import { DEMO_MODE } from '../config/demo';
+import { DEMO_TEACHER_UID } from '../services/seed';
+
+// Deterministic demo group IDs (see seed.ts). Used ONLY as a fallback when
+// the teacher's assignment index is empty in demo mode — e.g. the users/{uid}
+// document did not exist the first time the seeder ran. Reads stay per-doc
+// so Firestore rules still enforce ownership.
+const DEMO_GROUP_IDS = [
+  'demo-group-cefr-b2',
+  'demo-group-dtm-math',
+  'demo-group-dtm-main',
+  'demo-group-kids',
+  'demo-group-yakshanba',
+];
 
 interface TeacherPortalContextType {
   teacherUid: string;
@@ -140,7 +154,18 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         // 1. Authorized index from the teacher's own profile.
         const profile = await userService.getUserProfile(teacherUid);
-        const assignedGroupIds = profile?.assignedGroupIds ?? [];
+        let assignedGroupIds = profile?.assignedGroupIds ?? [];
+        // Demo fallback: the seeder writes this index with setDoc-merge, but
+        // older installs may have an empty index. In demo mode, and only for
+        // the known demo teacher identity, resolve the deterministic demo
+        // groups directly (per-doc reads — rules still apply).
+        if (
+          assignedGroupIds.length === 0 &&
+          DEMO_MODE &&
+          teacherUid === DEMO_TEACHER_UID
+        ) {
+          assignedGroupIds = DEMO_GROUP_IDS;
+        }
         if (!mounted) return;
 
         // 2. Groups by ID (per-doc reads; unauthorized/missing docs skipped).
@@ -151,8 +176,14 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // 3. Students via the groups' membership indexes.
         const studentIds = teacherGroups.flatMap(g => g.studentIds ?? []);
-        const teacherStudents = await studentsService.getStudentsByIds(studentIds);
+        const teacherStudentsRaw = await studentsService.getStudentsByIds(studentIds);
         if (!mounted) return;
+        // Canonicalize payment status casing: Firestore seeds use
+        // 'Paid'/'Due'/'Overdue' while the teacher portal compares lowercase.
+        const teacherStudents = teacherStudentsRaw.map((s: any) => ({
+          ...s,
+          paymentStatus: String(s.paymentStatus || 'pending').toLowerCase(),
+        }));
         setStudents(teacherStudents);
 
         // 4. Attendance via deterministic `{groupId}_{date}` IDs (30-day window).
@@ -243,11 +274,18 @@ export const TeacherPortalProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(true);
     try {
       const profile = await userService.getUserProfile(teacherUid);
-      const assignedGroupIds = profile?.assignedGroupIds ?? [];
+      let assignedGroupIds = profile?.assignedGroupIds ?? [];
+      if (assignedGroupIds.length === 0 && DEMO_MODE && teacherUid === DEMO_TEACHER_UID) {
+        assignedGroupIds = DEMO_GROUP_IDS;
+      }
       const teacherGroups = await groupsService.getGroupsByIds(assignedGroupIds);
       setGroups(teacherGroups);
       const studentIds = teacherGroups.flatMap(g => g.studentIds ?? []);
-      setStudents(await studentsService.getStudentsByIds(studentIds));
+      const refreshedStudents = await studentsService.getStudentsByIds(studentIds);
+      setStudents(refreshedStudents.map((s: any) => ({
+        ...s,
+        paymentStatus: String(s.paymentStatus || 'pending').toLowerCase(),
+      })));
       const recordIds = teacherGroups.flatMap(g =>
         attendanceService.attendanceWindowIds(g.id, 30)
       );

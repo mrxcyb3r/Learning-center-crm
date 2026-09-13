@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
         };
       case 'receptionist':
         return {
-          label: 'RECEPTIONIST',
+          label: 'QABULXONA',
           bg: 'bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/30',
           icon: <LifeBuoy className="w-3.5 h-3.5 text-sky-500" />
         };
@@ -261,7 +261,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/30 transition cursor-pointer shrink-0"
-          title="Sign Out"
+          title={t.nav.logout}
         >
           <LogOut className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{t.nav.logout}</span>

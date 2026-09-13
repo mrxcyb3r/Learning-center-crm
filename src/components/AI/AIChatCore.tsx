@@ -207,23 +207,43 @@ export const AIChatCore: React.FC<AIChatCoreProps> = ({
   }, []);
 
   // Dynamic Multi-Role System Prompt Generator
+  // Role-scoped live CenterFlow context (aiContext service). Retrieval
+  // enforces permissions before anything reaches the model — the model
+  // never decides authorization itself.
+  const [crmContext, setCrmContext] = useState('');
+  useEffect(() => {
+    let mounted = true;
+    const uid = userProfile?.uid || '';
+    import('../../services/aiContext').then(({ buildAiContextForRole }) =>
+      buildAiContextForRole(activeRole, uid).then((res) => {
+        if (mounted && res.state === 'ok') setCrmContext(res.context);
+      }).catch(() => {})
+    );
+    return () => {
+      mounted = false;
+    };
+  }, [activeRole, userProfile?.uid]);
+
   const buildSystemPrompt = () => {
-    const name = userProfile?.fullName || (userProfile as any)?.name || (activeRole === 'teacher' ? 'Teacher' : activeRole === 'admin' ? 'Administrator' : 'Student');
+    const name = userProfile?.fullName || (userProfile as any)?.name || (activeRole === 'teacher' ? 'Teacher' : activeRole === 'admin' ? 'Administrator' : activeRole === 'receptionist' ? 'Qabulxona xodimi' : 'Student');
+    const liveData = crmContext ? `\nLIVE CENTERFLOW CONTEXT (verified, role-scoped — answer ONLY from this when asked about center data):\n${crmContext}` : '';
+
+    if (activeRole === 'receptionist') {
+      return `You are the Front-Desk Copilot for receptionist ${name} at Renessans Learning Center.
+Responsibilities: incoming inquiries, follow-ups, trial scheduling, admissions guidance, lead conversion steps.
+RULES: Answer from the live context below when asked about leads/trials/groups. Never invent phone numbers or records. Never disclose organization finance (revenue/expenses/salaries) — that data is excluded from your context on purpose. Response language: ${userLang}.${liveData}`;
+    }
 
     if (activeRole === 'teacher') {
-      const dept = 'IELTS & Academic English';
-      const assignedGroups = 'IELTS-Intensive-A1, General-English-B2';
-
       if (activeMode === 'lesson_plan') {
         return `You are Teacher Copilot & Curriculum Design Assistant for ${name} at Renessans Learning Center.
-Department: ${dept} | Groups: ${assignedGroups}.
 SPECIALIZED MODE: 📚 Lesson Plan Generator.
 Output structured 60-minute or 90-minute lesson outlines including:
 1. Warm-up Activity (10 mins)
 2. Core Interactive Skill Building (35 mins)
 3. Guided Worksheet/Exercise Practice (35 mins)
 4. Wrap-up & Homework Assignment (10 mins)
-Maintain an efficient, highly practical, academic tone. Format cleanly with clear headers and bullet points. Response language: ${userLang}.`;
+Maintain an efficient, highly practical, academic tone. Format cleanly with clear headers and bullet points. Response language: ${userLang}.${liveData}`;
       }
 
       if (activeMode === 'quiz_builder') {
@@ -238,34 +258,28 @@ SPECIALIZED MODE: 💬 Parent Progress Report Writer.
 Convert teacher shorthand notes into polite, constructive, encouraging, and professional student progress updates for parents via Telegram or Email. Response language: ${userLang}.`;
       }
 
-      return `You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teacher ${name} at Renessans Learning Center. Help draft lesson plans, worksheets, student feedback, and class announcements efficiently. Response language: ${userLang}.`;
+      return `You are the Executive Academic Assistant & IELTS/CEFR Co-Pilot for teacher ${name} at Renessans Learning Center. Help draft lesson plans, worksheets, student feedback, and class announcements efficiently. When asked about the teacher's own groups/students/lessons, use the live context. Response language: ${userLang}.${liveData}`;
     }
 
     if (activeRole === 'admin' || activeRole === 'superadmin') {
-      const branch = 'Tashkent Main Branch';
-
       if (activeMode === 'announcements') {
-        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}).
+        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center.
 SPECIALIZED MODE: 📢 Announcement & Broadcast Generator.
-Draft engaging, clear, high-converting Telegram, SMS, or email announcements for student tuition fee reminders, upcoming IELTS test dates, center holidays, or new course batch launches. Use emojis effectively. Response language: ${userLang}.`;
+Draft engaging, clear, high-converting Telegram, SMS, or email announcements for student tuition fee reminders, upcoming IELTS test dates, center holidays, or new course batch launches. Use emojis effectively. Response language: ${userLang}.${liveData}`;
       }
 
       if (activeMode === 'operations_advisory') {
-        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}).
+        return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center.
 SPECIALIZED MODE: 📊 Operations & Administration Advisory.
-Provide practical operational advice, staff scheduling frameworks, debtor communication scripts, and administrative templates. Response language: ${userLang}.`;
+Provide practical operational advice, staff scheduling frameworks, debtor communication scripts, and administrative templates. When asked about center metrics, use the live context figures. Response language: ${userLang}.${liveData}`;
       }
 
-      return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center (${branch}). Provide clear operational scripts, administrative copy, and center reports. Response language: ${userLang}.`;
+      return `You are Executive Operations Copilot for administrator ${name} at Renessans Learning Center. Provide clear operational scripts, administrative copy, and center reports. When asked about leads/students/revenue/groups, answer from the live context. Response language: ${userLang}.${liveData}`;
     }
 
     // Default: Student Role
-    const enrolledSubject = 'IELTS & General English';
-    const targetGoal = 'Band 8.0 / 1500+ SAT';
-
     if (activeMode === 'essay_evaluator') {
       return `You are Specialized AI Mentor for student ${name}.
-Enrolled Subject: ${enrolledSubject} | Target Goal: ${targetGoal}.
 SPECIALIZED MODE: 📝 IELTS Essay Evaluator.
 Analyze submitted essays strictly against official IELTS Band Descriptors:
 1. Task Response / Task Achievement
@@ -906,9 +920,16 @@ Response language: ${userLang}.`;
         );
       }
     } catch (err: any) {
+      const raw = String(err?.message || 'Error');
+      const notConfigured = /No Gemini API key|API key.*missing|GEMINI/i.test(raw);
       setMessages((prev) => [
         ...prev,
-        { role: 'model', text: `❌ Error receiving AI response: ${err?.message || 'Error'}` }
+        {
+          role: 'model',
+          text: notConfigured
+            ? 'AI xizmati hali sozlanmagan. Administrator AI xizmatini Sozlamalar orqali ulashi kerak.'
+            : 'AI xizmatiga ulanib bo‘lmadi. Keyinroq urinib ko‘ring.',
+        },
       ]);
     } finally {
       setIsLoading(false);

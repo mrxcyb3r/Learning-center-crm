@@ -31,8 +31,10 @@ const DEMO_COLLECTIONS: DemoCollectionInfo[] = [
   { name: 'branches', label: 'Filiallar' },
   { name: 'expenses', label: 'Xarajatlar' },
   { name: 'leads', label: 'Lidlar' },
+  { name: 'lead_timeline', label: 'Lid tarixi' },
   { name: 'homework', label: 'Uy vazifalari' },
   { name: 'attendance', label: 'Davomat' },
+  { name: 'teacher_tasks', label: 'O‘qituvchi vazifalari' },
   { name: 'notifications', label: 'Bildirishnomalar' },
 ];
 

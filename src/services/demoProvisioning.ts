@@ -6,8 +6,8 @@ import { auth } from './firebase';
  *
  * The demo Firebase Auth users MUST be provisioned explicitly in the Firebase
  * Console (Authentication → Users) together with their canonical Firestore
- * `users/{uid}` role documents (role=admin / teacher / student) through a
- * trusted/admin path. The browser client never creates users and never writes
+ * `users/{uid}` role documents (role=admin / receptionist / teacher / student)
+ * through a trusted/admin path. The browser client never creates users and never writes
  * roles: it only calls `signInWithEmailAndPassword` with the documented
  * credentials below. Values can be overridden via environment variables; the
  * literals are the project demo defaults.
@@ -29,6 +29,11 @@ export const DEMO_STUDENT_EMAIL =
   import.meta.env.VITE_DEMO_STUDENT_EMAIL || 'student@renessans.demo';
 export const DEMO_STUDENT_PASSWORD =
   import.meta.env.VITE_DEMO_STUDENT_PASSWORD || 'demo123456';
+
+export const DEMO_RECEPTIONIST_EMAIL =
+  import.meta.env.VITE_DEMO_RECEPTIONIST_EMAIL || 'reception@renessans.demo';
+export const DEMO_RECEPTIONIST_PASSWORD =
+  import.meta.env.VITE_DEMO_RECEPTIONIST_PASSWORD || 'demo123456';
 
 export interface DemoAccountResult {
   success: boolean;
@@ -88,7 +93,7 @@ export function describeDemoAuthError(code: string | undefined): string {
 }
 
 async function signInDemoAccount(
-  role: 'admin' | 'teacher' | 'student',
+  role: 'admin' | 'teacher' | 'student' | 'receptionist',
   email: string,
   password: string
 ): Promise<DemoAccountResult> {
@@ -119,4 +124,9 @@ export async function signInAsDemoTeacher(): Promise<DemoAccountResult> {
 /** Sign in as demo student (real Firebase Auth only — no provisioning). */
 export async function signInAsDemoStudent(): Promise<DemoAccountResult> {
   return signInDemoAccount('student', DEMO_STUDENT_EMAIL, DEMO_STUDENT_PASSWORD);
+}
+
+/** Sign in as demo receptionist (real Firebase Auth only — no provisioning). */
+export async function signInAsDemoReceptionist(): Promise<DemoAccountResult> {
+  return signInDemoAccount('receptionist', DEMO_RECEPTIONIST_EMAIL, DEMO_RECEPTIONIST_PASSWORD);
 }

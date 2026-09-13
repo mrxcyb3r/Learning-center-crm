@@ -23,7 +23,7 @@ import { formatCurrency } from '../../utils/format';
 import { slugify } from '../../utils/content';
 import { getImagePoolForCategory } from '../../config/subjectVisuals';
 
-export const CoursesView: React.FC = () => {
+export const CoursesView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
   const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
@@ -198,6 +198,7 @@ export const CoursesView: React.FC = () => {
           </p>
         </div>
 
+        {!readOnly && (
         <button
           onClick={handleOpenAdd}
           className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
@@ -205,6 +206,7 @@ export const CoursesView: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>Yangi Kurs Yaratish</span>
         </button>
+        )}
       </div>
 
       {/* Notice */}
@@ -359,6 +361,7 @@ export const CoursesView: React.FC = () => {
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
+                {!readOnly && (
                 <button
                   onClick={() => handleOpenEdit(c)}
                   className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
@@ -366,6 +369,8 @@ export const CoursesView: React.FC = () => {
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
+                )}
+                {!readOnly && (
                 <button
                   onClick={() => handleDeleteCourse(c.id, c.title)}
                   className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer"
@@ -373,6 +378,7 @@ export const CoursesView: React.FC = () => {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                )}
               </div>
             </div>
           </div>

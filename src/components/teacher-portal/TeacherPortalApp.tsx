@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TeacherPortalProvider, useTeacherPortal } from '../../context/TeacherPortalContext';
 import { TeacherSidebar } from './TeacherSidebar';
 import { TeacherHeader } from './TeacherHeader';
@@ -15,16 +15,24 @@ import { TeacherDocumentsView } from './views/TeacherDocumentsView';
 import { TeacherProfileView } from './views/TeacherProfileView';
 import { TeacherAnalyticsView } from './views/TeacherAnalyticsView';
 import { TeacherSettingsView } from './views/TeacherSettingsView';
+import { GlobalSearch } from '../erp/GlobalSearch';
 import { useTheme } from '../../context/ThemeContext';
 import { Loader2 } from 'lucide-react';
 
 const TeacherPortalLayout: React.FC = () => {
-  const { activeTab, isLoading } = useTeacherPortal();
+  const { activeTab, isLoading, myGroups, myStudents, setActiveTab } = useTeacherPortal();
   const { theme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const sidebarWidth = sidebarCollapsed ? 68 : 260;
+
+  useEffect(() => {
+    const onSearch = () => setSearchOpen(true);
+    window.addEventListener('centerflow-header-search', onSearch);
+    return () => window.removeEventListener('centerflow-header-search', onSearch);
+  }, []);
 
   const renderView = () => {
     switch (activeTab) {
@@ -97,6 +105,24 @@ const TeacherPortalLayout: React.FC = () => {
           )}
         </main>
       </div>
+
+      <GlobalSearch
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        scope="teacher"
+        teacherData={{
+          students: myStudents.map((s: any) => ({ id: s.id, fullName: s.fullName || s.name, phone: s.phone, course: s.course, groupName: s.groupName })),
+          groups: myGroups.map((g: any) => ({ id: g.id, groupName: g.groupName || g.name, course: g.course, teacher: g.teacher })),
+        }}
+        onNavigate={(tab) => {
+          const map: Record<string, any> = {
+            students: 'students',
+            groups: 'groups',
+            courses: 'dashboard',
+          };
+          setActiveTab(map[tab] || 'dashboard');
+        }}
+      />
     </div>
   );
 };

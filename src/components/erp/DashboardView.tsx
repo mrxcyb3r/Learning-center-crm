@@ -12,6 +12,7 @@ import { leadsService, studentsService, paymentsService, expensesService, course
 import { Lead, GroupScheduleItem, StudentRecord, IncomePaymentRecord, ExpenseRecord, CourseData, MurojaatSummary } from '../../types/crm';
 import { formatCurrencyShort, formatCompactCurrency, toSafeNumber, getStudentName } from '../../utils/format';
 import { normalizeLeadStatus } from '../../utils/leads';
+import { DEMO_MODE } from '../../config/demo';
 
 interface DashboardViewProps {
   onNavigateTab: (tabId: string) => void;
@@ -154,6 +155,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
   };
 
   const today = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  const demoMode = DEMO_MODE;
 
   return (
     <div className="space-y-8">
@@ -164,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
             Markaz Holati
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {today} • Barcha ko'rsatkichlar haqiqiy ma'lumotlardan hisoblanadi
+            {today} • {demoMode ? 'Demo ma’lumotlari asosida' : 'Markaz ma’lumotlari asosida'}
           </p>
         </div>
 
@@ -402,15 +404,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab, onS
                       <a href={`tel:${lead.phone}`} className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-500 transition" title="Qo'ng'iroq qilish">
                         <Phone className="w-3.5 h-3.5" />
                       </a>
-                      <a
-                        href={`https://t.me/+${lead.phone.replace(/\D/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-sky-500 transition"
-                        title="Telegramda ochish"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                      </a>
+                      {lead.telegramUsername && (
+                        <a
+                          href={`https://t.me/${lead.telegramUsername.replace(/^@/, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-sky-500 transition"
+                          title="Telegramda ochish"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                        </a>
+                      )}
 
                       <select
                         value={lead.status}

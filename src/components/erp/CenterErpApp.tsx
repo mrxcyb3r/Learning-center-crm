@@ -46,6 +46,7 @@ import { SettingsView } from './SettingsView';
 import { SupportPanel } from './SupportPanel';
 import { ReceptionistView } from './ReceptionistView';
 import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
+import { GlobalSearch } from './GlobalSearch';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { leadsService, murojaatlarService } from '../../services/repository';
 import { ensureSeeded } from '../../services/seed';
@@ -139,7 +140,7 @@ export const CenterErpApp: React.FC = () => {
   const displayName =
     userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Direktor';
   const roleLabel =
-    activeRole === 'superadmin' ? 'SuperAdmin' : activeRole === 'admin' ? 'ADMIN' : activeRole === 'receptionist' ? 'RECEPTIONIST' : activeRole === 'teacher' ? "O'QITUVCHI" : activeRole;
+    activeRole === 'superadmin' ? 'SuperAdmin' : activeRole === 'admin' ? 'ADMIN' : activeRole === 'receptionist' ? 'QABULXONA' : activeRole === 'teacher' ? "O'QITUVCHI" : activeRole;
 
   const handleLogout = async () => {
     try {
@@ -153,6 +154,7 @@ export const CenterErpApp: React.FC = () => {
   // build flag; flips off once an operator clears the demo namespace and back
   // on when it is restored for presentations.
   const [demoActive, setDemoActive] = useState(DEMO_MODE);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Fetch counts on mount
   useEffect(() => {
@@ -179,6 +181,13 @@ export const CenterErpApp: React.FC = () => {
       window.removeEventListener('centerflow-demo-cleared', onCleared);
       window.removeEventListener('centerflow-demo-restored', onRestored);
     };
+  }, []);
+
+  // Shared header search opens the scoped global search.
+  useEffect(() => {
+    const onSearch = () => setSearchOpen(true);
+    window.addEventListener('centerflow-header-search', onSearch);
+    return () => window.removeEventListener('centerflow-header-search', onSearch);
   }, []);
 
   const renderActiveView = () => {
@@ -286,7 +295,7 @@ case 'murojaatlar':
           {demoActive && (
             <div className="px-3.5 mb-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
               <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
-                Demo Rejimi
+                Namoyish rejimi
               </span>
             </div>
           )}
@@ -414,15 +423,12 @@ case 'murojaatlar':
             </span>
             <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <input
-                placeholder="Qidiruv..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    window.dispatchEvent(new CustomEvent('centerflow-header-search', { detail: (e.target as HTMLInputElement).value.trim() }));
-                  }
-                }}
-                className="w-36 bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none"
-              />
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer"
+              >
+                Lid, o‘quvchi, kurs qidirish...
+              </button>
             </div>
           </div>
 
@@ -479,8 +485,7 @@ case 'murojaatlar':
           {demoActive && (
             <div className="mb-4 px-4 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2 text-[11px] font-bold text-amber-700 dark:text-amber-400">
               <Sparkles className="w-4 h-4 shrink-0" />
-              Namoyish (demo) rejimida ishlayapsiz — ko'rsatilgan ma'lumotlar namuna sifatida.
-              Haqiqiy ma'lumotlarga o'tish: Sozlamalar → Ishga tushirish.
+              Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.
             </div>
           )}
           <AdminErrorBoundary key={activeTab} sectionName={SIDEBAR_ITEMS.find((s) => s.id === activeTab)?.label}>
@@ -488,6 +493,19 @@ case 'murojaatlar':
           </AdminErrorBoundary>
         </main>
       </div>
+
+      <GlobalSearch
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        scope="admin"
+        onNavigate={(tab, record) => {
+          setActiveTab(tab as ErpTab);
+          if (record) {
+            // Let the target view mount first, then deep-link the record.
+            setTimeout(() => window.dispatchEvent(new CustomEvent('centerflow-open-record', { detail: record })), 150);
+          }
+        }}
+      />
     </div>
   );
 };

@@ -74,6 +74,14 @@ export const DevRoleDropdown: React.FC<DevRoleDropdownProps> = ({
       description: 'Telegram suite, health monitor, payroll'
     },
     {
+      role: 'receptionist',
+      label: 'Qabulxona',
+      icon: <UserCheck className="w-4 h-4 text-sky-500" />,
+      badgeBg: 'bg-sky-500/10 dark:bg-sky-500/20 border-sky-500/30 text-sky-600 dark:text-sky-400',
+      textColor: 'text-sky-500',
+      description: 'CRM, trials, follow-ups & admissions'
+    },
+    {
       role: 'superadmin',
       label: 'SuperAdmin',
       icon: <ShieldAlert className="w-4 h-4 text-rose-500" />,

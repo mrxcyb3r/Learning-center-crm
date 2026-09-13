@@ -42,6 +42,7 @@ interface AuthContextType {
   loginAsDemoAdmin: () => Promise<void>;
   loginAsDemoTeacher: () => Promise<void>;
   loginAsDemoStudent: () => Promise<void>;
+  loginAsDemoReceptionist: () => Promise<void>;
   loginAsDemoUser: (role: UserRole) => Promise<void>;
   setRole: (role: UserRole) => void;
   /** Re-resolve role/profile from Firestore for the current user. */
@@ -392,6 +393,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await runDemoSignIn('student', signInAsDemoStudent);
   };
 
+  const loginAsDemoReceptionist = async () => {
+    const { signInAsDemoReceptionist } = await import('../services/demoProvisioning');
+    await runDemoSignIn('receptionist', signInAsDemoReceptionist);
+  };
+
   // All demo roles resolve through real Firebase Auth + Firestore
   // users/{uid}. No frontend-only role assignment happens here.
   const loginAsDemoUser = async (role: UserRole) => {
@@ -399,6 +405,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await loginAsDemoAdmin();
     } else if (role === 'teacher') {
       await loginAsDemoTeacher();
+    } else if (role === 'receptionist') {
+      await loginAsDemoReceptionist();
     } else if (role === 'student') {
       await loginAsDemoStudent();
     } else {
@@ -445,6 +453,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsDemoAdmin,
         loginAsDemoTeacher,
         loginAsDemoStudent,
+        loginAsDemoReceptionist,
         loginAsDemoUser,
         setRole,
         activeRole: role,

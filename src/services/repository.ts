@@ -989,7 +989,9 @@ export const leadsService = {
     const leadRef = doc(db, LEADS_COL, leadId);
     batch.update(leadRef, {
       status: "O'quvchiga aylandi" as LeadStatus,
-      enrollmentDate
+      enrollmentDate,
+      convertedStudentId: studentRef.id,
+      conversionDate: new Date().toISOString(),
     });
     await batch.commit();
     // Maintain the group's membership index (admin-only path).
@@ -1015,6 +1017,89 @@ export const leadsService = {
       query(collection(db, LEADS_COL), orderBy('createdAt', 'desc')),
       (snap) => callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as Lead)))
     );
+  }
+};
+
+const LEAD_TIMELINE_COL = 'lead_timeline';
+
+export type LeadTimelineEventType =
+  | 'created'
+  | 'called'
+  | 'telegram_contacted'
+  | 'note_added'
+  | 'status_changed'
+  | 'trial_scheduled'
+  | 'trial_attended'
+  | 'converted'
+  | 'lost'
+  | 'follow_up';
+
+export interface LeadTimelineEvent {
+  id: string;
+  leadId: string;
+  type: LeadTimelineEventType;
+  message: string;
+  actor?: string;
+  actorUid?: string;
+  createdAt: string;
+}
+
+/**
+ * Append-only per-lead activity timeline (front-desk CRM audit trail).
+ * Writes are best-effort: a timeline failure must never break the lead
+ * operation itself.
+ */
+export const leadTimelineService = {
+  async log(
+    leadId: string,
+    type: LeadTimelineEventType,
+    message: string,
+    actor?: string,
+    actorUid?: string
+  ): Promise<void> {
+    try {
+      await addDoc(collection(db, LEAD_TIMELINE_COL), cleanData({
+        leadId,
+        type,
+        message: message.slice(0, 1000),
+        actor: actor || '',
+        actorUid: actorUid || '',
+        createdAt: new Date().toISOString(),
+        isDemo: true,
+      }));
+    } catch (err) {
+      console.warn('[leadTimeline] append failed (best-effort):', err);
+    }
+  },
+
+  async getForLead(leadId: string): Promise<LeadTimelineEvent[]> {
+    try {
+      const snap = await getDocs(
+        query(collection(db, LEAD_TIMELINE_COL), where('leadId', '==', leadId))
+      );
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as LeadTimelineEvent))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+      return [];
+    }
+  },
+
+  subscribeToLead(leadId: string, callback: (events: LeadTimelineEvent[]) => void) {
+    try {
+      return onSnapshot(
+        query(collection(db, LEAD_TIMELINE_COL), where('leadId', '==', leadId)),
+        (snap) => callback(
+          snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as LeadTimelineEvent))
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        ),
+        () => callback([])
+      );
+    } catch {
+      callback([]);
+      return () => {};
+    }
   }
 };
 

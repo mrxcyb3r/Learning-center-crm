@@ -41,7 +41,7 @@ function userNameKey(raw?: string | null): string {
   return (raw || '').trim().toLowerCase();
 }
 
-export const StudentsView: React.FC = () => {
+export const StudentsView: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [schedule, setSchedule] = useState<GroupScheduleItem[]>([]);
@@ -94,6 +94,21 @@ export const StudentsView: React.FC = () => {
     userService.getAllUsers()
       .then(setLinkedUsers)
       .catch(() => setLinkedUsers([]));
+  }, []);
+
+  // Global search deep-link: open the matching student for editing.
+  useEffect(() => {
+    const onOpenRecord = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { kind?: string; id?: string } | undefined;
+      if (!detail || detail.kind !== 'student' || !detail.id) return;
+      setStudents((current) => {
+        const found = current.find((s) => s.id === detail.id);
+        if (found) handleOpenEdit(found);
+        return current;
+      });
+    };
+    window.addEventListener('centerflow-open-record', onOpenRecord);
+    return () => window.removeEventListener('centerflow-open-record', onOpenRecord);
   }, []);
 
   const showNotification = (msg: string) => {
@@ -621,7 +636,8 @@ export const StudentsView: React.FC = () => {
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Quick Pay Button */}
+                        {/* Quick Pay Button — hidden in read-only (front-desk) mode */}
+                        {!readOnly && (
                         <button
                           onClick={() => handleOpenQuickPay(st)}
                           className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1 transition cursor-pointer"
@@ -630,6 +646,7 @@ export const StudentsView: React.FC = () => {
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>To'lov</span>
                         </button>
+                        )}
 
                         <button
                           onClick={() => handleOpenEdit(st)}
@@ -639,6 +656,7 @@ export const StudentsView: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
 
+                        {!readOnly && (
                         <button
                           onClick={() => handleDeleteStudent(st.id, st.fullName || st.name)}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
@@ -646,6 +664,7 @@ export const StudentsView: React.FC = () => {
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -17,7 +17,7 @@ import { db } from './firebase';
  * - StrictMode-safe via module-level single-flight guard.
  */
 
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 // Verified live Firebase Auth UIDs for the project demo accounts.
 export const DEMO_ADMIN_UID = '8QEu4s0IW4QtYYDhxTigjCkRe4e2';
@@ -106,17 +106,17 @@ const DEMO_STUDENTS: SeedStudent[] = [
 ];
 
 const DEMO_LEADS = [
-  { id: 'demo-lead-001', name: 'Javlonbek Sodiqov', phone: '+998 (90) 222-00-01', course: 'DTM & Milliy Sertifikat', status: 'Yangi', source: 'Sayt orqali ariza', daysAgo: 0 },
-  { id: 'demo-lead-002', name: 'Nilufar Ergasheva', phone: '+998 (90) 222-00-02', course: 'CEFR B2/C1', status: 'Yangi', source: 'Instagram', daysAgo: 0 },
-  { id: 'demo-lead-003', name: 'Aziza Qodirova', phone: '+998 (90) 222-00-03', course: 'English Kids', status: "Bog'lanildi", source: 'Telegram bot orqali', daysAgo: 1 },
-  { id: 'demo-lead-004', name: 'Farrux Mirzayev', phone: '+998 (90) 222-00-04', course: 'Matematika & Fizika', status: "Bog'lanildi", source: 'Tavsiya asosida', daysAgo: 1 },
-  { id: 'demo-lead-005', name: 'Dilbar Sultonova', phone: '+998 (90) 222-00-05', course: 'DTM & Milliy Sertifikat', status: 'Sinov darsi belgilandi', source: 'Sayt orqali ariza', daysAgo: 2 },
+  { id: 'demo-lead-001', name: 'Javlonbek Sodiqov', phone: '+998 (90) 222-00-01', course: 'DTM & Milliy Sertifikat', status: 'Yangi', source: 'Sayt orqali ariza', daysAgo: 0, priority: 'muhim', followUpDate: isoDay(0), followUpNote: 'Bugun qo‘ng‘iroq qilish', contactAttempts: 0 },
+  { id: 'demo-lead-002', name: 'Nilufar Ergasheva', phone: '+998 (90) 222-00-02', course: 'CEFR B2/C1', status: 'Yangi', source: 'Instagram', daysAgo: 0, priority: 'oddiy', followUpDate: isoDay(0), followUpNote: 'Kurs haqida ma’lumot berish', contactAttempts: 1 },
+  { id: 'demo-lead-003', name: 'Aziza Qodirova', phone: '+998 (90) 222-00-03', course: 'English Kids', status: "Bog'lanildi", source: 'Telegram bot orqali', daysAgo: 1, priority: 'oddiy', contactAttempts: 2 },
+  { id: 'demo-lead-004', name: 'Farrux Mirzayev', phone: '+998 (90) 222-00-04', course: 'Matematika & Fizika', status: "Bog'lanildi", source: 'Tavsiya asosida', daysAgo: 1, priority: 'muhim', followUpDate: isoDay(-1), followUpNote: 'Muddati o‘tgan — qayta bog‘lanish', contactAttempts: 2 },
+  { id: 'demo-lead-005', name: 'Dilbar Sultonova', phone: '+998 (90) 222-00-05', course: 'DTM & Milliy Sertifikat', status: 'Sinov darsi belgilandi', source: 'Sayt orqali ariza', daysAgo: 2, trialDateTime: new Date().toISOString(), trialRoom: '101-Auditoriya', trialTeacher: 'Jasur Alimov' },
   { id: 'demo-lead-006', name: 'Akmal Avezov', phone: '+998 (90) 222-00-06', course: 'Mental Arifmetika', status: 'Sinov darsi belgilandi', source: 'Markazga tashrif', daysAgo: 2 },
   { id: 'demo-lead-007', name: 'Maftuna Utaeva', phone: '+998 (90) 222-00-07', course: 'Ona Tili', status: 'Sinov darsi yakunlandi', source: 'Telefon orqali', daysAgo: 3 },
   { id: 'demo-lead-008', name: 'Otabek Rashidov', phone: '+998 (90) 222-00-08', course: 'CEFR B2/C1', status: "O'quvchiga aylandi", source: 'Sayt orqali ariza', daysAgo: 4 },
-  { id: 'demo-lead-009', name: 'Munisa Abdullayeva', phone: '+998 (90) 222-00-09', course: 'English Kids', status: "Yo'qotildi", source: 'Instagram', daysAgo: 5 },
-  { id: 'demo-lead-010', name: 'Islomjon Karimov', phone: '+998 (90) 222-00-10', course: 'Matematika & Fizika', status: "Bog'lanildi", source: 'Bosh sahifa (Hero forma)', daysAgo: 0 },
-  { id: 'demo-lead-011', name: 'Yulduz Bekmurodova', phone: '+998 (90) 222-00-11', course: 'DTM & Milliy Sertifikat', status: 'Yangi', source: 'Telegram bot orqali', daysAgo: 1 },
+  { id: 'demo-lead-009', name: 'Munisa Abdullayeva', phone: '+998 (90) 222-00-09', course: 'English Kids', status: "Yo'qotildi", source: 'Instagram', daysAgo: 5, lostReason: 'Boshqa markazni tanladi', lostDate: isoDay(2) },
+  { id: 'demo-lead-010', name: 'Islomjon Karimov', phone: '+998 (90) 222-00-10', course: 'Matematika & Fizika', status: "Bog'lanildi", source: 'Bosh sahifa (Hero forma)', daysAgo: 0, priority: 'oddiy', contactAttempts: 1 },
+  { id: 'demo-lead-011', name: 'Yulduz Bekmurodova', phone: '+998 (90) 222-00-11', course: 'DTM & Milliy Sertifikat', status: 'Yangi', source: 'Telegram bot orqali', daysAgo: 1, priority: 'shoshilinch', followUpDate: isoDay(0), followUpNote: 'Bugun 15:30 da qo‘ng‘iroq', contactAttempts: 0 },
   { id: 'demo-lead-012', name: 'Sirojiddin Aliyev', phone: '+998 (90) 222-00-12', course: 'Ona Tili', status: 'Sinov darsi belgilandi', source: 'Tavsiya asosida', daysAgo: 2 },
 ];
 
@@ -141,8 +141,13 @@ const DEMO_HOMEWORK = [
   { id: 'demo-hw-005', groupId: 'demo-group-yakshanba', title: 'Haftalik takrorlash testi', subjectCategory: 'Test Score', dueInDays: 6 },
 ];
 
-const DEMO_NOTIFICATIONS = [
-  { id: 'demo-notif-001', to: 'uid' as const, category: 'announcement', title: 'Yangi guruh tayinlandi', description: 'Sizga DTM Tayyorlov demo guruhlari biriktirildi.' },
+const DEMO_TEACHER_TASKS = [
+  { id: 'demo-task-001', title: 'CEFR B2 — Demo guruhi uchun mock test tayyorlash', description: 'Listening + Reading bo‘limlari, javob kaliti bilan.', dueInDays: 2 },
+  { id: 'demo-task-002', title: 'DTM Matematika — Demo guruhi davomatini tekshirish', description: 'Haftalik davomat hisobotini ota-onalarga yuborish.', dueInDays: 1 },
+  { id: 'demo-task-003', title: 'English Kids — Demo uchun ota-onalar uchrashuvi', description: 'Oylik natijalarni muhokama qilish.', dueInDays: 5 },
+];
+
+const DEMO_NOTIFICATIONS = [  { id: 'demo-notif-001', to: 'uid' as const, category: 'announcement', title: 'Yangi guruh tayinlandi', description: 'Sizga DTM Tayyorlov demo guruhlari biriktirildi.' },
   { id: 'demo-notif-002', to: 'role' as const, category: 'announcement', title: 'Davomat eslatmasi', description: 'Bugungi darslar uchun davomatni belgilashni unutmang.' },
   { id: 'demo-notif-003', to: 'all' as const, category: 'announcement', title: 'Admin e\'loni', description: 'Ertaga soat 10:00 da pedagogik kengash bo\'lib o\'tadi.' },
   { id: 'demo-notif-004', to: 'role' as const, category: 'announcement', title: 'Ertangi dars jadvali', description: 'Ertangi jadval yangilandi — guruhlaringizni tekshiring.' },
@@ -258,10 +263,12 @@ async function writeDemoDataset(): Promise<void> {
     }, { merge: true });
   }
 
-  // Teacher assignment index (union — preserves any existing assignments).
-  await updateDoc(doc(db, 'users', DEMO_TEACHER_UID), {
+  // Teacher assignment index (merge — never fails when the users doc is
+  // absent, e.g. the demo teacher has not signed in yet; preserves any
+  // existing assignments).
+  await setDoc(doc(db, 'users', DEMO_TEACHER_UID), {
     assignedGroupIds: arrayUnion(...DEMO_GROUPS.map((g) => g.id)),
-  });
+  }, { merge: true });
 
   // Attendance: last 14 days per group, deterministic statuses.
   for (const g of DEMO_GROUPS) {
@@ -356,6 +363,20 @@ async function writeDemoDataset(): Promise<void> {
     }, { merge: true });
   }
 
+  // Teacher tasks (owned by the real demo teacher — teacher portal reads).
+  for (const t of DEMO_TEACHER_TASKS) {
+    await setDoc(doc(db, 'teacher_tasks', t.id), {
+      title: t.title,
+      description: t.description,
+      teacherId: DEMO_TEACHER_UID,
+      teacherName: DEMO_TEACHER_NAME,
+      status: 'pending',
+      dueDate: isoDay(-t.dueInDays),
+      createdAt: nowIso,
+      isDemo: true,
+    }, { merge: true });
+  }
+
   // Retire demo IDs removed from the v4 set (idempotent; missing docs are no-ops).
   for (const retired of ['demo-expense-009', 'demo-expense-010']) {
     try {
@@ -367,8 +388,7 @@ async function writeDemoDataset(): Promise<void> {
   }
 
   // Notifications for the demo teacher.
-  for (const n of DEMO_NOTIFICATIONS) {
-    await setDoc(doc(db, 'notifications', n.id), {
+  for (const n of DEMO_NOTIFICATIONS) {    await setDoc(doc(db, 'notifications', n.id), {
       category: n.category,
       title: n.title,
       description: n.description,

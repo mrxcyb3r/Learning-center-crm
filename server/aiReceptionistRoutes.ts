@@ -1,6 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { getFirestore, getAdminAuth } from './firebaseAdmin';
 import { GoogleGenAI } from '@google/genai';
+import { LOCAL_GEMINI_API_KEY } from './geminiKey.local';
+
+/** Env first, gitignored local key file as fallback. Never hardcode elsewhere. */
+function getReceptionistApiKey(): string {
+  const fromEnv = (process.env.GEMINI_API_KEY || '').trim();
+  if (fromEnv) return fromEnv;
+  return (LOCAL_GEMINI_API_KEY || '').trim();
+}
 
 const VALID_INTENTS = ['course_price', 'course_description', 'branch_address', 'working_hours', 'trial_lesson', 'faq', 'contact_info', 'teacher_info'] as const;
 
@@ -63,7 +71,7 @@ export function aiReceptionistRouter() {
         return res.status(400).json({ error: 'Nazorati noto\'g\'ri.' });
       }
 
-      const apiKey = process.env.GEMINI_API_KEY || '';
+      const apiKey = getReceptionistApiKey();
       if (!apiKey) {
         // No Gemini configured — return fallback
         return res.json({
@@ -90,7 +98,7 @@ Answer:
 `;
 
       const result = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3.6-flash',
         contents: prompt,
         config: {
           temperature: 0.2,

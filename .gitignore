@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+# Local AI provider keys — never commit. Server reads env first,
+# then falls back to server/geminiKey.local.ts (see .example).
+server/geminiKey.local.ts

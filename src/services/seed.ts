@@ -17,13 +17,15 @@ import { db } from './firebase';
  * - StrictMode-safe via module-level single-flight guard.
  */
 
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 // Verified live Firebase Auth UIDs for the project demo accounts.
 export const DEMO_ADMIN_UID = '8QEu4s0IW4QtYYDhxTigjCkRe4e2';
 export const DEMO_TEACHER_UID = '1mHTkm1lfRdn5recPAU9GH0sLdQ2';
 export const DEMO_STUDENT_UID = 'of8abp2UXVQw9BIRMIh1giWRtv63';
+export const DEMO_RECEPTIONIST_UID = 'gBYrizEDKzNWESOyTrxjx43yP923';
 export const DEMO_TEACHER_NAME = 'Jasur Alimov';
+export const DEMO_RECEPTIONIST_NAME = 'Qabulxona';
 
 const SEED_META_REF = () => doc(db, 'settings', 'seed_meta');
 
@@ -152,6 +154,8 @@ const DEMO_NOTIFICATIONS = [  { id: 'demo-notif-001', to: 'uid' as const, catego
   { id: 'demo-notif-003', to: 'all' as const, category: 'announcement', title: 'Admin e\'loni', description: 'Ertaga soat 10:00 da pedagogik kengash bo\'lib o\'tadi.' },
   { id: 'demo-notif-004', to: 'role' as const, category: 'announcement', title: 'Ertangi dars jadvali', description: 'Ertangi jadval yangilandi — guruhlaringizni tekshiring.' },
   { id: 'demo-notif-005', to: 'uid' as const, category: 'grade_published', title: 'To\'lov eslatmasi', description: '3 nafar o\'quvchida qarzdorlik mavjud.' },
+  { id: 'demo-notif-006', to: 'uid' as const, uid: DEMO_RECEPTIONIST_UID, category: 'announcement', title: 'Yangi murojaatlar tayinlandi', description: '3 ta yangi ariza Qabulxonaga tayinlandi. Kuzatuv ro‘yxatini tekshiring.' },
+  { id: 'demo-notif-007', to: 'uid' as const, uid: DEMO_RECEPTIONIST_UID, category: 'announcement', title: 'Bugungi sinov darslari', description: 'Bugun bitta sinov darsi rejalashtirilgan — jadvalni tekshiring.' },
 ];
 
 const DEMO_RESULTS = [
@@ -395,7 +399,7 @@ async function writeDemoDataset(): Promise<void> {
       isRead: false,
       createdAt: nowIso,
       senderName: 'Admin',
-      ...(n.to === 'uid' ? { recipientId: DEMO_TEACHER_UID } : {}),
+      ...(n.to === 'uid' ? { recipientId: (n as { uid?: string }).uid || DEMO_TEACHER_UID } : {}),
       ...(n.to === 'role' ? { recipientRole: 'teacher' } : {}),
       ...(n.to === 'all' ? { recipientRole: 'all' } : {}),
       isDemo: true,

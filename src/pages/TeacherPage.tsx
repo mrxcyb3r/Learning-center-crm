@@ -118,7 +118,7 @@ export const TeacherPage: React.FC = () => {
           <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-8" aria-label="Ustoz navigatsiyasi">
             <Link to="/" className="hover:text-amber-500 transition">Bosh sahifa</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-600 dark:text-slate-300">Ustozlar</span>
+            <Link to="/#ustozlar" className="hover:text-amber-500 transition">Ustozlar</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-slate-600 dark:text-slate-300 line-clamp-1">{teacher.name}</span>
           </nav>

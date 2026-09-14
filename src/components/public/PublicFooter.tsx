@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Send, Phone, MapPin, ExternalLink, ShieldCheck } from 'lucide-react';
-import { cmsBridge } from '../../services/cmsBridge';
+import { Heart, Send, Phone, MapPin, ExternalLink } from 'lucide-react';
 import { landingCmsService } from '../../services/repository';
 
 export const PublicFooter: React.FC = () => {
   const navigate = useNavigate();
-  const [contact, setContact] = useState(cmsBridge.getContact());
+  const [contact, setContact] = useState({
+    phone: '+998 (88) 648-49-49',
+    telegram: '@D_Furqatovich',
+    branches: [
+      'Yangiobod tumani, 1-sonli umumiy o\'rta ta\'lim maktabi binosi',
+      'Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION)',
+    ],
+  });
 
   useEffect(() => {
-    // Production path: Firestore `settings/landing_cms` (public read).
-    // Legacy cmsBridge is only the offline fallback.
     let cancelled = false;
     landingCmsService.getLandingContent()
       .then((doc) => {
@@ -25,11 +29,8 @@ export const PublicFooter: React.FC = () => {
           }));
           return;
         }
-        setContact(cmsBridge.getContact());
       })
-      .catch(() => {
-        if (!cancelled) setContact(cmsBridge.getContact());
-      });
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -123,7 +124,7 @@ export const PublicFooter: React.FC = () => {
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>1-Filial:</strong> {contact.branches[0] || "Yangiobod tumani 1-maktab binosi"}
+                  <strong>1-Filial:</strong> {contact.branches[0] || "Yangiobod tumani, 1-sonli umumiy o'rta ta'lim maktabi binosi"}
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -135,24 +136,15 @@ export const PublicFooter: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 4: Contacts & Admin */}
+          {/* Col 4: Contacts */}
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Aloqa & Tizim
+              Aloqa
             </h4>
             <div className="space-y-2 text-xs font-mono">
               <p className="text-white font-bold">{contact.phone}</p>
-              <p className="text-slate-400 font-sans">Ish vaqti: 08:00 – 19:00</p>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => navigate('/admin')}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 hover:border-amber-500/30 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-500" />
-                <span>Admin ERP Tizimi</span>
-              </button>
+              <p className="text-slate-400 font-sans">Ish vaqti: Dushanba–Shanba 08:00–19:00</p>
+              <p className="text-slate-400 font-sans">Yakshanba: Haftalik Diagnostik & Mock Testlar</p>
             </div>
           </div>
         </div>

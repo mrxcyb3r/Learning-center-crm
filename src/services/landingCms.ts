@@ -137,7 +137,7 @@ export const DEFAULT_LANDING_PAGE_CONTENT: LandingPageContent = {
   addressEn: "Tashkent / Main Branch",
   addressRu: "Ташкент / Главный Филиал",
   phone: "+998 90 123 45 67",
-  telegramHandle: "@renessans_lc_official",
+  telegramHandle: "@D_Furqatovich",
   operatingHoursUz: "Ish vaqti: Dushanba - Shanba 08:00 - 20:00",
   operatingHoursEn: "Operating Hours: Mon-Sat 08:00 - 20:00",
   operatingHoursRu: "Режим работы: Пн-Сб 08:00 - 20:00",

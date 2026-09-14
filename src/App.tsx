@@ -91,8 +91,13 @@ function MainAppRoutes() {
       <Route path="/" element={<RenessansLandingPage />} />
       <Route path="/courses" element={<PublicCoursesPage />} />
       <Route path="/courses/:slug" element={<CourseDetailPage />} />
+      <Route path="/kurslar/:slug" element={<Navigate to="/courses/:slug" replace />} />
       <Route path="/teachers/:slug" element={<TeacherPage />} />
+      <Route path="/ustozlar/:slug" element={<TeacherPage />} />
       <Route path="/receipt/verify/:receiptId" element={<PublicReceiptVerifyPage />} />
+
+      {/* Legacy teacher route redirects (demo-teacher-jasur -> jasur-alimov) */}
+      <Route path="/teachers/demo-teacher-jasur" element={<Navigate to="/ustozlar/jasur-alimov" replace />} />
 
       {/* Unified Login - single entry point */}
       <Route path="/login" element={<AdminLoginPage />} />

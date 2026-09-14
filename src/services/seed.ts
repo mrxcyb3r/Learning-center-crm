@@ -223,7 +223,7 @@ async function writeDemoDataset(): Promise<void> {
   const cmsRef = doc(db, 'settings', 'landing_cms');
   if (!(await getDoc(cmsRef)).exists()) {
     await setDoc(cmsRef, {
-      contact: { phone: '+998 (88) 648-49-49', telegram: '@renessans_lc', branches: ['Asosiy filial', '2-filial'] },
+      contact: { phone: '+998 (88) 648-49-49', telegram: '@D_Furqatovich', branches: ['Yangiobod tumani, 1-sonli umumiy o\'rta ta\'lim maktabi binosi', 'Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION)'] },
       hero: { centerName: 'Renessans LC', tagline: 'Bilimdan Natijaga!', subtitle: 'DTM, CEFR va maktab fanlari', badge: 'Yangiobod' },
       stats: { universityAdmissions: '1200+', studentAdmittedRatio: '94%', highestDtmScore: '189.5', stateGrantsCount: '210' },
       isDemo: true,

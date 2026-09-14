@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, Phone, Send, Menu, X, Sun, Moon, LayoutDashboard, ArrowRight, ShieldCheck, GraduationCap } from 'lucide-react';
+import { Phone, Menu, X, ArrowRight } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { DEMO_MODE } from '../../config/demo';
-import { cmsBridge } from '../../services/cmsBridge';
 import { landingCmsService } from '../../services/repository';
 
 interface PublicNavbarProps {
@@ -17,19 +15,18 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [phone, setPhone] = useState(cmsBridge.getContact().phone);
+  const [phone, setPhone] = useState('+998 (88) 648-49-49');
 
   useEffect(() => {
-    // Production path: Firestore `settings/landing_cms` (public read).
     let cancelled = false;
     landingCmsService.getLandingContent()
       .then((doc) => {
         if (cancelled) return;
         const livePhone = (doc?.contact?.phone || doc?.phone) as string | undefined;
-        setPhone(livePhone || cmsBridge.getContact().phone);
+        setPhone(livePhone || '+998 (88) 648-49-49');
       })
       .catch(() => {
-        if (!cancelled) setPhone(cmsBridge.getContact().phone);
+        if (!cancelled) setPhone('+998 (88) 648-49-49');
       });
     return () => { cancelled = true; };
   }, []);
@@ -62,221 +59,113 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ onOpenTrialModal, ac
     navigate('/');
   };
 
+  const navItems = [
+    { id: 'courses', label: 'Kurslar', onClick: goCourses },
+    { id: 'teachers', label: 'Ustozlar', onClick: () => goSection('ustozlar') },
+    { id: 'results', label: 'Natijalar', onClick: () => goSection('natijalar') },
+    { id: 'contact', label: 'Manzillarimiz', onClick: () => goSection('manzil') },
+  ];
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 py-3.5 shadow-sm'
-          : 'bg-transparent py-5'
+      className={`fixed inset-x-0 top-0 z-[100] transition-all duration-300 ease-in-out ${
+        isScrolled ? "py-2.5 px-4 sm:px-8" : "py-5 px-4 sm:px-8"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Brand Logo */}
-          <div
-            onClick={goHome}
-            className="flex items-center gap-3 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-amber-500/20 group-hover:scale-105 transition">
-              R
-            </div>
-            <div>
-              <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight block leading-none">
-                RENESSANS
-              </span>
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest block mt-0.5">
-                O'quv Markazi
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-7">
-            <button
-              onClick={goCourses}
-              className={`text-sm font-semibold transition cursor-pointer ${
-                activePage === 'courses'
-                  ? 'text-amber-500 dark:text-amber-400'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400'
-              }`}
-            >
-              Kurslar
-            </button>
-            <button
-              onClick={() => goSection('teachers')}
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
-            >
-              Ustozlar
-            </button>
-            <button
-              onClick={() => goSection('results')}
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
-            >
-              Natijalar
-            </button>
-            <button
-              onClick={() => goSection('contact')}
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
-            >
-              Manzillarimiz
-            </button>
-          </nav>
-
-          {/* Right Actions */}
-          <div className="hidden sm:flex items-center gap-3">
-            {/* Direct Phone */}
-            <a
-              href={`tel:${phone.replace(/[^+\d]/g, '')}`}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-amber-500 flex items-center gap-2 border border-slate-200 dark:border-slate-800 transition"
-            >
-              <Phone className="w-3.5 h-3.5 text-amber-500" />
-              <span>{phone}</span>
-            </a>
-
-            {/* Dark / Light Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              title="Mavzuni almashtirish"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            {/* Admin Panel Button */}
-            <button
-              onClick={() => navigate('/admin')}
-              className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-[10px] font-bold border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center gap-1 cursor-pointer"
-              title="Admin Panel"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin</span>
-            </button>
-
-            {/* Teacher Panel Button */}
-            <button
-              onClick={() => navigate('/teacher')}
-              className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-[10px] font-bold border border-slate-200/60 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 transition flex items-center gap-1 cursor-pointer"
-              title="O'qituvchi paneli"
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>O'qituvchi</span>
-            </button>
-
-            {/* Demo badge */}
-            <span className="px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest border border-amber-500/20 hidden lg:inline-flex">
-              Demo
+      <div
+        className={`mx-auto flex max-w-[1400px] items-center justify-between rounded-full transition-all duration-300 ease-in-out ${
+          isScrolled
+            ? "border border-white/10 bg-[#07090d]/85 px-5 py-2.5 backdrop-blur-md shadow-2xl"
+            : "border border-transparent bg-transparent px-5 py-2"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={goHome}
+          className="group flex items-center gap-3 text-left focus:outline-none flex-shrink-0"
+          aria-label="Renessans Asosiy Sahifa"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 font-serif text-base font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.45)] transition-transform group-hover:scale-105">
+            R
+          </span>
+          <div className="flex flex-col">
+            <span className="font-serif text-sm font-bold tracking-[0.2em] text-stone-100 group-hover:text-amber-400 transition-colors">
+              RENESSANS
             </span>
-
-            {/* CTA Button */}
-            <button
-              onClick={onOpenTrialModal}
-              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 hover:shadow-amber-500/35 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Sinov Darsi</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <span className="font-mono text-[8px] uppercase tracking-widest text-stone-400">
+              O‘quv Markazi • Yangiobod
+            </span>
           </div>
+        </button>
 
-          {/* Mobile Menu Trigger */}
-          <div className="flex sm:hidden items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+        <nav
+          aria-label="Asosiy menyu"
+          className="hidden xl:flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.15em] text-stone-400"
+        >
+          {navItems.map(({ id, label, onClick }) => {
+            const isActive = activePage === id || (id !== 'courses' && activePage === 'landing');
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={onClick}
+                className="relative px-3.5 py-2 transition-colors hover:text-stone-100 min-h-[44px] flex items-center rounded-full"
+              >
+                <span className="relative z-10">{label}</span>
+                {isActive && (
+                  <div
+                    className="absolute inset-0 z-0 rounded-full bg-amber-400/[0.12] border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 cursor-pointer"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <a
+            href={`tel:${phone.replace(/[^+\d]/g, '')}`}
+            className="hidden sm:inline-flex items-center gap-2 whitespace-nowrap flex-shrink-0 font-mono text-xs text-stone-300 hover:text-amber-400 transition-colors min-h-[44px] px-2.5 rounded-full hover:bg-white/[0.04]"
+          >
+            <Phone className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+            <span className="whitespace-nowrap tabular-nums">{phone}</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl text-stone-300 hover:text-amber-400 transition-colors flex-shrink-0"
+            title="Mavzuni almashtirish"
+          >
+            {theme === 'dark' ? (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenTrialModal}
+            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-amber-400 to-amber-300 px-6 py-2.5 min-h-[44px] text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.45)] whitespace-nowrap flex-shrink-0"
+          >
+            <span>Sinov Darsi</span>
+            <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-stone-300 xl:hidden hover:text-amber-400 transition-colors flex-shrink-0"
+            aria-label="Menyu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
-
-        {/* Mobile Dropdown */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden mt-4 p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={goCourses}
-                className={`text-left font-bold text-sm py-2 ${
-                  activePage === 'courses' ? 'text-amber-500' : 'text-slate-800 dark:text-slate-200'
-                }`}
-              >
-                Kurslar
-              </button>
-              <button
-                onClick={() => goSection('teachers')}
-                className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
-              >
-                Ustozlar
-              </button>
-              <button
-                onClick={() => goSection('results')}
-                className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
-              >
-                Natijalar
-              </button>
-              <button
-                onClick={() => goSection('contact')}
-                className="text-left font-bold text-sm py-2 text-slate-800 dark:text-slate-200 hover:text-amber-500"
-              >
-                Manzillarimiz
-              </button>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-              <a
-                href={`tel:${phone.replace(/[^+\d]/g, '')}`}
-                className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs flex items-center justify-center gap-2"
-              >
-                <Phone className="w-4 h-4 text-amber-500" />
-                <span>{phone}</span>
-              </a>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate('/admin');
-                  }}
-                  className="flex-1 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 font-bold text-[10px] flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-800"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Admin</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate('/teacher');
-                  }}
-                  className="flex-1 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 font-bold text-[10px] flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-800"
-                >
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  <span>O'qituvchi</span>
-                </button>
-              </div>
-
-              <span className="text-center text-[9px] font-bold text-amber-500 uppercase tracking-widest pt-1 block">
-                Demo Rejimi
-              </span>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenTrialModal();
-                }}
-                className="w-full py-3.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"
-              >
-                <span>Sinov Darsiga Yozilish</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

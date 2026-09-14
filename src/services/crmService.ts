@@ -2243,11 +2243,11 @@ class CrmService {
         stateGrantsCount: '2 nafar',
       },
       contact: {
-        phone: '+998 (90) 862-22-26',
-        telegram: '@renessans_lc',
+        phone: '+998 (88) 648-49-49',
+        telegram: '@D_Furqatovich',
         branches: [
-          'Jizzax viloyati, Yangiobod tumani, 1-maktab binosi',
-          'Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION) binosi',
+          'Yangiobod tumani, 1-sonli umumiy o\'rta ta\'lim maktabi binosi',
+          'Yangiobod tuman texnikumi (NODIRABEGIM EDUCATION)',
         ],
       },
       faqs: [

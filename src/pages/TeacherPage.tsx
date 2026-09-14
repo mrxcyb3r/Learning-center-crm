@@ -95,8 +95,9 @@ export const TeacherPage: React.FC = () => {
   }
 
   const taughtCategories = Array.from(new Set(courses.map((c) => c.category)).values());
+  const teacherSlug = slugify(teacher.name);
   const canonicalUrl = typeof window !== 'undefined' && window.location?.origin
-    ? `${window.location.origin}/teachers/${slug}`
+    ? `${window.location.origin}/ustozlar/${teacherSlug}`
     : '';
   const subjectsList = [
     ...(teacher.subject ? [teacher.subject] : []),

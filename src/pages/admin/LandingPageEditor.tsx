@@ -1549,7 +1549,7 @@ export const LandingPageEditor: React.FC = () => {
                 value={content.telegramHandle}
                 onChange={(e) => handleChange('telegramHandle', e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border text-xs font-mono font-bold text-sky-500"
-                placeholder="@renessans_lc_official"
+                placeholder="@D_Furqatovich"
               />
             </div>
 

@@ -17,10 +17,10 @@ export const SecuritySettingsView: React.FC = () => {
     return en;
   };
 
-  const [centerName, setCenterName] = useState('Renessans Learning Center');
-  const [address, setAddress] = useState('Toshkent / Markaziy Filial');
-  const [phone, setPhone] = useState('+998 90 123 45 67');
-  const [telegram, setTelegram] = useState('@renessans_lc_official');
+  const [centerName, setCenterName] = useState('Renessans O\'quv Markazi');
+  const [address, setAddress] = useState('Yangiobod tumani, 1-sonli umumiy o\'rta ta\'lim maktabi binosi');
+  const [phone, setPhone] = useState('+998 (88) 648-49-49');
+  const [telegram, setTelegram] = useState('@D_Furqatovich');
 
   const [adminPin, setAdminPin] = useState('secureadmin');
   const [teacherPin, setTeacherPin] = useState('secureteacher');

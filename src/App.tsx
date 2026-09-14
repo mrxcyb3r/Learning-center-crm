@@ -19,6 +19,7 @@ import { PublicCoursesPage } from './pages/PublicCoursesPage';
 import { PublicReceiptVerifyPage } from './pages/PublicReceiptVerifyPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { TeacherPage } from './pages/TeacherPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { CenterErpApp } from './components/erp/CenterErpApp';
 import { SupportCenterApp } from './components/erp/SupportCenterApp';
 import { TeacherPortalApp } from './components/teacher-portal/TeacherPortalApp';
@@ -115,8 +116,8 @@ function MainAppRoutes() {
         }
       />
 
-      {/* Catch-All Fallback Redirect (after login, redirect to /app) */}
-      <Route path="*" element={<Navigate to="/app" replace />} />
+      {/* Catch-All: Public 404 for unknown public routes, redirect to /app for app routes */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

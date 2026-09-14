@@ -97,7 +97,7 @@ export const translations = {
       nameLabel: "To'liq ismingiz",
       namePlaceholder: "Masalan: Jasur Rahimov",
       phoneLabel: "Telefon raqamingiz",
-      phonePlaceholder: "+998 90 123 45 67",
+      phonePlaceholder: "+998 88 648 49 49",
       courseLabel: "Tanlangan kurs",
       courseSelectPlaceholder: "Kursni tanlang...",
       messageLabel: "Xabar yoki izohingiz (Ixtiyoriy)",
@@ -105,10 +105,10 @@ export const translations = {
       submitBtn: "Arizani yuborish",
       successMsg: "Rahmat! Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.",
       addressTitle: "Bizning manzil va kontaktlar",
-      addressText: "Toshkent / Markaziy Filial",
-      phoneText: "+998 90 123 45 67",
-      telegramText: "Telegram: @renessans_lc_official",
-      workHours: "Ish vaqti: Dush-Shanba 08:00 - 20:00"
+      addressText: "Yangiobod tumani, 1-sonli umumiy o'rta ta'lim maktabi binosi",
+      phoneText: "+998 (88) 648-49-49",
+      telegramText: "Telegram: @D_Furqatovich",
+      workHours: "Ish vaqti: Dushanba–Shanba 08:00–19:00; Yakshanba: Haftalik Diagnostik & Mock Testlar"
     },
     faq: {
       title: "Ko'p beriladigan savollar",
@@ -268,7 +268,7 @@ export const translations = {
       nameLabel: "Your Full Name",
       namePlaceholder: "E.g., Jasur Rahimov",
       phoneLabel: "Phone Number",
-      phonePlaceholder: "+998 90 123 45 67",
+      phonePlaceholder: "+998 88 648 49 49",
       courseLabel: "Selected Course",
       courseSelectPlaceholder: "Choose a course...",
       messageLabel: "Message / Inquiry (Optional)",
@@ -276,10 +276,10 @@ export const translations = {
       submitBtn: "Send Application",
       successMsg: "Thank you! Your application has been received. We will call you soon.",
       addressTitle: "Location & Contacts",
-      addressText: "Tashkent / Main Branch",
-      phoneText: "+998 90 123 45 67",
-      telegramText: "Telegram: @renessans_lc_official",
-      workHours: "Operating Hours: Mon-Sat 08:00 - 20:00"
+      addressText: "Yangiobod District, 1st General Secondary School Building",
+      phoneText: "+998 (88) 648-49-49",
+      telegramText: "Telegram: @D_Furqatovich",
+      workHours: "Operating Hours: Mon–Sat 08:00–19:00; Sun: Weekly Diagnostic & Mock Tests"
     },
     faq: {
       title: "Frequently Asked Questions",
@@ -439,7 +439,7 @@ export const translations = {
       nameLabel: "Ваше полное имя",
       namePlaceholder: "Например: Джасур Рахимов",
       phoneLabel: "Номер телефона",
-      phonePlaceholder: "+998 90 123 45 67",
+      phonePlaceholder: "+998 88 648 49 49",
       courseLabel: "Выбранный курс",
       courseSelectPlaceholder: "Выберите курс...",
       messageLabel: "Сообщение или вопрос (необязательно)",
@@ -447,10 +447,10 @@ export const translations = {
       submitBtn: "Отправить заявку",
       successMsg: "Спасибо! Ваша заявка принята. Мы скоро свяжемся с вами.",
       addressTitle: "Адрес и контакты",
-      addressText: "Ташкент / Главный Филиал",
-      phoneText: "+998 90 123 45 67",
-      telegramText: "Telegram: @renessans_lc_official",
-      workHours: "Режим работы: Пн-Сб 08:00 - 20:00"
+      addressText: "Янгиободский район, здание 1-й общеобразовательной школы",
+      phoneText: "+998 (88) 648-49-49",
+      telegramText: "Telegram: @D_Furqatovich",
+      workHours: "Режим работы: Пн–Сб 08:00–19:00; Вс: Еженедельная диагностика и Mock-тесты"
     },
     faq: {
       title: "Часто задаваемые вопросы",

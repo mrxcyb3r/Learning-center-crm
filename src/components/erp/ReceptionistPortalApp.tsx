@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -33,7 +33,7 @@ import { leadsService, murojaatlarService } from '../../services/repository';
 import { normalizeLeadStatus } from '../../utils/leads';
 import { DEMO_MODE } from '../../config/demo';
 
-type ReceptionTab =
+export type ReceptionTab =
   | 'dashboard'
   | 'murojaatlar'
   | 'leads'
@@ -47,32 +47,29 @@ type SidebarGroup = {
   items: Array<{ id: ReceptionTab; label: string; icon: React.FC<{ className?: string }> }>;
 };
 
-// Murojaatlar (unified website/Telegram inbox) and Qabulxona (AI-escalated
-// operator queue) read the same underlying inbox — they are grouped together
-// under CRM so the overlap is explicit instead of duplicated top-level items.
-const SIDEBAR_GROUPS: SidebarGroup[] = [
+const getSidebarGroups = (t: (uz: string, en: string, ru: string) => string): SidebarGroup[] => [
   {
-    title: 'Boshqaruv',
-    items: [{ id: 'dashboard', label: 'Bosh sahifa', icon: LayoutDashboard }],
+    title: t('Boshqaruv', 'Management', 'Управление'),
+    items: [{ id: 'dashboard', label: t('Bosh sahifa', 'Dashboard', 'Главная'), icon: LayoutDashboard }],
   },
   {
     title: 'CRM',
     items: [
-      { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
-      { id: 'leads', label: 'Lidlar', icon: PhoneCall },
+      { id: 'murojaatlar', label: t('Murojaatlar', 'Inquiries', 'Обращения'), icon: MessageSquare },
+      { id: 'leads', label: t('Lidlar', 'Leads', 'Лиды'), icon: PhoneCall },
     ],
   },
   {
-    title: "O'quvchilar",
+    title: t('O‘quvchilar', 'Students', 'Ученики'),
     items: [
-      { id: 'students', label: "O'quvchilar", icon: Users },
-      { id: 'groups', label: 'Guruhlar va jadval', icon: Calendar },
-      { id: 'courses', label: 'Kurslar', icon: BookOpen },
+      { id: 'students', label: t('O‘quvchilar', 'Students', 'Ученики'), icon: Users },
+      { id: 'groups', label: t('Guruhlar va jadval', 'Groups & Schedule', 'Группы и расписание'), icon: Calendar },
+      { id: 'courses', label: t('Kurslar', 'Courses', 'Курсы'), icon: BookOpen },
     ],
   },
   {
-    title: 'Moliya',
-    items: [{ id: 'payments', label: "To'lovlar", icon: CreditCard }],
+    title: t('Moliya', 'Finance', 'Финансы'),
+    items: [{ id: 'payments', label: t('To‘lovlar', 'Payments', 'Оплаты'), icon: CreditCard }],
   },
 ];
 
@@ -85,7 +82,8 @@ export const ReceptionistPortalApp: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, userProfile, logout } = useAuth();
-  const { t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const [activeTab, setActiveTab] = useState<ReceptionTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadsCount, setLeadsCount] = useState(0);
@@ -93,8 +91,11 @@ export const ReceptionistPortalApp: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [demoActive] = useState(DEMO_MODE);
 
+  const sidebarGroups = useMemo(() => getSidebarGroups(t), [language]);
+  const allItems = useMemo(() => sidebarGroups.flatMap((g) => g.items), [sidebarGroups]);
+
   const displayName =
-    userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Qabulxona';
+    userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || t('Qabulxona', 'Front Desk', 'Ресепшн');
 
   const handleLogout = async () => {
     try {
@@ -143,29 +144,58 @@ export const ReceptionistPortalApp: React.FC = () => {
     }
   };
 
-  const allItems = SIDEBAR_GROUPS.flatMap((g) => g.items);
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col lg:flex-row font-sans selection:bg-emerald-500 selection:text-white">
+      {/* Mobile Top Header */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm shrink-0">
             Q
           </div>
-          <span className="font-black text-sm tracking-tight">Qabulxona</span>
-          <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Onlayn
-          </span>
+          <div>
+            <div className="font-black text-sm tracking-tight leading-none text-slate-900 dark:text-white">
+              {t('Qabulxona', 'Front Desk', 'Ресепшн')}
+            </div>
+            <div className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-hidden="true" />
+              <span>{t('Onlayn', 'Online', 'Онлайн')}</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setSearchOpen(true)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800" aria-label="Qidirish">
-            <Search className="w-4 h-4" />
+          {/* Mobile Language Switcher */}
+          <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[10px] font-bold">
+            <button
+              type="button"
+              onClick={() => setLanguage('UZ')}
+              className={`px-1.5 py-0.5 rounded transition cursor-pointer ${language === 'UZ' ? 'bg-emerald-600 text-white font-black' : 'text-slate-500'}`}
+            >
+              UZ
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('RU')}
+              className={`px-1.5 py-0.5 rounded transition cursor-pointer ${language === 'RU' ? 'bg-emerald-600 text-white font-black' : 'text-slate-500'}`}
+            >
+              RU
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('EN')}
+              className={`px-1.5 py-0.5 rounded transition cursor-pointer ${language === 'EN' ? 'bg-emerald-600 text-white font-black' : 'text-slate-500'}`}
+            >
+              EN
+            </button>
+          </div>
+
+          <button onClick={() => setSearchOpen(true)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer" aria-label={t('Qidirish', 'Search', 'Поиск')}>
+            <Search className="w-4 h-4" aria-hidden="true" />
           </button>
-          <button onClick={toggleTheme} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800" aria-label="Mavzu">
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          <button onClick={toggleTheme} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer" aria-label={t('Mavzu', 'Theme', 'Тема')}>
+            {theme === 'dark' ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
           </button>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800" aria-label="Menyu">
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer" aria-label={t('Menyu', 'Menu', 'Меню')}>
+            {mobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -174,27 +204,32 @@ export const ReceptionistPortalApp: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white font-black flex items-center justify-center text-base shadow-md">Q</div>
+              <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white font-black flex items-center justify-center text-base shadow-md shrink-0">Q</div>
               <div>
-                <span className="font-black text-base tracking-tight block leading-none">Qabulxona</span>
-                <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Onlayn
-                </span>
+                <div className="font-black text-base tracking-tight leading-none text-slate-900 dark:text-white">
+                  {t('Qabulxona', 'Front Desk', 'Ресепшн')}
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1.5 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-hidden="true" />
+                  <span>{t('Onlayn', 'Online', 'Онлайн')}</span>
+                </div>
               </div>
             </div>
-            <button onClick={() => setMobileMenuOpen(false)} className="lg:hidden p-1.5 rounded-lg text-slate-400" aria-label="Yopish">
-              <X className="w-4 h-4" />
+            <button onClick={() => setMobileMenuOpen(false)} className="lg:hidden p-1.5 rounded-lg text-slate-400 cursor-pointer" aria-label={t('Yopish', 'Close', 'Закрыть')}>
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
           {demoActive && (
             <div className="px-3.5 mb-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-              <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Namoyish rejimi</span>
+              <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                {t('Namoyish rejimi', 'Demo Mode', 'Демонстрационный режим')}
+              </span>
             </div>
           )}
 
           <nav className="space-y-5">
-            {SIDEBAR_GROUPS.map((group) => (
+            {sidebarGroups.map((group) => (
               <div key={group.title}>
                 <div className="px-3.5 mb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                   {group.title}
@@ -244,9 +279,9 @@ export const ReceptionistPortalApp: React.FC = () => {
             onClick={() => navigate('/')}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer border border-slate-200 dark:border-slate-700"
           >
-            <Globe className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Saytni ko‘rish</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
+            <Globe className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+            <span>{t('Saytni ko‘rish', 'View Website', 'Открыть сайт')}</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2.5 px-1 min-w-0">
             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center font-bold text-white text-xs shrink-0">
@@ -254,15 +289,15 @@ export const ReceptionistPortalApp: React.FC = () => {
             </div>
             <div className="min-w-0">
               <span className="font-bold text-slate-900 dark:text-white block text-[11px] leading-tight truncate">{displayName}</span>
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">QABULXONA</span>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase">{t('Qabulxona', 'Front Desk', 'Ресепшн')}</span>
             </div>
           </div>
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>{t.nav.logout}</span>
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
           </button>
         </div>
       </aside>
@@ -271,47 +306,85 @@ export const ReceptionistPortalApp: React.FC = () => {
         <header className="hidden lg:flex items-center justify-between gap-4 px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 shrink-0">
-              Qabulxona
+              {t('Qabulxona', 'Front Desk', 'Ресепшн')}
             </span>
             <button
               onClick={() => setSearchOpen(true)}
               className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-500 cursor-pointer"
             >
-              <Search className="w-3.5 h-3.5" />
-              <span>Lid, o‘quvchi, kurs qidirish...</span>
+              <Search className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t('Lid, o‘quvchi, kurs qidirish...', 'Search leads, students, courses...', 'Поиск лидов, учеников, курсов...')}</span>
             </button>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* Language Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[11px] font-bold" role="group" aria-label={t('Tilni tanlash', 'Select language', 'Выбор языка')}>
+              <button
+                type="button"
+                onClick={() => setLanguage('UZ')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'UZ' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                UZ
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('RU')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'RU' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                RU
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('EN')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'EN' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                EN
+              </button>
+            </div>
+
+            <button
+              onClick={() => navigate('/')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+              <span>{t('Saytni ko‘rish', 'View Website', 'Открыть сайт')}</span>
+            </button>
+
             <span className="hidden 2xl:block text-[11px] font-bold text-slate-600 dark:text-slate-300 max-w-28 truncate">{displayName}</span>
-            <button onClick={toggleTheme} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" aria-label="Mavzu">
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <button onClick={toggleTheme} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer" aria-label={t('Mavzu', 'Theme', 'Тема')}>
+              {theme === 'dark' ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
             </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/30 transition cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{t.nav.logout}</span>
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
             </button>
           </div>
         </header>
 
         <div className="lg:hidden flex items-center justify-between gap-2 px-4 py-2 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">Qabulxona</span>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>{t.nav.logout}</span>
-          </button>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+            {t('Qabulxona', 'Front Desk', 'Ресепшн')}
+          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-32">{displayName}</span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
+            </button>
+          </div>
         </div>
 
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
           {demoActive && (
             <div className="mb-4 px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-              <MessageSquare className="w-4 h-4 shrink-0" />
-              Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.
+              <MessageSquare className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{t('Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.', 'Demo mode — displayed data is based on sample data.', 'Демо-режим — данные сформированы на основе демонстрационных образцов.')}</span>
             </div>
           )}
           <AdminErrorBoundary key={activeTab} sectionName={allItems.find((s) => s.id === activeTab)?.label}>

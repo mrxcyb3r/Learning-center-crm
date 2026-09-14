@@ -28,19 +28,19 @@ interface TeacherSidebarProps {
 }
 
 const NAV_ITEMS: { tab: TeacherTab; icon: React.ReactNode; labelUz: string; labelEn: string; labelRu: string; groupUz: string; groupEn: string; groupRu: string }[] = [
-  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, labelUz: 'Bosh sahifa', labelEn: 'Dashboard', labelRu: 'Главная', groupUz: 'Boshqaruv', groupEn: 'Manage', groupRu: 'Управление' },
-  { tab: 'groups', icon: <Users className="w-5 h-5" />, labelUz: 'Guruhlarim', labelEn: 'My Groups', labelRu: 'Мои группы', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
-  { tab: 'students', icon: <UserCog className="w-5 h-5" />, labelUz: 'O‘quvchilarim', labelEn: 'My Students', labelRu: 'Мои ученики', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
-  { tab: 'timetable', icon: <Calendar className="w-5 h-5" />, labelUz: 'Dars jadvali', labelEn: 'Timetable', labelRu: 'Расписание', groupUz: 'Ta’lim', groupEn: 'Teaching', groupRu: 'Обучение' },
-  { tab: 'attendance', icon: <CheckSquare className="w-5 h-5" />, labelUz: 'Davomat', labelEn: 'Attendance', labelRu: 'Посещаемость', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
-  { tab: 'payments', icon: <DollarSign className="w-5 h-5" />, labelUz: 'To‘lovlar', labelEn: 'Payments', labelRu: 'Оплаты', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
-  { tab: 'income', icon: <TrendingUp className="w-5 h-5" />, labelUz: 'Daromad', labelEn: 'Income', labelRu: 'Доход', groupUz: 'Faoliyat', groupEn: 'Activity', groupRu: 'Деятельность' },
-  { tab: 'announcements', icon: <Bell className="w-5 h-5" />, labelUz: 'E’lonlar', labelEn: 'Announcements', labelRu: 'Объявления', groupUz: 'Aloqa', groupEn: 'Comms', groupRu: 'Связь' },
-  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" />, labelUz: 'Vazifalar', labelEn: 'Tasks', labelRu: 'Задачи', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'documents', icon: <FileText className="w-5 h-5" />, labelUz: 'Hujjatlar', labelEn: 'Documents', labelRu: 'Документы', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" />, labelUz: 'Tahlil', labelEn: 'Analytics', labelRu: 'Аналитика', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'profile', icon: <User className="w-5 h-5" />, labelUz: 'Profil', labelEn: 'Profile', labelRu: 'Профиль', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
-  { tab: 'settings', icon: <Settings className="w-5 h-5" />, labelUz: 'Sozlamalar', labelEn: 'Settings', labelRu: 'Настройки', groupUz: 'Boshqa', groupEn: 'More', groupRu: 'Ещё' },
+  { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" />, labelUz: 'Bosh sahifa', labelEn: 'Dashboard', labelRu: 'Главная', groupUz: 'Boshqaruv', groupEn: 'Manage', groupRu: 'Управление' },
+  { tab: 'groups', icon: <Users className="w-5 h-5" aria-hidden="true" />, labelUz: 'Mening guruhlarim', labelEn: 'My Groups', labelRu: 'Мои группы', groupUz: 'O‘qitish', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'students', icon: <UserCog className="w-5 h-5" aria-hidden="true" />, labelUz: 'O‘quvchilarim', labelEn: 'My Students', labelRu: 'Мои ученики', groupUz: 'O‘qitish', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'timetable', icon: <Calendar className="w-5 h-5" aria-hidden="true" />, labelUz: 'Dars jadvali', labelEn: 'Timetable', labelRu: 'Расписание', groupUz: 'O‘qitish', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'attendance', icon: <CheckSquare className="w-5 h-5" aria-hidden="true" />, labelUz: 'Davomat', labelEn: 'Attendance', labelRu: 'Посещаемость', groupUz: 'O‘qitish', groupEn: 'Teaching', groupRu: 'Обучение' },
+  { tab: 'payments', icon: <DollarSign className="w-5 h-5" aria-hidden="true" />, labelUz: 'O‘quvchi to‘lovlari', labelEn: 'Teacher Payments', labelRu: 'Оплаты', groupUz: 'Moliya', groupEn: 'Finance', groupRu: 'Финансы' },
+  { tab: 'income', icon: <TrendingUp className="w-5 h-5" aria-hidden="true" />, labelUz: 'Oylik va daromad', labelEn: 'Salary & Income', labelRu: 'Зарплата и доход', groupUz: 'Moliya', groupEn: 'Finance', groupRu: 'Финансы' },
+  { tab: 'announcements', icon: <Bell className="w-5 h-5" aria-hidden="true" />, labelUz: 'E’lonlar', labelEn: 'Announcements', labelRu: 'Объявления', groupUz: 'Tashkiliy', groupEn: 'Organization', groupRu: 'Организация' },
+  { tab: 'tasks', icon: <ListTodo className="w-5 h-5" aria-hidden="true" />, labelUz: 'Vazifalar', labelEn: 'Tasks', labelRu: 'Задачи', groupUz: 'Tashkiliy', groupEn: 'Organization', groupRu: 'Организация' },
+  { tab: 'documents', icon: <FileText className="w-5 h-5" aria-hidden="true" />, labelUz: 'Hujjatlar', labelEn: 'Documents', labelRu: 'Документы', groupUz: 'Tashkiliy', groupEn: 'Organization', groupRu: 'Организация' },
+  { tab: 'analytics', icon: <BarChart3 className="w-5 h-5" aria-hidden="true" />, labelUz: 'Tahlil', labelEn: 'Analytics', labelRu: 'Аналитика', groupUz: 'Tizim', groupEn: 'System', groupRu: 'Система' },
+  { tab: 'profile', icon: <User className="w-5 h-5" aria-hidden="true" />, labelUz: 'Profil', labelEn: 'Profile', labelRu: 'Профиль', groupUz: 'Tizim', groupEn: 'System', groupRu: 'Система' },
+  { tab: 'settings', icon: <Settings className="w-5 h-5" aria-hidden="true" />, labelUz: 'Sozlamalar', labelEn: 'Teacher Settings', labelRu: 'Настройки', groupUz: 'Tizim', groupEn: 'System', groupRu: 'Система' },
 ];
 
 export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onToggle }) => {
@@ -76,14 +76,14 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
         </div>
         {!collapsed && (
           <div className="ml-3 overflow-hidden">
-            <span className={`text-sm font-black tracking-tight block leading-none ${
+            <div className={`text-sm font-black tracking-tight leading-none ${
               theme === 'dark' ? 'text-white' : 'text-slate-900'
             }`}>
               RENESSANS
-            </span>
-            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
-              O‘qituvchi
-            </span>
+            </div>
+            <div className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-1">
+              {language === 'EN' ? 'Teacher' : language === 'RU' ? 'Учитель' : 'O‘qituvchi'}
+            </div>
           </div>
         )}
       </div>
@@ -114,7 +114,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({ collapsed, onTog
                 }`}
                 title={collapsed ? label(item) : undefined}
               >
-                <span className="flex-shrink-0">{item.icon}</span>
+                <span className="flex-shrink-0" aria-hidden="true">{item.icon}</span>{' '}
                 {!collapsed && (
                   <span className="text-sm font-semibold truncate">{label(item)}</span>
                 )}

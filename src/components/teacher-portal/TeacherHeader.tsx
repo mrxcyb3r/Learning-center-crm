@@ -15,7 +15,8 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
   const { teacherName } = useTeacherPortal();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, userProfile, logout } = useAuth();
-  const { t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -27,7 +28,7 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
     }
   };
 
-  const displayName = userProfile?.displayName || currentUser?.displayName || teacherName || 'User';
+  const displayName = userProfile?.displayName || currentUser?.displayName || teacherName || t('O‘qituvchi', 'Teacher', 'Учитель');
 
   return (
     <header
@@ -44,25 +45,27 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
           className={`lg:hidden p-2 rounded-xl transition cursor-pointer shrink-0 ${
             theme === 'dark' ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
           }`}
-          aria-label="Menyu"
+          aria-label={t('Menyu', 'Menu', 'Меню')}
         >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {mobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
         </button>
 
         <div className="min-w-0">
           <span className="text-sm font-extrabold tracking-tight truncate block" style={{ color: theme === 'dark' ? '#fff' : '#0f172a' }}>
-            O‘qituvchi paneli
+            {t('O‘qituvchi paneli', 'Teacher Portal', 'Панель преподавателя')}
           </span>
           <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate">
-            CenterFlow • Renessans Learning Center
+            <span>CenterFlow</span>
+            <span className="mx-1.5 text-slate-400">·</span>
+            <span>{t('Renessans Ta’lim Markazi', 'Renessans Learning Center', 'Учебный Центр Renessans')}</span>
           </p>
         </div>
 
-        {/* Desktop search slot — consistent shell, no fake results */}
+        {/* Desktop search slot */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ml-2">
-          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
           <input
-            placeholder="Qidiruv..."
+            placeholder={t('Qidiruv...', 'Search...', 'Поиск...')}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 window.dispatchEvent(new CustomEvent('centerflow-header-search', { detail: (e.target as HTMLInputElement).value.trim() }));
@@ -75,6 +78,31 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Language Switcher */}
+        <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[11px] font-bold" role="group" aria-label={t('Tilni tanlash', 'Select language', 'Выбор языка')}>
+          <button
+            type="button"
+            onClick={() => setLanguage('UZ')}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'UZ' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+          >
+            UZ
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage('RU')}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'RU' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+          >
+            RU
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage('EN')}
+            className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'EN' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+          >
+            EN
+          </button>
+        </div>
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
@@ -83,9 +111,10 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
               ? 'text-slate-400 hover:text-white hover:bg-slate-800'
               : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
           }`}
-          title="Mavzu"
+          title={t('Mavzu', 'Theme', 'Тема')}
+          aria-label={t('Mavzu', 'Theme', 'Тема')}
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === 'dark' ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
         </button>
 
         {/* Notifications */}
@@ -96,10 +125,10 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
               ? 'text-slate-400 hover:text-white hover:bg-slate-800'
               : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
           }`}
-          title="Bildirishnomalar"
-          aria-label="Bildirishnomalar"
+          title={t('Bildirishnomalar', 'Notifications', 'Уведомления')}
+          aria-label={t('Bildirishnomalar', 'Notifications', 'Уведомления')}
         >
-          <Bell className="w-4 h-4" />
+          <Bell className="w-4 h-4" aria-hidden="true" />
         </button>
 
         {/* Teacher Avatar + profile */}
@@ -113,18 +142,21 @@ export const TeacherHeader: React.FC<TeacherHeaderProps> = ({ onMenuToggle, mobi
             }`}>
               {displayName}
             </span>
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">O‘qituvchi</span>
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+              {t('O‘qituvchi', 'Teacher', 'Учитель')}
+            </span>
           </div>
         </div>
 
-        {/* Logout — clearly accessible, real Firebase logout */}
+        {/* Logout */}
         <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/30 transition cursor-pointer"
-          title="Chiqish"
+          title={t('Chiqish', 'Sign Out', 'Выход')}
+          aria-label={t('Chiqish', 'Sign Out', 'Выход')}
         >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">{t.nav.logout}</span>
+          <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+          <span className="hidden sm:inline">{t('Chiqish', 'Sign Out', 'Выход')}</span>
         </button>
       </div>
     </header>

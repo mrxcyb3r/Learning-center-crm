@@ -15,6 +15,7 @@ import {
 import { useTeacherPortal } from '../../../context/TeacherPortalContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { TelegramConnectionCard } from '../../erp/TelegramConnectionCard';
 import { BusinessModel } from '../../../types/teacher';
 
@@ -42,6 +43,7 @@ export const TeacherSettingsView: React.FC = () => {
   const { theme } = useTheme();
   const { currentUser, activeRole } = useAuth();
   const { businessModel, setBusinessModel, teacherName, teacherUid } = useTeacherPortal();
+  const { language, setLanguage } = useLanguage();
 
   const SETTINGS_KEY = `renessans_teacher_settings_${teacherUid}`;
 
@@ -52,7 +54,6 @@ export const TeacherSettingsView: React.FC = () => {
   const [lessonReminders, setLessonReminders] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
 
-  const [language, setLanguage] = useState<'UZ' | 'EN' | 'RU'>('UZ');
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {
@@ -262,7 +263,7 @@ export const TeacherSettingsView: React.FC = () => {
           {/* Language */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Til
+              Til / Language / Язык
             </label>
             <div className="relative">
               <select
@@ -270,15 +271,12 @@ export const TeacherSettingsView: React.FC = () => {
                 onChange={(e) => setLanguage(e.target.value as 'UZ' | 'EN' | 'RU')}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-sm appearance-none cursor-pointer"
               >
-                <option value="UZ">O'zbek tili</option>
-                <option value="EN">English</option>
-                <option value="RU">Русский</option>
+                <option value="UZ">O‘zbekcha (UZ)</option>
+                <option value="RU">Русский (RU)</option>
+                <option value="EN">English (EN)</option>
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden="true" />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 italic">
-              Tez orada qo'shiladi
-            </p>
           </div>
 
           {/* Compact Mode */}

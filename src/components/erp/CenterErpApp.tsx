@@ -75,76 +75,76 @@ type SidebarGroup = {
   items: { id: ErpTab; label: string; icon: React.FC<{ className?: string }>; badge?: string }[];
 };
 
-const SIDEBAR_GROUPS: SidebarGroup[] = [
+const getSidebarGroups = (t: (uz: string, en: string, ru: string) => string): SidebarGroup[] => [
   {
-    title: 'Boshqaruv',
-    items: [{ id: 'dashboard', label: 'Bosh sahifa', icon: LayoutDashboard }],
+    title: t('Boshqaruv', 'Management', 'Управление'),
+    items: [{ id: 'dashboard', label: t('Bosh sahifa', 'Dashboard', 'Главная'), icon: LayoutDashboard }],
   },
   {
-    title: 'Qabul va o‘quvchilar',
+    title: t('Qabul va o‘quvchilar', 'Admissions & Students', 'Приём и ученики'),
     items: [
-      { id: 'murojaatlar', label: 'Murojaatlar', icon: MessageSquare },
-      { id: 'leads', label: 'Lidlar CRM', icon: PhoneCall },
-      { id: 'students', label: 'O‘quvchilar', icon: Users },
-      { id: 'receptionist', label: 'Qabulxona', icon: LifeBuoy },
+      { id: 'murojaatlar', label: t('Murojaatlar', 'Inquiries', 'Обращения'), icon: MessageSquare },
+      { id: 'leads', label: t('Lidlar CRM', 'Leads CRM', 'Лиды CRM'), icon: PhoneCall },
+      { id: 'students', label: t('O‘quvchilar', 'Students', 'Ученики'), icon: Users },
+      { id: 'receptionist', label: t('Qabulxona', 'Front Desk', 'Ресепшн'), icon: LifeBuoy },
     ],
   },
   {
-    title: 'Ta’lim',
+    title: t('Ta’lim', 'Teaching', 'Обучение'),
     items: [
-      { id: 'teachers', label: 'O‘qituvchilar', icon: GraduationCap },
-      { id: 'courses', label: 'Kurslar va to‘lovlar', icon: BookOpen },
-      { id: 'schedule', label: 'Guruhlar va dars jadvali', icon: Calendar },
+      { id: 'teachers', label: t('O‘qituvchilar', 'Teachers', 'Преподаватели'), icon: GraduationCap },
+      { id: 'courses', label: t('Kurslar va to‘lovlar', 'Courses & Fees', 'Курсы и тарифы'), icon: BookOpen },
+      { id: 'schedule', label: t('Guruhlar va dars jadvali', 'Groups & Schedule', 'Группы и расписание'), icon: Calendar },
     ],
   },
   {
-    title: 'Moliya',
+    title: t('Moliya', 'Finance', 'Финансы'),
     items: [
-      { id: 'payments', label: 'To‘lovlar', icon: CreditCard },
-      { id: 'expenses', label: 'Xarajatlar va ish haqlari', icon: DollarSign },
+      { id: 'payments', label: t('To‘lovlar', 'Payments', 'Оплаты'), icon: CreditCard },
+      { id: 'expenses', label: t('Xarajatlar va ish haqlari', 'Expenses & Payroll', 'Расходы и зарплаты'), icon: DollarSign },
     ],
   },
   {
-    title: 'Tahlil',
-    items: [{ id: 'reports', label: 'Hisobotlar va tahlil', icon: BarChart3 }],
+    title: t('Tahlil', 'Analytics', 'Аналитика'),
+    items: [{ id: 'reports', label: t('Hisobotlar va tahlil', 'Reports & Analytics', 'Отчёты и аналитика'), icon: BarChart3 }],
   },
   {
-    title: 'Marketing',
+    title: t('Marketing', 'Marketing', 'Маркетинг'),
     items: [
-      { id: 'cms', label: 'Veb-sayt', icon: Globe },
-      { id: 'telegram', label: 'Telegram bot', icon: Send },
+      { id: 'cms', label: t('Veb-sayt', 'Website CMS', 'Веб-сайт'), icon: Globe },
+      { id: 'telegram', label: t('Telegram bot', 'Telegram Bot', 'Telegram бот'), icon: Send },
     ],
   },
   {
-    title: 'Tizim',
+    title: t('Tizim', 'System', 'Система'),
     items: [
-      { id: 'settings', label: 'Sozlamalar', icon: Settings },
-      { id: 'support', label: 'Yordam', icon: LifeBuoy },
+      { id: 'settings', label: t('Sozlamalar', 'Settings', 'Настройки'), icon: Settings },
+      { id: 'support', label: t('Yordam', 'Support', 'Поддержка'), icon: LifeBuoy },
     ],
   },
 ];
-
-const SIDEBAR_ITEMS = SIDEBAR_GROUPS.flatMap((g) => g.items);
 
 export const CenterErpApp: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, userProfile, activeRole, logout } = useAuth();
-  const { language, t: translateObj } = useLanguage();
+  const { language, setLanguage, t: translateObj } = useLanguage();
   const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const [activeTab, setActiveTab] = useState<ErpTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadsCount, setLeadsCount] = useState(0);
   const [murojaatUnread, setMurojaatUnread] = useState(0);
 
+  const sidebarGroups = useMemo(() => getSidebarGroups(t), [language]);
+
   const displayName =
-    userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Direktor';
+    userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || t('Direktor', 'Director', 'Директор');
   const roleLabel =
-    activeRole === 'superadmin' ? t('SuperAdmin', 'SuperAdmin', 'SuperAdmin') :
-    activeRole === 'admin' ? t('ADMIN', 'ADMIN', 'АДМИН') :
-    activeRole === 'receptionist' ? t('QABULXONA', 'FRONT DESK', 'РЕСЕПШН') :
-    activeRole === 'teacher' ? t("O'QITUVCHI", 'TEACHER', 'УЧИТЕЛЬ') :
-    t(activeRole, activeRole, activeRole);
+    activeRole === 'superadmin' ? t('SuperAdmin', 'SuperAdmin', 'СуперАдмин') :
+    activeRole === 'admin' ? t('Direktor', 'Director', 'Директор') :
+    activeRole === 'receptionist' ? t('Qabulxona', 'Front Desk', 'Ресепшн') :
+    activeRole === 'teacher' ? t('O‘qituvchi', 'Teacher', 'Учитель') :
+    String(activeRole || '');
 
   const handleLogout = async () => {
     try {
@@ -270,28 +270,31 @@ case 'murojaatlar':
           {/* Brand */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-base shadow-md shadow-amber-500/20">
+              <div className="w-9 h-9 rounded-2xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-base shadow-md shadow-amber-500/20 shrink-0">
                 R
               </div>
-              <div>
-                <span className="font-black text-base tracking-tight text-slate-900 dark:text-white block leading-none">
+              <div className="space-y-0.5">
+                <div className="font-black text-base tracking-tight text-slate-900 dark:text-white leading-none">
                   RENESSANS
-                </span>
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block mt-0.5">
-                  O'quv markazi
-                </span>
-                <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Direktor • Onlayn
-                </span>
+                </div>
+                <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  {t('O‘quv markazi', 'Learning Center', 'Учебный центр')}
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1.5 pt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" aria-hidden="true" />
+                  <span>{roleLabel}</span>
+                  <span className="text-slate-400">·</span>
+                  <span>{t('Onlayn', 'Online', 'Онлайн')}</span>
+                </div>
               </div>
             </div>
 
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white"
+              aria-label={t('Yopish', 'Close', 'Закрыть')}
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
@@ -299,14 +302,14 @@ case 'murojaatlar':
           {demoActive && (
             <div className="px-3.5 mb-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
               <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
-                Namoyish rejimi
+                {t('Namoyish rejimi', 'Demo Mode', 'Демонстрационный режим')}
               </span>
             </div>
           )}
 
           {/* Navigation Items */}
           <nav className="space-y-5">
-            {SIDEBAR_GROUPS.map((group) => (
+            {sidebarGroups.map((group) => (
               <div key={group.title}>
                 <div className="px-3.5 mb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                   {group.title}
@@ -372,9 +375,9 @@ case 'murojaatlar':
             onClick={() => navigate('/')}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer border border-slate-200 dark:border-slate-700"
           >
-            <Globe className="w-3.5 h-3.5 text-amber-500" />
-            <span>Saytni ko'rish</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
+            <Globe className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
+            <span>{t('Saytni ko‘rish', 'View Website', 'Открыть сайт')}</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" aria-hidden="true" />
           </button>
 
           {/* User profile brief — real authenticated user */}
@@ -394,63 +397,88 @@ case 'murojaatlar':
             <button
               onClick={toggleTheme}
               className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 cursor-pointer shrink-0"
-              title="Mavzuni almashtirish"
+              title={t('Mavzuni almashtirish', 'Toggle Theme', 'Переключить тему')}
             >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" aria-hidden="true" /> : <Moon className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
           </div>
 
-          {/* Logout — real Firebase logout, always accessible */}
-<button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{translateObj.nav.logout}</span>
-            </button>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
+          </button>
         </div>
       </aside>
 
       {/* Main Workspace View */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Workspace Topbar — unified shell: workspace, search slot, profile, logout */}
+        {/* Workspace Topbar */}
         <header className="hidden lg:flex items-center justify-between gap-4 px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
-              <span>Kampus:</span>
+              <span>{t('Kampus:', 'Campus:', 'Кампус:')}</span>
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
-                Faol • 08:30 – 21:00
+                {t('Faol · 08:30 – 21:00', 'Active · 08:30 – 21:00', 'Активен · 08:30 – 21:00')}
               </span>
             </div>
             <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30 shrink-0">
               {roleLabel}
             </span>
             <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
               <button
                 onClick={() => setSearchOpen(true)}
                 className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer"
               >
-                Lid, o‘quvchi yoki kurs qidirish...
+                {t('Lid, o‘quvchi yoki kurs qidirish...', 'Search leads, students or courses...', 'Поиск лидов, учеников или курсов...')}
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* Language Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[11px] font-bold" role="group" aria-label={t('Tilni tanlash', 'Select language', 'Выбор языка')}>
+              <button
+                type="button"
+                onClick={() => setLanguage('UZ')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'UZ' ? 'bg-amber-500 text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                UZ
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('RU')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'RU' ? 'bg-amber-500 text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                RU
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('EN')}
+                className={`px-2 py-1 rounded-lg transition cursor-pointer ${language === 'EN' ? 'bg-amber-500 text-slate-950 font-black shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                EN
+              </button>
+            </div>
+
             <button
               onClick={() => setActiveTab('murojaatlar')}
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>{murojaatUnread} o‘qilmagan murojaat</span>
+              <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{murojaatUnread} {t('ta o‘qilmagan', 'unread', 'непрочитанных')}</span>
             </button>
 
             <button
               onClick={() => navigate('/')}
               className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700"
             >
-              <Globe className="w-3.5 h-3.5 text-amber-500" />
-              <span>Bosh sahifa</span>
+              <Globe className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
+              <span>{t('Saytni ko‘rish', 'View Website', 'Открыть сайт')}</span>
             </button>
 
             <span className="hidden 2xl:block text-[11px] font-bold text-slate-600 dark:text-slate-300 max-w-28 truncate" title={displayName}>
@@ -459,27 +487,53 @@ case 'murojaatlar':
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/30 transition cursor-pointer"
-              title="Chiqish"
+              title={t('Chiqish', 'Sign Out', 'Выход')}
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{translateObj.nav.logout}</span>
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
             </button>
           </div>
         </header>
 
-        {/* Mobile topbar logout row — keeps logout reachable on small screens */}
+        {/* Mobile topbar logout row */}
         <div className="lg:hidden flex items-center justify-between gap-2 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
-            {roleLabel}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg border text-[10px] font-bold bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
+              {roleLabel}
+            </span>
+            {/* Mobile language switcher */}
+            <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[10px] font-bold">
+              <button
+                type="button"
+                onClick={() => setLanguage('UZ')}
+                className={`px-1.5 py-0.5 rounded transition ${language === 'UZ' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-500'}`}
+              >
+                UZ
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('RU')}
+                className={`px-1.5 py-0.5 rounded transition ${language === 'RU' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-500'}`}
+              >
+                RU
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('EN')}
+                className={`px-1.5 py-0.5 rounded transition ${language === 'EN' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-500'}`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-32">{displayName}</span>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30 shrink-0"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{translateObj.nav.logout}</span>
+              <LogOut className="w-3 h-3" aria-hidden="true" />
+              <span>{t('Chiqish', 'Sign Out', 'Выход')}</span>
             </button>
           </div>
         </div>
@@ -488,11 +542,11 @@ case 'murojaatlar':
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
           {demoActive && (
             <div className="mb-4 px-4 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2 text-[11px] font-bold text-amber-700 dark:text-amber-400">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.
+              <Sparkles className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{t('Namoyish rejimi — ko‘rsatilgan ma’lumotlar demo ma’lumotlar asosida.', 'Demo mode — displayed data is based on sample data.', 'Демо-режим — данные сформированы на основе демонстрационных образцов.')}</span>
             </div>
           )}
-          <AdminErrorBoundary key={activeTab} sectionName={SIDEBAR_ITEMS.find((s) => s.id === activeTab)?.label}>
+          <AdminErrorBoundary key={activeTab} sectionName={sidebarItems.find((s) => s.id === activeTab)?.label}>
             {renderActiveView()}
           </AdminErrorBoundary>
         </main>

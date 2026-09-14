@@ -76,7 +76,7 @@ function paymentAmountDisplay(p: IncomePaymentRecord): string | null {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) => {
-  const { language } = useLanguage();
+  const { language, counter } = useLanguage();
   // NOTE: `t` is intentionally NOT a useCallback dependency of loadData —
   // it is re-created every render, which used to retrigger the load effect
   // endlessly (fetch storm / never-settling UI). loadData depends on
@@ -255,7 +255,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (studentStats.debtors.length > 0) {
       items.push({
         id: 'debt',
-        title: t(`${studentStats.debtors.length} ta qarzdor`, `${studentStats.debtors.length} debtors`, `${studentStats.debtors.length} должников`),
+        title: counter(studentStats.debtors.length, 'debtor'),
         detail:
           studentStats.outstanding > 0
             ? t(`${formatCurrencyShort(studentStats.outstanding)} so‘m qarzdorlik`, `${formatCurrencyShort(studentStats.outstanding)} UZS outstanding`, `Ожидается ${formatCurrencyShort(studentStats.outstanding)} сум`)
@@ -267,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (leadStats.fresh.length > 0) {
       items.push({
         id: 'leads',
-        title: t(`${leadStats.fresh.length} ta yangi lid`, `${leadStats.fresh.length} new leads`, `${leadStats.fresh.length} новых лидов`),
+        title: counter(leadStats.fresh.length, 'newLead'),
         detail: t('qayta bog‘lanish kerak', 'need follow-up', 'нужен follow-up'),
         tab: 'leads',
         tone: 'blue',
@@ -276,7 +276,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (leadStats.trialsToday.length > 0) {
       items.push({
         id: 'trials',
-        title: t(`${leadStats.trialsToday.length} ta bugungi sinov darsi`, `${leadStats.trialsToday.length} trial lessons today`, `${leadStats.trialsToday.length} пробных уроков сегодня`),
+        title: counter(leadStats.trialsToday.length, 'trial'),
         detail: leadStats.trialsToday
           .slice(0, 2)
           .map((l) => l.name)
@@ -288,7 +288,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (leadStats.overdueFollowUps.length > 0) {
       items.push({
         id: 'followup',
-        title: t(`${leadStats.overdueFollowUps.length} ta kechikkan follow-up`, `${leadStats.overdueFollowUps.length} overdue follow-ups`, `${leadStats.overdueFollowUps.length} просроченных follow-up`),
+        title: t(
+          `${counter(leadStats.overdueFollowUps.length, 'lead')} kechikkan follow-up`,
+          `${leadStats.overdueFollowUps.length} overdue follow-ups`,
+          `${leadStats.overdueFollowUps.length} просроченных follow-up`
+        ),
         detail: t('Qayta bog‘lanish zarur', 'Need to reach out again', 'Нужно связаться повторно'),
         tab: 'leads',
         tone: 'amber',
@@ -297,14 +301,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
     if (revenue.pendingCount > 0) {
       items.push({
         id: 'pending',
-        title: t(`${revenue.pendingCount} ta kutilayotgan to‘lov`, `${revenue.pendingCount} pending payments`, `${revenue.pendingCount} ожидающих платежей`),
+        title: counter(revenue.pendingCount, 'pendingPayment'),
         detail: t(`${formatCurrencyShort(revenue.pendingSum)} so‘m tasdiqlanmagan`, `${formatCurrencyShort(revenue.pendingSum)} UZS unconfirmed`, `${formatCurrencyShort(revenue.pendingSum)} сум не подтверждено`),
         tab: 'payments',
         tone: 'amber',
       });
     }
     return items;
-  }, [studentStats, leadStats, revenue, t]);
+  }, [studentStats, leadStats, revenue, t, counter]);
 
   const greeting = greetingKey(now);
   const greetingText =
@@ -360,7 +364,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       label: t('Bu oydagi tushum', 'Revenue this month', 'Доход за месяц'),
       value: `${formatCompactCurrency(revenue.monthCollected)}`,
       suffix: t("so‘m", 'UZS', 'сум'),
-      sub: t(`Yig‘ilgan • ${revenue.monthCollectedCount} ta to‘lov`, `Collected • ${revenue.monthCollectedCount} payments`, `Собрано • ${revenue.monthCollectedCount} платежей`),
+      sub: `${t('Yig‘ilgan', 'Collected', 'Собрано')} • ${counter(revenue.monthCollectedCount, 'payment')}`,
       tab: 'payments',
       accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
     },
@@ -380,7 +384,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       label: t('Yangi lidlar', 'New leads', 'Новые лиды'),
       value: `${leadStats.fresh.length}`,
       suffix: '',
-      sub: t(`Bugun: ${leadStats.todayNew} ta`, `Today: ${leadStats.todayNew}`, `Сегодня: ${leadStats.todayNew}`),
+      sub: `${t('Bugun', 'Today', 'Сегодня')}: ${counter(leadStats.todayNew, 'lead')}`,
       tab: 'leads',
       accent: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
     },
@@ -577,7 +581,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {groupStats.todayClasses.length > 0
-                  ? t(`${groupStats.todayClasses.length} ta dars rejalashtirilgan`, `${groupStats.todayClasses.length} classes scheduled`, `Запланировано занятий: ${groupStats.todayClasses.length}`)
+                  ? `${counter(groupStats.todayClasses.length, 'lesson')} ${t('rejalashtirilgan', 'scheduled', 'запланировано')}`
                   : t('Bugun dars rejalashtirilmagan', 'No classes scheduled today', 'Сегодня занятий нет')}
               </p>
             </div>
@@ -864,8 +868,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               onClick={() => onNavigateTab('payments')}
               className="w-full mt-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-600 dark:text-rose-400 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <Clock className="w-3.5 h-3.5" />
-              {t(`${studentStats.debtors.length} ta qarzdorni ko‘rib chiqish`, `Review ${studentStats.debtors.length} debtors`, `Проверить ${studentStats.debtors.length} должников`)}
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              {t(`${counter(studentStats.debtors.length, 'debtor')}ni ko‘rib chiqish`, `Review ${counter(studentStats.debtors.length, 'debtor')}`, `Проверить ${counter(studentStats.debtors.length, 'debtor')}`)}
             </button>
           )}
         </div>

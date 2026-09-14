@@ -39,7 +39,7 @@ function leadLabel(status: string): string {
  * No organization finance (revenue/expenses/profit) is shown here by design.
  */
 export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
-  const { language } = useLanguage();
+  const { language, counter } = useLanguage();
   // See DashboardView: keep the load effect keyed on `language`, not on the
   // per-render `t` closure, to avoid an endless refetch loop.
   const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
@@ -192,17 +192,17 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
   const kpis = [
     {
       id: 'new', icon: PhoneCall, label: t('Yangi murojaatlar', 'New inquiries', 'Новые обращения'),
-      value: `${stats.fresh.length}`, sub: t(`Bugun: ${stats.todayNew.length} ta`, `Today: ${stats.todayNew.length}`, `Сегодня: ${stats.todayNew.length}`),
+      value: `${stats.fresh.length}`, sub: `${t('Bugun', 'Today', 'Сегодня')}: ${counter(stats.todayNew.length, 'lead')}`,
       tab: 'leads', accent: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
     },
     {
       id: 'trials', icon: CalendarClock, label: t('Bugungi sinov darslari', "Today's trials", 'Пробные сегодня'),
-      value: `${stats.trialsToday.length}`, sub: t(`Qatnashdi: ${stats.attendedToday.length} ta`, `Attended: ${stats.attendedToday.length}`, `Посетили: ${stats.attendedToday.length}`),
+      value: `${stats.trialsToday.length}`, sub: `${t('Qatnashdi', 'Attended', 'Посетили')}: ${counter(stats.attendedToday.length, 'student')}`,
       tab: 'leads', accent: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
     },
     {
       id: 'follow', icon: AlertCircle, label: t('Qayta bog‘lanish kerak', 'Follow-up needed', 'Нужен follow-up'),
-      value: `${stats.followUps.length}`, sub: t(`Muddati o‘tgan: ${stats.overdueFollowUps.length} ta`, `Overdue: ${stats.overdueFollowUps.length}`, `Просрочено: ${stats.overdueFollowUps.length}`),
+      value: `${stats.followUps.length}`, sub: `${t('Muddati o‘tgan', 'Overdue', 'Просрочено')}: ${counter(stats.overdueFollowUps.length, 'lead')}`,
       tab: 'leads', accent: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
     },
     {
@@ -547,8 +547,8 @@ export const ReceptionistDashboard: React.FC<Props> = ({ onNavigateTab }) => {
                     <div className="text-[11px] text-slate-400 mt-0.5">
                       {courseGroups.length > 0
                         ? hasCapacity
-                          ? t(`${courseGroups.length} ta guruh • ${filled}/${capacity} joy band`, `${courseGroups.length} groups • ${filled}/${capacity} seats taken`, `${courseGroups.length} групп • ${filled}/${capacity} мест занято`)
-                          : t(`${courseGroups.length} ta guruh`, `${courseGroups.length} groups`, `${courseGroups.length} групп`)
+                          ? `${counter(courseGroups.length, 'group')} • ${filled}/${capacity} ${t('joy band', 'seats taken', 'мест занято')}`
+                          : counter(courseGroups.length, 'group')
                         : t('Bo‘sh guruh yo‘q', 'No open groups', 'Открытых групп нет')}
                     </div>
                   </li>

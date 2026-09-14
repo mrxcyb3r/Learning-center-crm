@@ -17,6 +17,7 @@ import { formatCurrency, formatCurrencyShort } from '../../utils/format';
 import { ReceiptModal } from './ReceiptModal';
 import { InvoiceModal } from './InvoiceModal';
 import { getReceiptNumber, ReceiptCenter } from '../../utils/receipt';
+import { useLanguage } from '../../context/LanguageContext';
 
 const UZ_MONTHS = [
   'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
@@ -29,6 +30,9 @@ function currentMonthLabel(): string {
 }
 
 export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean }> = ({ readOnly = false, allowCreate = false }) => {
+  const { language, counter } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
+
   const [payments, setPayments] = useState<IncomePaymentRecord[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -234,10 +238,14 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Kassa va O'quvchilar To'lovlari
+            {t("Kassa va O'quvchilar To'lovlari", "Cashier & Student Payments", "Касса и Платежи Учеников")}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Click, Payme, Naqd pul va Karta orqali qabul qilingan barcha kvitansiyalar.
+            {t(
+              "Click, Payme, Naqd pul va Karta orqali qabul qilingan barcha kvitansiyalar.",
+              "All receipts accepted via Click, Payme, Cash, and Card.",
+              "Все квитанции, принятые через Click, Payme, Наличные и Карты."
+            )}
           </p>
         </div>
 
@@ -246,8 +254,8 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
           onClick={handleOpenAdd}
           className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
-          <span>Yangi To'lov Qabul Qilish</span>
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          <span>{t("Yangi To'lov Qabul Qilish", "Accept New Payment", "Принять Новый Платеж")}</span>
         </button>
         )}
       </div>
@@ -259,7 +267,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
             : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
         }`}>
-          {noticeTone === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+          {noticeTone === 'ok' ? <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> : <AlertTriangle className="w-4 h-4" aria-hidden="true" />}
           <span>{notice}</span>
         </div>
       )}
@@ -267,47 +275,65 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400 block">Jami Qabul Qilingan Tushum</span>
+          <span className="text-xs font-semibold text-slate-400 block">
+            {t("Jami Qabul Qilingan Tushum", "Total Revenue Collected", "Всего Принято Доходов")}
+          </span>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCurrency(totalCollected)}
           </div>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 block">
-            {activePayments.length} ta faol kvitansiya
+            {counter(activePayments.length, 'activeReceipt')}
           </span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-sky-500 block">Click orqali</span>
+          <span className="text-xs font-semibold text-sky-500 block">
+            {t("Click orqali", "Via Click", "Через Click")}
+          </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCurrency(clickSum)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Mobil ilova orqali</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">
+            {t("Mobil ilova orqali", "Via mobile app", "Через приложение")}
+          </span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-teal-500 block">Payme orqali</span>
+          <span className="text-xs font-semibold text-teal-500 block">
+            {t("Payme orqali", "Via Payme", "Через Payme")}
+          </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCurrency(paymeSum)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Onlayn to'lov</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">
+            {t("Onlayn to'lov", "Online payment", "Онлайн оплата")}
+          </span>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-xs font-semibold text-emerald-500 block">Naqd Pul (Kassa)</span>
+          <span className="text-xs font-semibold text-emerald-500 block">
+            {t("Naqd Pul (Kassa)", "Cash (Cashier)", "Наличные (Касса)")}
+          </span>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1 font-mono">
             {formatCurrency(cashSum)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Markaz binosida</span>
+          <span className="text-[11px] text-slate-500 mt-1 block">
+            {t("Markaz binosida", "At center premises", "В здании центра")}
+          </span>
         </div>
       </div>
 
       {/* Filter Bar */}
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
             type="text"
-            placeholder="O'quvchi ismi, kurs yoki kvitansiya raqami bo'yicha qidirish..."
+            placeholder={t(
+              "O'quvchi ismi, kurs yoki kvitansiya raqami bo'yicha qidirish...",
+              "Search by student name, course or receipt number...",
+              "Поиск по имени учеnika, курсу или номеру квитанции..."
+            )}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -320,11 +346,11 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
             onChange={(e) => setMethodFilter(e.target.value)}
             className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
-            <option value="All">Barcha To'lov Usullari</option>
+            <option value="All">{t("Barcha to'lov usullari", "All payment methods", "Все способы оплаты")}</option>
             <option value="Click">Click</option>
             <option value="Payme">Payme</option>
-            <option value="Cash">Naqd pul</option>
-            <option value="Card">Bank kartasi</option>
+            <option value="Cash">{t("Naqd pul", "Cash", "Наличные")}</option>
+            <option value="Card">{t("Bank kartasi", "Bank card", "Банковская карта")}</option>
           </select>
 
           <select
@@ -332,9 +358,9 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
           >
-            <option value="All">Barcha holatlar</option>
-            <option value="Completed">Faol</option>
-            <option value="Voided">Bekor qilingan</option>
+            <option value="All">{t("Barcha holatlar", "All statuses", "Все статусы")}</option>
+            <option value="Completed">{t("Faol", "Active", "Активные")}</option>
+            <option value="Voided">{t("Bekor qilingan", "Voided", "Аннулированные")}</option>
           </select>
         </div>
       </div>
@@ -345,21 +371,21 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
           <table className="w-full text-left text-xs sm:text-sm">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-4">Kvitansiya #</th>
-                <th className="py-3.5 px-4">Invoice #</th>
-                <th className="py-3.5 px-4">O'quvchi</th>
-                <th className="py-3.5 px-4">Kurs & Oy</th>
-                <th className="py-3.5 px-4">To'lov Usuli</th>
-                <th className="py-3.5 px-4">Summa</th>
-                <th className="py-3.5 px-4">Sana & Vaqt</th>
-                <th className="py-3.5 px-4 text-right">Amallar</th>
+                <th scope="col" className="py-3.5 px-4">{t("Kvitansiya #", "Receipt #", "Квитанция #")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("Invoice #", "Invoice #", "Инвойс #")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("O'quvchi", "Student", "Ученик")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("Kurs & Oy", "Course & Month", "Курс и Месяц")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("To'lov Usuli", "Payment Method", "Способ Оплаты")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("Summa", "Amount", "Сумма")}</th>
+                <th scope="col" className="py-3.5 px-4">{t("Sana & Vaqt", "Date & Time", "Дата и Время")}</th>
+                <th scope="col" className="py-3.5 px-4 text-right">{t("Amallar", "Actions", "Действия")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-xs text-slate-400">
-                    Bu davrda to'lovlar qayd etilmagan.
+                  <td colSpan={8} className="py-12 text-center text-xs text-slate-400">
+                    {t("Bu davrda to'lovlar qayd etilmagan.", "No payments recorded for this period.", "За этот период платежей не зарегистрировано.")}
                   </td>
                 </tr>
               )}
@@ -372,7 +398,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
                     {getReceiptNumber(p)}
                     {isVoided && (
                       <span className="ml-2 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black border border-rose-500/20">
-                        BEKOR QILINGAN
+                        {t("BEKOR QILINGAN", "VOIDED", "АННУЛИРОВАН")}
                       </span>
                     )}
                   </td>
@@ -402,7 +428,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
                           : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
                       }`}
                     >
-                      {p.method === 'Cash' ? 'Naqd' : p.method}
+                      {p.method === 'Cash' ? t('Naqd', 'Cash', 'Наличные') : p.method}
                     </span>
                   </td>
                   <td className={`py-3.5 px-4 font-mono font-black ${isVoided ? 'text-slate-400 line-through' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -416,26 +442,26 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
                       <button
                         onClick={() => setViewReceipt(p)}
                         className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
-                        title="Kvitansiyani ko'rish / Chiqarish"
+                        title={t("Kvitansiyani ko'rish / Chiqarish", "View / Print receipt", "Просмотр / Печать квитанции")}
                       >
-                        <Printer className="w-4 h-4" />
+                        <Printer className="w-4 h-4" aria-hidden="true" />
                       </button>
                       {invoice && (
                         <button
                           onClick={() => setViewInvoice(invoice)}
                           className="p-1.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer"
-                          title="Invoice ko'rish"
+                          title={t("Invoice ko'rish", "View invoice", "Просмотр инвойса")}
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-4 h-4" aria-hidden="true" />
                         </button>
                       )}
                       {!isVoided && !readOnly && (
                         <button
                           onClick={() => handleVoidPayment(p.id, p.studentName)}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                          title="Bekor qilish"
+                          title={t("Bekor qilish", "Void", "Аннулировать")}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
                         </button>
                       )}
                     </div>
@@ -454,27 +480,27 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
               <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                To'lov Qabul Qilish
+                {t("To'lov Qabul Qilish", "Accept Payment", "Принять Платеж")}
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             <form onSubmit={handleCreatePayment} className="space-y-4 text-xs sm:text-sm">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  O'quvchini Tanlang *
+                  {t("O'quvchini Tanlang *", "Select Student *", "Выберите Ученика *")}
                 </label>
                 <select
                   value={formStudentId}
                   onChange={(e) => handleStudentSelect(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
                 >
-                  <option value="">(Ro'yxatdan tanlang)</option>
+                  <option value="">{t("(Ro'yxatdan tanlang)", "(Select from list)", "(Выберите из списка)")}</option>
                   {students.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.fullName || s.name} ({s.course} - {s.groupName})
@@ -485,21 +511,21 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  O'quvchi Ismi *
+                  {t("O'quvchi Ismi *", "Student Name *", "Имя Ученика *")}
                 </label>
                 <input
                   type="text"
                   required
                   value={formStudentName}
                   onChange={(e) => setFormStudentName(e.target.value)}
-                  placeholder="Ism Familiya"
+                  placeholder={t("Ism Familiya", "Full Name", "Имя Фамилия")}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Kurs Nomi *
+                  {t("Kurs Nomi *", "Course Name *", "Название Курса *")}
                 </label>
                 <select
                   value={formCourse}
@@ -516,7 +542,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  To'lov Miqdori (UZS) *
+                  {t("To'lov Miqdori (UZS) *", "Payment Amount (UZS) *", "Сумма Платежа (UZS) *")}
                 </label>
                 <input
                   type="number"
@@ -530,7 +556,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  To'lov Usuli *
+                  {t("To'lov Usuli *", "Payment Method *", "Способ Оплаты *")}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {(['Click', 'Payme', 'Cash', 'Card'] as const).map((m) => (
@@ -544,7 +570,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                       }`}
                     >
-                      {m === 'Cash' ? 'Naqd' : m}
+                      {m === 'Cash' ? t('Naqd', 'Cash', 'Наличные') : m}
                     </button>
                   ))}
                 </div>
@@ -553,13 +579,13 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
               {(formMethod === 'Click' || formMethod === 'Payme') && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                    Tranzaksiya ID ({formMethod})
+                    {t(`Tranzaksiya ID (${formMethod})`, `Transaction ID (${formMethod})`, `ID Транзакции (${formMethod})`)}
                   </label>
                   <input
                     type="text"
                     value={formTrx}
                     onChange={(e) => setFormTrx(e.target.value)}
-                    placeholder="Kvitansiya/tr. raqami (ixtiyoriy)"
+                    placeholder={t("Kvitansiya/tr. raqami (ixtiyoriy)", "Receipt/Trx ID (optional)", "Номер квитанции/транзакции (необязательно)")}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                   />
                 </div>
@@ -567,7 +593,7 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Qaysi oy uchun
+                  {t("Qaysi oy uchun", "For which month", "За какой месяц")}
                 </label>
                 <input
                   type="text"
@@ -584,14 +610,14 @@ export const PaymentsView: React.FC<{ readOnly?: boolean; allowCreate?: boolean 
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
-                  Bekor qilish
+                  {t("Bekor qilish", "Cancel", "Отмена")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
-                  {isSubmitting ? 'Saqlanmoqda...' : "To'lovni Saqlash"}
+                  {isSubmitting ? t('Saqlanmoqda...', 'Saving...', 'Сохранение...') : t("To'lovni Saqlash", "Save Payment", "Сохранить Платеж")}
                 </button>
               </div>
             </form>

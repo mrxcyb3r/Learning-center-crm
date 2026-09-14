@@ -93,7 +93,7 @@ export const PublicFooter: React.FC = () => {
               </li>
               <li>
                 <a href="/courses/cefr-ingliz-tili" className="hover:text-amber-400 transition">
-                  CEFR Ingliz tili (B2/C1)
+                  CEFR B2/C1 Ingliz Tili
                 </a>
               </li>
               <li>

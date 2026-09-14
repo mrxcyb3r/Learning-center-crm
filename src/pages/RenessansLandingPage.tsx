@@ -38,6 +38,8 @@ import {
   leadsService,
 } from "../services/repository";
 import { notificationService } from "../services/notificationService";
+import { crmService } from "../services/crmService";
+import { slugify } from "../utils/content";
 import { AiReceptionistWidget } from "../components/public/AiReceptionistWidget";
 
 /* ============================================================================
@@ -106,226 +108,41 @@ export interface RenessansLandingPageProps {
 }
 
 /* ============================================================================
-   CANONICAL DATA
+   CANONICAL DATA — Fetched from authoritative source (Firestore → crmService fallback)
+   No hardcoded duplicate data. Single source of truth.
 ============================================================================ */
 
-const DEFAULT_COURSES: CoursePath[] = [
-  {
-    id: "c-tarix-huquq",
-    slug: "tarix-huquq-geografiya",
-    title: "Tarix • Huquq • Geografiya",
-    category: "Ijtimoiy-Gumanitar & DTM",
-    duration: "8 oy",
-    level: "DTM / Milliy Sertifikat A+",
-    description:
-      "Yurisprudensiya (TDYU), Diplomatiya (JIDU) va Davlat Huquq Akademiyasiga kiruvchilar uchun kompleks tayyorlov. 2025–2026 o'quv yilida OTM qamrovi 100% natija.",
-    isFeatured: true,
-    highlights: [
-      "Diplomatiya va Huquqshunoslikka maqsadli tayyorlov",
-      "Tarix va Geografiya Milliy Sertifikat A+ dasturi",
-      "Xaritalar va yuridik normativ hujjatlar tahlili",
-      "Haftalik DTM andozasidagi real nazorat testlari",
-    ],
-    schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Dr. Sanjar Karimov",
-    price: "380,000 UZS / oy",
-  },
-  {
-    id: "c-matematika-pm",
-    slug: "matematika-prezident-maktabi",
-    title: "Matematika & Prezident Maktabi",
-    category: "Aniq Fanlar & Mantiq",
-    duration: "9 oy",
-    level: "Prezident Maktabi / Milliy Sertifikat",
-    description:
-      "Prezident maktablarining 1- va 2-bosqich saralash imtihonlari hamda Milliy Sertifikat A+ talablariga to'liq moslashtirilgan chuqurlashtirilgan mantiqiy dastur.",
-    highlights: [
-      "Mantiqiy, fazoviy va nostandart masalalar",
-      "Milliy Sertifikat A+ masalalar banki",
-      "Prezident maktablari test simulyatsiyalari",
-      "Tezkor yechish algoritmlari va olimpiada bazasi",
-    ],
-    schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Dr. Rustam Zokirov",
-    price: "350,000 UZS / oy",
-  },
-  {
-    id: "c-cefr-english",
-    slug: "cefr-ingliz-tili",
-    title: "CEFR Ingliz Tili (B2 / C1)",
-    category: "Xalqaro & Milliy Til",
-    duration: "6 oy",
-    level: "Intermediate → C1 Advanced",
-    description:
-      "Grammar, Listening, Reading va Speaking bo‘yicha intensiv akademik mashg‘ulotlar. OTMga 100% imtiyoz beruvchi xalqaro va milliy sertifikat kafolati.",
-    highlights: [
-      "Har haftalik Mock imtihonlari va xatolar tahlili",
-      "Akademik Speaking Club va bahs-munozaralar",
-      "Reading va Listening strategik kalitlari",
-      "B2 / C1 sertifikatiga bosqichma-bosqich chiqish",
-    ],
-    schedule: "Haftada 3 kun • 1.5 soatdan",
-    teacherName: "Feruza Rahimova",
-    price: "350,000 UZS / oy",
-  },
-  {
-    id: "c-general-kids-english",
-    slug: "general-kids-english",
-    title: "Kids English (3–10 yosh) & General",
-    category: "Bolalar & Maktab Dasturi",
-    duration: "Davomiy",
-    level: "Beginner → Elementary",
-    description:
-      "Bolaning katta orzulari biz bilan boshlanadi! Interaktiv o'yinlar, vizual qo'llanmalar va Prezident maktabiga tayyorgarlikning ilk poydevori.",
-    highlights: [
-      "Qiziqarli o‘yinlar, audio-vizual mashqlar",
-      "Erkin inglizcha muloqot va boy so'z zaxirasi",
-      "Prezident maktabi boshlang'ich talablari",
-      "Bolalar psixologiyasiga mos zamonaviy muhit",
-    ],
-    schedule: "Haftada 3 kun • 1.5 soatdan",
-    teacherName: "Javohir Rustamov",
-    price: "300,000 UZS / oy",
-  },
-  {
-    id: "c-mental-arifmetika",
-    slug: "mental-arifmetika",
-    title: "Mental Arifmetika & Tezkor Hisob",
-    category: "Mantiqiy Rivojlanish",
-    duration: "6 oy",
-    level: "Barcha yoshlar",
-    description:
-      "Bolalarda o'ng va chap yarim sharlarni birdek rivojlantirish, kuchli xotira, diqqatni jamlash va bir necha soniyada murakkab hisob-kitoblarni amalga oshirish.",
-    highlights: [
-      "Abakus bilan tezkor hisoblash texnikasi",
-      "Fotografik xotira va zehnni o'stirish",
-      "Mantiqiy testlarni yechish tezligi",
-      "Prezident maktabi mantiq bosqichiga poydevor",
-    ],
-    schedule: "Haftada 2 kun • 1.5 soatdan",
-    teacherName: "Nilufar Mansurova",
-    price: "280,000 UZS / oy",
-  },
-  {
-    id: "c-ona-tili",
-    slug: "ona-tili-adabiyot",
-    title: "Ona Tili va Adabiyot",
-    category: "Majburiy & Mutaxassislik",
-    duration: "7 oy",
-    level: "DTM & Milliy Sertifikat",
-    description:
-      "Barcha OTM yo‘nalishlari uchun majburiy blok hamda filologiya va yurisprudensiya yo‘nalishlariga kiruvchilar uchun chuqurlashtirilgan ona tili va adabiyot kursi.",
-    highlights: [
-      "Imlo, matn tahlili va punktuatsiya",
-      "Adabiyotdan asarlar va qahramonlar tahlili",
-      "Milliy Sertifikat A+ metodikasi",
-      "DTM 30/30 maksimal natija strategiyasi",
-    ],
-    schedule: "Haftada 3 kun • 2 soatdan",
-    teacherName: "Azizaxon Olimova",
-    price: "320,000 UZS / oy",
-  },
-];
+function mapCourseForLanding(c: any): CoursePath {
+  return {
+    id: c.id,
+    slug: c.slug || slugify(c.title),
+    title: c.title,
+    category: c.category || "Umumiy",
+    duration: c.duration || "",
+    level: c.lessonsPerWeek || "",
+    description: c.description || "",
+    isFeatured: c.featured,
+    highlights: c.features || [],
+    schedule: c.schedule || c.lessonsPerWeek,
+    teacherName: c.teacherName,
+    price: c.formattedFee || (c.monthlyFee != null ? `${c.monthlyFee.toLocaleString()} UZS / oy` : ""),
+  };
+}
 
-const DEFAULT_TEACHERS: TeacherRecord[] = [
-  {
-    id: "t-sanjar",
-    slug: "dr-sanjar-karimov",
-    name: "Dr. Sanjar Karimov",
-    subject: "Head IELTS Examiner & Lead Curriculum Developer",
-    experienceYears: "8+ yil",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
-    bio: "Xalqaro toifali metodist va yetakchi kurator. OTM va xalqaro universitetlarga tayyorlash bo'yicha bosh ekspert. 2025–2026 o'quv yilida 100% OTM qamrovi natijasini qayd etgan.",
-    achievements: [
-      "187.9 eng yuqori DTM balli sohibi ustozi",
-      "2 nafar 100% Davlat granti talabasi ustozi",
-      "OTM qamrovi bo'yicha 100% natija (2025)",
-      "Milliy Sertifikat A+ bitiruvchilari",
-    ],
-    resultsCount: 34,
-    initials: "SK",
-  },
-  {
-    id: "t-rustam",
-    slug: "dr-rustam-zokirov",
-    name: "Dr. Rustam Zokirov",
-    subject: "Digital SAT Lead & STEM Specialist",
-    experienceYears: "7+ yil",
-    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80",
-    bio: "Matematika, mantiq va fazoviy tafakkur bo'yicha olimpiada murabbiyi. Prezident maktablari saralash imtihonlari hamda Milliy Sertifikat A+ dasturlari yetakchisi.",
-    achievements: [
-      "Prezident maktabiga qabul qilingan o'quvchilar",
-      "Matematika Milliy Sertifikat A+ natijalar",
-      "DTM majburiy va asosiy blokda maksimal ballar",
-    ],
-    resultsCount: 29,
-    initials: "RZ",
-  },
-  {
-    id: "t-feruza",
-    slug: "feruza-rahimova",
-    name: "Feruza Rahimova",
-    subject: "Senior Academic Director & Language Specialist",
-    experienceYears: "6+ yil",
-    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
-    bio: "CEFR va xalqaro til sertifikatlari bo'yicha yetakchi ekspert. Speaking, debate va akademik til ko'nikmalarini tizimli shakllantiruvchi metodist.",
-    achievements: [
-      "CEFR C1 va B2 xalqaro sertifikat sohiblari",
-      "Akademik speaking va debate klubi asoschisi",
-      "Nufuzli xorijiy va mahalliy OTM talabalari",
-    ],
-    resultsCount: 25,
-    initials: "FR",
-  },
-  {
-    id: "t-javohir",
-    slug: "javohir-rustamov",
-    name: "Javohir Rustamov",
-    subject: "Kids & General English (Cambridge YLE)",
-    experienceYears: "5+ yil",
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
-    bio: "Cambridge CELTA sertifikati sohibi. 3–10 yoshli bolalarni erta yoshdan ravon inglizcha muloqotga o'rgatish va Prezident maktabiga tayyorlash metodisti.",
-    achievements: [
-      "Prezident maktabi boshlang'ich saralash g'oliblari",
-      "Cambridge YLE xalqaro dastur sertifikatlari",
-      "Erta yoshdagi bolalar uchun interaktiv o'yin metodikasi",
-    ],
-    resultsCount: 23,
-    initials: "JR",
-  },
-  {
-    id: "t-nilufar",
-    slug: "nilufar-mansurova",
-    name: "Nilufar Mansurova",
-    subject: "Head of Student Admissions & Assessment",
-    experienceYears: "8+ yil",
-    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80",
-    bio: "O'quvchilar salohiyatini diagnostika qilish, mantiqiy tafakkur, tezkor hisoblash hamda bolalar kognitiv rivojlanishi bo'yicha tajribali mutaxassis.",
-    achievements: [
-      "Tezkor abakus hisoblash bo'yicha turnir sovrindorlari",
-      "Diqqat va xotirani 3 baravarga oshirish dasturi",
-      "Prezident maktabi mantiqiy savollar tayyorlovi",
-    ],
-    resultsCount: 31,
-    initials: "NM",
-  },
-  {
-    id: "t-azizaxon",
-    slug: "azizaxon-olimova",
-    name: "Azizaxon Olimova",
-    subject: "Lead Academic Advisor & Essay Grader",
-    experienceYears: "6+ yil",
-    photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80",
-    bio: "Ona tili, adabiyot va matn tahlili bo'yicha yetakchi filolog. Milliy Sertifikat A+ va DTM imtihonlariga akademik tayyorlov dasturi muallifi.",
-    achievements: [
-      "Ona tili Milliy Sertifikat A+ darajalar",
-      "DTM majburiy va asosiy blok maksimal ballari",
-      "Matn tahlili va imlo bo'yicha mualliflik dasturi",
-    ],
-    resultsCount: 27,
-    initials: "AO",
-  },
-];
+function mapTeacherForLanding(t: any): TeacherRecord {
+  return {
+    id: t.id,
+    slug: slugify(t.name),
+    name: t.name,
+    subject: t.subject || t.specialization || "",
+    experienceYears: t.experience,
+    photo: t.photo,
+    bio: t.description,
+    achievements: t.achievements,
+    resultsCount: t.studentsCount,
+    initials: t.name.split(" ").map((n: string) => n[0]).join(""),
+  };
+}
 
 const DEFAULT_RESULTS: StudentResult[] = [
   {
@@ -482,21 +299,21 @@ const PRESIDENT_STAGES = [
   {
     step: "02",
     title: "Mantiqiy Matematika",
-    desc: "Dr. Rustam Zokirov rahbarligida fazoviy, nostandart va olimpiada darajasidagi masalalar yechiladi.",
+    desc: "Jasur Alimov rahbarligida fazoviy, nostandart va olimpiada darajasidagi masalalar yechiladi.",
     focus: "Nostandart masalalar & Formula tahlili",
     icon: Layers3,
   },
   {
     step: "03",
     title: "Kids & General English",
-    desc: "Javohir Rustamov bilan speaking, reading va Prezident maktabi imtihoniga xos leksika o'rganiladi.",
+    desc: "Dilnoza Rahimova bilan speaking, reading va Prezident maktabi imtihoniga xos leksika o'rganiladi.",
     focus: "Akademik lug'at & Matn bilan ishlash",
     icon: BookOpen,
   },
   {
     step: "04",
     title: "Mental Arifmetika",
-    desc: "Nilufar Mansurova bilan soniyalarda tezkor hisoblash, fotografik xotira va zehnni yuksaltirish.",
+    desc: "Dilnoza Rahimova bilan soniyalarda tezkor hisoblash, fotografik xotira va zehnni yuksaltirish.",
     focus: "Abakus texnikasi & Diqqatni jamlash",
     icon: Zap,
   },
@@ -516,56 +333,60 @@ const PRESIDENT_STAGES = [
   },
 ];
 
-const SUBJECT_ITEMS = [
-  {
-    step: "01",
-    subject: "TARIX • HUQUQ • GEOGRAFIYA",
-    teacher: "Dr. Sanjar Karimov",
-    programs: "DTM • Diplomatiya • Yurisprudensiya • Akademiya",
-    description:
-      "Tarix va huquqshunoslik bo'yicha Milliy Sertifikat A+ va DTM ga chuqurlashtirilgan tayyorlov. Manbalar, xaritalar va huquqiy normalar tahlili.",
-  },
-  {
-    step: "02",
-    subject: "MATEMATIKA",
-    teacher: "Dr. Rustam Zokirov",
-    programs: "Milliy Sertifikat A+ • Prezident Maktabi • Olimpiada",
-    description:
-      "Mantiqiy fikrlash, nostandart masalalar va oliy o'quv yurtlari kirish imtihonlariga poydevor qo'yuvchi intensiv matematika.",
-  },
-  {
-    step: "03",
-    subject: "CEFR INGLIZ TILI",
-    teacher: "Feruza Rahimova",
-    programs: "CEFR C1 / B2 • Grammar • Speaking • Mock Test",
-    description:
-      "Listening, Reading, Writing va Speaking ko'nikmalarini intensiv akademik darajaga olib chiqish hamda imtihon strategiyasi.",
-  },
-  {
-    step: "04",
-    subject: "GENERAL & KIDS ENGLISH",
-    teacher: "Javohir Rustamov",
-    programs: "Kids English (3–10 yosh) • Prezident Maktabi Tayyorlov",
-    description:
-      "Qiziqarli o'yinlar, vizual qo'llanmalar va bolalar uchun erta yoshdan tabiiy va ravon inglizcha muloqot muhiti.",
-  },
-  {
-    step: "05",
-    subject: "MENTAL ARIFMETIKA",
-    teacher: "Nilufar Mansurova",
-    programs: "Tez hisoblash • Kuchli xotira • Fazoviy tafakkur",
-    description:
-      "Abakus orqali soniyalarda tezkor hisoblash va miya yarim sharlarini birdek faollashtiruvchi mantiqiy mashqlar.",
-  },
-  {
-    step: "06",
-    subject: "ONA TILI VA ADABIYOT",
-    teacher: "Azizaxon Olimova",
-    programs: "Milliy Sertifikat • DTM Majburiy & Asosiy Blok",
-    description:
-      "Imlo, matn tahlili, grammatik qoidalar va adabiyotdan asarlar tahlili bo'yicha mukammal metodik tayyorgarlik.",
-  },
-];
+function getSubjectItems(courses: CoursePath[]): Array<{ step: string; subject: string; teacher: string; programs: string; description: string }> {
+  const subjectMap: Record<string, { step: string; subject: string; programs: string; description: string }> = {
+    "DTM & Milliy Sertifikat": {
+      step: "01",
+      subject: "DTM & MILLIY SERTIFIKAT",
+      programs: "DTM • Diplomatiya • Yurisprudensiya • Akademiya",
+      description:
+        "Tarix va huquqshunoslik bo'yicha Milliy Sertifikat A+ va DTM ga chuqurlashtirilgan tayyorlov. Manbalar, xaritalar va huquqiy normalar tahlili.",
+    },
+    "Matematika & Fizika": {
+      step: "02",
+      subject: "MATEMATIKA & FIZIKA",
+      programs: "Milliy Sertifikat A+ • Prezident Maktabi • Olimpiada",
+      description:
+        "Mantiqiy fikrlash, nostandart masalalar va oliy o'quv yurtlari kirish imtihonlariga poydevor qo'yuvchi intensiv matematika.",
+    },
+    "CEFR B2/C1 Ingliz Tili": {
+      step: "03",
+      subject: "CEFR B2/C1 INGLIZ TILI",
+      programs: "CEFR C1 / B2 • Grammar • Speaking • Mock Test",
+      description:
+        "Listening, Reading, Writing va Speaking ko'nikmalarini intensiv akademik darajaga olib chiqish hamda imtihon strategiyasi.",
+    },
+    "English Kids (3–10 yosh)": {
+      step: "04",
+      subject: "ENGLISH KIDS (3–10 YOSH)",
+      programs: "Kids English (3–10 yosh) • Prezident Maktabi Tayyorlov",
+      description:
+        "Qiziqarli o'yinlar, vizual qo'llanmalar va bolalar uchun erta yoshdan tabiiy va ravon inglizcha muloqot muhiti.",
+    },
+    "Mental Arifmetika": {
+      step: "05",
+      subject: "MENTAL ARIFMETIKA",
+      programs: "Tez hisoblash • Kuchli xotira • Fazoviy tafakkur",
+      description:
+        "Abakus orqali soniyalarda tezkor hisoblash va miya yarim sharlarini birdek faollashtiruvchi mantiqiy mashqlar.",
+    },
+    "Ona Tili va Adabiyot": {
+      step: "06",
+      subject: "ONA TILI VA ADABIYOT",
+      programs: "Milliy Sertifikat • DTM Majburiy & Asosiy Blok",
+      description:
+        "Imlo, matn tahlili, grammatik qoidalar va adabiyotdan asarlar tahlili bo'yicha mukammal metodik tayyorgarlik.",
+    },
+  };
+
+  return courses
+    .filter((c) => subjectMap[c.title])
+    .map((c, idx) => ({
+      ...subjectMap[c.title]!,
+      step: String(idx + 1).padStart(2, "0"),
+      teacher: c.teacherName || "—",
+    }));
+}
 
 const TICKER_ITEMS = [
   "76.2% OTMGA KIRISH KO'RSATKICHI",
@@ -578,10 +399,10 @@ const TICKER_ITEMS = [
 ];
 
 const HERO_TYPED_STRINGS = [
-  "Tarix, Huquq & Geografiya",
+  "DTM & Milliy Sertifikat",
   "Prezident Maktabiga Tayyorlov",
-  "CEFR (B2 / C1) & Kids English",
-  "Matematika & Milliy Sertifikat",
+  "CEFR B2/C1 & Kids English",
+  "Matematika & Fizika",
   "Mental Arifmetika & Tezkor Hisob",
 ];
 
@@ -1358,7 +1179,7 @@ export function RenessansLandingPage({
         ? propsTeachers
         : liveTeachers && liveTeachers.length > 0
         ? liveTeachers
-        : DEFAULT_TEACHERS,
+        : crmService.getTeachers().map(mapTeacherForLanding),
     [propsTeachers, liveTeachers]
   );
   const courses = useMemo(
@@ -1367,7 +1188,7 @@ export function RenessansLandingPage({
         ? propsCourses
         : liveCourses && liveCourses.length > 0
         ? liveCourses
-        : DEFAULT_COURSES,
+        : crmService.getCourses().map(mapCourseForLanding),
     [propsCourses, liveCourses]
   );
   const faqs = useMemo(
@@ -2237,7 +2058,7 @@ export function RenessansLandingPage({
           />
 
           <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SUBJECT_ITEMS.map((item, idx) => (
+            {getSubjectItems(courses).map((item, idx) => (
               <motion.div
                 key={item.step}
                 initial={reduceMotion ? {} : { opacity: 0, y: 30 }}

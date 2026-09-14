@@ -41,6 +41,7 @@ const VALID_INTENTS = [
   'level_placement',
   'results_grants',
   'payment_methods',
+  'recommendation',
 ] as const;
 
 function normalizeIntent(raw: unknown): string | null {
@@ -81,28 +82,122 @@ CONVERSATION FLOW:
 You will be provided with "Verified CenterFlow Data" below. Use ONLY that information. Do not reference or access any other data sources.
 `;
 
+// ---------------------------------------------------------------------------
+// Rate limiting — simple in-memory sliding window per IP.
+// ---------------------------------------------------------------------------
+const MAX_QUESTION_CHARS = 1000;
+const MAX_CONTEXT_CHARS = 8000;
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 15; // per window per IP
+const LLM_TIMEOUT_MS = 30_000;
+const MAX_LLM_RETRIES = 1;
+
+interface RateBucket {
+  count: number;
+  windowStart: number;
+}
+const rateBuckets = new Map<string, RateBucket>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || now - bucket.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateBuckets.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+  bucket.count++;
+  return bucket.count <= RATE_LIMIT_MAX;
+}
+
+// Periodic cleanup so the map doesn't grow unbounded.
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of rateBuckets) {
+    if (now - bucket.windowStart > RATE_LIMIT_WINDOW_MS * 2) rateBuckets.delete(ip);
+  }
+}, RATE_LIMIT_WINDOW_MS * 2).unref();
+
+// ---------------------------------------------------------------------------
+// Gemini call with timeout + retry on 429.
+// ---------------------------------------------------------------------------
+async function callGemini(
+  ai: GoogleGenAI,
+  prompt: string,
+  retries = MAX_LLM_RETRIES
+): Promise<string> {
+  const attempt = async (): Promise<string> => {
+    const result = await Promise.race([
+      ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          temperature: 0.2,
+          topP: 0.8,
+          topK: 40,
+        },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini timeout')), LLM_TIMEOUT_MS)
+      ),
+    ]);
+    return (result.text || '').trim();
+  };
+
+  let lastErr: unknown;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await attempt();
+    } catch (err: any) {
+      lastErr = err;
+      const status = err?.status || err?.code || 0;
+      if (status === 429 && i < retries) {
+        // Exponential backoff: 1s, 2s
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 export function aiReceptionistRouter() {
   const router = Router();
 
   const handleReceptionist = async (req: Request, res: Response) => {
     try {
+      const ip = (req.ip || req.socket.remoteAddress || 'unknown').replace(/::ffff:/, '');
+
+      // Rate limit.
+      if (!checkRateLimit(ip)) {
+        return res.status(429).json({ error: "Juda ko'p so'rov. Iltimos, biroz kutib qayta urinib ko'ring." });
+      }
+
       const { question, context, intent } = req.body || {};
 
       if (!question || typeof question !== 'string' || question.trim().length === 0) {
         return res.status(400).json({ error: 'Savol kiritilishi shart.' });
       }
 
+      if (question.length > MAX_QUESTION_CHARS) {
+        return res.status(400).json({ error: "Savol juda uzun — iltimos, qisqartiring." });
+      }
+
       if (!context || typeof context !== 'string' || context.trim().length === 0) {
         return res.status(400).json({ error: 'Kontext talab qilinadi.' });
       }
 
-      if (!intent || !VALID_INTENTS.includes(intent)) {
+      if (context.length > MAX_CONTEXT_CHARS) {
+        return res.status(400).json({ error: "Kontext hajmi chegaradan oshib ketdi." });
+      }
+
+      const validIntent = normalizeIntent(intent);
+      if (!validIntent) {
         return res.status(400).json({ error: 'Nazorati noto\'g\'ri.' });
       }
 
       const apiKey = getReceptionistApiKey();
       if (!apiKey) {
-        // No Gemini configured — return fallback
         return res.json({
           text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
           fallback: true,
@@ -133,21 +228,8 @@ Based on the verified data above, provide a concise answer in Uzbek (or the user
 Answer:
 `;
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.2,
-          topP: 0.8,
-          topK: 40,
-        },
-      });
+      const text = await callGemini(ai, prompt);
 
-      const text = (result.text || '').trim();
-
-      // Empty model output is the only server-side rejection case — the
-      // client runs the overlap-against-verified-facts gate
-      // (validateAIAnswer) before anything is shown to the customer.
       if (!text) {
         return res.json({
           text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
@@ -162,8 +244,9 @@ Answer:
         source: 'gemini'
       });
     } catch (err: any) {
-      console.error('[AI RECEPTIONIST] Error:', err?.message || String(err));
-      // Graceful fallback on any error
+      // Safe logging — never log the question content.
+      const status = err?.status || err?.code || 'unknown';
+      console.error('[AI RECEPTIONIST] Error:', { status, message: err?.message || String(err) });
       res.json({
         text: 'Bu savol bo\'yicha aniq ma\'lumotim yo\'q. Murojaatingizni operatorimizga yuboraman.',
         fallback: true,

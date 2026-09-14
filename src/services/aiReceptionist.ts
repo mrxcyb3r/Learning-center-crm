@@ -1,133 +1,33 @@
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { faqsService, coursesService, landingCmsService } from './repository';
+import {
+  normalizeText,
+  normalizeForMatch,
+  tokenize,
+  levenshtein,
+  matchesKeyword,
+} from './aiNormalize';
+import {
+  buildKnowledgeGraph,
+  toKnowledgeCourse,
+  toKnowledgeTeacher,
+  resolveSingleTeacher,
+  courseTeacherAnswer,
+  teacherProfileAnswer,
+  teacherCoursesAnswer,
+  runKnowledgeAudit,
+  summarizeIssues,
+} from './aiKnowledge';
 import type {
-  CourseData,
-  CampusBranch,
-  TeacherRecord,
-  CenterSettings,
-  Murojaat,
-  MurojaatKind,
-  MurojaatStatus,
-  MurojaatSource,
-} from '../types/crm';
-import { faqsService } from './repository';
-import { coursesService } from './repository';
-import { landingCmsService } from './repository';
-import { normalizeMurojaatSource } from '../utils/murojaat';
+  KnowledgeGraph,
+  KnowledgeTeacher,
+  KnowledgeIssue,
+} from './aiKnowledge';
 
-const CYRILLIC_TO_LATIN: Record<string, string> = {
-  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
-  'ж': 'j', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
-  'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
-  'ф': 'f', 'х': 'x', 'ҳ': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sh',
-  'ъ': '', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya', 'ў': 'o', 'ғ': 'g', 'қ': 'q'
-};
-
-/**
- * Normalize Uzbek text:
- * 1. Lowercase + trim
- * 2. Transliterate Cyrillic to Latin
- * 3. Strip apostrophes (o', g', ', ', `, ʻ, ʼ, ‘)
- * 4. Normalize common phonetic / typo variants (k->q in specific prefixes, etc.)
- */
-export function normalizeText(raw: string): string {
-  let s = (raw || '').trim().toLowerCase();
-  if (!s) return '';
-
-  // Cyrillic to Latin transliteration
-  let trans = '';
-  for (const ch of s) {
-    trans += CYRILLIC_TO_LATIN[ch] !== undefined ? CYRILLIC_TO_LATIN[ch] : ch;
-  }
-  s = trans;
-
-  // Apostrophe removal
-  s = s.split("'").join('');
-  s = s.split('’').join('');
-  s = s.split('`').join('');
-  s = s.split('ʻ').join('');
-  s = s.split('ʼ').join('');
-  s = s.split('‘').join('');
-
-  return s;
-}
-
-/** Collapse whitespace + strip punctuation for reliable matching. */
-export function normalizeForMatch(raw: string): string {
-  const n = normalizeText(raw);
-  if (!n) return '';
-  // Keep letters/numbers/spaces only; replace the rest with spaces.
-  let out = '';
-  for (const ch of n) {
-    const code = ch.codePointAt(0) || 0;
-    const isLetter =
-      (code >= 97 && code <= 122) ||
-      (code >= 48 && code <= 57) ||
-      code === 32;
-    out += isLetter ? ch : ' ';
-  }
-  const parts = out.split(' ').filter(Boolean);
-  return parts.join(' ');
-}
-
-export function tokenize(normalized: string): string[] {
-  if (!normalized) return [];
-  return normalized.split(' ').filter((w) => w.length > 0);
-}
-
-/** Compute Levenshtein distance for fuzzy keyword / entity matching */
-export function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (!a) return b.length;
-  if (!b) return a.length;
-  const m = a.length;
-  const n = b.length;
-  if (Math.abs(m - n) > 2) return 99;
-  const dp: number[] = Array.from({ length: n + 1 }, (_, i) => i);
-  for (let i = 1; i <= m; i++) {
-    let prev = dp[0];
-    dp[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const temp = dp[j];
-      if (a[i - 1] === b[j - 1]) {
-        dp[j] = prev;
-      } else {
-        dp[j] = Math.min(prev + 1, dp[j] + 1, dp[j - 1] + 1);
-      }
-      prev = temp;
-    }
-  }
-  return dp[n];
-}
-
-/** Match keyword with exact phrase inclusion, word boundaries, or token-level fuzzy tolerance */
-export function matchesKeyword(normalized: string, keywords: string[], tokens?: string[]): boolean {
-  if (!normalized) return false;
-  // 1. Direct whole-phrase or substring match
-  for (const kw of keywords) {
-    if (normalized.includes(kw)) return true;
-  }
-  // 2. Token-level fuzzy match (tolerance of 1 edit for >= 5 chars, first letter must match)
-  const toks = tokens || tokenize(normalized);
-  for (const kw of keywords) {
-    const kwTokens = kw.split(' ').filter(Boolean);
-    if (kwTokens.length === 1) {
-      const target = kwTokens[0];
-      if (target.length >= 5) {
-        for (const tok of toks) {
-          if (
-            Math.abs(tok.length - target.length) <= 1 &&
-            tok[0] === target[0] &&
-            levenshtein(tok, target) <= 1
-          ) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
+// Normalization primitives moved to ./aiNormalize — re-exported for callers
+// that historically imported them from this module.
+export { normalizeText, normalizeForMatch, tokenize, levenshtein, matchesKeyword };
 
 // ---------------------------------------------------------------------------
 // Course aliases — RETRIEVAL helpers only. They never create course records.
@@ -194,7 +94,6 @@ const COURSE_ALIAS_GROUPS: Array<{ canonical: string; aliases: string[] }> = [
   },
 ];
 
-// Greeting keywords - handled BEFORE knowledge retrieval
 const GREETING_KEYWORDS = [
   'salom', 'assalomu alaykum', 'assalom', 'hi', 'hello', 'hayrli tong', 'hayrli kun', 'hayrli kech',
   'rahmat', 'katta rahmat', 'xayr', 'ko\'rishguncha', 'salam', 'privet', 'zdravstvuyte', 'assalomualaykum',
@@ -312,6 +211,14 @@ const LEVEL_PLACEMENT_KEYWORDS = [
   'daraja', 'placement', 'test natija', 'qaysi guruhga mos', 'guruhga mos', 'level',
   'darajani aniqlash', 'darajam',
 ];
+// Recommendation needs a human/LLM judgment — answered by Gemini with verified
+// course context, never invented from general knowledge.
+const RECOMMENDATION_KEYWORDS = [
+  'qaysi kurs menga mos', 'qaysi yo\'nalish mos', 'qaysi kursni tanla', 'qaysi kursni tanlasam',
+  'nima maslahat', 'maslahat bering', 'maslahat berasizmi', 'farzandimga qaysi', 'farzandim qaysi',
+  'tavsiya bering', 'suggest', 'which course', 'qaysi kurs eng', 'tayyorlanmoqchi', 'boshlasam',
+  'nimadan boshlashim', 'rekomendatsiya',
+];
 
 export type SupportedIntent =
   | 'course_price'
@@ -329,7 +236,8 @@ export type SupportedIntent =
   | 'admission'
   | 'level_placement'
   | 'results_grants'
-  | 'payment_methods';
+  | 'payment_methods'
+  | 'recommendation';
 
 type EscalationTarget = 'receptionist' | 'teacher' | 'admin';
 
@@ -339,14 +247,12 @@ interface EscalationRule {
   to: EscalationTarget;
 }
 
-// Security: reject attempts to extract internal system instructions or secret tokens
 const PROMPT_LEAK_KEYWORDS = [
   'system instruction', 'system prompt', 'tizim prompti', 'promptingiz',
   'api key', 'apikey', 'secret key', 'parol', 'maxfiy kalit', 'tokeningiz',
   'ignore previous instructions', 'override instructions', 'sen kimsan nima topshiriq',
 ];
 
-// Explicit escalation rules — checked BEFORE intent detection
 const ESCALATION_RULES: EscalationRule[] = [
   {
     keys: ['qaytar', 'refund', 'vozvrat', 'vernut', 'pulimni', 'pulni qaytar', 'bekor qilib pul'],
@@ -382,7 +288,6 @@ const LEVEL_SIGNALS = [
 ];
 
 export function detectEscalation(normalized: string): EscalationRule | null {
-  // Security guard first
   for (const leak of PROMPT_LEAK_KEYWORDS) {
     if (normalized.includes(leak)) {
       return {
@@ -397,11 +302,44 @@ export function detectEscalation(normalized: string): EscalationRule | null {
     if (rule.keys.some((k) => normalized.includes(k))) return rule;
   }
 
-  // Payment-word escalation only when it is about paying/owing, not when asking about price or payment methods
+  // Payment-related escalation only when the user is NOT asking about a price
+  // or about payment methods. Precise phrase checks — never fuzzy matching here,
+  // so "to'lov tariximni ko'rsat" (private data) is never read as a price query.
+  const mentionsPayment =
+    normalized.includes('tolov') ||
+    normalized.includes('tulov') ||
+    normalized.includes('payment') ||
+    normalized.includes('oplata') ||
+    normalized.includes('oplati');
+
+  // Requests about the user's OWN payment/finance history always go to a human.
+  const privatePaymentSignals = [
+    'tarix', 'tarixim', 'rekord', 'qilganman', 'tolagan', "to'lagan", 'balans',
+    'mening tolov', 'mening tulov', 'nechta tolov', 'nechta tulov',
+    'tolovlarim', 'to\'lovlarim', 'tulovlarim',
+  ];
+  if (mentionsPayment && privatePaymentSignals.some((s) => normalized.includes(s))) {
+    return {
+      keys: [],
+      reason: "Shaxsiy to'lov/finans ma'lumotlari — maxfiy, faqat Operator/Admin ko'rish huquqiga ega.",
+      to: 'admin',
+    };
+  }
+
+  const pricePhrases = [
+    'narx', 'narxi', 'qancha', 'kancha', 'nechpul', 'nech pul', 'necha pul', 'nechi pul',
+    'summa', 'oyiga', 'oylik tolov', 'oylik tolovi', 'baho', 'qancha turadi', 'qanchadan',
+    'tolov miqdori', 'tulov miqdori', 'narh', 'narhi', 'cost', 'price', 'skolko', 'tsena',
+  ];
+  const paymentMethodPhrases = [
+    'tolov usuli', 'tolov usullari', "to'lov usuli", "to'lov usullari",
+    'tolov shakli', 'tolov turl', 'tolash', 'qanday tolayman', 'qanday tolasa', 'qanday tol',
+    'click', 'payme', 'naqd', 'karta orqali', 'plastik', 'kartadan', 'payment method',
+  ];
   if (
-    (normalized.includes('tolov') || normalized.includes('tulov') || normalized.includes('payment') || normalized.includes('oplata') || normalized.includes('oplati')) &&
-    !matchesKeyword(normalized, COURSE_PRICE_KEYWORDS) &&
-    !matchesKeyword(normalized, PAYMENT_KEYWORDS)
+    mentionsPayment &&
+    !pricePhrases.some((p) => normalized.includes(p)) &&
+    !paymentMethodPhrases.some((p) => normalized.includes(p))
   ) {
     return {
       keys: [],
@@ -429,12 +367,10 @@ export function detectIntent(normalized: string): SupportedIntent | null {
   if (!normalized) return null;
   const toks = tokenize(normalized);
 
-  // 1. High-specificity intents first
   if (matchesKeyword(normalized, RESULTS_GRANTS_KEYWORDS, toks)) return 'results_grants';
   if (matchesKeyword(normalized, PAYMENT_KEYWORDS, toks)) return 'payment_methods';
   if (matchesKeyword(normalized, TRIAL_KEYWORDS, toks)) return 'trial_lesson';
 
-  // Contact info (prioritize if email / contact is mentioned, to avoid confusion with address)
   if (
     normalized.includes('email') ||
     normalized.includes('pochta') ||
@@ -446,10 +382,7 @@ export function detectIntent(normalized: string): SupportedIntent | null {
     if (matchesKeyword(normalized, CONTACT_KEYWORDS, toks)) return 'contact_info';
   }
 
-  // Working hours vs course schedule
   if (matchesKeyword(normalized, WORKING_HOURS_KEYWORDS, toks)) return 'working_hours';
-
-  // Course duration (e.g. "muddati qancha") checked before course price (which has "qancha")
   if (matchesKeyword(normalized, COURSE_DURATION_KEYWORDS, toks)) return 'course_duration';
   if (matchesKeyword(normalized, COURSE_PRICE_KEYWORDS, toks)) return 'course_price';
   if (matchesKeyword(normalized, COURSE_SCHEDULE_KEYWORDS, toks)) return 'course_schedule';
@@ -462,9 +395,8 @@ export function detectIntent(normalized: string): SupportedIntent | null {
   if (matchesKeyword(normalized, LEVEL_PLACEMENT_KEYWORDS, toks)) return 'level_placement';
   if (matchesKeyword(normalized, FAQ_KEYWORDS, toks)) return 'faq';
   if (matchesKeyword(normalized, COURSE_DESC_KEYWORDS, toks)) return 'course_description';
+  if (matchesKeyword(normalized, RECOMMENDATION_KEYWORDS, toks)) return 'recommendation';
 
-  // Direct short course queries (e.g. "IELTS?", "Ayelts", "CEFR")
-  // Only apply when query is short (<= 4 words or <= 35 chars) to avoid matching random long sentences
   const wordCount = normalized.split(' ').filter(Boolean).length;
   if (wordCount <= 4 || normalized.length <= 35) {
     for (const g of COURSE_ALIAS_GROUPS) {
@@ -502,6 +434,7 @@ export function detectAllIntents(normalized: string): SupportedIntent[] {
     [LEVEL_PLACEMENT_KEYWORDS, 'level_placement'],
     [FAQ_KEYWORDS, 'faq'],
     [COURSE_DESC_KEYWORDS, 'course_description'],
+    [RECOMMENDATION_KEYWORDS, 'recommendation'],
   ];
 
   for (const [keys, intent] of pairs) {
@@ -539,10 +472,6 @@ function courseSearchText(course: any): string {
   );
 }
 
-/**
- * Pure entity matcher (no Firestore) — deterministic and unit-testable.
- * Returns matched courses sorted by score (best first).
- */
 export function matchCoursesByEntity(normalizedQuestion: string, courses: any[]): CourseMatch[] {
   const qMatch = normalizeForMatch(normalizedQuestion);
   if (!qMatch || courses.length === 0) return [];
@@ -556,7 +485,6 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
     let score = 0;
     let via = '';
 
-    // 1) Full normalized title contained in question (strongest).
     const titleNorm = normalizeForMatch(course?.title || '');
     if (titleNorm && titleNorm.length >= 3 && qMatch.includes(titleNorm)) {
       score += 100;
@@ -568,7 +496,6 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
       via = via || 'short_title';
     }
 
-    // 2) Alias phrase contained in BOTH question and course identity.
     for (const [aliasNorm, canonical] of NORMALIZED_ALIAS_TO_CANONICAL) {
       if (aliasNorm.length < 3) continue;
       if (qMatch.includes(aliasNorm) && (cText.includes(aliasNorm) || cText.includes(canonical))) {
@@ -578,7 +505,6 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
       }
     }
 
-    // 2b) Fuzzy alias match (tolerance for minor typos like ayelts, ayles, tsefr)
     if (score === 0) {
       for (const [aliasNorm, canonical] of NORMALIZED_ALIAS_TO_CANONICAL) {
         if (aliasNorm.length < 4) continue;
@@ -595,7 +521,6 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
       }
     }
 
-    // 3) Canonical keyword shared by question and course (e.g. both mention ielts).
     for (const g of COURSE_ALIAS_GROUPS) {
       const canon = g.canonical;
       if (qWords.has(canon) && cText.split(' ').includes(canon)) {
@@ -605,7 +530,6 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
       }
     }
 
-    // 4) Title-token overlap (whole words only, no fuzzy fragments).
     let overlap = 0;
     for (const w of cWords) {
       if (qWords.has(w)) overlap++;
@@ -629,7 +553,6 @@ export function resolveSingleCourse(normalizedQuestion: string, courses: any[]):
   const matches = matchCoursesByEntity(normalizedQuestion, courses);
   if (matches.length === 0) return null;
   if (matches.length === 1) return matches[0].course;
-  // Ambiguous only when top scores tie — otherwise take the clear winner.
   if (matches[0].score > matches[1].score + 5) return matches[0].course;
   return null;
 }
@@ -696,9 +619,8 @@ async function getKnowledgeForIntent(
         if (entityCourse) {
           const vc = toVerifiedCourse(entityCourse);
           if (!vc.price) return null; // price genuinely missing → escalate
-          return [{ text: formatCoursePrice(vc) + ' (manba: courses/' + vc.sourceId + ')', source: 'Kurs: ' + vc.name }];
+          return [{ text: formatCoursePrice(vc), source: 'Kurs: ' + vc.name }];
         }
-        // No entity — list public prices so generic "narxlar" still answers.
         const priced = allCourses.map(toVerifiedCourse).filter((c) => c.price);
         if (priced.length === 0) return null;
         const lines = priced.slice(0, 8).map(formatCoursePrice).join('; ');
@@ -777,11 +699,12 @@ async function getKnowledgeForIntent(
         return [{ text: 'Qabul uchun: saytdagi “Sinov darsiga yozilish” formasini to‘ldiring yoki markaz telefoniga qo‘ng‘iroq qiling. Operator siz bilan bog‘lanadi.', source: 'Qabul tartibi' }];
       }
       case 'level_placement': {
-        return null; // always needs a teacher — escalate
+        return null; // always needs a teacher — escalate / LLM-routed
+      }
+      case 'recommendation': {
+        return null; // judgment needed — LLM-routed with course context
       }
       case 'branch_address': {
-        // settings/center is admin-only; anonymous reads throw permission-denied.
-        // Try it best-effort, then fall back to public CMS / hardcoded center block.
         try {
           const settingsSnap = await getDoc(doc(db, 'settings', 'center'));
           if (settingsSnap.exists()) {
@@ -802,13 +725,11 @@ async function getKnowledgeForIntent(
           if (cms && (cms as any).location1) {
             return [{ text: (cms as any).location1Title + ': ' + (cms as any).location1, source: 'Veb-sayt manzil' }];
           }
-          // Known public address from default landing content (mirrors RenessansLandingPage DEFAULT_FAQS)
           const hardcoded = (cms as any)?.addressUz || (cms as any)?.addressEn;
           if (hardcoded) return [{ text: hardcoded, source: 'Veb-sayt manzil' }];
         } catch {
           // ignore cms read errors
         }
-        // Final fallback — verified public center location (never invented per-branch details)
         return [{ text: "Renessans O'quv Markazi — Yangiobod tumani, 1-sonli umumiy o'rta ta'lim maktabi binosi", source: 'Markaz manzili' }];
       }
       case 'working_hours': {
@@ -833,15 +754,14 @@ async function getKnowledgeForIntent(
         } catch {
           // ignore
         }
-        // Generic fallback — public working hours (always verified)
         return [{ text: 'Dushanba–Shanba, 08:30–21:00. Yakshanba — dam olish.', source: 'Markaz ish tartibi' }];
       }
       case 'trial_lesson': {
-        const trialCourses = allCourses.filter((c: any) => c.isActive !== false && c.isPublic !== false);
         if (entityCourse) {
           const vc = toVerifiedCourse(entityCourse);
           return [{ text: vc.name + ' bo‘yicha sinov darsiga yozilishingiz mumkin. Murojaatingizni yuboring — operator bog‘lanadi.', source: 'Sinov darsi: ' + vc.name }];
         }
+        const trialCourses = allCourses.filter((c: any) => c.isActive !== false && c.isPublic !== false);
         if (trialCourses.length > 0) {
           const first = trialCourses[0];
           return [{ text: first.title + ' sinov darsi mavjud. Ro‘yxatdan o‘tish uchun murojaatingizni yuboring.', source: 'Sinov darsi: ' + first.title }];
@@ -851,7 +771,6 @@ async function getKnowledgeForIntent(
       case 'teacher_info': {
         const { teachersService } = await import('./repository');
         const teachers = await teachersService.getPublicTeachers();
-        // If a person name or subject is mentioned, prefer matching teachers.
         const qNorm = normalizeForMatch(normalizedQuestion);
         const scored = teachers
           .map((t: any) => {
@@ -897,7 +816,6 @@ async function getKnowledgeForIntent(
           return [{ text: best.answer, source: 'Savol: ' + best.question }];
         }
         const first = (faqs as any[])[0];
-        // Only fall back to first FAQ when the question is generic-FAQ-like.
         if (normalizedQuestion.includes('faq') || normalizedQuestion.includes('savol')) {
           return [{ text: first.answer, source: 'Savol: ' + first.question }];
         }
@@ -942,7 +860,6 @@ async function getKnowledgeForIntent(
         } catch {
           // ignore
         }
-        // Final verified public contact fallback (landing page always shows this)
         return [{ text: 'Tel: +998 90 862-22-26 | Telegram: @centerflow_bot', source: 'Markaz kontaktlari' }];
       }
       case 'results_grants': {
@@ -1001,6 +918,58 @@ function buildContext(knowledge: Array<{ text: string; source: string }>): strin
   return '\n--- Verified CenterFlow Data ---\n' + lines.join('\n') + '\n-----------------------\n';
 }
 
+// ---------------------------------------------------------------------------
+// Conversation context — lets bare follow-ups ("kim o'qitadi?", "narxi?")
+// resolve against the last referenced course/teacher.
+// ---------------------------------------------------------------------------
+export interface AiConversationTurn {
+  question: string;
+  answer: string | null;
+  intent: SupportedIntent | null;
+  entity?: string | null;
+  escalated?: boolean;
+}
+
+export interface AiReceptionistOptions {
+  conversation?: AiConversationTurn[];
+}
+
+const MAX_QUESTION_LENGTH = 500;
+const MAX_CONVERSATION_LOOKBACK = 8;
+
+const REFERENTIAL_FOLLOWUP_KEYWORDS = [
+  'kim', 'kimlar', 'kimdir', 'qaysi', 'o\'qitadi', 'oqitadi', 'o\'rgatadi', 'ustoz',
+  'narxi', 'narhi', 'qancha', 'necha', 'davomiyligi', 'muddati', 'qayerda', 'manzili',
+  'jadvali', 'vaqti', 'haqida', 'dars beradi', 'nimani', 'nima', 'mos',
+];
+
+/** True when the current turn reads like a bare follow-up that needs context. */
+function isBareFollowUp(normalized: string): boolean {
+  const toks = tokenize(normalizeForMatch(normalized));
+  if (toks.length === 0 || toks.length > 6) return false;
+  const qMatch = normalizeForMatch(normalized);
+  return REFERENTIAL_FOLLOWUP_KEYWORDS.some((kw) => {
+    const kn = normalizeForMatch(kw);
+    return kn.length >= 3 && qMatch.includes(kn);
+  });
+}
+
+/** Most recent non-escalated turn that named a real entity (course/teacher). */
+function lastConversationEntity(
+  conversation?: AiConversationTurn[]
+): { entity: string } | null {
+  if (!conversation || conversation.length === 0) return null;
+  const start = Math.max(0, conversation.length - MAX_CONVERSATION_LOOKBACK);
+  for (let i = conversation.length - 1; i >= start; i--) {
+    const turn = conversation[i];
+    if (!turn?.escalated && turn?.entity) return { entity: turn.entity };
+  }
+  return null;
+}
+
+/** Intents for which Gemini is genuinely needed (recommendation, level tests). */
+const LLM_ONLY_INTENTS: SupportedIntent[] = ['recommendation', 'level_placement'];
+
 export interface AiProcessResult {
   answer: string | null;
   shouldEscalate: boolean;
@@ -1010,6 +979,8 @@ export interface AiProcessResult {
   entity?: string | null;
   escalatedTo: EscalationTarget | null;
   knowledgeSources: Array<{ text: string; source: string }>;
+  /** Routing/cost metadata: how this turn was answered. */
+  route?: 'graph' | 'llm' | 'greeting' | 'escalation' | 'guard';
 }
 
 export interface KnowledgeHealth {
@@ -1018,10 +989,13 @@ export interface KnowledgeHealth {
   faqs: { activeCount: number };
   results: { totalCount: number; grantCount: number };
   center: { contactConfigured: boolean; branchesConfigured: boolean; workingHoursConfigured: boolean };
+  relationships: { explicit: number; implicit: number; danglingTeacherIds: number; coursesWithoutTeacher: number };
+  auditIssues: KnowledgeIssue[];
+  issueSummary: { critical: number; warning: number; info: number };
   missing: string[];
 }
 
-/** Admin/dev diagnostic — real Firestore counts only, never fabricated. */
+/** Admin/dev diagnostic — real Firestore data + relationship graph audit only. */
 export async function getKnowledgeHealth(): Promise<KnowledgeHealth> {
   const missing: string[] = [];
   let courses: any[] = [];
@@ -1046,6 +1020,36 @@ export async function getKnowledgeHealth(): Promise<KnowledgeHealth> {
     teachers = [];
   }
   if (teachers.length === 0) missing.push('Public o‘qituvchi topilmadi');
+
+  // Relationship graph + knowledge audit (conflicts, dangling refs, site-DB gaps).
+  const relationships = { explicit: 0, implicit: 0, danglingTeacherIds: 0, coursesWithoutTeacher: 0 };
+  let auditIssues: KnowledgeIssue[] = [];
+  let issueSummary = { critical: 0, warning: 0, info: 0 };
+  try {
+    const kCourses = publicCourses.map((c: any) => toKnowledgeCourse(c));
+    const graph = buildKnowledgeGraph(kCourses, teachers.map((t: any) => toKnowledgeTeacher(t)));
+    const links = [...graph.courseTeacher.values()].flat();
+    relationships.explicit = links.filter((l) => l.kind !== 'subject').length;
+    relationships.implicit = links.filter((l) => l.kind === 'subject').length;
+    relationships.danglingTeacherIds = kCourses.reduce(
+      (n, c) => n + c.explicitTeacherIds.filter((id) => !graph.byTeacherId.has(id)).length,
+      0
+    );
+    relationships.coursesWithoutTeacher = kCourses.filter((c) => {
+      const l = graph.courseTeacher.get(c.id) || [];
+      return (c.explicitTeacherIds.length === 0 || l.length === 0) && l.length === 0;
+    }).length;
+    auditIssues = runKnowledgeAudit(graph);
+    issueSummary = summarizeIssues(auditIssues);
+    if (relationships.coursesWithoutTeacher > 0) {
+      missing.push(relationships.coursesWithoutTeacher + ' ta kursda ustoz biriktirilmagan');
+    }
+    if (issueSummary.warning > 0) {
+      missing.push(issueSummary.warning + ' ta ogohlantirish mavjud (shu jumladan sayt-tizim nomuvofiqliklari)');
+    }
+  } catch {
+    auditIssues = [];
+  }
 
   let faqs: any[] = [];
   try {
@@ -1104,13 +1108,33 @@ export async function getKnowledgeHealth(): Promise<KnowledgeHealth> {
     faqs: { activeCount: faqs.length },
     results: { totalCount: publishedResults.length, grantCount: grantResults.length },
     center: { contactConfigured, branchesConfigured, workingHoursConfigured },
+    relationships,
+    auditIssues,
+    issueSummary,
     missing,
   };
 }
 
 class AIReceptionist {
-  async processQuestion(question: string): Promise<AiProcessResult> {
+  async processQuestion(question: string, opts?: AiReceptionistOptions): Promise<AiProcessResult> {
     const normalized = normalizeText(question);
+
+    // Guard — length/emptiness safe limits.
+    if (!normalized || question.length > MAX_QUESTION_LENGTH) {
+      return {
+        answer: "So'rov juda uzun yoki bo'sh. Iltimos, savolni qisqaroq shaklda yozing.",
+        shouldEscalate: true,
+        escalationReason: question.length > MAX_QUESTION_LENGTH
+          ? "So'rov juda uzun — operator ko'rib chiqadi."
+          : "Bo'sh so'rov.",
+        intent: null,
+        intents: [],
+        entity: null,
+        escalatedTo: 'receptionist',
+        knowledgeSources: [],
+        route: 'guard',
+      };
+    }
 
     // Gate 0 — explicit escalation rules win over everything. A refund or
     // complaint mentioning a "price" must still go to a human.
@@ -1123,13 +1147,14 @@ class AIReceptionist {
         intent: null,
         escalatedTo: forced.to,
         knowledgeSources: [],
+        route: 'escalation',
       };
     }
 
     // Gate 1 — greetings: respond naturally, no knowledge retrieval needed.
     if (isGreeting(normalized)) {
       return {
-        answer: "Va alaykum assalom! 😊 Renessans o‘quv markazi haqida savollaringiz bo‘lsa, yordam beraman. Kurslar, narxlar, ustozlar, manzil yoki dars jadvali haqida so‘rashingiz mumkin.",
+        answer: "Va alaykum assalom! Renessans o'quv markazi haqida savollaringiz bo'lsa, yordam beraman. Kurslar, narxlar, ustozlar, manzil yoki dars jadvali haqida so'rashingiz mumkin.",
         shouldEscalate: false,
         escalationReason: null,
         intent: null,
@@ -1137,39 +1162,65 @@ class AIReceptionist {
         entity: null,
         escalatedTo: null,
         knowledgeSources: [],
+        route: 'greeting',
       };
     }
 
-    const intents = detectAllIntents(normalized);
+    // Load the public knowledge base for this turn (courses + teachers).
+    let allCourses: any[] = [];
+    try {
+      allCourses = (await coursesService.getAllCourses()).filter((c: any) => c.isActive !== false && c.isPublic !== false);
+    } catch {
+      allCourses = [];
+    }
+    let rawTeachers: any[] = [];
+    try {
+      const { teachersService } = await import('./repository');
+      rawTeachers = await teachersService.getPublicTeachers();
+    } catch {
+      rawTeachers = [];
+    }
+
+    const kCourses = allCourses.map((c: any) => toKnowledgeCourse(c));
+    const kTeachers = rawTeachers.map((t: any) => toKnowledgeTeacher(t));
+    const graph = buildKnowledgeGraph(kCourses, kTeachers);
+
+    // Resolve whatever entities the raw question names.
+    let teacher = resolveSingleTeacher(normalized, kTeachers);
+    let entityCourse = resolveSingleCourse(normalized, allCourses);
+
+    // Bare follow-ups borrow the last resolved entity from conversation history.
+    const lastEntity = lastConversationEntity(opts?.conversation);
+    let effectiveQuestion = question;
+    if (!teacher && !entityCourse && lastEntity && isBareFollowUp(normalized)) {
+      effectiveQuestion = lastEntity.entity + ' — ' + question;
+    }
+    const effNorm = normalizeText(effectiveQuestion);
+
+    teacher = resolveSingleTeacher(effNorm, kTeachers) || teacher;
+    entityCourse = resolveSingleCourse(effNorm, allCourses) || entityCourse;
+
+    const intents = detectAllIntents(effNorm);
+    if (teacher && !intents.includes('teacher_info')) intents.unshift('teacher_info');
     const intent = intents[0] || null;
+
     if (!intent) {
       return {
         answer: null,
         shouldEscalate: true,
         escalationReason: 'Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi.\n\nOperatorimiz sizga aniq javob berishi mumkin. Iltimos, “Operator bilan bog‘lanish” tugmasini bosing yoki murojaat formasini to‘ldiring.',
         intent: null,
+        intents: [],
+        entity: teacher ? teacher.name : entityCourse ? String((entityCourse as any)?.title || '') : null,
         escalatedTo: 'receptionist',
         knowledgeSources: [],
+        route: 'escalation',
       };
     }
 
-    // Load public courses once — the single source of truth for course intents.
-    let allCourses: any[] = [];
-    const needsCourses = intents.some((it) =>
-      ['course_price', 'course_description', 'course_schedule', 'course_duration', 'course_teacher', 'course_availability', 'trial_lesson', 'admission'].includes(it)
-    );
-    if (needsCourses) {
-      try {
-        allCourses = (await coursesService.getAllCourses()).filter((c: any) => c.isActive !== false && c.isPublic !== false);
-      } catch {
-        allCourses = [];
-      }
-    }
-
-    const entityCourse = needsCourses ? resolveSingleCourse(normalized, allCourses) : null;
     // Ambiguity: two different courses match equally well — ask, don't guess.
-    const matches = needsCourses ? matchCoursesByEntity(normalized, allCourses) : [];
-    const isAmbiguous = matches.length > 1 && matches[0].score <= matches[1].score + 5 && matches[0].score > 0;
+    const matches = matchCoursesByEntity(effNorm, allCourses);
+    const isAmbiguous = matches.length > 1 && matches[0].score > 0 && matches[0].score <= matches[1].score + 5;
     if (isAmbiguous && ['course_price', 'course_schedule', 'course_duration', 'course_teacher'].includes(intent)) {
       return {
         answer: null,
@@ -1177,80 +1228,154 @@ class AIReceptionist {
         escalationReason: 'Qaysi kursni nazarda tutganingizni aniqlay olmadim. Operatorimiz aniqlashtirib beradi.',
         intent,
         intents,
-        entity: null,
+        entity: teacher ? teacher.name : entityCourse ? String((entityCourse as any)?.title || '') : null,
         escalatedTo: 'receptionist',
         knowledgeSources: [],
+        route: 'escalation',
       };
     }
 
-    // Multi-source: gather verified facts for every detected intent (max 3).
+    // Split intents into deterministic (graph/verified data) and LLM-only.
+    const llmOnlyIntents = intents.filter((i) => LLM_ONLY_INTENTS.includes(i));
+    const detIntents = intents.filter((i) => !LLM_ONLY_INTENTS.includes(i));
+
+    // Gather verified facts for every deterministic intent (max 3).
     const knowledgeList: Array<{ text: string; source: string }> = [];
-    for (const one of intents.slice(0, 3)) {
-      const k = await getKnowledgeForIntent(one, normalized, entityCourse, allCourses);
+    for (const one of detIntents.slice(0, 3)) {
+      const k = await this.retrieveFacts(one, effNorm, effectiveQuestion, entityCourse, teacher, allCourses, graph);
       if (k) knowledgeList.push(...k);
     }
 
-    if (knowledgeList.length === 0) {
-      const isPriceMissing =
-        intent === 'course_price' && entityCourse && !Number((entityCourse as any)?.monthlyFee) && !(entityCourse as any)?.formattedFee;
-      return {
-        answer: isPriceMissing
+    const entityValue = entityCourse ? String((entityCourse as any)?.title || '') : teacher ? teacher.name : null;
+
+    // Deterministic-only route: answer purely from verified data, NO Gemini.
+    if (llmOnlyIntents.length === 0) {
+      if (knowledgeList.length === 0) {
+        const isPriceMissing =
+          intent === 'course_price' && entityCourse && !Number((entityCourse as any)?.monthlyFee) && !(entityCourse as any)?.formattedFee;
+        const msg = isPriceMissing
           ? "Bu kursning narxi hozircha tizimda ko‘rsatilmagan. Operatorimiz aniq ma’lumot beradi."
-          : "Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi. Operatorimiz sizga aniq javob berishi mumkin.",
-        shouldEscalate: true,
-        escalationReason: isPriceMissing
-          ? 'Bu kursning narxi hozircha tizimda ko‘rsatilmagan. Operatorimiz aniq ma’lumot beradi.'
-          : 'Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi. Operatorimiz sizga aniq javob berishi mumkin.',
+          : "Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi. Operatorimiz sizga aniq javob berishi mumkin.";
+        return {
+          answer: msg,
+          shouldEscalate: true,
+          escalationReason: msg,
+          intent,
+          intents,
+          entity: entityValue,
+          escalatedTo: 'receptionist',
+          knowledgeSources: [],
+          route: 'escalation',
+        };
+      }
+      return {
+        answer: knowledgeList.map((k) => k.text).join('\n'),
+        shouldEscalate: false,
+        escalationReason: null,
         intent,
         intents,
-        entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
-        escalatedTo: 'receptionist',
-        knowledgeSources: [],
+        entity: entityValue,
+        escalatedTo: null,
+        knowledgeSources: knowledgeList,
+        route: 'graph',
       };
     }
 
+    // LLM-only route (recommendation / level placement): Gemini with verified
+    // context, validated ground-by-fact before being shown.
     const context = buildContext(knowledgeList);
-    const aiAnswer = await this.generateAIResponse(question, context, intent);
+    const aiAnswer = await this.generateAIResponse(effectiveQuestion, context, intent ?? (llmOnlyIntents[0] as SupportedIntent));
 
-    if (!aiAnswer) {
-      return {
-        answer: "Uzr, hozir javob tayyorlab bo'lmadi. Operatorimiz sizga aniq javob beradi.",
-        shouldEscalate: true,
-        escalationReason: 'AI javobi shakllantirib bo‘lmadi. Murojaatingiz operatorga yo‘natilmoqda.',
-        intent,
-        intents,
-        entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
-        escalatedTo: 'receptionist',
-        knowledgeSources: knowledgeList,
-      };
+    let validation: { ok: boolean; reason: string } = { ok: false, reason: 'AI javobi shakllantirib bo‘lmadi.' };
+    if (aiAnswer) {
+      validation = knowledgeList.length > 0
+        ? { ok: true, reason: '' } // context binds the model — skip fact-gating
+        : this.validateAIAnswer(aiAnswer, knowledgeList, intent);
     }
 
-    const validation = this.validateAIAnswer(aiAnswer, knowledgeList, intent);
-    if (!validation.ok) {
-      // Log diagnostic info server-side, show friendly message to user
-      console.warn('[AI Validation Failed]', { reason: validation.reason, intent, question });
+    if (aiAnswer && validation.ok) {
       return {
-        answer: "Uzr, hozir bu ma'lumotni tasdiqlay olmadim. Operatorimiz sizga aniq javob beradi.",
-        shouldEscalate: true,
-        escalationReason: validation.reason,
+        answer: aiAnswer,
+        shouldEscalate: false,
+        escalationReason: null,
         intent,
         intents,
-        entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
-        escalatedTo: 'receptionist',
+        entity: entityValue,
+        escalatedTo: null,
         knowledgeSources: knowledgeList,
+        route: 'llm',
+      };
+    }
+    if (aiAnswer) {
+      console.warn('[AI Validation Failed]', { reason: validation.reason, intent, question });
+    }
+
+    // Model failure fallback: show verified facts if we have them.
+    if (knowledgeList.length > 0) {
+      return {
+        answer: knowledgeList.map((k) => k.text).join('\n'),
+        shouldEscalate: false,
+        escalationReason: null,
+        intent,
+        intents,
+        entity: entityValue,
+        escalatedTo: null,
+        knowledgeSources: knowledgeList,
+        route: 'graph',
       };
     }
 
     return {
-      answer: aiAnswer,
-      shouldEscalate: false,
-      escalationReason: null,
+      answer: "Uzr, hozir javob tayyorlab bo'lmadi. Operatorimiz sizga aniq javob beradi.",
+      shouldEscalate: true,
+      escalationReason: validation.reason || 'AI javobi shakllantirib bo‘lmadi. Murojaatingiz operatorga yo‘natilmoqda.',
       intent,
       intents,
-      entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
-      escalatedTo: null,
+      entity: entityValue,
+      escalatedTo: 'receptionist',
       knowledgeSources: knowledgeList,
+      route: 'escalation',
     };
+  }
+
+  /** Per-intent fact retrieval. Graph answers first, then the generic branch. */
+  private async retrieveFacts(
+    intent: SupportedIntent,
+    normalizedQuestion: string,
+    rawQuestion: string,
+    entityCourse: any | null,
+    teacher: KnowledgeTeacher | null,
+    allCourses: any[],
+    graph: KnowledgeGraph
+  ): Promise<Array<{ text: string; source: string }> | null> {
+    // Course → teacher: relationship graph (explicit + implicit subject links).
+    if (intent === 'course_teacher' && entityCourse) {
+      const kc = toKnowledgeCourse(entityCourse);
+      const links = graph.courseTeacher.get(kc.id) || [];
+      const ans = courseTeacherAnswer(kc, links, graph.byTeacherId);
+      if (ans) return [{ text: ans, source: 'Kurs: ' + kc.canonicalName }];
+    }
+
+    // Teacher profile (+ the courses they teach when the question asks for them).
+    if (intent === 'teacher_info' && teacher) {
+      const qMatch = normalizeForMatch(rawQuestion);
+      const wantsCourses = qMatch.includes('kurs') || qMatch.includes('dars beradi') || qMatch.includes('qaysi') || qMatch.includes('fandan');
+      const links = graph.teacherCourses.get(teacher.id) || [];
+      const out: Array<{ text: string; source: string }> = [];
+      if (wantsCourses) {
+        const ca = teacherCoursesAnswer(teacher, links, graph.byCourseId);
+        if (ca) out.push({ text: ca, source: 'O\'qituvchi: ' + teacher.name });
+      }
+      out.push({ text: teacherProfileAnswer(teacher), source: 'O\'qituvchi: ' + teacher.name });
+      if (out.length) return out;
+    }
+
+    // Course price genuinely missing → escalate with a clear message.
+    if (intent === 'course_price' && entityCourse && !Number((entityCourse as any)?.monthlyFee) && !(entityCourse as any)?.formattedFee) {
+      return null;
+    }
+
+    return getKnowledgeForIntent(intent, normalizedQuestion, entityCourse, allCourses);
   }
 
   // Normalize price for verification - handles various formats
@@ -1259,7 +1384,6 @@ class AIReceptionist {
       return String(value);
     }
     const s = String(value).trim();
-    // Remove currency suffixes, spaces, commas, apostrophes, dots (thousands separators)
     return s
       .replace(/[^\d]/g, '')
       .replace(/^0+/, '') || '0';
@@ -1337,7 +1461,6 @@ class AIReceptionist {
       const hit = courseNames.some((cn) => {
         const tokens = tokenize(cn).filter((w) => w.length > 2);
         if (tokens.length === 0) return true;
-        // At least one significant course token (or its alias canonical) present.
         return tokens.some((tok) => normAnswer.includes(tok));
       });
       if (!hit) {
@@ -1345,7 +1468,6 @@ class AIReceptionist {
       }
     }
 
-    // Generic overlap gate (lenient): guards against fully off-topic text.
     const kLower = knowledgeList.map((k) => k.text.toLowerCase()).join(' ');
     const knownWords = kLower.split(' ').filter((w: string) => w.length > 3);
     const answerWords = answer.toLowerCase().split(' ').filter((w: string) => w.length > 3);

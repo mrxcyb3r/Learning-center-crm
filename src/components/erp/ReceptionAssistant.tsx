@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, Loader2, User, Bot, AlertCircle } from 'lucide-react';
 import { aiReceptionist } from '../../services/aiReceptionist';
+import type { AiConversationTurn } from '../../services/aiReceptionist';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface ChatMsg {
@@ -62,6 +63,7 @@ export const ReceptionAssistant: React.FC = () => {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<AiConversationTurn[]>([]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -74,7 +76,15 @@ export const ReceptionAssistant: React.FC = () => {
     setInput('');
     setBusy(true);
     try {
-      const result = await aiReceptionist.processQuestion(q);
+      const result = await aiReceptionist.processQuestion(q, { conversation: conversationRef.current });
+      conversationRef.current.push({
+        question: q,
+        answer: result.answer,
+        intent: result.intent,
+        entity: result.entity ?? null,
+        escalated: result.shouldEscalate,
+      });
+      if (conversationRef.current.length > 8) conversationRef.current.shift();
       if (result.answer) {
         setMessages((m) => [...m, { role: 'assistant', text: result.answer as string, escalated: result.shouldEscalate }]);
       } else {

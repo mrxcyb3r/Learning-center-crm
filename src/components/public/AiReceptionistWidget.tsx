@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, Phone } from 'lucide-react';
 import { aiReceptionist } from '../../services/aiReceptionist';
+import type { AiConversationTurn } from '../../services/aiReceptionist';
 
 interface ChatMsg {
   id: string;
@@ -42,6 +43,7 @@ export const AiReceptionistWidget: React.FC = () => {
   const [opPhone, setOpPhone] = useState('');
   const [opSent, setOpSent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<AiConversationTurn[]>([]);
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -85,7 +87,16 @@ export const AiReceptionistWidget: React.FC = () => {
 
       setSending(true);
       try {
-        const result = await aiReceptionist.processQuestion(text);
+        const result = await aiReceptionist.processQuestion(text, { conversation: conversationRef.current });
+        // Track conversation history for bare follow-up resolution.
+        conversationRef.current.push({
+          question: text,
+          answer: result.answer,
+          intent: result.intent,
+          entity: result.entity ?? null,
+          escalated: result.shouldEscalate,
+        });
+        if (conversationRef.current.length > 8) conversationRef.current.shift();
         if (result.answer) {
           pushMsg({
             id: nextId(),

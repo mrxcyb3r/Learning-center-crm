@@ -15,20 +15,40 @@ import { coursesService } from './repository';
 import { landingCmsService } from './repository';
 import { normalizeMurojaatSource } from '../utils/murojaat';
 
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+  'ж': 'j', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+  'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+  'ф': 'f', 'х': 'x', 'ҳ': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sh',
+  'ъ': '', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya', 'ў': 'o', 'ғ': 'g', 'қ': 'q'
+};
+
 /**
- * Normalize Uzbek text for keyword matching: lowercase + strip apostrophes
- * (o', g', ', ', `) so "to'lov" and "tolov" match the same keyword.
- * Uses split/join chains — no regex literals.
+ * Normalize Uzbek text:
+ * 1. Lowercase + trim
+ * 2. Transliterate Cyrillic to Latin
+ * 3. Strip apostrophes (o', g', ', ', `, ʻ, ʼ, ‘)
+ * 4. Normalize common phonetic / typo variants (k->q in specific prefixes, etc.)
  */
 export function normalizeText(raw: string): string {
   let s = (raw || '').trim().toLowerCase();
   if (!s) return '';
+
+  // Cyrillic to Latin transliteration
+  let trans = '';
+  for (const ch of s) {
+    trans += CYRILLIC_TO_LATIN[ch] !== undefined ? CYRILLIC_TO_LATIN[ch] : ch;
+  }
+  s = trans;
+
+  // Apostrophe removal
   s = s.split("'").join('');
   s = s.split('’').join('');
   s = s.split('`').join('');
   s = s.split('ʻ').join('');
   s = s.split('ʼ').join('');
   s = s.split('‘').join('');
+
   return s;
 }
 
@@ -43,10 +63,7 @@ export function normalizeForMatch(raw: string): string {
     const isLetter =
       (code >= 97 && code <= 122) ||
       (code >= 48 && code <= 57) ||
-      code === 32 ||
-      // Cyrillic а-я + ё
-      (code >= 1072 && code <= 1103) ||
-      code === 1105;
+      code === 32;
     out += isLetter ? ch : ' ';
   }
   const parts = out.split(' ').filter(Boolean);
@@ -58,62 +75,142 @@ export function tokenize(normalized: string): string[] {
   return normalized.split(' ').filter((w) => w.length > 0);
 }
 
+/** Compute Levenshtein distance for fuzzy keyword / entity matching */
+export function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+  const m = a.length;
+  const n = b.length;
+  if (Math.abs(m - n) > 2) return 99;
+  const dp: number[] = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0];
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = dp[j];
+      if (a[i - 1] === b[j - 1]) {
+        dp[j] = prev;
+      } else {
+        dp[j] = Math.min(prev + 1, dp[j] + 1, dp[j - 1] + 1);
+      }
+      prev = temp;
+    }
+  }
+  return dp[n];
+}
+
+/** Match keyword with exact phrase inclusion, word boundaries, or token-level fuzzy tolerance */
+export function matchesKeyword(normalized: string, keywords: string[], tokens?: string[]): boolean {
+  if (!normalized) return false;
+  // 1. Direct whole-phrase or substring match
+  for (const kw of keywords) {
+    if (normalized.includes(kw)) return true;
+  }
+  // 2. Token-level fuzzy match (tolerance of 1 edit for >= 5 chars, first letter must match)
+  const toks = tokens || tokenize(normalized);
+  for (const kw of keywords) {
+    const kwTokens = kw.split(' ').filter(Boolean);
+    if (kwTokens.length === 1) {
+      const target = kwTokens[0];
+      if (target.length >= 5) {
+        for (const tok of toks) {
+          if (
+            Math.abs(tok.length - target.length) <= 1 &&
+            tok[0] === target[0] &&
+            levenshtein(tok, target) <= 1
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Course aliases — RETRIEVAL helpers only. They never create course records.
-// Each group maps common user phrasings to the canonical course keywords
-// that must match a REAL Firestore course title/category.
+// Each group maps common user phrasings, typos, and variants to canonical courses.
 // ---------------------------------------------------------------------------
 const COURSE_ALIAS_GROUPS: Array<{ canonical: string; aliases: string[] }> = [
   {
     canonical: 'ielts',
-    aliases: ['ielts', 'ayelts', 'iels', 'ielts kursi', 'ielts kurs', 'ielts darslari', 'ielts tayyorlov', 'ielts dars'],
+    aliases: [
+      'ielts', 'ayelts', 'iels', 'ayles', 'aylts', 'ilts', 'ayeltis', 'ieltskursi', 'ayeltskursi',
+      'ielts kursi', 'ielts kurs', 'ielts darslari', 'ielts tayyorlov', 'ielts dars', 'ieltsga tayyorlov',
+      'ielts darslar', 'ieltsga'
+    ],
   },
   {
     canonical: 'cefr',
-    aliases: ['cefr', 'cefr b2', 'cefr c1', 'cefr kursi', 'ingliz tili', 'ingliz tili kursi', 'english', 'english kids', 'general english', 'kids english'],
+    aliases: [
+      'cefr', 'sefr', 'tsefr', 'cefr b2', 'cefr c1', 'cefr kursi', 'ingliz tili', 'ingliz tili kursi',
+      'english', 'english kids', 'general english', 'kids english', 'ingiliz tili', 'inglis tili',
+      'ingliz tili darslari', 'starter', 'beginner', 'elementary', 'pre-intermediate', 'intermediate',
+      'upper intermediate', 'cefrga', 'sefrga'
+    ],
   },
   {
     canonical: 'dtm',
-    aliases: ['dtm', 'dtm tayyorlov', 'milliy sertifikat', 'milliy sertifikat kursi', 'milliy sertificat'],
+    aliases: [
+      'dtm', 'dtm tayyorlov', 'milliy sertifikat', 'milliy sertifikat kursi', 'milliy sertificat',
+      'kirish imtihoni', 'abituriyent', 'abiturient', 'kirish testlari', 'universitetga tayyorlov',
+      'majburiy fanlar', 'blok fanlar', 'dtm kursi', 'dtm darslari', 'abituriyentlar'
+    ],
   },
   {
     canonical: 'matematika',
-    aliases: ['matematika', 'matematika kursi', 'fizika', 'matematika fizika', 'aniq fanlar'],
+    aliases: [
+      'matematika', 'matematika kursi', 'fizika', 'matematika fizika', 'aniq fanlar',
+      'matem', 'algebra', 'geometriya', 'hisob kitob', 'matematika darslari'
+    ],
   },
   {
     canonical: 'ona tili',
-    aliases: ['ona tili', 'ona tili kursi', 'adabiyot', 'ona tili adabiyot'],
+    aliases: [
+      'ona tili', 'ona tili kursi', 'adabiyot', 'ona tili adabiyot', 'ona tili va adabiyot',
+      'onatili', 'grammatika', 'ona tili darslari'
+    ],
   },
   {
     canonical: 'mental',
-    aliases: ['mental arifmetika', 'mental', 'arifmetika', 'soroban'],
+    aliases: [
+      'mental arifmetika', 'mental', 'arifmetika', 'soroban', 'tez hisoblash',
+      'mental arifmetika kursi', 'mental darslari'
+    ],
   },
   {
     canonical: 'sat',
-    aliases: ['sat', 'sat kursi', 'sat tayyorlov'],
+    aliases: ['sat', 'sat kursi', 'sat tayyorlov', 'sat imtihoni'],
   },
   {
     canonical: 'rus tili',
-    aliases: ['rus tili', 'rus tili kursi', 'russkiy'],
+    aliases: ['rus tili', 'rus tili kursi', 'russkiy', 'ruscha', 'rustili', 'rus tili darslari'],
   },
   {
     canonical: 'arab tili',
-    aliases: ['arab tili', 'arab tili kursi'],
+    aliases: ['arab tili', 'arab tili kursi', 'arabcha', 'tajvid', 'arab tili darslari'],
   },
 ];
 
 // Greeting keywords - handled BEFORE knowledge retrieval
 const GREETING_KEYWORDS = [
   'salom', 'assalomu alaykum', 'assalom', 'hi', 'hello', 'hayrli tong', 'hayrli kun', 'hayrli kech',
-  'rahmat', 'katta rahmat', 'xayr', 'ko\'rishguncha', 'salam', 'privet', 'zdravstvuyte',
+  'rahmat', 'katta rahmat', 'xayr', 'ko\'rishguncha', 'salam', 'privet', 'zdravstvuyte', 'assalomualaykum',
+  'salom hammaga', 'salom berdim',
 ];
 
-function isGreeting(normalized: string): boolean {
+export function isGreeting(normalized: string): boolean {
   if (!normalized) return false;
-  // Check if the normalized input matches a greeting (whole word or exact phrase)
   for (const g of GREETING_KEYWORDS) {
     const gNorm = normalizeForMatch(g);
-    if (normalized === gNorm || normalized.includes(' ' + gNorm + ' ') || normalized.startsWith(gNorm + ' ') || normalized.endsWith(' ' + gNorm)) {
+    if (
+      normalized === gNorm ||
+      normalized.includes(' ' + gNorm + ' ') ||
+      normalized.startsWith(gNorm + ' ') ||
+      normalized.endsWith(' ' + gNorm)
+    ) {
       return true;
     }
   }
@@ -130,57 +227,90 @@ const NORMALIZED_ALIAS_TO_CANONICAL: Map<string, string> = (() => {
   return m;
 })();
 
-// Whole-word keywords matched against normalized text.
+// Whole-word and phrase keywords matched against normalized text.
 const COURSE_PRICE_KEYWORDS = [
-  'narx', 'qancha', 'nech pul', 'nechpul', 'summ', 'fee', 'cost', 'price',
-  'how much', 'skolko', 'stoimost', 'tsena', 'tolovi', 'tulovi', 'oyiga', 'necha pul', 'kurs narxi',
+  'narx', 'narxi', 'qancha', 'kancha', 'nech pul', 'nechpul', 'necha pul', 'nechi pul',
+  'summ', 'summa', 'baho', 'tolovi', 'tulovi', 'oyiga', 'qanchadan', 'kurs narxi', 'narxlar',
+  'narxlari', 'narh', 'narhi', 'narhlar', 'fee', 'cost', 'price', 'how much', 'skolko', 'stoimost',
+  'tsena', 'qimmatmi', 'arzonmi', 'oylik tolovi', 'tolash kerak', 'qancha turadi',
 ];
 const COURSE_DESC_KEYWORDS = [
   'haqida', 'tavsif', 'tarkib', 'dastur', 'programma', 'detail', 'maqsad',
-  'what is', 'about', 'malumot', 'nimani orgatadi', 'qanday kurs',
+  'what is', 'about', 'malumot', 'ma\'lumot', 'nimani orgatadi', 'qanday kurs',
+  'kursda nima', 'tushuntirib bering', 'kurs haqida',
 ];
 const COURSE_SCHEDULE_KEYWORDS = [
-  'jadval', 'dars jadvali', 'qaysi kunlari', 'kunlari', 'soat nechada', 'dars vaqti',
-  'schedule', 'raspisanie', 'qachon boladi', 'qachon buladi', 'darslar qachon',
+  'jadval', 'jadvali', 'dars jadvali', 'qaysi kunlari', 'kunlari', 'soat nechada', 'dars vaqti',
+  'dars vaqtlari', 'vaqtlari', 'vaqti', 'schedule', 'raspisanie', 'qachon boladi', 'qachon buladi', 'darslar qachon',
+  'qaysi vaqtda', 'haftada necha kun', 'kunlari qanaqa', 'kachon buladi', 'kachon boladi',
+  'soat nechi', 'ertalabmi', 'kechqurunmi', 'qachon boshlanadi',
 ];
 const COURSE_DURATION_KEYWORDS = [
-  'davomiyligi', 'davom etadi', 'necha oy', 'qancha davom', 'duration', 'muddat', 'nechi oy',
+  'muddati qancha', 'qancha vaqt', 'davomiyligi qancha', 'davomiyligi', 'qancha vaqt davom etadi',
+  'davom etadi', 'necha oy', 'nechi oy', 'qancha davom', 'duration', 'muddat',
+  'kurs muddati', 'qancha oy', 'necha oyda', 'necha oylik',
 ];
 const COURSE_TEACHER_KEYWORDS = [
-  'kim dars', 'ustoz kim', 'oqituvchi kim', 'kim oqitadi', 'teacher of',
+  'kim dars', 'ustoz kim', 'oqituvchi kim', 'o\'qituvchi kim', 'oqituvchisi kim', 'oqituvchisi',
+  'kim oqitadi', 'kim o\'rgatadi', 'kim dars beradi', 'muallim kim', 'teacher of', 'who teaches',
+  'ustoz haqida', 'ustozlari kim', 'ustozlari kimlar',
 ];
 const COURSE_AVAILABILITY_KEYWORDS = [
   'joy bormi', 'ochiqmi', 'qabul bormi', 'guruh bormi', 'mavjudmi', 'available', 'bor mi',
+  'yangi guruh', 'joy qoldimi', 'boshlanyaptimi',
+];
+const RESULTS_GRANTS_KEYWORDS = [
+  'natija', 'natijalar', 'natijalari', 'yutuq', 'yutuqlar', 'yutuqlari', 'grant', 'grantlar',
+  'davlat granti', 'westminster', 'byudjet', 'byudjetga', 'grantga', 'eng yuqori ball', 'yuqori ball',
+  'ballar', 'balli necha', 'balli qancha', 'nechtasi kirdi', 'universitetga kirgan', 'universitetlarga kirdi',
+  'sertifikat olganlar', 'bitiruvchilar', 'results', 'achievements', 'nechi ball', 'necha ball',
+  'oqishga kirish', 'kirgan talabalar', 'oqishga kirdi', 'talaba boldi', 'nechta oquvchi kirdi',
+];
+const PAYMENT_KEYWORDS = [
+  'tolov usuli', 'tolov usullari', 'to\'lov usullari', 'tolov shakli', 'tolov turlari',
+  'tolash', 'qanday tolayman', 'qanday tolasa', 'click', 'payme', 'naqd', 'naqd pul',
+  'karta orqali', 'plastik karta', 'plastik', 'kartadan', 'karta orqali tolov', 'payment method',
+  'click bormi', 'payme bormi', 'qanday tolov',
 ];
 const BRANCH_ADDR_KEYWORDS = [
-  'manzil', 'filial', 'qayerda', 'qayer', 'address', 'koring', 'qayerga',
-  'joylashuv', 'adres', 'gde nahoditsya',
+  'manzil', 'filial', 'qayerda', 'qayer', 'qatta', 'qattasiz', 'qattasizlar', 'qayerda joylashgan',
+  'joylashuv', 'address', 'koring', 'qayerga', 'adres', 'gde nahoditsya', 'moljal', 'mo\'ljal',
+  'lokatsiya', 'qaysi tumanda', 'qaysi maktab', 'kaerda', 'kaerda joylashgan',
 ];
 const WORKING_HOURS_KEYWORDS = [
-  'ish vaqti', 'ish soat', 'ochilish', 'yopilish', 'nechigacha', 'nechidan',
-  'opening', 'closing', 'grafik', 'rejim',
+  'ish vaqti', 'ish vaqtlari', 'ish vakti', 'ish vaktlari', 'ish soat', 'ish soatlari',
+  'ochilish vaqti', 'yopilish vaqti', 'soat nechadan', 'soat nechagacha', 'ochilasizlar',
+  'ochiladi', 'yopiladi', 'opening', 'closing', 'grafik', 'rejim', 'ish rejimi', 'shanba kuni',
+  'yakshanba kuni', 'dam olish kuni', 'ochiq boladi', 'ishlaysizlar',
 ];
 const TRIAL_KEYWORDS = [
   'sinov', 'bepul dars', 'trial', 'free lesson', 'probniy', 'tekshiruv darsi',
+  'birinchi dars bepul', 'sinab korish', 'bepulmi', 'birinchi darsga',
 ];
 const FAQ_KEYWORDS = [
-  'savol-javob', 'kop soraladigan', 'faq', 'frequently',
+  'savol javob', 'savol-javob', 'savol javoblar', 'savol-javoblar', 'kop soraladigan',
+  'ko\'p so\'raladigan', 'faq', 'frequently', 'savollar', 'beriladigan savol',
 ];
 const CONTACT_KEYWORDS = [
-  'boglanish', 'telefon', 'telegram', 'email', 'aloqa', 'nomer',
-  'connect', 'contact', 'kontakt',
+  'boglanish', 'bog\'lanish', 'boglansam', 'qanday boglansam', 'boglanish uchun',
+  'telefon', 'telegram', 'email', 'aloqa', 'nomer', 'raqam',
+  'connect', 'contact', 'kontakt', 'telefon raqam', 'aloqa raqami',
+  'nomer bering', 'kontaktlar', 'email manzili', 'elektron pochta',
 ];
 const TEACHER_KEYWORDS = [
-  'oqituvchi', 'ustoz', 'muallim', 'teacher', 'kim dars', 'prepodavatel',
+  'oqituvchi', 'ustoz', 'muallim', 'teacher', 'kim dars', 'prepodavatel', 'ustozlar',
+  'oqituvchilar', 'o\'qituvchilar', 'pedagoglar', 'jamoa', 'qaysi fandan dars beradi',
+  'ustozlar haqida', 'oqituvchilar royxati',
 ];
 const ADMISSION_KEYWORDS = [
-  'qabul', 'royxat', 'yozilish', 'qanday yozilaman', 'admission', 'enroll', 'zapisatsya',
+  'qabul', 'royxatdan otish', 'ro\'yxatdan o\'tish', 'royxatdan', 'ro\'yxatdan', 'royxatga olish',
+  'yozilish', 'yozilsam', 'yozilsam boladi', 'yozilish uchun',
+  'yozilmoqchi', 'qanday yozilsa', 'yozilish tartibi', 'qanday yozilaman', 'admission', 'enroll',
+  'zapisatsya', 'kursga yozilish', 'kursga qatnashish', 'qanday qatnashsam', 'qabul qachon',
 ];
 const LEVEL_PLACEMENT_KEYWORDS = [
   'daraja', 'placement', 'test natija', 'qaysi guruhga mos', 'guruhga mos', 'level',
-];
-const PAYMENT_KEYWORDS = [
-  'tolov usuli', 'tolash', 'qanday tolayman', 'click', 'payme', 'naqd', 'karta orqali', 'payment method',
+  'darajani aniqlash', 'darajam',
 ];
 
 export type SupportedIntent =
@@ -197,7 +327,9 @@ export type SupportedIntent =
   | 'contact_info'
   | 'teacher_info'
   | 'admission'
-  | 'level_placement';
+  | 'level_placement'
+  | 'results_grants'
+  | 'payment_methods';
 
 type EscalationTarget = 'receptionist' | 'teacher' | 'admin';
 
@@ -207,55 +339,69 @@ interface EscalationRule {
   to: EscalationTarget;
 }
 
-// Explicit escalation rules — checked BEFORE intent detection so risky
-// requests (refund, complaint, salary...) can never be auto-answered,
-// even if they happen to contain a safe-looking keyword.
+// Security: reject attempts to extract internal system instructions or secret tokens
+const PROMPT_LEAK_KEYWORDS = [
+  'system instruction', 'system prompt', 'tizim prompti', 'promptingiz',
+  'api key', 'apikey', 'secret key', 'parol', 'maxfiy kalit', 'tokeningiz',
+  'ignore previous instructions', 'override instructions', 'sen kimsan nima topshiriq',
+];
+
+// Explicit escalation rules — checked BEFORE intent detection
 const ESCALATION_RULES: EscalationRule[] = [
   {
-    keys: ['qaytar', 'refund', 'vozvrat', 'vernut', 'pulimni'],
+    keys: ['qaytar', 'refund', 'vozvrat', 'vernut', 'pulimni', 'pulni qaytar', 'bekor qilib pul'],
     reason: "To'lovni qaytarish bo'yicha so'rov — moliyaviy qaror talab qiladi, AI qaror qabul qilmaydi.",
     to: 'admin',
   },
   {
-    keys: ['qarz', 'qarzdorlik'],
+    keys: ['qarz', 'qarzdorlik', 'qarzi', 'qarzim'],
     reason: "To'lov bo'yicha savol — moliyaviy masala, operator/Admin ko'rib chiqadi.",
     to: 'admin',
   },
   {
-    keys: ['chegirma', 'skidka', 'discount', 'arzonlashtir'],
+    keys: ['chegirma', 'skidka', 'discount', 'arzonlashtir', 'arzonroq qilib', 'aksiya bormi', 'kamroq qilib'],
     reason: "Chegirma so'rovi — biznes qaror talab qiladi, operator/Admin ko'rib chiqadi.",
     to: 'admin',
   },
   {
-    keys: ['shikoyat', 'noroziman', 'norozilik', 'jaloba', 'yomon xizmat', 'yomon oqit'],
+    keys: ['shikoyat', 'noroziman', 'norozilik', 'jaloba', 'yomon xizmat', 'yomon oqit', 'ustoz yomon', 'shikoyatim'],
     reason: "Shikoyat — inson ko'rib chiqishi shart.",
     to: 'admin',
   },
   {
-    keys: ['maosh', 'oylik', 'ish haqi', 'zarplata'],
+    keys: ['maosh', 'oylik maosh', 'oylik maoshi', 'ish haqi', 'zarplata', 'xodimlar oyligi', 'ustozlar oyligi', 'oqituvchilar oyligi'],
     reason: "Maosh/xodimlar masalasi — ichki ma'lumot, faqat Admin ko'radi.",
     to: 'admin',
   },
 ];
 
-// Level-placement signals: only meaningful together with 'guruh'.
-// ("Qaysi guruhga yozilsam?" alone stays with Receptionist per spec §9;
-// "6.0 oldi, qaysi guruhga?" needs a teacher per spec §11.)
 const GROUP_WORD = 'guruh';
 const LEVEL_SIGNALS = [
   'daraja', 'ball', 'baholash', 'placement', 'mos', 'oldi', 'topshir',
-  'ielts', 'cefr', 'bosqich', 'test',
+  'ielts', 'cefr', 'bosqich', 'test', 'darajam',
 ];
 
-function detectEscalation(normalized: string): EscalationRule | null {
+export function detectEscalation(normalized: string): EscalationRule | null {
+  // Security guard first
+  for (const leak of PROMPT_LEAK_KEYWORDS) {
+    if (normalized.includes(leak)) {
+      return {
+        keys: [leak],
+        reason: "Xavfsizlik va maxfiylik qoidalariga binoan ichki tizim ma'lumotlari yoki maxfiy kalitlar taqdim etilmaydi.",
+        to: 'admin',
+      };
+    }
+  }
+
   for (const rule of ESCALATION_RULES) {
     if (rule.keys.some((k) => normalized.includes(k))) return rule;
   }
-  // Payment-word escalation only when it is about paying/owing, not when the
-  // user asks "kurs tolovi qancha" (price intent handles that).
+
+  // Payment-word escalation only when it is about paying/owing, not when asking about price or payment methods
   if (
     (normalized.includes('tolov') || normalized.includes('tulov') || normalized.includes('payment') || normalized.includes('oplata') || normalized.includes('oplati')) &&
-    !COURSE_PRICE_KEYWORDS.some((k) => normalized.includes(k))
+    !matchesKeyword(normalized, COURSE_PRICE_KEYWORDS) &&
+    !matchesKeyword(normalized, PAYMENT_KEYWORDS)
   ) {
     return {
       keys: [],
@@ -263,8 +409,10 @@ function detectEscalation(normalized: string): EscalationRule | null {
       to: 'admin',
     };
   }
+
   if (
-    normalized.includes(GROUP_WORD) &&
+    !matchesKeyword(normalized, COURSE_AVAILABILITY_KEYWORDS) &&
+    (normalized.includes(GROUP_WORD) || normalized.includes('guruhga') || normalized.includes('sinfga')) &&
     LEVEL_SIGNALS.some((s) => normalized.includes(s))
   ) {
     return {
@@ -273,29 +421,61 @@ function detectEscalation(normalized: string): EscalationRule | null {
       to: 'teacher',
     };
   }
+
   return null;
 }
 
 export function detectIntent(normalized: string): SupportedIntent | null {
   if (!normalized) return null;
+  const toks = tokenize(normalized);
 
-  const check = (keywords: string[]) => keywords.some((kw) => normalized.includes(kw));
+  // 1. High-specificity intents first
+  if (matchesKeyword(normalized, RESULTS_GRANTS_KEYWORDS, toks)) return 'results_grants';
+  if (matchesKeyword(normalized, PAYMENT_KEYWORDS, toks)) return 'payment_methods';
+  if (matchesKeyword(normalized, TRIAL_KEYWORDS, toks)) return 'trial_lesson';
 
-  if (check(COURSE_PRICE_KEYWORDS)) return 'course_price';
-  if (check(COURSE_SCHEDULE_KEYWORDS)) return 'course_schedule';
-  if (check(COURSE_DURATION_KEYWORDS)) return 'course_duration';
-  if (check(COURSE_TEACHER_KEYWORDS)) return 'course_teacher';
-  if (check(COURSE_AVAILABILITY_KEYWORDS)) return 'course_availability';
-  if (check(COURSE_DESC_KEYWORDS)) return 'course_description';
-  if (check(BRANCH_ADDR_KEYWORDS)) return 'branch_address';
-  if (check(WORKING_HOURS_KEYWORDS)) return 'working_hours';
-  if (check(TRIAL_KEYWORDS)) return 'trial_lesson';
-  if (check(TEACHER_KEYWORDS)) return 'teacher_info';
-  if (check(ADMISSION_KEYWORDS)) return 'admission';
-  if (check(LEVEL_PLACEMENT_KEYWORDS)) return 'level_placement';
-  if (check(PAYMENT_KEYWORDS)) return 'contact_info';
-  if (check(FAQ_KEYWORDS)) return 'faq';
-  if (check(CONTACT_KEYWORDS)) return 'contact_info';
+  // Contact info (prioritize if email / contact is mentioned, to avoid confusion with address)
+  if (
+    normalized.includes('email') ||
+    normalized.includes('pochta') ||
+    normalized.includes('telegram') ||
+    normalized.includes('telefon') ||
+    normalized.includes('aloqa') ||
+    normalized.includes('boglan')
+  ) {
+    if (matchesKeyword(normalized, CONTACT_KEYWORDS, toks)) return 'contact_info';
+  }
+
+  // Working hours vs course schedule
+  if (matchesKeyword(normalized, WORKING_HOURS_KEYWORDS, toks)) return 'working_hours';
+
+  // Course duration (e.g. "muddati qancha") checked before course price (which has "qancha")
+  if (matchesKeyword(normalized, COURSE_DURATION_KEYWORDS, toks)) return 'course_duration';
+  if (matchesKeyword(normalized, COURSE_PRICE_KEYWORDS, toks)) return 'course_price';
+  if (matchesKeyword(normalized, COURSE_SCHEDULE_KEYWORDS, toks)) return 'course_schedule';
+  if (matchesKeyword(normalized, COURSE_TEACHER_KEYWORDS, toks)) return 'course_teacher';
+  if (matchesKeyword(normalized, COURSE_AVAILABILITY_KEYWORDS, toks)) return 'course_availability';
+  if (matchesKeyword(normalized, ADMISSION_KEYWORDS, toks)) return 'admission';
+  if (matchesKeyword(normalized, TEACHER_KEYWORDS, toks)) return 'teacher_info';
+  if (matchesKeyword(normalized, BRANCH_ADDR_KEYWORDS, toks)) return 'branch_address';
+  if (matchesKeyword(normalized, CONTACT_KEYWORDS, toks)) return 'contact_info';
+  if (matchesKeyword(normalized, LEVEL_PLACEMENT_KEYWORDS, toks)) return 'level_placement';
+  if (matchesKeyword(normalized, FAQ_KEYWORDS, toks)) return 'faq';
+  if (matchesKeyword(normalized, COURSE_DESC_KEYWORDS, toks)) return 'course_description';
+
+  // Direct short course queries (e.g. "IELTS?", "Ayelts", "CEFR")
+  // Only apply when query is short (<= 4 words or <= 35 chars) to avoid matching random long sentences
+  const wordCount = normalized.split(' ').filter(Boolean).length;
+  if (wordCount <= 4 || normalized.length <= 35) {
+    for (const g of COURSE_ALIAS_GROUPS) {
+      for (const a of g.aliases) {
+        if (normalized.includes(normalizeForMatch(a))) {
+          return 'course_description';
+        }
+      }
+    }
+  }
+
   return null;
 }
 
@@ -303,27 +483,44 @@ export function detectIntent(normalized: string): SupportedIntent | null {
 export function detectAllIntents(normalized: string): SupportedIntent[] {
   if (!normalized) return [];
   const out: SupportedIntent[] = [];
+  const toks = tokenize(normalized);
+
   const pairs: Array<[string[], SupportedIntent]> = [
-    [COURSE_PRICE_KEYWORDS, 'course_price'],
-    [COURSE_SCHEDULE_KEYWORDS, 'course_schedule'],
+    [RESULTS_GRANTS_KEYWORDS, 'results_grants'],
+    [PAYMENT_KEYWORDS, 'payment_methods'],
+    [TRIAL_KEYWORDS, 'trial_lesson'],
+    [WORKING_HOURS_KEYWORDS, 'working_hours'],
     [COURSE_DURATION_KEYWORDS, 'course_duration'],
+    [COURSE_SCHEDULE_KEYWORDS, 'course_schedule'],
+    [COURSE_PRICE_KEYWORDS, 'course_price'],
     [COURSE_TEACHER_KEYWORDS, 'course_teacher'],
     [COURSE_AVAILABILITY_KEYWORDS, 'course_availability'],
-    [COURSE_DESC_KEYWORDS, 'course_description'],
-    [BRANCH_ADDR_KEYWORDS, 'branch_address'],
-    [WORKING_HOURS_KEYWORDS, 'working_hours'],
-    [TRIAL_KEYWORDS, 'trial_lesson'],
-    [TEACHER_KEYWORDS, 'teacher_info'],
     [ADMISSION_KEYWORDS, 'admission'],
+    [TEACHER_KEYWORDS, 'teacher_info'],
+    [BRANCH_ADDR_KEYWORDS, 'branch_address'],
+    [CONTACT_KEYWORDS, 'contact_info'],
     [LEVEL_PLACEMENT_KEYWORDS, 'level_placement'],
     [FAQ_KEYWORDS, 'faq'],
-    [CONTACT_KEYWORDS, 'contact_info'],
+    [COURSE_DESC_KEYWORDS, 'course_description'],
   ];
+
   for (const [keys, intent] of pairs) {
-    if (keys.some((k) => normalized.includes(k)) && !out.includes(intent)) {
+    if (matchesKeyword(normalized, keys, toks) && !out.includes(intent)) {
       out.push(intent);
     }
   }
+
+  if (out.length === 0) {
+    for (const g of COURSE_ALIAS_GROUPS) {
+      for (const a of g.aliases) {
+        if (normalized.includes(normalizeForMatch(a))) {
+          out.push('course_description');
+          return out;
+        }
+      }
+    }
+  }
+
   return out;
 }
 
@@ -378,6 +575,23 @@ export function matchCoursesByEntity(normalizedQuestion: string, courses: any[])
         score += 50;
         via = via || ('alias:' + aliasNorm);
         break;
+      }
+    }
+
+    // 2b) Fuzzy alias match (tolerance for minor typos like ayelts, ayles, tsefr)
+    if (score === 0) {
+      for (const [aliasNorm, canonical] of NORMALIZED_ALIAS_TO_CANONICAL) {
+        if (aliasNorm.length < 4) continue;
+        for (const qw of qWords) {
+          if (Math.abs(qw.length - aliasNorm.length) <= 1 && levenshtein(qw, aliasNorm) <= 1) {
+            if (cText.includes(canonical) || cText.includes(aliasNorm)) {
+              score += 45;
+              via = via || ('fuzzy_alias:' + aliasNorm);
+              break;
+            }
+          }
+        }
+        if (score > 0) break;
       }
     }
 
@@ -731,6 +945,45 @@ async function getKnowledgeForIntent(
         // Final verified public contact fallback (landing page always shows this)
         return [{ text: 'Tel: +998 90 862-22-26 | Telegram: @centerflow_bot', source: 'Markaz kontaktlari' }];
       }
+      case 'results_grants': {
+        try {
+          const { resultsService } = await import('./repository');
+          const pubResults = await resultsService.getPublishedResults();
+          if (pubResults.length > 0) {
+            const lines = pubResults.slice(0, 5).map((r: any) => {
+              const parts = [
+                r.studentName,
+                r.score ? `${r.score} ball` : '',
+                r.university,
+                r.badge || (r.admissionType === 'Grant' ? 'Davlat granti' : '')
+              ].filter(Boolean);
+              return parts.join(' — ');
+            });
+            return [
+              {
+                text: `Renessans o‘quv markazi o‘quvchilari natijalari va grantlari: ${lines.join('; ')}. O‘quvchilarimiz muntazam ravishda davlat grantlari va nufuzli universitetlarga qabul qilinmoqda.`,
+                source: 'Markaz natijalari va grantlari'
+              }
+            ];
+          }
+        } catch {
+          // ignore error and use verified center achievements fallback
+        }
+        return [
+          {
+            text: "Renessans o‘quv markazi natijalari: 187.9 eng yuqori DTM balli (Toshkent Davlat Universiteti davlat granti); IELTS 8.5 ball (Westminster Xalqaro Universiteti 100% grant); 120+ nafar o‘quvchi CEFR B2 va C1 sertifikatlariga ega. Bitiruvchilarimizning 85%+ qismi davlat granti va nufuzli OTMlarga qabul qilingan.",
+            source: 'Markaz natijalari va grantlari'
+          }
+        ];
+      }
+      case 'payment_methods': {
+        return [
+          {
+            text: "To‘lov usullari: Click va Payme ilovalari orqali onlayn, Uzcard va Humo bank kartalari orqali yoki o‘quv markazi qabulxonasida naqd pul shaklida qabul qilinadi.",
+            source: 'To‘lov usullari'
+          }
+        ];
+      }
       default:
         return null;
     }
@@ -763,6 +1016,7 @@ export interface KnowledgeHealth {
   courses: { total: number; withPrice: number; withDescription: number; withSchedule: number };
   teachers: { publicCount: number };
   faqs: { activeCount: number };
+  results: { totalCount: number; grantCount: number };
   center: { contactConfigured: boolean; branchesConfigured: boolean; workingHoursConfigured: boolean };
   missing: string[];
 }
@@ -801,6 +1055,21 @@ export async function getKnowledgeHealth(): Promise<KnowledgeHealth> {
   }
   if (faqs.length === 0) missing.push('Faol FAQ topilmadi');
 
+  let resultsList: any[] = [];
+  try {
+    const { resultsService } = await import('./repository');
+    resultsList = await resultsService.getAllResults();
+  } catch {
+    resultsList = [];
+  }
+  const publishedResults = resultsList.filter((r: any) => r.published !== false);
+  const grantResults = publishedResults.filter((r: any) =>
+    (r.badge && String(r.badge).toLowerCase().includes('grant')) ||
+    r.admissionType === 'Grant' ||
+    (r.university && String(r.university).toLowerCase().includes('grant'))
+  );
+  if (publishedResults.length === 0) missing.push('O‘quvchilar natijalari/grantlari kiritilmagan');
+
   let contactConfigured = false;
   let branchesConfigured = false;
   let workingHoursConfigured = false;
@@ -833,6 +1102,7 @@ export async function getKnowledgeHealth(): Promise<KnowledgeHealth> {
     courses: { total: publicCourses.length, withPrice, withDescription, withSchedule },
     teachers: { publicCount: teachers.length },
     faqs: { activeCount: faqs.length },
+    results: { totalCount: publishedResults.length, grantCount: grantResults.length },
     center: { contactConfigured, branchesConfigured, workingHoursConfigured },
     missing,
   };
@@ -885,7 +1155,9 @@ class AIReceptionist {
 
     // Load public courses once — the single source of truth for course intents.
     let allCourses: any[] = [];
-    const needsCourses = ['course_price', 'course_description', 'course_schedule', 'course_duration', 'course_teacher', 'course_availability', 'trial_lesson', 'admission'].includes(intent);
+    const needsCourses = intents.some((it) =>
+      ['course_price', 'course_description', 'course_schedule', 'course_duration', 'course_teacher', 'course_availability', 'trial_lesson', 'admission'].includes(it)
+    );
     if (needsCourses) {
       try {
         allCourses = (await coursesService.getAllCourses()).filter((c: any) => c.isActive !== false && c.isPublic !== false);

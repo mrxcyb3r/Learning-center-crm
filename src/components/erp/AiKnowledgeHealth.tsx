@@ -47,7 +47,7 @@ export const AiKnowledgeHealth: React.FC = () => {
         <div className="text-xs text-slate-500 dark:text-slate-400">{loading ? t('Tekshirilmoqda...', 'Checking...', 'Проверка...') : t('Ma’lumot olinmadi.', 'No data.', 'Данные не получены.')}</div>
       ) : (
         <div className="space-y-2 text-xs">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="block text-[10px] font-bold text-slate-500">{t('Public kurslar', 'Public courses', 'Публичные курсы')}</span>
               <span className="block text-lg font-black text-slate-900 dark:text-white">{health.courses.total}</span>
@@ -60,6 +60,11 @@ export const AiKnowledgeHealth: React.FC = () => {
             <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="block text-[10px] font-bold text-slate-500">{t('Faol FAQ', 'Active FAQ', 'Активные FAQ')}</span>
               <span className="block text-lg font-black text-slate-900 dark:text-white">{health.faqs.activeCount}</span>
+            </div>
+            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <span className="block text-[10px] font-bold text-slate-500">{t('Natijalar / Grantlar', 'Results / Grants', 'Результаты / Гранты')}</span>
+              <span className="block text-lg font-black text-slate-900 dark:text-white">{health.results?.totalCount ?? 0}</span>
+              <span className="block text-[10px] text-slate-500">{t('grantlar: ', 'grants: ', 'гранты: ')}{health.results?.grantCount ?? 0}</span>
             </div>
             <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="block text-[10px] font-bold text-slate-500">{t('Markaz', 'Center', 'Центр')}</span>

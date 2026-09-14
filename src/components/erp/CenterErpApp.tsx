@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -136,6 +136,7 @@ export const CenterErpApp: React.FC = () => {
   const [murojaatUnread, setMurojaatUnread] = useState(0);
 
   const sidebarGroups = useMemo(() => getSidebarGroups(t), [language]);
+  const sidebarItems = sidebarGroups.flatMap((group) => group.items);
 
   const displayName =
     userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || t('Direktor', 'Director', 'Директор');

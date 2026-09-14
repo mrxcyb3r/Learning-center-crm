@@ -3,6 +3,7 @@ import { Send, CheckCircle2, RefreshCw, ExternalLink, ShieldAlert, Copy, Check, 
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { checkBotStatus, createTelegramLinkSession } from '../../services/telegram';
 
 export interface TelegramIntegrationCardProps {
@@ -12,6 +13,8 @@ export interface TelegramIntegrationCardProps {
 
 export const TelegramIntegrationCard: React.FC<TelegramIntegrationCardProps> = ({ compact = false }) => {
   const { currentUser, userProfile, logout } = useAuth();
+  const { language } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const [isBotConnected, setIsBotConnected] = useState<boolean>(Boolean(userProfile?.isBotConnected));
   const [telegramUsername, setTelegramUsername] = useState<string>(userProfile?.telegramUsername || '');
   const [loading, setLoading] = useState<boolean>(false);
@@ -221,7 +224,7 @@ export const TelegramIntegrationCard: React.FC<TelegramIntegrationCardProps> = (
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
+            <span>{t('Chiqish', 'Sign Out', 'Выйти')}</span>
           </button>
         </div>
       )}

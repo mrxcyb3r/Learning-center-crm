@@ -3,6 +3,7 @@ import { Send, CheckCircle2, ShieldCheck, Sparkles, Copy, Check, ExternalLink, R
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { BOT_USERNAME, checkBotStatus, createTelegramLinkSession } from '../../services/telegram';
 
 interface ConnectTelegramOnboardingProps {
@@ -11,6 +12,8 @@ interface ConnectTelegramOnboardingProps {
 
 export const ConnectTelegramOnboarding: React.FC<ConnectTelegramOnboardingProps> = ({ onComplete }) => {
   const { currentUser, userProfile, logout } = useAuth();
+  const { language } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const [isBotConnected, setIsBotConnected] = useState<boolean>(Boolean(userProfile?.isBotConnected));
   const [telegramUsername, setTelegramUsername] = useState<string>(userProfile?.telegramUsername || '');
   const [loading, setLoading] = useState(false);
@@ -189,7 +192,7 @@ export const ConnectTelegramOnboarding: React.FC<ConnectTelegramOnboardingProps>
                 className="flex items-center gap-1.5 text-slate-400 hover:text-white transition cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
+                <span>{t('Chiqish', 'Sign Out', 'Выйти')}</span>
               </button>
             </div>
           </div>

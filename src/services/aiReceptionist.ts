@@ -70,7 +70,7 @@ const COURSE_ALIAS_GROUPS: Array<{ canonical: string; aliases: string[] }> = [
   },
   {
     canonical: 'cefr',
-    aliases: ['cefr', 'cefr b2', 'cefr c1', 'cefr kursi', 'ingliz tili', 'ingliz tili kursi', 'english', 'english kids', 'general english'],
+    aliases: ['cefr', 'cefr b2', 'cefr c1', 'cefr kursi', 'ingliz tili', 'ingliz tili kursi', 'english', 'english kids', 'general english', 'kids english'],
   },
   {
     canonical: 'dtm',
@@ -101,6 +101,24 @@ const COURSE_ALIAS_GROUPS: Array<{ canonical: string; aliases: string[] }> = [
     aliases: ['arab tili', 'arab tili kursi'],
   },
 ];
+
+// Greeting keywords - handled BEFORE knowledge retrieval
+const GREETING_KEYWORDS = [
+  'salom', 'assalomu alaykum', 'assalom', 'hi', 'hello', 'hayrli tong', 'hayrli kun', 'hayrli kech',
+  'rahmat', 'katta rahmat', 'xayr', 'ko\'rishguncha', 'salam', 'privet', 'zdravstvuyte',
+];
+
+function isGreeting(normalized: string): boolean {
+  if (!normalized) return false;
+  // Check if the normalized input matches a greeting (whole word or exact phrase)
+  for (const g of GREETING_KEYWORDS) {
+    const gNorm = normalizeForMatch(g);
+    if (normalized === gNorm || normalized.includes(' ' + gNorm + ' ') || normalized.startsWith(gNorm + ' ') || normalized.endsWith(' ' + gNorm)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 const NORMALIZED_ALIAS_TO_CANONICAL: Map<string, string> = (() => {
   const m = new Map<string, string>();
@@ -838,6 +856,20 @@ class AIReceptionist {
       };
     }
 
+    // Gate 1 — greetings: respond naturally, no knowledge retrieval needed.
+    if (isGreeting(normalized)) {
+      return {
+        answer: "Va alaykum assalom! 😊 Renessans o‘quv markazi haqida savollaringiz bo‘lsa, yordam beraman. Kurslar, narxlar, ustozlar, manzil yoki dars jadvali haqida so‘rashingiz mumkin.",
+        shouldEscalate: false,
+        escalationReason: null,
+        intent: null,
+        intents: [],
+        entity: null,
+        escalatedTo: null,
+        knowledgeSources: [],
+      };
+    }
+
     const intents = detectAllIntents(normalized);
     const intent = intents[0] || null;
     if (!intent) {
@@ -890,11 +922,13 @@ class AIReceptionist {
       const isPriceMissing =
         intent === 'course_price' && entityCourse && !Number((entityCourse as any)?.monthlyFee) && !(entityCourse as any)?.formattedFee;
       return {
-        answer: null,
+        answer: isPriceMissing
+          ? "Bu kursning narxi hozircha tizimda ko‘rsatilmagan. Operatorimiz aniq ma’lumot beradi."
+          : "Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi. Operatorimiz sizga aniq javob berishi mumkin.",
         shouldEscalate: true,
         escalationReason: isPriceMissing
           ? 'Bu kursning narxi hozircha tizimda ko‘rsatilmagan. Operatorimiz aniq ma’lumot beradi.'
-          : 'Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi.\n\nOperatorimiz sizga aniq javob berishi mumkin. Iltimos, “Operator bilan bog‘lanish” tugmasini bosing yoki murojaat formasini to‘ldiring.',
+          : 'Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi. Operatorimiz sizga aniq javob berishi mumkin.',
         intent,
         intents,
         entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
@@ -908,7 +942,7 @@ class AIReceptionist {
 
     if (!aiAnswer) {
       return {
-        answer: null,
+        answer: "Uzr, hozir javob tayyorlab bo'lmadi. Operatorimiz sizga aniq javob beradi.",
         shouldEscalate: true,
         escalationReason: 'AI javobi shakllantirib bo‘lmadi. Murojaatingiz operatorga yo‘natilmoqda.',
         intent,
@@ -921,14 +955,12 @@ class AIReceptionist {
 
     const validation = this.validateAIAnswer(aiAnswer, knowledgeList, intent);
     if (!validation.ok) {
-      const friendly =
-        validation.reason === 'AI javobi tasdiqlanmadi — axborot haqqida xato.'
-          ? 'Bu savol bo‘yicha tasdiqlangan ma’lumot topilmadi.\n\nOperatorimiz sizga aniq javob berishi mumkin.'
-          : validation.reason;
+      // Log diagnostic info server-side, show friendly message to user
+      console.warn('[AI Validation Failed]', { reason: validation.reason, intent, question });
       return {
-        answer: 'Bu savol bo‘yicha aniq ma’lumotim yo‘q. Murojaatingizni operatorimizga yuboraman.',
+        answer: "Uzr, hozir bu ma'lumotni tasdiqlay olmadim. Operatorimiz sizga aniq javob beradi.",
         shouldEscalate: true,
-        escalationReason: friendly,
+        escalationReason: validation.reason,
         intent,
         intents,
         entity: entityCourse ? String((entityCourse as any)?.title || '') : null,
@@ -947,6 +979,18 @@ class AIReceptionist {
       escalatedTo: null,
       knowledgeSources: knowledgeList,
     };
+  }
+
+  // Normalize price for verification - handles various formats
+  private normalizePrice(value: string | number): string {
+    if (typeof value === 'number') {
+      return String(value);
+    }
+    const s = String(value).trim();
+    // Remove currency suffixes, spaces, commas, apostrophes, dots (thousands separators)
+    return s
+      .replace(/[^\d]/g, '')
+      .replace(/^0+/, '') || '0';
   }
 
   private async generateAIResponse(
@@ -997,14 +1041,12 @@ class AIReceptionist {
     // Price questions: verified digits must appear in the answer.
     if (intent === 'course_price') {
       const priceDigits = knowledgeList
-        .map((k) => digitsOf(k.text))
+        .map((k) => this.normalizePrice(k.text))
         .filter((d) => d.length >= 4);
       if (priceDigits.length > 0) {
-        const answerDigits = digitsOf(answer);
+        const answerDigits = this.normalizePrice(answer);
         const matches = priceDigits.some((pd) => {
-          // Compare compact digit strings (spaces/commas ignored).
-          const compact = pd.replace(/^0+/, '');
-          return compact.length >= 4 && answerDigits.includes(compact);
+          return pd.length >= 4 && answerDigits.includes(pd);
         });
         if (!matches) {
           return { ok: false, reason: 'AI javobi tasdiqlanmadi — narx verified ma’lumotga mos kelmadi.' };

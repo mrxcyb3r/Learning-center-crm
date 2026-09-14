@@ -130,7 +130,8 @@ export const CenterErpApp: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { currentUser, userProfile, activeRole, logout } = useAuth();
-  const { t } = useLanguage();
+  const { language, t: translateObj } = useLanguage();
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
   const [activeTab, setActiveTab] = useState<ErpTab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadsCount, setLeadsCount] = useState(0);
@@ -139,7 +140,11 @@ export const CenterErpApp: React.FC = () => {
   const displayName =
     userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Direktor';
   const roleLabel =
-    activeRole === 'superadmin' ? 'SuperAdmin' : activeRole === 'admin' ? 'ADMIN' : activeRole === 'receptionist' ? 'QABULXONA' : activeRole === 'teacher' ? "O'QITUVCHI" : activeRole;
+    activeRole === 'superadmin' ? t('SuperAdmin', 'SuperAdmin', 'SuperAdmin') :
+    activeRole === 'admin' ? t('ADMIN', 'ADMIN', 'АДМИН') :
+    activeRole === 'receptionist' ? t('QABULXONA', 'FRONT DESK', 'РЕСЕПШН') :
+    activeRole === 'teacher' ? t("O'QITUVCHI", 'TEACHER', 'УЧИТЕЛЬ') :
+    t(activeRole, activeRole, activeRole);
 
   const handleLogout = async () => {
     try {
@@ -396,13 +401,13 @@ case 'murojaatlar':
           </div>
 
           {/* Logout — real Firebase logout, always accessible */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>{t.nav.logout}</span>
-          </button>
+<button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{translateObj.nav.logout}</span>
+            </button>
         </div>
       </aside>
 
@@ -457,7 +462,7 @@ case 'murojaatlar':
               title="Chiqish"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t.nav.logout}</span>
+              <span>{translateObj.nav.logout}</span>
             </button>
           </div>
         </header>
@@ -474,7 +479,7 @@ case 'murojaatlar':
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30 shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t.nav.logout}</span>
+              <span>{translateObj.nav.logout}</span>
             </button>
           </div>
         </div>

@@ -119,13 +119,15 @@ export const AiReceptionistWidget: React.FC = () => {
           });
         };
         if (result.shouldEscalate) {
-          pushMsg({
-            id: nextId(),
-            from: 'system',
-            text:
-              result.escalationReason ||
-              "Bu savol bo'yicha aniq ma'lumotim yo'q. Murojaatingizni operatorimizga yuboraman.",
-          });
+          // result.answer already contains the friendly user-facing message
+          if (result.answer) {
+            pushMsg({
+              id: nextId(),
+              from: 'ai',
+              text: result.answer,
+              aiNote: false,
+            });
+          }
           try {
             await persistTurn();
           } catch {

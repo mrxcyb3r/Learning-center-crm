@@ -18,18 +18,20 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t: translateObj, translate } = useLanguage();
   const { currentUser, userProfile, activeRole, logout } = useAuth();
+
+  const t = (uz: string, en: string, ru: string) => (language === 'EN' ? en : language === 'RU' ? ru : uz);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const navLinks = [
-    { href: '#why-us', label: language === 'UZ' ? 'Imkoniyatlar' : language === 'RU' ? 'Возможности' : 'Features' },
-    { href: '#multi-subject', label: language === 'UZ' ? 'Fanlar Xabi' : language === 'RU' ? 'Хаб Предметов' : 'Multi-Subject Hub' },
-    { href: '#role-demos', label: language === 'UZ' ? 'Rol Demosi' : language === 'RU' ? 'Демо Ролей' : 'Role Demos' },
-    { href: '#telegram-sec', label: language === 'UZ' ? 'Telegram & Xavfsizlik' : language === 'RU' ? 'Телеграм & Защита' : 'Security & Telegram' },
-    { href: '#faq', label: language === 'UZ' ? 'Savollar' : language === 'RU' ? 'Вопросы' : 'FAQs' }
+    { href: '#why-us', label: t('Imkoniyatlar', 'Features', 'Возможности') },
+    { href: '#multi-subject', label: t('Fanlar Xabi', 'Multi-Subject Hub', 'Хаб Предметов') },
+    { href: '#role-demos', label: t('Rol Demosi', 'Role Demos', 'Демо Ролей') },
+    { href: '#telegram-sec', label: t('Telegram & Xavfsizlik', 'Security & Telegram', 'Телеграм & Защита') },
+    { href: '#faq', label: t('Savollar', 'FAQs', 'Вопросы') }
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -155,20 +157,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
               <button
                 onClick={logout}
                 className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
-                title="Sign Out"
+                title={t('Chiqish', 'Sign Out', 'Выйти')}
               >
                 <LogOut className="w-4 h-4" />
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={onOpenAuth}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 fill-slate-950" />
-              <span>Sign In / Portal Access</span>
-            </button>
-          )}
+</div>
+           ) : (
+             <button
+               onClick={onOpenAuth}
+               className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
+             >
+               <Sparkles className="w-4 h-4 fill-slate-950" />
+               <span>{t('Kirish / Portalga kirish', 'Sign In / Portal Access', 'Вход / Доступ к порталу')}</span>
+             </button>
+           )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -242,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
                   className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-3 rounded-xl shadow-lg shadow-amber-500/20"
                 >
                   <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>Sign In / Portal Access</span>
+                  <span>{t('Kirish / Portalga kirish', 'Sign In / Portal Access', 'Вход / Доступ к порталу')}</span>
                 </button>
               )}
             </div>

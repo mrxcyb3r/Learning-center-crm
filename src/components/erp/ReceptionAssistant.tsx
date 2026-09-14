@@ -76,16 +76,16 @@ export const ReceptionAssistant: React.FC = () => {
     try {
       const result = await aiReceptionist.processQuestion(q);
       if (result.answer) {
-        setMessages((m) => [...m, { role: 'assistant', text: result.answer as string }]);
+        setMessages((m) => [...m, { role: 'assistant', text: result.answer as string, escalated: result.shouldEscalate }]);
       } else {
         setMessages((m) => [
           ...m,
           {
             role: 'assistant',
             text: t(
-              'Bu savolga avtomatik javob topilmadi — mijoz bilan bevosita bog‘laning yoki administratorga yo‘naltiring.',
-              'No automatic answer found — contact the client directly or escalate to an administrator.',
-              'Автоматический ответ не найден — свяжитесь с клиентом напрямую или передайте администратору.'
+              "Uzr, hozir bu ma'lumotni tasdiqlay olmadim. Operatorimiz sizga aniq javob beradi.",
+              "Sorry, I couldn't verify this information right now. Our operator will give you an exact answer.",
+              "Извините, я не смог подтвердить эту информацию прямо сейчас. Наш оператор даст точный ответ."
             ),
             escalated: true,
           },
@@ -96,7 +96,7 @@ export const ReceptionAssistant: React.FC = () => {
         ...m,
         {
           role: 'assistant',
-          text: t('Yordamchini ishga tushirishda xatolik. Keyinroq qayta urinib ko‘ring.', 'Assistant failed to respond. Please try again later.', 'Ошибка помощника. Попробуйте позже.'),
+          text: t("Uzr, hozir javob tayyorlab bo'lmadi. Operatorimiz sizga aniq javob beradi.", "Sorry, couldn't prepare an answer right now. Our operator will give you an exact answer.", "Извините, не удалось подготовить ответ прямо сейчас. Наш оператор даст точный ответ."),
           escalated: true,
         },
       ]);

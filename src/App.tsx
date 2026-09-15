@@ -116,6 +116,9 @@ function MainAppRoutes() {
         }
       />
 
+      {/* Teacher registration with invitation, leveraging existing TeacherRegisterPage */}
+      <Route path="/teacher/register" element={<TeacherRegisterPage />} />
+
       {/* Catch-All: Public 404 for unknown public routes, redirect to /app for app routes */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

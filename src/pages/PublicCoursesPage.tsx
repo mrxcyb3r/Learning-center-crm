@@ -17,6 +17,7 @@ import { getSiteUrl } from '../utils/content';
 export const PublicCoursesPage: React.FC = () => {
   const { openTrial } = useTrialModal();
   const [courses, setCourses] = useState<CourseData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('Barchasi');
 
   useEffect(() => {
@@ -50,12 +51,36 @@ export const PublicCoursesPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    setIsLoading(false);
+  }, [courses.length]);
+
   const categories = ['Barchasi', ...Array.from(new Set(courses.map((c) => c.category)).values()).filter(Boolean)];
 
   const filtered =
     selectedCategory === 'Barchasi'
       ? courses
       : courses.filter((c) => c.category === selectedCategory);
+
+  if (isLoading) {
+    return (
+      <PublicLayout activePage="courses">
+        <SEOHead
+          title="Kurslar — Renessans O'quv Markazi"
+          description="Renessans O'quv markazining barcha kurslari: DTM va Milliy sertifikat, matematika–fizika, CEFR ingliz tili, English Kids, mental arifmetika va ona tili. Bepul sinov darsi!"
+          canonicalUrl={`${getSiteUrl()}/courses`}
+        />
+        <section className="py-12 md:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              <Sparkles className="w-12 h-12 mb-4 text-slate-300 dark:text-slate-600 animate-pulse" />
+              <p className="text-slate-500 dark:text-slate-400">Kurslar yuklanmoqda...</p>
+            </div>
+          </div>
+        </section>
+      </PublicLayout>
+    );
+  }
 
   return (
     <PublicLayout activePage="courses">

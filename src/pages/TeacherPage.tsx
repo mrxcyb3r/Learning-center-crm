@@ -21,6 +21,7 @@ export const TeacherPage: React.FC = () => {
 
   const [teacher, setTeacher] = useState<TeacherRecord | null>(null);
   const [courses, setCourses] = useState<CourseData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Production path: Firestore `teachers`/`courses`. Legacy crmService is
@@ -70,16 +71,29 @@ export const TeacherPage: React.FC = () => {
             )
           : []);
       }
+      setIsLoading(false);
     })();
     return () => { cancelled = true; };
   }, [slug]);
+
+if (isLoading) {
+    return (
+      <PublicLayout>
+        <div className="pt-40 pb-32 text-center px-4">
+          <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white">Yuklanmoqda...</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Ustoz ma'lumotlari yuklanmoqda. Iltimos, biroz kuting.</p>
+        </div>
+      </PublicLayout>
+    );
+  }
 
   if (!teacher) {
     return (
       <PublicLayout>
         <div className="pt-40 pb-32 text-center px-4">
           <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white">Ustoz topilmadi</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white">Ustuz topilmadi</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
             Bunday ustoz mavjud emas yoki hozircha nashr qilinmagan.
           </p>
